@@ -654,7 +654,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Future<void> _createNewMeeting({required bool instant}) async {
     // If not instant, would typically show a form to schedule the meeting
     // For demo, we'll create an instant meeting regardless
-
+    return;
     final now = DateTime.now();
     final meetingName = 'Meeting ${now.hour}:${now.minute}';
 

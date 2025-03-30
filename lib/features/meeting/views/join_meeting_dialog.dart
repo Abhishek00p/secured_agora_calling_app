@@ -112,7 +112,7 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
               _listener?.cancel(); // Stop listening to prevent further triggers
 
               _meetingData = {'channelName': 'testing'};
-              _joinMeeting(); // Pass meeting data if needed
+              // _joinMeeting(); // Pass meeting data if needed
             }
           }
         });
