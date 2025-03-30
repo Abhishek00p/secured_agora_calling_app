@@ -130,7 +130,6 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
       await _firebaseService.requestToJoinMeeting(_meetingId!, userId);
 
       if (mounted) {
-        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
