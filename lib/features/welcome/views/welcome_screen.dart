@@ -48,7 +48,7 @@ class WelcomeScreen extends StatelessWidget {
 
                 // App Name
                 Text(
-                  'DreamFlow',
+                  'SecuredCalling',
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     background:

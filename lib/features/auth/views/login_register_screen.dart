@@ -165,132 +165,109 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
         ),
         child: SafeArea(
           child: Center(
-            child: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // App Logo
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient,
-                          borderRadius: BorderRadius.circular(20),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // App Logo
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.video_call_rounded,
+                        size: 40,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // App Name
+                    Text('SecuredCalling', style: TextStyle(fontSize: 24)),
+                    const SizedBox(height: 36),
+
+                    // Tab Bar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TabBar(
+                        controller: _tabController,
+                        indicatorPadding: EdgeInsets.all(8),
+                        padding: EdgeInsets.all(16),
+                        indicator: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: AppTheme.primaryColor,
                         ),
-                        child: const Icon(
-                          Icons.video_call_rounded,
-                          size: 40,
-                          color: Colors.white,
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        labelColor: Colors.white,
+                        unselectedLabelColor:
+                            Theme.of(context).textTheme.bodyLarge?.color,
+                        labelStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        tabs: const [Tab(text: 'Login'), Tab(text: 'Register')],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Error Message
+                    if (_errorMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppTheme.errorColor.withOpacity(0.5),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: AppTheme.errorColor,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: TextStyle(color: AppTheme.errorColor),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // App Name
-                      Text(
-                        'DreamFlow',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          background:
-                              Paint()
-                                ..shader = const LinearGradient(
-                                  colors: [
-                                    AppTheme.primaryColor,
-                                    AppTheme.secondaryColor,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ).createShader(
-                                  const Rect.fromLTWH(0.0, 0.0, 180.0, 60.0),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 36),
-
-                      // Tab Bar
-                      Container(
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: TabBar(
-                          controller: _tabController,
-                          indicator: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: AppTheme.primaryColor,
-                          ),
-                          labelColor: Colors.white,
-                          unselectedLabelColor:
-                              Theme.of(context).textTheme.bodyLarge?.color,
-                          labelStyle: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          tabs: const [
-                            Tab(text: 'Login'),
-                            Tab(text: 'Register'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // Error Message
-                      if (_errorMessage != null) ...[
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.errorColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppTheme.errorColor.withOpacity(0.5),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: AppTheme.errorColor,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _errorMessage!,
-                                  style: TextStyle(color: AppTheme.errorColor),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // Tab Views
-                      SizedBox(
-                        height: _tabController.index == 0 ? 260 : 350,
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            // Login Form
-                            _buildLoginForm(),
-
-                            // Register Form
-                            _buildRegisterForm(),
-                          ],
-                        ),
-                      ),
-
-                      // Animated Loading Indicator
-                      if (_isLoading) ...[
-                        const SizedBox(height: 24),
-                        const Center(child: CircularProgressIndicator()),
-                      ],
                     ],
-                  ),
+
+                    // Tab Views
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          // Login Form
+                          _buildLoginForm(),
+
+                          // Register Form
+                          _buildRegisterForm(),
+                        ],
+                      ),
+                    ),
+
+                    // Animated Loading Indicator
+                    if (_isLoading) ...[
+                      const SizedBox(height: 24),
+                      const Center(child: CircularProgressIndicator()),
+                    ],
+                  ],
                 ),
               ),
             ),

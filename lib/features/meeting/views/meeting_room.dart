@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/meeting/services/agora_service.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class MeetingRoom extends ConsumerStatefulWidget {
   final String channelName;
@@ -35,6 +35,7 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
   bool _isParticipantListOpen = false;
   bool _isRecording = false;
   bool _isSpeakerFocusEnabled = false;
+  bool _isAudioOnlyMode = true;
   int? _focusedUserId;
 
   // Meeting info
@@ -92,7 +93,8 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
       );
 
       await _agoraService.joinChannel(
-        channelName: widget.channelName,
+        channelName: 'testing',
+        //  widget.channelName,
         isFreeTrial: !widget.isHost, // Free trial for non-hosts
       );
 
@@ -164,6 +166,18 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
     setState(() {
       _isVideoEnabled = !_isVideoEnabled;
     });
+  }
+
+  Future<void> _toggleAudioOnlyMode() async {
+    await _agoraService.toggleAudioOnlyMode();
+    setState(() {
+      _isAudioOnlyMode = !_isAudioOnlyMode;
+      if (_isAudioOnlyMode) {
+        // Audio-only mode forces video off
+        _isVideoEnabled = false;
+      }
+    });
+    ref.read(isAudioOnlyModeProvider.notifier).state = _isAudioOnlyMode;
   }
 
   Future<void> _toggleScreenSharing() async {
@@ -446,7 +460,7 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
 
                     // Bottom Control Bar
                     _buildControlBar(),
-
+                    _buildEndCallButton(),
                     // Side Panels
                     if (_isParticipantListOpen)
                       _buildParticipantsPanel(remoteUsers),
@@ -665,8 +679,8 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
 
   Widget _buildLocalVideo() {
     return Positioned(
-      right: 16,
-      bottom: 100,
+      left: 16,
+      bottom: 150,
       width: 120,
       height: 160,
       child: Container(
@@ -737,64 +751,86 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
     );
   }
 
+  Widget _buildEndCallButton() {
+    return Positioned(
+      bottom: 16,
+      child: Container(
+        width: MediaQuery.sizeOf(context).width,
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        height: 30,
+        child: InkWell(
+          onTap: _endMeeting,
+          child: ColoredBox(
+            color: Colors.red,
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('End Call'),
+                SizedBox(width: 10),
+                Icon(Icons.call_end),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildControlBar() {
     return Positioned(
       left: 0,
       right: 0,
-      bottom: 16,
+      bottom: 60,
       child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildControlButton(
-              icon: _isMuted ? Icons.mic_off : Icons.mic,
-              label: _isMuted ? 'Unmute' : 'Mute',
-              color: _isMuted ? Colors.red : Colors.white,
-              onPressed: _toggleMute,
-            ),
-            _buildControlButton(
-              icon: _isVideoEnabled ? Icons.videocam : Icons.videocam_off,
-              label: _isVideoEnabled ? 'Stop Video' : 'Start Video',
-              color: _isVideoEnabled ? Colors.white : Colors.red,
-              onPressed: _toggleVideo,
-            ),
-            _buildControlButton(
-              icon: Icons.screen_share,
-              label: 'Share Screen',
-              color: _isScreenSharing ? AppTheme.accentColor : Colors.white,
-              onPressed: _toggleScreenSharing,
-            ),
-            if (widget.isHost) ...[
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               _buildControlButton(
-                icon:
-                    _isRecording
-                        ? Icons.fiber_manual_record
-                        : Icons.fiber_manual_record_outlined,
-                label: _isRecording ? 'Stop Recording' : 'Record',
-                color: _isRecording ? Colors.red : Colors.white,
-                onPressed: _toggleRecording,
+                icon: _isMuted ? Icons.mic_off : Icons.mic,
+                label: _isMuted ? 'Unmute' : 'Mute',
+                color: _isMuted ? Colors.red : Colors.white,
+                onPressed: _toggleMute,
               ),
               _buildControlButton(
-                icon:
-                    _isSpeakerFocusEnabled
-                        ? Icons.center_focus_strong
-                        : Icons.center_focus_weak,
-                label: 'Speaker Focus',
-                color:
-                    _isSpeakerFocusEnabled
-                        ? AppTheme.accentColor
-                        : Colors.white,
-                onPressed: _toggleSpeakerFocus,
+                icon: _isVideoEnabled ? Icons.videocam : Icons.videocam_off,
+                label: _isVideoEnabled ? 'Stop Video' : 'Start Video',
+                color: _isVideoEnabled ? Colors.white : Colors.red,
+                onPressed: _toggleVideo,
               ),
+              _buildControlButton(
+                icon: Icons.screen_share,
+                label: 'Share Screen',
+                color: _isScreenSharing ? AppTheme.accentColor : Colors.white,
+                onPressed: _toggleScreenSharing,
+              ),
+              if (widget.isHost) ...[
+                _buildControlButton(
+                  icon:
+                      _isRecording
+                          ? Icons.fiber_manual_record
+                          : Icons.fiber_manual_record_outlined,
+                  label: _isRecording ? 'Stop Recording' : 'Record',
+                  color: _isRecording ? Colors.red : Colors.white,
+                  onPressed: _toggleRecording,
+                ),
+                _buildControlButton(
+                  icon:
+                      _isSpeakerFocusEnabled
+                          ? Icons.center_focus_strong
+                          : Icons.center_focus_weak,
+                  label: 'Speaker Focus',
+                  color:
+                      _isSpeakerFocusEnabled
+                          ? AppTheme.accentColor
+                          : Colors.white,
+                  onPressed: _toggleSpeakerFocus,
+                ),
+              ],
             ],
-            _buildControlButton(
-              icon: Icons.call_end,
-              label: 'End',
-              color: Colors.red,
-              onPressed: _endMeeting,
-              isEndCall: true,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1210,8 +1246,33 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
                   SwitchListTile(
                     title: const Text('Disable my camera'),
                     value: !_isVideoEnabled,
-                    onChanged: (value) => _toggleVideo(),
+                    onChanged:
+                        _isAudioOnlyMode
+                            ? null
+                            : (value) =>
+                                _toggleVideo(), // Disable toggle when in audio-only mode
                   ),
+                  SwitchListTile(
+                    title: const Text('Audio-Only Mode'),
+                    subtitle: const Text(
+                      'Disables video for all participants to save bandwidth',
+                    ),
+                    value: _isAudioOnlyMode,
+                    onChanged: (value) => _toggleAudioOnlyMode(),
+                    activeColor: AppTheme.accentColor,
+                  ),
+                  if (_isAudioOnlyMode) ...[
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      child: Text(
+                        'Audio-only mode is active. Video is disabled to conserve bandwidth and improve call quality.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
 
                   if (widget.isHost) ...[
                     const SizedBox(height: 16),

@@ -110,7 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('DreamFlow'),
+        title: const Text('SecuredCalling'),
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),
@@ -246,6 +246,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
             child: TabBar(
               controller: _tabController,
+              indicatorSize: TabBarIndicatorSize.tab,
               indicator: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 color: AppTheme.primaryColor,
@@ -678,7 +679,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             context,
             AppRouter.meetingRoomRoute,
             arguments: {
-              'channelName': meetingData['channelName'],
+              'channelName': 'testing',
+              //  meetingData['channelName'],
               'isHost': true,
             },
           );
