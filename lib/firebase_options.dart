@@ -51,38 +51,38 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR-API-KEY',
-    appId: 'YOUR-APP-ID',
-    messagingSenderId: 'YOUR-MESSAGING-SENDER-ID',
-    projectId: 'YOUR-PROJECT-ID',
-    storageBucket: 'YOUR-STORAGE-BUCKET',
+    apiKey: 'AIzaSyDxBxRwfgmLeSIFJ34w6DLtXRwVujrRP98',
+    appId: '1:210466860375:android:8a619464ead7edfc65a212',
+    messagingSenderId: '210466860375',
+    projectId: 'secure-calling-2025',
+    storageBucket: 'secure-calling-2025.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR-API-KEY',
-    appId: 'YOUR-APP-ID',
-    messagingSenderId: 'YOUR-MESSAGING-SENDER-ID',
-    projectId: 'YOUR-PROJECT-ID',
-    storageBucket: 'YOUR-STORAGE-BUCKET',
-    iosClientId: 'YOUR-IOS-CLIENT-ID',
-    iosBundleId: 'YOUR-IOS-BUNDLE-ID',
+    apiKey: 'AIzaSyBCQPADo64jCw28p1lwaS1_nTDZLJkq3C4',
+    appId: '1:210466860375:ios:fc1b1fb53bc1a1bb65a212',
+    messagingSenderId: '210466860375',
+    projectId: 'secure-calling-2025',
+    storageBucket: 'secure-calling-2025.firebasestorage.app',
+    iosBundleId: 'com.example.securedCalling',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'YOUR-API-KEY',
-    appId: 'YOUR-APP-ID',
-    messagingSenderId: 'YOUR-MESSAGING-SENDER-ID',
-    projectId: 'YOUR-PROJECT-ID',
-    storageBucket: 'YOUR-STORAGE-BUCKET',
-    iosClientId: 'YOUR-IOS-CLIENT-ID',
-    iosBundleId: 'YOUR-IOS-BUNDLE-ID',
+    apiKey: 'AIzaSyBCQPADo64jCw28p1lwaS1_nTDZLJkq3C4',
+    appId: '1:210466860375:ios:fc1b1fb53bc1a1bb65a212',
+    messagingSenderId: '210466860375',
+    projectId: 'secure-calling-2025',
+    storageBucket: 'secure-calling-2025.firebasestorage.app',
+    iosBundleId: 'com.example.securedCalling',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'YOUR-API-KEY',
-    appId: 'YOUR-APP-ID',
-    messagingSenderId: 'YOUR-MESSAGING-SENDER-ID',
-    projectId: 'YOUR-PROJECT-ID',
-    storageBucket: 'YOUR-STORAGE-BUCKET',
+    apiKey: 'AIzaSyC_AMkY_m4alUO9ZiWIL5e8BBQsiuuGyw4',
+    appId: '1:210466860375:web:f75ab0fae7f003c765a212',
+    messagingSenderId: '210466860375',
+    projectId: 'secure-calling-2025',
+    authDomain: 'calling-2025.firebaseapp.com',
+    storageBucket: 'secure-calling-2025.firebasestorage.app',
   );
+
 }
