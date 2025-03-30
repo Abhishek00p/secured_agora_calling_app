@@ -313,7 +313,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 onPressed: () {
                   // Upgrade membership logic would go here
                   // For demo, we'll just set the user as a member
-                  _simulateUpgrade();
+                  // _simulateUpgrade();
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(

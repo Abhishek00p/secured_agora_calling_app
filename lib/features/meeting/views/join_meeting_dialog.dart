@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
@@ -92,6 +94,30 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
     }
   }
 
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  StreamSubscription<DocumentSnapshot>? _listener;
+
+  void listenForParticipantAddition(String meetingId, String userId) {
+    _listener = _firestore
+        .collection('meetings')
+        .doc(meetingId)
+        .snapshots()
+        .listen((snapshot) {
+          if (snapshot.exists) {
+            final data = snapshot.data() as Map<String, dynamic>;
+            final List<dynamic> participants = data['participants'] ?? [];
+
+            if (participants.contains(userId)) {
+              // User has been added to the participants list, stop listening
+              _listener?.cancel(); // Stop listening to prevent further triggers
+
+              _meetingData = {'channelName': 'testing'};
+              _joinMeeting(); // Pass meeting data if needed
+            }
+          }
+        });
+  }
+
   Future<void> _requestToJoin() async {
     if (_meetingId == null || _meetingData == null) return;
 
@@ -113,6 +139,7 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
             backgroundColor: AppTheme.successColor,
           ),
         );
+        listenForParticipantAddition(_meetingId ?? '-', userId);
       }
     } catch (e) {
       setState(() {
