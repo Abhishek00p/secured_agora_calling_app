@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/meeting/views/join_meeting_dialog.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -111,6 +111,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('SecuredCalling'),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),
@@ -212,24 +213,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Subscription Status:',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
+                    child: RichText(
+                    textAlign: TextAlign.center,
+                      text: TextSpan(
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
                         ),
-                        Text(
-                          'Active until ${_formatDate(_userData?['subscription']['expiryDate'])}}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                      
+                        children: [
+                          const TextSpan(
+                            text: 'Subscription Status: ',
+                            style: TextStyle(fontWeight: FontWeight.w500),
                           ),
-                        ),
-                      ],
+                          TextSpan(
+                            text:
+                                'Active until ${_formatDate(_userData?['subscription']['expiryDate'])}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -652,9 +656,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _createNewMeeting({required bool instant}) async {
-    // If not instant, would typically show a form to schedule the meeting
-    // For demo, we'll create an instant meeting regardless
-    return;
+   
     final now = DateTime.now();
     final meetingName = 'Meeting ${now.hour}:${now.minute}';
 
@@ -744,13 +746,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   // Helper for date formatting
-  String _formatDate(dynamic timestamp) {
+  String _formatDate(Timestamp? timestamp) {
     if (timestamp == null) return 'N/A';
 
-    final DateTime date =
-        timestamp is Timestamp ? timestamp.toDate() : timestamp;
+    final DateTime date = timestamp.toDate();
 
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
+    return '${date.day}/${date.month}/${date.year} ${DateFormat('h:m a').format(date)}';
   }
 
   // For demo purposes - simulate upgrading to premium

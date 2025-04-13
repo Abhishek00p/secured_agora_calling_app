@@ -1,154 +1,77 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:secured_calling/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
-import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:secured_calling/features/auth/views/login_register_controller.dart';
+import 'package:secured_calling/features/auth/views/login_screen.dart';
+import 'package:secured_calling/features/auth/views/register_screen.dart';
 
-class LoginRegisterScreen extends StatefulWidget {
+class LoginRegisterScreen extends ConsumerStatefulWidget {
   const LoginRegisterScreen({super.key});
 
   @override
-  State<LoginRegisterScreen> createState() => _LoginRegisterScreenState();
+  ConsumerState<LoginRegisterScreen> createState() =>
+      _LoginRegisterScreenState();
 }
 
-class _LoginRegisterScreenState extends State<LoginRegisterScreen>
+class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
   final GlobalKey<FormState> _registerFormKey = GlobalKey<FormState>();
-
-  final TextEditingController _loginEmailController = TextEditingController();
-  final TextEditingController _loginPasswordController =
-      TextEditingController();
-  final TextEditingController _registerNameController = TextEditingController();
-  final TextEditingController _registerEmailController =
-      TextEditingController();
-  final TextEditingController _registerPasswordController =
-      TextEditingController();
-
-  bool _isLoading = false;
-  bool _obscureLoginPassword = true;
-  bool _obscureRegisterPassword = true;
-  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
-      // Clear error message when switching tabs
-      if (_errorMessage != null) {
-        setState(() {
-          _errorMessage = null;
-        });
-      }
+      ref.read(loginRegisterControllerProvider.notifier).clearError();
     });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _loginEmailController.dispose();
-    _loginPasswordController.dispose();
-    _registerNameController.dispose();
-    _registerEmailController.dispose();
-    _registerPasswordController.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
     if (!_loginFormKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await AppFirebaseService.instance.signInWithEmailAndPassword(
-        email: _loginEmailController.text.trim(),
-        password: _loginPasswordController.text,
-      );
-
-      // Navigate to home screen on successful login
-      if (mounted) {
+    final result = await ref
+        .read(loginRegisterControllerProvider.notifier)
+        .login(
+          ref.read(loginEmailControllerProvider).text,
+          ref.read(loginPasswordControllerProvider).text,
+        );
+    if (mounted) {
+      if (result) {
         Navigator.pushReplacementNamed(context, AppRouter.homeRoute);
+      } else {
+        AppToastUtil.showErrorToast(
+          context,
+          ref.read(loginRegisterControllerProvider).errorMessage ?? '-',
+        );
       }
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        switch (e.code) {
-          case 'user-not-found':
-            _errorMessage = 'No user found with this email.';
-            break;
-          case 'wrong-password':
-            _errorMessage = 'Incorrect password.';
-            break;
-          case 'invalid-email':
-            _errorMessage = 'Invalid email format.';
-            break;
-          default:
-            _errorMessage = 'Error: ${e.message}';
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred. Please try again.';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
   Future<void> _register() async {
     if (!_registerFormKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await AppFirebaseService.instance.signUpWithEmailAndPassword(
-        email: _registerEmailController.text.trim(),
-        password: _registerPasswordController.text,
-        name: _registerNameController.text.trim(),
-      );
-
-      // Navigate to home screen on successful registration
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRouter.homeRoute);
-      }
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        switch (e.code) {
-          case 'email-already-in-use':
-            _errorMessage = 'An account already exists with this email.';
-            break;
-          case 'weak-password':
-            _errorMessage = 'Password is too weak. Use at least 6 characters.';
-            break;
-          case 'invalid-email':
-            _errorMessage = 'Invalid email format.';
-            break;
-          default:
-            _errorMessage = 'Error: ${e.message}';
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred. Please try again.';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    ref
+        .read(loginRegisterControllerProvider.notifier)
+        .register(
+          ref.read(registerNameControllerProvider).text,
+          ref.read(registerEmailControllerProvider).text,
+          ref.read(registerPasswordControllerProvider).text,
+        );
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(loginRegisterControllerProvider);
+    final controller = ref.read(loginRegisterControllerProvider.notifier);
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -219,7 +142,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
                     const SizedBox(height: 32),
 
                     // Error Message
-                    if (_errorMessage != null) ...[
+                    if (state.errorMessage != null) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -238,7 +161,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                _errorMessage!,
+                                state.errorMessage ?? '-',
                                 style: TextStyle(color: AppTheme.errorColor),
                               ),
                             ),
@@ -253,17 +176,17 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
                       child: TabBarView(
                         controller: _tabController,
                         children: [
-                          // Login Form
-                          _buildLoginForm(),
-
-                          // Register Form
-                          _buildRegisterForm(),
+                          LoginForm(formKey: _loginFormKey, onSubmit: _login),
+                          RegisterForm(
+                            formKey: _registerFormKey,
+                            onSubmit: _register,
+                          ),
                         ],
                       ),
                     ),
 
                     // Animated Loading Indicator
-                    if (_isLoading) ...[
+                    if (state.isLoading) ...[
                       const SizedBox(height: 24),
                       const Center(child: CircularProgressIndicator()),
                     ],
@@ -273,163 +196,6 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLoginForm() {
-    return Form(
-      key: _loginFormKey,
-      child: Column(
-        children: [
-          // Email Field
-          TextFormField(
-            controller: _loginEmailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              prefixIcon: Icon(Icons.email_outlined),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              if (!RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-              ).hasMatch(value)) {
-                return 'Please enter a valid email address';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Password Field
-          TextFormField(
-            controller: _loginPasswordController,
-            obscureText: _obscureLoginPassword,
-            decoration: InputDecoration(
-              labelText: 'Password',
-              prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscureLoginPassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscureLoginPassword = !_obscureLoginPassword;
-                  });
-                },
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your password';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 32),
-
-          // Login Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _login,
-              child: const Text('Log In'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRegisterForm() {
-    return Form(
-      key: _registerFormKey,
-      child: Column(
-        children: [
-          // Name Field
-          TextFormField(
-            controller: _registerNameController,
-            decoration: const InputDecoration(
-              labelText: 'Full Name',
-              prefixIcon: Icon(Icons.person_outline),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your name';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Email Field
-          TextFormField(
-            controller: _registerEmailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              prefixIcon: Icon(Icons.email_outlined),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              if (!RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-              ).hasMatch(value)) {
-                return 'Please enter a valid email address';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Password Field
-          TextFormField(
-            controller: _registerPasswordController,
-            obscureText: _obscureRegisterPassword,
-            decoration: InputDecoration(
-              labelText: 'Password',
-              prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscureRegisterPassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscureRegisterPassword = !_obscureRegisterPassword;
-                  });
-                },
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter a password';
-              }
-              if (value.length < 6) {
-                return 'Password must be at least 6 characters';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 32),
-
-          // Register Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _register,
-              child: const Text('Create Account'),
-            ),
-          ),
-        ],
       ),
     );
   }
