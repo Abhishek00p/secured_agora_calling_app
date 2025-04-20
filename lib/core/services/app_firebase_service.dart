@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:secured_calling/core/models/app_user_model.dart';
 
 class AppFirebaseService {
   // Singleton pattern
@@ -75,6 +76,17 @@ class AppFirebaseService {
   // Firestore methods
   Future<DocumentSnapshot> getUserData(String uid) async {
     return await usersCollection.doc(uid).get();
+  }
+
+  Future<AppUser> getLoggedInUserDataAsModel()async{
+    final uid =  _auth.currentUser?.uid??'';
+    if(uid.trim().isNotEmpty){
+      final res = (await usersCollection.doc(uid).get() ).data();
+      if(res!=null){
+        return AppUser.fromJson((res as Map<String,dynamic>));
+      }
+    }
+    return AppUser.toEmpty();
   }
 
   Stream<DocumentSnapshot> getUserDataStream(String uid) {

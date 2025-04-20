@@ -42,15 +42,14 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen>
         .read(loginRegisterControllerProvider.notifier)
         .login(
           ref.read(loginEmailControllerProvider).text,
-          ref.read(loginPasswordControllerProvider).text,
+          ref.read(loginPasswordControllerProvider).text,context: context
         );
     if (mounted) {
-      if (result) {
+      if (result==null) {
         Navigator.pushReplacementNamed(context, AppRouter.homeRoute);
       } else {
         AppToastUtil.showErrorToast(
-          context,
-          ref.read(loginRegisterControllerProvider).errorMessage ?? '-',
+          context,result,
         );
       }
     }

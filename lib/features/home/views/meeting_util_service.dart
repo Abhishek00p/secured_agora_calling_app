@@ -33,6 +33,7 @@ class MeetingUtil {
             arguments: {
               'channelName': meetingData['channelName'] ?? 'default_channel',
               'isHost': true,
+              'meetingId':doc.id,
             },
           );
         }

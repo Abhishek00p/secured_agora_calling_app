@@ -1,20 +1,24 @@
 import 'dart:async';
-
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:secured_calling/app_tost_util.dart';
+import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/meeting/services/agora_service.dart';
+import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
 
 class MeetingRoom extends ConsumerStatefulWidget {
   final String channelName;
   final bool isHost;
-
+  final String meetingId;
   const MeetingRoom({
     required this.channelName,
     this.isHost = false,
     super.key,
+    required this.meetingId,
   });
 
   @override
@@ -77,7 +81,7 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
         });
       }
     } catch (e) {
-      _showError('Error loading meeting data: $e');
+      AppToastUtil.showErrorToast(context, 'Error loading meeting data: $e');
     }
   }
 
@@ -101,8 +105,21 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
       setState(() {
         _isLoading = false;
       });
+      if (_agoraService.isInitialized) {
+        AppToastUtil.showSuccessToast(
+          context,
+          'Agora intialized , lets go......',
+        );
+        AppFirebaseService.instance.startMeeting(widget.meetingId);
+      } else {
+        AppToastUtil.showErrorToast(
+          context,
+          'Agora not intialized , dont go......',
+        );
+      }
     } catch (e) {
-      _showError('Error initializing video call: $e');
+      debugPrint("error in init agora :$e");
+      AppToastUtil.showErrorToast(context, 'Error initializing video call: $e');
       setState(() {
         _isLoading = false;
       });
@@ -142,7 +159,7 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
   }
 
   void _onMeetingEnded() {
-    Navigator.pop(context);
+    // Navigator.pop(context);
   }
 
   void _onFreeTrialCountdown(int remainingSeconds) {
@@ -191,7 +208,7 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
         _isScreenSharing = !_isScreenSharing;
       });
     } catch (e) {
-      _showError('Error toggling screen sharing: $e');
+      AppToastUtil.showErrorToast(context, 'Error toggling screen sharing: $e');
     }
   }
 
@@ -206,7 +223,7 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
         _isRecording = !_isRecording;
       });
     } catch (e) {
-      _showError('Error toggling recording: $e');
+      AppToastUtil.showErrorToast(context, 'Error toggling recording: $e');
     }
   }
 
@@ -243,7 +260,7 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
         const SnackBar(content: Text('Meeting extended by 15 minutes')),
       );
     } catch (e) {
-      _showError('Error extending meeting: $e');
+      AppToastUtil.showErrorToast(context, 'Error extending meeting: $e');
     }
   }
 
@@ -266,89 +283,6 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
     _chatController.clear();
   }
 
-  Future<void> _fetchPendingRequests() async {
-    if (_meetingId == null) return;
-
-    try {
-      final meetingDoc =
-          await _firebaseService.meetingsCollection.doc(_meetingId).get();
-      final meetingData = meetingDoc.data() as Map<String, dynamic>;
-      final pendingUserIds = meetingData['pendingApprovals'] as List<dynamic>;
-
-      final pendingRequests = <Map<String, dynamic>>[];
-      for (final userId in pendingUserIds) {
-        final userDoc = await _firebaseService.getUserData(userId as String);
-        final userData = userDoc.data() as Map<String, dynamic>?;
-        if (userData != null) {
-          pendingRequests.add({
-            'userId': userId,
-            'name': userData['name'] ?? 'Unknown User',
-          });
-        }
-      }
-
-      setState(() {
-        _pendingRequests = pendingRequests;
-      });
-    } catch (e) {
-      _showError('Error fetching pending requests: $e');
-    }
-  }
-
-  Future<void> _approveJoinRequest(String userId) async {
-    if (_meetingId == null) return;
-
-    try {
-      await _firebaseService.approveMeetingJoinRequest(_meetingId!, userId);
-      await _fetchPendingRequests();
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('User approved to join')));
-    } catch (e) {
-      _showError('Error approving request: $e');
-    }
-  }
-
-  Future<void> _rejectJoinRequest(String userId) async {
-    if (_meetingId == null) return;
-
-    try {
-      await _firebaseService.rejectMeetingJoinRequest(_meetingId!, userId);
-      await _fetchPendingRequests();
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('User rejected')));
-    } catch (e) {
-      _showError('Error rejecting request: $e');
-    }
-  }
-
-  Future<void> _endMeeting() async {
-    if (_meetingId != null && widget.isHost) {
-      try {
-        await _firebaseService.endMeeting(_meetingId!);
-      } catch (e) {
-        // Just log the error and continue with leaving
-        debugPrint('Error ending meeting: $e');
-      }
-    }
-
-    await _agoraService.leaveChannel();
-    if (mounted) {
-      Navigator.pop(context);
-    }
-  }
-
-  void _showError(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    }
-  }
-
   @override
   void dispose() {
     _chatController.dispose();
@@ -356,14 +290,32 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
     super.dispose();
   }
 
+  void endMeeting(MeetingController controller) async {
+    await controller.endMeeting(
+      leaveAgora: () async {
+        _agoraService.leaveChannel();
+      },
+      meetingId: widget.meetingId,
+    );
+    if (mounted) {
+      debugPrint("popping context from meeting room.....");
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final remoteUsers = ref.watch(remoteUsersProvider);
-
-    return WillPopScope(
-      onWillPop: () async {
-        await _endMeeting();
-        return true;
+    final controller = ref.read(
+      meetingControllerProvider((
+        isHost: widget.isHost,
+        meetingId: widget.channelName,
+      )).notifier,
+    );
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        endMeeting(controller);
       },
       child: Scaffold(
         appBar: AppBar(
@@ -373,106 +325,32 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
               const Text('Meeting Room'),
               if (_remainingSeconds != null) ...[
                 Text(
-                  'Time remaining: ${_formatDuration(_remainingSeconds!)}',
+                  'Time remaining: ${_remainingSeconds!.formatDuration}',
                   style: const TextStyle(fontSize: 12, color: Colors.red),
                 ),
               ],
             ],
           ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _endMeeting,
-          ),
-          actions: [
-            if (widget.isHost && _pendingRequests.isEmpty) ...[
-              IconButton(
-                icon: const Badge(
-                  label: Text('0'),
-                  child: Icon(Icons.person_add),
-                ),
-                onPressed: _fetchPendingRequests,
-                tooltip: 'Pending Requests',
-              ),
-            ] else if (widget.isHost) ...[
-              IconButton(
-                icon: Badge(
-                  label: Text('${_pendingRequests.length}'),
-                  child: const Icon(Icons.person_add),
-                ),
-                onPressed: () => _showPendingRequestsDialog(),
-                tooltip: 'Pending Requests',
-              ),
-            ],
-            IconButton(
-              icon: Icon(
-                _isParticipantListOpen
-                    ? Icons.people_alt
-                    : Icons.people_outline,
-              ),
-              onPressed: () {
-                setState(() {
-                  _isParticipantListOpen = !_isParticipantListOpen;
-                  if (_isParticipantListOpen) {
-                    _isChatOpen = false;
-                    _isSettingsOpen = false;
-                  }
-                });
-              },
-              tooltip: 'Participants',
-            ),
-            IconButton(
-              icon: Icon(_isChatOpen ? Icons.chat : Icons.chat_outlined),
-              onPressed: () {
-                setState(() {
-                  _isChatOpen = !_isChatOpen;
-                  if (_isChatOpen) {
-                    _isParticipantListOpen = false;
-                    _isSettingsOpen = false;
-                  }
-                });
-              },
-              tooltip: 'Chat',
-            ),
-            IconButton(
-              icon: Icon(
-                _isSettingsOpen ? Icons.settings : Icons.settings_outlined,
-              ),
-              onPressed: () {
-                setState(() {
-                  _isSettingsOpen = !_isSettingsOpen;
-                  if (_isSettingsOpen) {
-                    _isParticipantListOpen = false;
-                    _isChatOpen = false;
-                  }
-                });
-              },
-              tooltip: 'Settings',
-            ),
-          ],
+          //
         ),
         body:
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : Stack(
                   children: [
-                    // Main Video Grid
                     _buildVideoGrid(remoteUsers),
-
+                    _buildLocalVideo(),
                     // Bottom Control Bar
                     _buildControlBar(),
-                    _buildEndCallButton(),
-                    // Side Panels
-                    if (_isParticipantListOpen)
-                      _buildParticipantsPanel(remoteUsers),
-                    if (_isChatOpen) _buildChatPanel(),
-                    if (_isSettingsOpen) _buildSettingsPanel(),
-
-                    // Floating Local Video
-                    _buildLocalVideo(),
-
-                    // Trial Extension Prompt
-                    if (_showExtendOption && widget.isHost)
-                      _buildExtendMeetingPrompt(),
+                    _buildEndCallButton(() => endMeeting(controller)),
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: IconButton(
+                        onPressed: () => _showPendingRequestsDialog(controller),
+                        icon: Icon(Icons.settings),
+                      ),
+                    ),
                   ],
                 ),
       ),
@@ -751,26 +629,24 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
     );
   }
 
-  Widget _buildEndCallButton() {
+  Widget _buildEndCallButton(VoidCallback onTap) {
     return Positioned(
       bottom: 16,
-      child: Container(
-        width: MediaQuery.sizeOf(context).width,
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        height: 30,
-        child: InkWell(
-          onTap: _endMeeting,
-          child: ColoredBox(
-            color: Colors.red,
-            child: Row(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('End Call'),
-                SizedBox(width: 10),
-                Icon(Icons.call_end),
-              ],
-            ),
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          width: MediaQuery.sizeOf(context).width,
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          height: 30,
+          color: Colors.red,
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('End Call'),
+              SizedBox(width: 10),
+              Icon(Icons.call_end),
+            ],
           ),
         ),
       ),
@@ -871,594 +747,601 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
     );
   }
 
-  Widget _buildParticipantsPanel(List<int> remoteUsers) {
-    return Positioned(
-      right: 0,
-      top: 0,
-      bottom: 80,
-      width: 300,
-      child: Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10),
-          ],
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Participants (${1 + remoteUsers.length})', // +1 for local user
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed:
-                        () => setState(() => _isParticipantListOpen = false),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView(
-                children: [
-                  // Local user (you)
-                  ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: AppTheme.primaryColor,
-                      child: const Text(
-                        'Y',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    title: const Text(
-                      'You (Host)',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(_isMuted ? 'Muted' : 'Unmuted'),
-                    trailing: IconButton(
-                      icon: Icon(_isMuted ? Icons.mic_off : Icons.mic),
-                      onPressed: _toggleMute,
-                    ),
-                  ),
-                  // Remote users
-                  ...remoteUsers.map(
-                    (uid) => ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.grey,
-                        child: Text(
-                          '${uid.toString().substring(0, 1)}',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      title: Text('User $uid'),
-                      subtitle: Text(
-                        _remoteUserAudioStates[uid] == false
-                            ? 'Muted'
-                            : 'Unmuted',
-                      ),
-                      trailing:
-                          widget.isHost
-                              ? Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      _remoteUserAudioStates[uid] == false
-                                          ? Icons.mic_off
-                                          : Icons.mic,
-                                    ),
-                                    onPressed: () => _muteRemoteUser(uid),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.more_vert),
-                                    onPressed:
-                                        () => _showUserOptionsDialog(uid),
-                                  ),
-                                ],
-                              )
-                              : null,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildParticipantsPanel(List<int> remoteUsers) {
+  //   return Positioned(
+  //     right: 0,
+  //     top: 0,
+  //     bottom: 80,
+  //     width: 300,
+  //     child: Container(
+  //       margin: const EdgeInsets.all(16),
+  //       decoration: BoxDecoration(
+  //         color: Theme.of(context).cardTheme.color,
+  //         borderRadius: BorderRadius.circular(12),
+  //         boxShadow: [
+  //           BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10),
+  //         ],
+  //       ),
+  //       child: Column(
+  //         children: [
+  //           Padding(
+  //             padding: const EdgeInsets.all(16.0),
+  //             child: Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 Text(
+  //                   'Participants (${1 + remoteUsers.length})', // +1 for local user
+  //                   style: const TextStyle(fontWeight: FontWeight.bold),
+  //                 ),
+  //                 IconButton(
+  //                   icon: const Icon(Icons.close),
+  //                   onPressed:
+  //                       () => setState(() => _isParticipantListOpen = false),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           const Divider(height: 1),
+  //           Expanded(
+  //             child: ListView(
+  //               children: [
+  //                 // Local user (you)
+  //                 ListTile(
+  //                   leading: CircleAvatar(
+  //                     backgroundColor: AppTheme.primaryColor,
+  //                     child: const Text(
+  //                       'Y',
+  //                       style: TextStyle(color: Colors.white),
+  //                     ),
+  //                   ),
+  //                   title: const Text(
+  //                     'You (Host)',
+  //                     style: TextStyle(fontWeight: FontWeight.bold),
+  //                   ),
+  //                   subtitle: Text(_isMuted ? 'Muted' : 'Unmuted'),
+  //                   trailing: IconButton(
+  //                     icon: Icon(_isMuted ? Icons.mic_off : Icons.mic),
+  //                     onPressed: _toggleMute,
+  //                   ),
+  //                 ),
+  //                 // Remote users
+  //                 // ...remoteUsers.map(
+  //                 //   (uid) => ListTile(
+  //                 //     leading: CircleAvatar(
+  //                 //       backgroundColor: Colors.grey,
+  //                 //       child: Text(
+  //                 //         '${uid.toString().substring(0, 1)}',
+  //                 //         style: const TextStyle(color: Colors.white),
+  //                 //       ),
+  //                 //     ),
+  //                 //     title: Text('User $uid'),
+  //                 //     subtitle: Text(
+  //                 //       _remoteUserAudioStates[uid] == false
+  //                 //           ? 'Muted'
+  //                 //           : 'Unmuted',
+  //                 //     ),
+  //                 //     trailing:
+  //                 //         widget.isHost
+  //                 //             ? Row(
+  //                 //               mainAxisSize: MainAxisSize.min,
+  //                 //               children: [
+  //                 //                 IconButton(
+  //                 //                   icon: Icon(
+  //                 //                     _remoteUserAudioStates[uid] == false
+  //                 //                         ? Icons.mic_off
+  //                 //                         : Icons.mic,
+  //                 //                   ),
+  //                 //                   onPressed: () => _muteRemoteUser(uid),
+  //                 //                 ),
+  //                 //                 IconButton(
+  //                 //                   icon: const Icon(Icons.more_vert),
+  //                 //                   onPressed:
+  //                 //                       () => _showUserOptionsDialog(uid),
+  //                 //                 ),
+  //                 //               ],
+  //                 //             )
+  //                 //             : null,
+  //                 //   ),
+  //                 // ),
 
-  Widget _buildChatPanel() {
-    return Positioned(
-      right: 0,
-      top: 0,
-      bottom: 80,
-      width: 300,
-      child: Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10),
-          ],
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Chat',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => setState(() => _isChatOpen = false),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child:
-                  _chatMessages.isEmpty
-                      ? const Center(child: Text('No messages yet'))
-                      : ListView.builder(
-                        itemCount: _chatMessages.length,
-                        itemBuilder: (context, index) {
-                          final message = _chatMessages[index];
-                          final isCurrentUser =
-                              message['isCurrentUser'] == true;
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 4,
-                              horizontal: 16,
-                            ),
-                            child: Row(
-                              mainAxisAlignment:
-                                  isCurrentUser
-                                      ? MainAxisAlignment.end
-                                      : MainAxisAlignment.start,
-                              children: [
-                                if (!isCurrentUser) ...[
-                                  CircleAvatar(
-                                    radius: 16,
-                                    backgroundColor: Colors.grey,
-                                    child: Text(
-                                      message['name'].substring(0, 1),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                ],
-                                Flexible(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          isCurrentUser
-                                              ? AppTheme.primaryColor
-                                              : Colors.grey.shade200,
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (!isCurrentUser) ...[
-                                          Text(
-                                            message['name'],
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color:
-                                                  isCurrentUser
-                                                      ? Colors.white
-                                                      : Colors.black,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                        ],
-                                        Text(
-                                          message['message'],
-                                          style: TextStyle(
-                                            color:
-                                                isCurrentUser
-                                                    ? Colors.white
-                                                    : Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                if (isCurrentUser) ...[
-                                  const SizedBox(width: 8),
-                                  CircleAvatar(
-                                    radius: 16,
-                                    backgroundColor: AppTheme.primaryColor,
-                                    child: const Text(
-                                      'Y',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _chatController,
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                      ),
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendChatMessage(),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  CircleAvatar(
-                    backgroundColor: AppTheme.primaryColor,
-                    child: IconButton(
-                      icon: const Icon(Icons.send, color: Colors.white),
-                      onPressed: _sendChatMessage,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildChatPanel() {
+  //   return Positioned(
+  //     right: 0,
+  //     top: 0,
+  //     bottom: 80,
+  //     width: 300,
+  //     child: Container(
+  //       margin: const EdgeInsets.all(16),
+  //       decoration: BoxDecoration(
+  //         color: Theme.of(context).cardTheme.color,
+  //         borderRadius: BorderRadius.circular(12),
+  //         boxShadow: [
+  //           BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10),
+  //         ],
+  //       ),
+  //       child: Column(
+  //         children: [
+  //           Padding(
+  //             padding: const EdgeInsets.all(16.0),
+  //             child: Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 const Text(
+  //                   'Chat',
+  //                   style: TextStyle(fontWeight: FontWeight.bold),
+  //                 ),
+  //                 IconButton(
+  //                   icon: const Icon(Icons.close),
+  //                   onPressed: () => setState(() => _isChatOpen = false),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           const Divider(height: 1),
+  //           Expanded(
+  //             child:
+  //                 _chatMessages.isEmpty
+  //                     ? const Center(child: Text('No messages yet'))
+  //                     : ListView.builder(
+  //                       itemCount: _chatMessages.length,
+  //                       itemBuilder: (context, index) {
+  //                         final message = _chatMessages[index];
+  //                         final isCurrentUser =
+  //                             message['isCurrentUser'] == true;
 
-  Widget _buildSettingsPanel() {
-    return Positioned(
-      right: 0,
-      top: 0,
-      bottom: 80,
-      width: 300,
-      child: Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10),
-          ],
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Meeting Settings',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => setState(() => _isSettingsOpen = false),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // Meeting Info
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Meeting Information',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Text('Meeting ID: '),
-                            Expanded(
-                              child: Text(
-                                widget.channelName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_meetingData != null) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Text('Meeting Name: '),
-                              Expanded(
-                                child: Text(
-                                  _meetingData!['meetingName'] as String,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+  //                         return Padding(
+  //                           padding: const EdgeInsets.symmetric(
+  //                             vertical: 4,
+  //                             horizontal: 16,
+  //                           ),
+  //                           child: Row(
+  //                             mainAxisAlignment:
+  //                                 isCurrentUser
+  //                                     ? MainAxisAlignment.end
+  //                                     : MainAxisAlignment.start,
+  //                             children: [
+  //                               if (!isCurrentUser) ...[
+  //                                 CircleAvatar(
+  //                                   radius: 16,
+  //                                   backgroundColor: Colors.grey,
+  //                                   child: Text(
+  //                                     message['name'].substring(0, 1),
+  //                                     style: const TextStyle(
+  //                                       color: Colors.white,
+  //                                     ),
+  //                                   ),
+  //                                 ),
+  //                                 const SizedBox(width: 8),
+  //                               ],
+  //                               Flexible(
+  //                                 child: Container(
+  //                                   padding: const EdgeInsets.symmetric(
+  //                                     horizontal: 12,
+  //                                     vertical: 8,
+  //                                   ),
+  //                                   decoration: BoxDecoration(
+  //                                     color:
+  //                                         isCurrentUser
+  //                                             ? AppTheme.primaryColor
+  //                                             : Colors.grey.shade200,
+  //                                     borderRadius: BorderRadius.circular(16),
+  //                                   ),
+  //                                   child: Column(
+  //                                     crossAxisAlignment:
+  //                                         CrossAxisAlignment.start,
+  //                                     children: [
+  //                                       if (!isCurrentUser) ...[
+  //                                         Text(
+  //                                           message['name'],
+  //                                           style: TextStyle(
+  //                                             fontWeight: FontWeight.bold,
+  //                                             color:
+  //                                                 isCurrentUser
+  //                                                     ? Colors.white
+  //                                                     : Colors.black,
+  //                                             fontSize: 12,
+  //                                           ),
+  //                                         ),
+  //                                         const SizedBox(height: 4),
+  //                                       ],
+  //                                       Text(
+  //                                         message['message'],
+  //                                         style: TextStyle(
+  //                                           color:
+  //                                               isCurrentUser
+  //                                                   ? Colors.white
+  //                                                   : Colors.black,
+  //                                         ),
+  //                                       ),
+  //                                     ],
+  //                                   ),
+  //                                 ),
+  //                               ),
+  //                               if (isCurrentUser) ...[
+  //                                 const SizedBox(width: 8),
+  //                                 CircleAvatar(
+  //                                   radius: 16,
+  //                                   backgroundColor: AppTheme.primaryColor,
+  //                                   child: const Text(
+  //                                     'Y',
+  //                                     style: TextStyle(color: Colors.white),
+  //                                   ),
+  //                                 ),
+  //                               ],
+  //                             ],
+  //                           ),
+  //                         );
+  //                       },
+  //                     ),
+  //           ),
+  //           const Divider(height: 1),
+  //           Padding(
+  //             padding: const EdgeInsets.all(8.0),
+  //             child: Row(
+  //               children: [
+  //                 Expanded(
+  //                   child: TextField(
+  //                     controller: _chatController,
+  //                     decoration: const InputDecoration(
+  //                       hintText: 'Type a message...',
+  //                       border: OutlineInputBorder(
+  //                         borderRadius: BorderRadius.all(Radius.circular(20)),
+  //                       ),
+  //                       contentPadding: EdgeInsets.symmetric(
+  //                         horizontal: 16,
+  //                         vertical: 8,
+  //                       ),
+  //                     ),
+  //                     textInputAction: TextInputAction.send,
+  //                     onSubmitted: (_) => _sendChatMessage(),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(width: 8),
+  //                 CircleAvatar(
+  //                   backgroundColor: AppTheme.primaryColor,
+  //                   child: IconButton(
+  //                     icon: const Icon(Icons.send, color: Colors.white),
+  //                     onPressed: _sendChatMessage,
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
-                  // User Settings
-                  const Text(
-                    'User Settings',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  SwitchListTile(
-                    title: const Text('Mute my microphone'),
-                    value: _isMuted,
-                    onChanged: (value) => _toggleMute(),
-                  ),
-                  SwitchListTile(
-                    title: const Text('Disable my camera'),
-                    value: !_isVideoEnabled,
-                    onChanged:
-                        _isAudioOnlyMode
-                            ? null
-                            : (value) =>
-                                _toggleVideo(), // Disable toggle when in audio-only mode
-                  ),
-                  SwitchListTile(
-                    title: const Text('Audio-Only Mode'),
-                    subtitle: const Text(
-                      'Disables video for all participants to save bandwidth',
-                    ),
-                    value: _isAudioOnlyMode,
-                    onChanged: (value) => _toggleAudioOnlyMode(),
-                    activeColor: AppTheme.accentColor,
-                  ),
-                  if (_isAudioOnlyMode) ...[
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
-                      child: Text(
-                        'Audio-only mode is active. Video is disabled to conserve bandwidth and improve call quality.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                  ],
+  // Widget _buildSettingsPanel() {
+  //   return Positioned(
+  //     right: 0,
+  //     top: 0,
+  //     bottom: 80,
+  //     width: 300,
+  //     child: Container(
+  //       margin: const EdgeInsets.all(16),
+  //       decoration: BoxDecoration(
+  //         color: Theme.of(context).cardTheme.color,
+  //         borderRadius: BorderRadius.circular(12),
+  //         boxShadow: [
+  //           BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10),
+  //         ],
+  //       ),
+  //       child: Column(
+  //         children: [
+  //           Padding(
+  //             padding: const EdgeInsets.all(16.0),
+  //             child: Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 const Text(
+  //                   'Meeting Settings',
+  //                   style: TextStyle(fontWeight: FontWeight.bold),
+  //                 ),
+  //                 IconButton(
+  //                   icon: const Icon(Icons.close),
+  //                   onPressed: () => setState(() => _isSettingsOpen = false),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           const Divider(height: 1),
+  //           Expanded(
+  //             child: ListView(
+  //               padding: const EdgeInsets.all(16),
+  //               children: [
+  //                 // Meeting Info
+  //                 Container(
+  //                   padding: const EdgeInsets.all(16),
+  //                   decoration: BoxDecoration(
+  //                     color: Colors.grey.withOpacity(0.1),
+  //                     borderRadius: BorderRadius.circular(8),
+  //                   ),
+  //                   child: Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                       const Text(
+  //                         'Meeting Information',
+  //                         style: TextStyle(fontWeight: FontWeight.bold),
+  //                       ),
+  //                       const SizedBox(height: 8),
+  //                       Row(
+  //                         children: [
+  //                           const Text('Meeting ID: '),
+  //                           Expanded(
+  //                             child: Text(
+  //                               widget.channelName,
+  //                               style: const TextStyle(
+  //                                 fontWeight: FontWeight.bold,
+  //                               ),
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                       if (_meetingData != null) ...[
+  //                         const SizedBox(height: 4),
+  //                         Row(
+  //                           children: [
+  //                             const Text('Meeting Name: '),
+  //                             Expanded(
+  //                               child: Text(
+  //                                 _meetingData!['meetingName'] as String,
+  //                                 style: const TextStyle(
+  //                                   fontWeight: FontWeight.bold,
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       ],
+  //                     ],
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 16),
 
-                  if (widget.isHost) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Host Settings',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    SwitchListTile(
-                      title: const Text('Enable Speaker Focus Mode'),
-                      value: _isSpeakerFocusEnabled,
-                      onChanged: (value) => _toggleSpeakerFocus(),
-                    ),
-                    SwitchListTile(
-                      title: const Text('Record Meeting'),
-                      value: _isRecording,
-                      onChanged: (value) => _toggleRecording(),
-                    ),
-                    ListTile(
-                      title: const Text('Extend Meeting Time'),
-                      trailing: ElevatedButton(
-                        onPressed: _extendMeeting,
-                        child: const Text('+15 min'),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  //                 // User Settings
+  //                 const Text(
+  //                   'User Settings',
+  //                   style: TextStyle(fontWeight: FontWeight.bold),
+  //                 ),
+  //                 const SizedBox(height: 8),
+  //                 SwitchListTile(
+  //                   title: const Text('Mute my microphone'),
+  //                   value: _isMuted,
+  //                   onChanged: (value) => _toggleMute(),
+  //                 ),
+  //                 SwitchListTile(
+  //                   title: const Text('Disable my camera'),
+  //                   value: !_isVideoEnabled,
+  //                   onChanged:
+  //                       _isAudioOnlyMode
+  //                           ? null
+  //                           : (value) =>
+  //                               _toggleVideo(), // Disable toggle when in audio-only mode
+  //                 ),
+  //                 SwitchListTile(
+  //                   title: const Text('Audio-Only Mode'),
+  //                   subtitle: const Text(
+  //                     'Disables video for all participants to save bandwidth',
+  //                   ),
+  //                   value: _isAudioOnlyMode,
+  //                   onChanged: (value) => _toggleAudioOnlyMode(),
+  //                   activeColor: AppTheme.accentColor,
+  //                 ),
+  //                 if (_isAudioOnlyMode) ...[
+  //                   const Padding(
+  //                     padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+  //                     child: Text(
+  //                       'Audio-only mode is active. Video is disabled to conserve bandwidth and improve call quality.',
+  //                       style: TextStyle(
+  //                         fontSize: 12,
+  //                         fontStyle: FontStyle.italic,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ],
 
-  Widget _buildExtendMeetingPrompt() {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 100,
-      child: Center(
-        child: Container(
-          width: 300,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.red.shade700,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Meeting ending soon',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your meeting will end in ${_formatDuration(_remainingSeconds ?? 0)}',
-                style: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _extendMeeting,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.red.shade700,
-                ),
-                child: const Text('Extend Meeting'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  //                 if (widget.isHost) ...[
+  //                   const SizedBox(height: 16),
+  //                   const Text(
+  //                     'Host Settings',
+  //                     style: TextStyle(fontWeight: FontWeight.bold),
+  //                   ),
+  //                   const SizedBox(height: 8),
+  //                   SwitchListTile(
+  //                     title: const Text('Enable Speaker Focus Mode'),
+  //                     value: _isSpeakerFocusEnabled,
+  //                     onChanged: (value) => _toggleSpeakerFocus(),
+  //                   ),
+  //                   SwitchListTile(
+  //                     title: const Text('Record Meeting'),
+  //                     value: _isRecording,
+  //                     onChanged: (value) => _toggleRecording(),
+  //                   ),
+  //                   ListTile(
+  //                     title: const Text('Extend Meeting Time'),
+  //                     trailing: ElevatedButton(
+  //                       onPressed: _extendMeeting,
+  //                       child: const Text('+15 min'),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  void _showUserOptionsDialog(int uid) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Options for User $uid'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.mic_off),
-                  title: const Text('Mute User'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _muteRemoteUser(uid);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.person_remove),
-                  title: const Text('Remove from Meeting'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // Remove user logic would go here
-                  },
-                ),
-                if (_isSpeakerFocusEnabled) ...[
-                  ListTile(
-                    leading: const Icon(Icons.fullscreen),
-                    title: const Text('Focus on this Speaker'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _focusOnUser(uid);
-                    },
-                  ),
-                ],
-                ListTile(
-                  leading: const Icon(Icons.meeting_room),
-                  title: const Text('Invite to Private Room'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // Private room invitation logic would go here
-                    // In a full implementation, this would create a new channel
-                    // and send an invitation to the user
-                    _agoraService.inviteToPrivateRoom(
-                      uid,
-                      'private_${widget.channelName}_$uid',
-                    );
-                  },
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-            ],
-          ),
-    );
-  }
+  // Widget _buildExtendMeetingPrompt() {
+  //   return Positioned(
+  //     left: 0,
+  //     right: 0,
+  //     bottom: 100,
+  //     child: Center(
+  //       child: Container(
+  //         width: 300,
+  //         padding: const EdgeInsets.all(16),
+  //         decoration: BoxDecoration(
+  //           color: Colors.red.shade700,
+  //           borderRadius: BorderRadius.circular(12),
+  //         ),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             const Text(
+  //               'Meeting ending soon',
+  //               style: TextStyle(
+  //                 color: Colors.white,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //             const SizedBox(height: 8),
+  //             Text(
+  //               'Your meeting will end in ${(_remainingSeconds ?? 0).formatDuration}',
+  //               style: const TextStyle(color: Colors.white),
+  //             ),
+  //             const SizedBox(height: 16),
+  //             ElevatedButton(
+  //               onPressed: _extendMeeting,
+  //               style: ElevatedButton.styleFrom(
+  //                 backgroundColor: Colors.white,
+  //                 foregroundColor: Colors.red.shade700,
+  //               ),
+  //               child: const Text('Extend Meeting'),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  void _showPendingRequestsDialog() {
+  // void _showUserOptionsDialog(int uid) {
+  //   showDialog(
+  //     context: context,
+  //     builder:
+  //         (context) => AlertDialog(
+  //           title: Text('Options for User $uid'),
+  //           content: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               ListTile(
+  //                 leading: const Icon(Icons.mic_off),
+  //                 title: const Text('Mute User'),
+  //                 onTap: () {
+  //                   Navigator.pop(context);
+  //                   _muteRemoteUser(uid);
+  //                 },
+  //               ),
+  //               ListTile(
+  //                 leading: const Icon(Icons.person_remove),
+  //                 title: const Text('Remove from Meeting'),
+  //                 onTap: () {
+  //                   Navigator.pop(context);
+  //                   // Remove user logic would go here
+  //                 },
+  //               ),
+  //               if (_isSpeakerFocusEnabled) ...[
+  //                 ListTile(
+  //                   leading: const Icon(Icons.fullscreen),
+  //                   title: const Text('Focus on this Speaker'),
+  //                   onTap: () {
+  //                     Navigator.pop(context);
+  //                     _focusOnUser(uid);
+  //                   },
+  //                 ),
+  //               ],
+  //               ListTile(
+  //                 leading: const Icon(Icons.meeting_room),
+  //                 title: const Text('Invite to Private Room'),
+  //                 onTap: () {
+  //                   Navigator.pop(context);
+  //                   // Private room invitation logic would go here
+  //                   // In a full implementation, this would create a new channel
+  //                   // and send an invitation to the user
+  //                   _agoraService.inviteToPrivateRoom(
+  //                     uid,
+  //                     'private_${widget.channelName}_$uid',
+  //                   );
+  //                 },
+  //               ),
+  //             ],
+  //           ),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.pop(context),
+  //               child: const Text('Cancel'),
+  //             ),
+  //           ],
+  //         ),
+  //   );
+  // }
+
+  void _showPendingRequestsDialog(MeetingController controller) {
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
             title: const Text('Pending Join Requests'),
-            content: SizedBox(
-              width: 300,
-              child:
-                  _pendingRequests.isEmpty
-                      ? const Center(child: Text('No pending requests'))
-                      : ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: _pendingRequests.length,
-                        itemBuilder: (context, index) {
-                          final request = _pendingRequests[index];
-                          return ListTile(
-                            title: Text(request['name']),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.check,
-                                    color: Colors.green,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    _approveJoinRequest(request['userId']);
-                                  },
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Meeting Id  : ${widget.meetingId}'),
+                _pendingRequests.isEmpty
+                    ? const Center(child: Text('No pending requests'))
+                    : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _pendingRequests.length,
+                      itemBuilder: (context, index) {
+                        final request = _pendingRequests[index];
+                        return ListTile(
+                          title: Text(request['name']),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.check,
+                                  color: Colors.green,
                                 ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.close,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    _rejectJoinRequest(request['userId']);
-                                  },
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  controller.approveJoinRequest(
+                                    request['userId'],
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: Colors.red,
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  controller.rejectJoinRequest(
+                                    request['userId'],
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+              ],
             ),
             actions: [
               TextButton(
@@ -1469,20 +1352,4 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
           ),
     );
   }
-
-  String _formatDuration(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-}
-
-// Utility class to store constants
-class R {
-  static const _Metrics metrics = _Metrics();
-}
-
-class _Metrics {
-  const _Metrics();
-  final double textSizeSmall = 12.0;
 }

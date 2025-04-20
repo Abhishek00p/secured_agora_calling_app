@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
@@ -164,7 +165,7 @@ class WelcomeScreen extends StatelessWidget {
                 // Get Started Button
                 ElevatedButton(
                   onPressed: () {
-                    FirebaseAuth.instance.currentUser != null
+                    AppLocalStorage.getLoggedInStatus()
                         ? Navigator.pushReplacementNamed(
                           context,
                           AppRouter.homeRoute,

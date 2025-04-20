@@ -26,6 +26,8 @@ class AppRouter {
               (_) => MeetingRoom(
                 channelName: args['channelName'],
                 isHost: args['isHost'] ?? false,
+                meetingId:args['meetingId']??'',
+
               ),
         );
       default:

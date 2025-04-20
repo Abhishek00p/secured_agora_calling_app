@@ -457,6 +457,7 @@ class AgoraService {
     Function()? onMeetingEnded,
     Function(int remainingSeconds)? onFreeTrialCountdown,
   }) async {
+    try{
     if (_isInitialized) return;
 
     // Set callbacks
@@ -486,11 +487,14 @@ class AgoraService {
     await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
 
     // Enable video & audio
-    await _engine!.enableVideo();
+    // await _engine!.enableVideo();
     await _engine!.enableAudio();
     await _engine!.startPreview();
 
     _isInitialized = true;
+    }catch(e){
+      debugPrint("error in init agora serive :$e");
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -582,7 +586,7 @@ class AgoraService {
 
     await _engine!.joinChannel(
       token:
-          '007eJxTYAjYHvDF4suuCYvt0zgbhP5+4xBZZflCWkah2Ni6pt/Y3EqBwcjINNHMKM0kyTQx0STV0iQxycQszdIwxSDRwMjUPNXwwuMX6Q2BjAwzTFxZGBkgEMRnZyhJLS7JzEtnYAAAJrwfGw==',
+          '007eJxTYLhb8rs4LJpTaIHshGNX9v35fnH260TX5JDS4D6l23ofzcwUGIyMTBPNjNJMkkwTE01SLU0Sk0zM0iwNUwwSDYxMzVMNHRayZDQEMjIsW1/AysgAgSA+O0NJanFJZl46AwMACO8haw==',
       channelId: 'testing',
       uid: 0,
       options: const ChannelMediaOptions(
