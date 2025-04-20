@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 
 class AppFirebaseService {
@@ -78,12 +79,12 @@ class AppFirebaseService {
     return await usersCollection.doc(uid).get();
   }
 
-  Future<AppUser> getLoggedInUserDataAsModel()async{
-    final uid =  _auth.currentUser?.uid??'';
-    if(uid.trim().isNotEmpty){
-      final res = (await usersCollection.doc(uid).get() ).data();
-      if(res!=null){
-        return AppUser.fromJson((res as Map<String,dynamic>));
+  Future<AppUser> getLoggedInUserDataAsModel() async {
+    final uid = _auth.currentUser?.uid ?? '';
+    if (uid.trim().isNotEmpty) {
+      final res = (await usersCollection.doc(uid).get()).data();
+      if (res != null) {
+        return AppUser.fromJson((res as Map<String, dynamic>));
       }
     }
     return AppUser.toEmpty();
@@ -104,7 +105,7 @@ class AppFirebaseService {
     required DateTime scheduledStartTime,
     required int duration, // in minutes
     String? password,
-    bool requiresApproval = true,
+    bool requiresApproval = false,
   }) async {
     return await meetingsCollection.add({
       'hostId': hostId,
@@ -122,7 +123,6 @@ class AppFirebaseService {
       'pendingApprovals': [],
     });
   }
-
 
   Future<void> startMeeting(String meetingId) async {
     await meetingsCollection.doc(meetingId).update({
@@ -185,6 +185,18 @@ class AppFirebaseService {
         .where('channelName', isEqualTo: channelName)
         .where('status', isEqualTo: 'live')
         .get();
+  }
+
+  Future<DocumentSnapshot<Object?>?> searchMeetingByMeetId(
+    String meetId,
+    String channelName,
+  ) async{
+    try {
+      return await meetingsCollection.doc(meetId).get();
+    } catch (e) {
+      debugPrint("can not find meet : $e");
+      return null;
+    }
   }
 
   // Call logs

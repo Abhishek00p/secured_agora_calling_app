@@ -46,11 +46,11 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
 
     try {
       final channelName = _meetingIdController.text.trim();
-      final querySnapshot = await _firebaseService.searchMeetingByChannelName(
-        channelName,
+      final documentSnapshot = await _firebaseService.searchMeetingByMeetId(
+        _meetingIdController.text,channelName
       );
 
-      if (querySnapshot.docs.isEmpty) {
+      if (documentSnapshot==null|| !documentSnapshot.exists) {
         setState(() {
           _errorMessage = 'No active meeting found with this ID';
           _isLoading = false;
@@ -58,8 +58,7 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
         return;
       }
 
-      final meetingDoc = querySnapshot.docs.first;
-      final meetingData = meetingDoc.data() as Map<String, dynamic>;
+      final meetingData = documentSnapshot.data() as Map<String, dynamic>;
 
       // Check password if required
       if (meetingData['password'] != null &&
@@ -77,7 +76,7 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
       setState(() {
         _meetingFound = true;
         _meetingData = meetingData;
-        _meetingId = meetingDoc.id;
+        _meetingId = documentSnapshot.id;
         _isLoading = false;
       });
 
@@ -112,7 +111,7 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
               _listener?.cancel(); // Stop listening to prevent further triggers
 
               _meetingData = {'channelName': 'testing'};
-              // _joinMeeting(); // Pass meeting data if needed
+              _joinMeeting(); // Pass meeting data if needed
             }
           }
         });

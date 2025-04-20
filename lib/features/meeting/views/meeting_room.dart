@@ -67,6 +67,40 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
       _getMeetingData();
     }
   }
+  Future<void> approveJoinRequest(String userId) async {
+  
+    try {
+      await _firebaseService.approveMeetingJoinRequest(widget.meetingId, userId);
+      await fetchPendingRequests();
+    } catch (e) {
+      debugPrint("error approving request: $e");
+    }
+  }
+  Future<void> fetchPendingRequests() async {
+    try {
+      final meetingDoc =
+          await _firebaseService.meetingsCollection.doc(widget.meetingId).get();
+      final meetingData = meetingDoc.data() as Map<String, dynamic>;
+      final pendingUserIds = meetingData['pendingApprovals'] as List<dynamic>;
+
+      final pendingRequests = <Map<String, dynamic>>[];
+
+      for (final userId in pendingUserIds) {
+        final userDoc = await _firebaseService.getUserData(userId as String);
+        final userData = userDoc.data() as Map<String, dynamic>?;
+        if (userData != null) {
+          pendingRequests.add({
+            'userId': userId,
+            'name': userData['name'] ?? 'Unknown User',
+          });
+        }
+      }
+
+      _pendingRequests = pendingRequests;
+    } catch (e) {
+      debugPrint("failed to fetch pending requests: $e");
+    }
+  }
 
   Future<void> _getMeetingData() async {
     try {
@@ -313,9 +347,9 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
       )).notifier,
     );
     return PopScope(
-      canPop: false,
+      canPop: true,
       onPopInvokedWithResult: (didPop, _) async {
-        endMeeting(controller);
+        // endMeeting(controller);
       },
       child: Scaffold(
         appBar: AppBar(
@@ -334,86 +368,116 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
           //
         ),
         body:
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Stack(
-                  children: [
-                    _buildVideoGrid(remoteUsers),
-                    _buildLocalVideo(),
-                    // Bottom Control Bar
-                    _buildControlBar(),
-                    _buildEndCallButton(() => endMeeting(controller)),
-                    Positioned(
-                      right: 10,
-                      top: 10,
-                      child: IconButton(
-                        onPressed: () => _showPendingRequestsDialog(controller),
-                        icon: Icon(Icons.settings),
+            SafeArea(
+              child: Column(
+                children: [
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : Stack(
+                        children: [
+                          _buildVideoGrid(remoteUsers),
+                          _buildLocalVideo(),
+                          // Bottom Control Bar
+                          Positioned(
+                            bottom: 10,
+                            child: Column(
+                              children: [
+                                _buildControlBar(),
+                                _buildEndCallButton(() async {
+                                  await controller.endMeeting(
+                                    leaveAgora: () async {
+                                      _agoraService.leaveChannel();
+                                    },
+                                    meetingId: widget.meetingId,
+                                  );
+                                
+                                  if (mounted) {
+                                    debugPrint("popping context from meeting room.....");
+                                    Navigator.pop(context);
+                                  }
+                                }),
+                              ],
+                            ),
+                          ),
+                         
+                          Positioned(
+                            right: 10,
+                            top: 10,
+                            child: IconButton(
+                              onPressed: () async {
+                                await fetchPendingRequests();
+                                _showPendingRequestsDialog(controller);
+                              },
+                              icon: Icon(Icons.settings),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
+                ],
+              ),
+            ),
+    
       ),
     );
   }
 
   Widget _buildVideoGrid(List<int> remoteUsers) {
     // If speaker focus is enabled and we have a focused user, show only that user
-    if (_isSpeakerFocusEnabled && _focusedUserId != null) {
-      return Center(
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: Container(
-            color: Colors.black,
-            child: Stack(
-              children: [
-                Center(
-                  child: AgoraVideoView(
-                    controller: VideoViewController.remote(
-                      rtcEngine: _agoraService.engine!,
-                      canvas: VideoCanvas(uid: _focusedUserId),
-                      connection: RtcConnection(channelId: widget.channelName),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_remoteUserAudioStates[_focusedUserId] ==
-                            false) ...[
-                          const Icon(
-                            Icons.mic_off,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                        const Text(
-                          'Speaker View',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+    // if (_isSpeakerFocusEnabled && _focusedUserId != null) {
+    //   return Center(
+    //     child: AspectRatio(
+    //       aspectRatio: 16 / 9,
+    //       child: Container(
+    //         color: Colors.black,
+    //         child: Stack(
+    //           children: [
+    //             Center(
+    //               child: AgoraVideoView(
+    //                 controller: VideoViewController.remote(
+    //                   rtcEngine: _agoraService.engine!,
+    //                   canvas: VideoCanvas(uid: _focusedUserId),
+    //                   connection: RtcConnection(channelId: widget.channelName),
+    //                 ),
+    //               ),
+    //             ),
+    //             Positioned(
+    //               bottom: 8,
+    //               right: 8,
+    //               child: Container(
+    //                 padding: const EdgeInsets.symmetric(
+    //                   horizontal: 8,
+    //                   vertical: 4,
+    //                 ),
+    //                 decoration: BoxDecoration(
+    //                   color: Colors.black54,
+    //                   borderRadius: BorderRadius.circular(4),
+    //                 ),
+    //                 child: Row(
+    //                   mainAxisSize: MainAxisSize.min,
+    //                   children: [
+    //                     if (_remoteUserAudioStates[_focusedUserId] ==
+    //                         false) ...[
+    //                       const Icon(
+    //                         Icons.mic_off,
+    //                         color: Colors.white,
+    //                         size: 16,
+    //                       ),
+    //                       const SizedBox(width: 4),
+    //                     ],
+    //                     const Text(
+    //                       'Speaker View',
+    //                       style: TextStyle(color: Colors.white, fontSize: 12),
+    //                     ),
+    //                   ],
+    //                 ),
+    //               ),
+    //             ),
+    //           ],
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // }
 
     // Calculate grid dimensions
     final int totalUsers = remoteUsers.length;
@@ -425,133 +489,136 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
     if (totalUsers > 4) crossAxisCount = 3;
     if (totalUsers > 9) crossAxisCount = 4;
 
-    return GridView.builder(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: 16 / 9,
-        crossAxisSpacing: 4,
-        mainAxisSpacing: 4,
-      ),
-      itemCount: totalUsers,
-      itemBuilder: (context, index) {
-        final remoteUid = remoteUsers[index];
-        return GestureDetector(
-          onTap: () => _focusOnUser(remoteUid),
-          child: Container(
-            color: Colors.black,
-            child: Stack(
-              children: [
-                Center(
-                  child:
-                      _remoteUserVideoStates[remoteUid] == false
-                          ? Container(
-                            color: Colors.black54,
-                            child: const Center(
-                              child: Icon(
-                                Icons.videocam_off,
-                                color: Colors.white,
-                                size: 40,
+    return Expanded(
+      child: GridView.builder(
+        shrinkWrap: true,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          childAspectRatio: 16 / 9,
+          crossAxisSpacing: 4,
+          mainAxisSpacing: 4,
+        ),
+        itemCount: totalUsers,
+        itemBuilder: (context, index) {
+          final remoteUid = remoteUsers[index];
+          return GestureDetector(
+            onTap: () => _focusOnUser(remoteUid),
+            child: Container(
+              color: Colors.black,
+              child: Stack(
+                children: [
+                  Center(
+                    child:
+                        _remoteUserVideoStates[remoteUid] == false
+                            ? Container(
+                              color: Colors.black54,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.videocam_off,
+                                  color: Colors.white,
+                                  size: 40,
+                                ),
+                              ),
+                            )
+                            : AgoraVideoView(
+                              controller: VideoViewController.remote(
+                                rtcEngine: _agoraService.engine!,
+                                canvas: VideoCanvas(uid: remoteUid),
+                                connection: RtcConnection(
+                                  channelId: widget.channelName,
+                                ),
                               ),
                             ),
-                          )
-                          : AgoraVideoView(
-                            controller: VideoViewController.remote(
-                              rtcEngine: _agoraService.engine!,
-                              canvas: VideoCanvas(uid: remoteUid),
-                              connection: RtcConnection(
-                                channelId: widget.channelName,
-                              ),
-                            ),
-                          ),
-                ),
-                Positioned(
-                  bottom: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_remoteUserAudioStates[remoteUid] == false) ...[
-                          const Icon(
-                            Icons.mic_off,
-                            color: Colors.white,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                        Text(
-                          'User $remoteUid',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
-                if (widget.isHost) ...[
                   Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Mute remote user
-                        GestureDetector(
-                          onTap: () => _muteRemoteUser(remoteUid),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Icon(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_remoteUserAudioStates[remoteUid] == false) ...[
+                            const Icon(
                               Icons.mic_off,
                               color: Colors.white,
-                              size: 16,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            'User $remoteUid',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ],
-                if (_isSpeakerFocusEnabled) ...[
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTap: () => _focusOnUser(remoteUid),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AppTheme.primaryColor,
-                            width: 2,
+                  if (widget.isHost) ...[
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Mute remote user
+                          GestureDetector(
+                            onTap: () => _muteRemoteUser(remoteUid),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Icon(
+                                Icons.mic_off,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
                           ),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.fullscreen,
-                            color: Colors.white,
-                            size: 32,
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (_isSpeakerFocusEnabled) ...[
+                    Positioned.fill(
+                      child: GestureDetector(
+                        onTap: () => _focusOnUser(remoteUid),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppTheme.primaryColor,
+                              width: 2,
+                            ),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.fullscreen,
+                              color: Colors.white,
+                              size: 32,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -658,55 +725,53 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
       left: 0,
       right: 0,
       bottom: 60,
-      child: SafeArea(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildControlButton(
+              icon: _isMuted ? Icons.mic_off : Icons.mic,
+              label: _isMuted ? 'Unmute' : 'Mute',
+              color: _isMuted ? Colors.red : Colors.white,
+              onPressed: _toggleMute,
+            ),
+            _buildControlButton(
+              icon: _isVideoEnabled ? Icons.videocam : Icons.videocam_off,
+              label: _isVideoEnabled ? 'Stop Video' : 'Start Video',
+              color: _isVideoEnabled ? Colors.white : Colors.red,
+              onPressed: _toggleVideo,
+            ),
+            _buildControlButton(
+              icon: Icons.screen_share,
+              label: 'Share Screen',
+              color: _isScreenSharing ? AppTheme.accentColor : Colors.white,
+              onPressed: _toggleScreenSharing,
+            ),
+            if (widget.isHost) ...[
               _buildControlButton(
-                icon: _isMuted ? Icons.mic_off : Icons.mic,
-                label: _isMuted ? 'Unmute' : 'Mute',
-                color: _isMuted ? Colors.red : Colors.white,
-                onPressed: _toggleMute,
+                icon:
+                    _isRecording
+                        ? Icons.fiber_manual_record
+                        : Icons.fiber_manual_record_outlined,
+                label: _isRecording ? 'Stop Recording' : 'Record',
+                color: _isRecording ? Colors.red : Colors.white,
+                onPressed: _toggleRecording,
               ),
               _buildControlButton(
-                icon: _isVideoEnabled ? Icons.videocam : Icons.videocam_off,
-                label: _isVideoEnabled ? 'Stop Video' : 'Start Video',
-                color: _isVideoEnabled ? Colors.white : Colors.red,
-                onPressed: _toggleVideo,
+                icon:
+                    _isSpeakerFocusEnabled
+                        ? Icons.center_focus_strong
+                        : Icons.center_focus_weak,
+                label: 'Speaker Focus',
+                color:
+                    _isSpeakerFocusEnabled
+                        ? AppTheme.accentColor
+                        : Colors.white,
+                onPressed: _toggleSpeakerFocus,
               ),
-              _buildControlButton(
-                icon: Icons.screen_share,
-                label: 'Share Screen',
-                color: _isScreenSharing ? AppTheme.accentColor : Colors.white,
-                onPressed: _toggleScreenSharing,
-              ),
-              if (widget.isHost) ...[
-                _buildControlButton(
-                  icon:
-                      _isRecording
-                          ? Icons.fiber_manual_record
-                          : Icons.fiber_manual_record_outlined,
-                  label: _isRecording ? 'Stop Recording' : 'Record',
-                  color: _isRecording ? Colors.red : Colors.white,
-                  onPressed: _toggleRecording,
-                ),
-                _buildControlButton(
-                  icon:
-                      _isSpeakerFocusEnabled
-                          ? Icons.center_focus_strong
-                          : Icons.center_focus_weak,
-                  label: 'Speaker Focus',
-                  color:
-                      _isSpeakerFocusEnabled
-                          ? AppTheme.accentColor
-                          : Colors.white,
-                  onPressed: _toggleSpeakerFocus,
-                ),
-              ],
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -1299,7 +1364,7 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Meeting Id  : ${widget.meetingId}'),
+                SelectableText('Meeting Id  : ${widget.meetingId}'),
                 _pendingRequests.isEmpty
                     ? const Center(child: Text('No pending requests'))
                     : ListView.builder(
@@ -1319,7 +1384,7 @@ class _MeetingRoomState extends ConsumerState<MeetingRoom> {
                                 ),
                                 onPressed: () {
                                   Navigator.pop(context);
-                                  controller.approveJoinRequest(
+                                 approveJoinRequest(
                                     request['userId'],
                                   );
                                 },

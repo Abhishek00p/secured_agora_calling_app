@@ -73,16 +73,7 @@ class MeetingController extends StateNotifier<MeetingState> {
     }
   }
 
-  Future<void> approveJoinRequest(String userId) async {
-    if (meetingId == null) return;
 
-    try {
-      await _firebaseService.approveMeetingJoinRequest(meetingId!, userId);
-      await fetchPendingRequests();
-    } catch (e) {
-      state = state.copyWith(error: 'Error approving request: $e');
-    }
-  }
 
   Future<void> rejectJoinRequest(String userId) async {
     if (meetingId == null) return;

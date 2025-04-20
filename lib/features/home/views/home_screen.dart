@@ -102,7 +102,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           radius: 30,
                           backgroundColor: Colors.white.withOpacity(0.9),
                           child: Text(
-                            user.name.substring(0, 1).toUpperCase(),
+                          user.name.isEmpty?'':  user.name.substring(0, 1).toUpperCase(),
                             style: const TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
