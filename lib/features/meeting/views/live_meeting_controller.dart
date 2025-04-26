@@ -5,8 +5,8 @@ import 'package:secured_calling/features/meeting/services/agora_service.dart';
 
 class MeetingController extends GetxController {
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
-  final String meetingId = '';
-  final bool isHost = false;
+   String meetingId = '';
+   bool isHost = false;
   bool get agoraInitialized => AgoraService().isInitialized;
   // Rx variables
   var isLoading = false.obs;
@@ -17,10 +17,10 @@ class MeetingController extends GetxController {
   RxBool isMuted = false.obs;
   MeetingController();
 
-  void inint(String meetingId, bool isHost) async {
+  void inint(String meetingid, bool isUserHost) async {
     try{
-    meetingId = meetingId;
-    isHost = isHost;
+    meetingId = meetingid;
+    isHost = isUserHost;
 
     AgoraService().initialize().then((V) {
       if (V) {

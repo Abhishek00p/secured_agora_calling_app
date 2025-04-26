@@ -110,6 +110,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
   final meetingController = Get.find<MeetingController>();
   @override
   void initState() {
+    AppLogger.print('meeting id before init  :${widget.meetingId}');
     meetingController.inint(widget.meetingId, widget.isHost);
     super.initState();
   }

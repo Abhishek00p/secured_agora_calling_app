@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:secured_calling/app_logger.dart';
+import 'package:secured_calling/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 
 class AppFirebaseService {
@@ -72,10 +73,10 @@ class AppFirebaseService {
   }
 
   Future<bool> signOut() async {
-    try{
-    await _auth.signOut();
-    return true;
-    }catch(e){
+    try {
+      await _auth.signOut();
+      return true;
+    } catch (e) {
       AppLogger.print("cant signout user from firebase : $e");
       return false;
     }
@@ -114,7 +115,8 @@ class AppFirebaseService {
     String? password,
     bool requiresApproval = false,
   }) async {
-    return await meetingsCollection.add({
+    final meetingDocId = await AppMeetingIdGenrator.generateMeetingId();
+    await meetingsCollection.doc(meetingDocId).set({
       'hostId': hostId,
       'meetingName': meetingName,
       'channelName': _generateRandomChannelName(),
@@ -129,6 +131,7 @@ class AppFirebaseService {
       'participants': [],
       'pendingApprovals': [],
     });
+    return meetingsCollection.doc(meetingDocId);
   }
 
   Future<void> startMeeting(String meetingId) async {
@@ -197,7 +200,7 @@ class AppFirebaseService {
   Future<DocumentSnapshot<Object?>?> searchMeetingByMeetId(
     String meetId,
     String channelName,
-  ) async{
+  ) async {
     try {
       return await meetingsCollection.doc(meetId).get();
     } catch (e) {
@@ -244,5 +247,9 @@ class AppFirebaseService {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
     final rnd = DateTime.now().millisecondsSinceEpoch.toString();
     return 'meeting_${rnd.substring(rnd.length - 8)}';
+  }
+
+  Future<List<String>> getAllMeetDocIds() async {
+    return (await meetingsCollection.get()).docs.map((e) => e.id).toList();
   }
 }
