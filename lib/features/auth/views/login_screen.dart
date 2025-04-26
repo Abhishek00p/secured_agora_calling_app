@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get_state_manager/get_state_manager.dart';
+import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/app_text_form_widget.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
 
-class LoginForm extends ConsumerWidget {
+class LoginForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final VoidCallback onSubmit;
 
@@ -14,53 +15,56 @@ class LoginForm extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-  final state = ref.watch(loginRegisterControllerProvider);
-  final notifier = ref.read(loginRegisterControllerProvider.notifier);
+  Widget build(BuildContext context, ) {
 
-  final emailController = ref.watch(loginEmailControllerProvider);
-  final passwordController = ref.watch(loginPasswordControllerProvider);
-    return Form(
-      key: formKey,
-      child: Column(
-        children: [
-          AppTextFormField(
-            controller: emailController,
-            labelText: 'Email',
-            prefixIcon: Icons.email_outlined,
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'Please enter your email';
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                return 'Please enter a valid email';
-              }
-              return null;
-            },
+    return GetBuilder<LoginRegisterController>(
+      builder: (loginRegisterController) {
+        return Form(
+          key: formKey,
+          child: Column(
+            children: [
+              AppTextFormField(
+                controller:loginRegisterController.loginEmailController,
+                labelText: 'Email',
+                prefixIcon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Please enter your email';
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              AppTextFormField(
+                controller: loginRegisterController.loginPasswordController,
+                labelText: 'Password',
+                prefixIcon: Icons.lock_outline,
+                obscureText: loginRegisterController.obscureLoginPassword.value,
+                suffixIcon: IconButton(
+                  icon: Icon(loginRegisterController.obscureLoginPassword.value
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined),
+                  onPressed: loginRegisterController.toggleLoginPasswordVisibility,
+                ),
+                validator: (value) => value == null || value.isEmpty ? 'Please enter your password' : null,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed:() {
+                    AppLogger.print("pressed login button");
+                    onSubmit();
+                  },
+                  child: const Text('Log In'),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          AppTextFormField(
-            controller: passwordController,
-            labelText: 'Password',
-            prefixIcon: Icons.lock_outline,
-            obscureText: state.obscureLoginPassword,
-            suffixIcon: IconButton(
-              icon: Icon(state.obscureLoginPassword
-                  ? Icons.visibility_outlined
-                  : Icons.visibility_off_outlined),
-              onPressed: notifier.toggleLoginPasswordVisibility,
-            ),
-            validator: (value) => value == null || value.isEmpty ? 'Please enter your password' : null,
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: state.isLoading ? null : onSubmit,
-              child: const Text('Log In'),
-            ),
-          ),
-        ],
-      ),
+        );
+      }
     );
   }
 }

@@ -127,7 +127,7 @@
 //       try {
 //         await _firebaseService.endMeeting(_meetingId!);
 //       } catch (e) {
-//         debugPrint('Error ending meeting: $e');
+//         AppLogger.print('Error ending meeting: $e');
 //       }
 //     }
 

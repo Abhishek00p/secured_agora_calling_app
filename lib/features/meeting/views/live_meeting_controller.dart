@@ -1,49 +1,57 @@
-
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
+import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/features/meeting/services/agora_service.dart';
 
-class MeetingState {
-  final bool isLoading;
-  final String? error;
-  final List<Map<String, dynamic>> pendingRequests;
+class MeetingController extends GetxController {
+  final AppFirebaseService _firebaseService = AppFirebaseService.instance;
+  final String meetingId = '';
+  final bool isHost = false;
+  bool get agoraInitialized => AgoraService().isInitialized;
+  // Rx variables
+  var isLoading = false.obs;
+  var error = RxnString();
+  var pendingRequests = <Map<String, dynamic>>[].obs;
 
-  const MeetingState({
-    this.isLoading = false,
-    this.error,
-    this.pendingRequests = const [],
-  });
+  int remainingSeconds = 25200;
+  RxBool isMuted = false.obs;
+  MeetingController();
 
-  MeetingState copyWith({
-    bool? isLoading,
-    String? error,
-    List<Map<String, dynamic>>? pendingRequests,
-  }) {
-    return MeetingState(
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-      pendingRequests: pendingRequests ?? this.pendingRequests,
-    );
+  void inint(String meetingId, bool isHost) async {
+    try{
+    meetingId = meetingId;
+    isHost = isHost;
+
+    AgoraService().initialize().then((V) {
+      if (V) {
+        if(meetingId.trim().isEmpty){
+  
+          AppLogger.print('meetingId is empty or null');
+          return;
+        }
+        startTimer();
+        AppFirebaseService.instance.startMeeting(meetingId);
+      }
+    });
+    }catch(e){
+      AppLogger.print('Something went wrong in init of controller : $e');
+    }
+    update();
   }
-}
 
-class MeetingController extends StateNotifier<MeetingState> {
-  final AppFirebaseService _firebaseService;
-  final String? meetingId;
-  final bool isHost;
-
-  MeetingController({
-    required AppFirebaseService firebaseService,
-    required this.meetingId,
-    required this.isHost,
-  })  : _firebaseService = firebaseService,
-        super(const MeetingState());
+  startTimer() async {
+    while (remainingSeconds > 0) {
+      await Future.delayed(Duration(seconds: 1));
+      remainingSeconds--;
+      update();
+    }
+  }
 
   Future<void> fetchPendingRequests() async {
     if (meetingId == null) return;
 
-    state = state.copyWith(isLoading: true, error: null);
+    isLoading.value = true;
+    error.value = null;
 
     try {
       final meetingDoc =
@@ -51,29 +59,26 @@ class MeetingController extends StateNotifier<MeetingState> {
       final meetingData = meetingDoc.data() as Map<String, dynamic>;
       final pendingUserIds = meetingData['pendingApprovals'] as List<dynamic>;
 
-      final pendingRequests = <Map<String, dynamic>>[];
+      final List<Map<String, dynamic>> requests = [];
 
       for (final userId in pendingUserIds) {
         final userDoc = await _firebaseService.getUserData(userId as String);
         final userData = userDoc.data() as Map<String, dynamic>?;
         if (userData != null) {
-          pendingRequests.add({
+          requests.add({
             'userId': userId,
             'name': userData['name'] ?? 'Unknown User',
           });
         }
       }
 
-      state = state.copyWith(
-        isLoading: false,
-        pendingRequests: pendingRequests,
-      );
+      pendingRequests.value = requests;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      error.value = e.toString();
+    } finally {
+      isLoading.value = false;
     }
   }
-
-
 
   Future<void> rejectJoinRequest(String userId) async {
     if (meetingId == null) return;
@@ -82,34 +87,23 @@ class MeetingController extends StateNotifier<MeetingState> {
       await _firebaseService.rejectMeetingJoinRequest(meetingId!, userId);
       await fetchPendingRequests();
     } catch (e) {
-      state = state.copyWith(error: 'Error rejecting request: $e');
+      error.value = 'Error rejecting request: $e';
     }
   }
 
-  Future<void> endMeeting({required Future<void> Function() leaveAgora,required String meetingId}) async {
+  Future<void> endMeeting({required String meetingId}) async {
     try {
+      final agoraService = AgoraService();
+      await agoraService.leaveChannel();
       if (meetingId.isNotEmpty && isHost) {
         await _firebaseService.endMeeting(meetingId);
       }
-      leaveAgora.call();
-    //       await _agoraService.leaveChannel();
-    //         if (mounted) {
-    //   Navigator.pop(context);
-    // }
-
     } catch (e) {
-      debugPrint('Error ending meeting: $e');
-    } finally {
-     
+      AppLogger.print('Error ending meeting: $e');
     }
   }
-}
 
-final meetingControllerProvider = StateNotifierProvider.autoDispose
-    .family<MeetingController, MeetingState, ({String? meetingId, bool isHost})>(
-  (ref, args) => MeetingController(
-    firebaseService: AppFirebaseService.instance,
-    meetingId: args.meetingId,
-    isHost: args.isHost,
-  ),
-);
+  Future<void> toggleMute() async {
+    isMuted.toggle();
+  }
+}

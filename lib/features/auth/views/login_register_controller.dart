@@ -1,75 +1,60 @@
-// login_register_controller.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/app_tost_util.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 
-class LoginRegisterState {
-  final bool isLoading;
-  final bool obscureLoginPassword;
-  final bool obscureRegisterPassword;
-  final String? errorMessage;
+class LoginRegisterController extends GetxController {
+  // State Variables
+  var isLoading = false.obs;
+  var obscureLoginPassword = true.obs;
+  var obscureRegisterPassword = true.obs;
+  var errorMessage = RxnString(); // nullable String
 
-  const LoginRegisterState({
-    this.isLoading = false,
-    this.obscureLoginPassword = true,
-    this.obscureRegisterPassword = true,
-    this.errorMessage,
-  });
+  // TextEditingControllers
+  final loginEmailController = TextEditingController();
+  final loginPasswordController = TextEditingController();
+  final registerNameController = TextEditingController();
+  final registerEmailController = TextEditingController();
+  final registerPasswordController = TextEditingController();
 
-  LoginRegisterState copyWith({
-    bool? isLoading,
-    bool? obscureLoginPassword,
-    bool? obscureRegisterPassword,
-    String? errorMessage,
-  }) {
-    return LoginRegisterState(
-      isLoading: isLoading ?? this.isLoading,
-      obscureLoginPassword: obscureLoginPassword ?? this.obscureLoginPassword,
-      obscureRegisterPassword:
-          obscureRegisterPassword ?? this.obscureRegisterPassword,
-      errorMessage: errorMessage,
-    );
-  }
-}
-
-class LoginRegisterController extends StateNotifier<LoginRegisterState> {
-  LoginRegisterController() : super(const LoginRegisterState());
-
+  // Actions
   void setLoading(bool loading) {
-    state = state.copyWith(isLoading: loading);
+    isLoading.value = loading;
   }
 
   void setError(String? error) {
-    state = state.copyWith(errorMessage: error);
-  }
-
-  void toggleLoginPasswordVisibility() {
-    state = state.copyWith(obscureLoginPassword: !state.obscureLoginPassword);
-  }
-
-  void toggleRegisterPasswordVisibility() {
-    state = state.copyWith(
-      obscureRegisterPassword: !state.obscureRegisterPassword,
-    );
+    errorMessage.value = error;
   }
 
   void clearError() {
-    state = state.copyWith(errorMessage: null);
+    errorMessage.value = null;
   }
 
-  Future<String?> login(
-    String email,
-    String password, {
-    required BuildContext context,
-  }) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+  void toggleLoginPasswordVisibility() {
+    obscureLoginPassword.toggle();
+    update();
+  }
+
+  void toggleRegisterPasswordVisibility() {
+    obscureRegisterPassword.value = !obscureRegisterPassword.value;
+  }
+
+  Future<String?> login({required BuildContext context}) async {
+    setLoading(true);
+    clearError();
+    update();
     try {
       final result = await AppFirebaseService.instance
-          .signInWithEmailAndPassword(email: email.trim(), password: password);
+          .signInWithEmailAndPassword(
+            email: loginEmailController.text.trim(),
+            password: loginPasswordController.text,
+          );
+      AppLogger.print("login button presed :  ${result.user}");
       AppToastUtil.showSuccessToast(context, 'Success ${result.user != null}');
+    
       if (result.user != null) {
         await AppFirebaseService.instance.getLoggedInUserDataAsModel().then((
           e,
@@ -79,109 +64,91 @@ class LoginRegisterController extends StateNotifier<LoginRegisterState> {
           }
         });
       }
-      AppLocalStorage.setLoggedIn(result.user != null);
 
+      AppLocalStorage.setLoggedIn(result.user != null);
       return null;
     } on FirebaseAuthException catch (e) {
-      debugPrint("firebase error while logging in :${e.code}");
+      AppLogger.print("firebase error while logging in :${e.code}");
 
-      
-    late LoginError errorType;
+      late LoginError errorType;
 
-    switch (e.code) {
-      case 'network-request-failed':
-        errorType = LoginError.network;
-        break;
-      case 'invalid-credential':
-        errorType = LoginError.invalidCredential;
-        break;
-      case 'user-not-found':
-        errorType = LoginError.userNotFound;
-        break;
-      case 'wrong-password':
-        errorType = LoginError.wrongPassword;
-        break;
-      case 'invalid-email':
-        errorType = LoginError.invalidEmail;
-        break;
-      default:
-        errorType = LoginError.unknown;
-    }
+      switch (e.code) {
+        case 'network-request-failed':
+          errorType = LoginError.network;
+          break;
+        case 'invalid-credential':
+          errorType = LoginError.invalidCredential;
+          break;
+        case 'user-not-found':
+          errorType = LoginError.userNotFound;
+          break;
+        case 'wrong-password':
+          errorType = LoginError.wrongPassword;
+          break;
+        case 'invalid-email':
+          errorType = LoginError.invalidEmail;
+          break;
+        default:
+          errorType = LoginError.unknown;
+      }
 
-    state = state.copyWith(errorMessage: errorType.message);
-    return errorType.message;
+      setError(errorType.message);
+      return errorType.message;
     } catch (e) {
-      debugPrint("error while logging in :$e");
-      state = state.copyWith(
-        errorMessage: 'An unexpected error occurred. Please try again.',
-      );
+      AppLogger.print("error while logging in :$e");
+      setError('An unexpected error occurred. Please try again.');
       return 'Something went wrong..';
     } finally {
-      state = state.copyWith(isLoading: false);
+      setLoading(false);
+      update();
     }
   }
 
-  Future<bool> register(String name, String email, String password) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+  Future<bool> register() async {
+    setLoading(true);
+    clearError();
     try {
       await AppFirebaseService.instance.signUpWithEmailAndPassword(
-        name: name.trim(),
-        email: email.trim(),
-        password: password,
+        name: registerNameController.text.trim(),
+        email: registerEmailController.text.trim(),
+        password: registerPasswordController.text.trim(),
       );
       return true;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'email-already-in-use':
-          state = state.copyWith(
-            errorMessage: 'An account already exists with this email.',
-          );
+          setError('An account already exists with this email.');
           break;
         case 'weak-password':
-          state = state.copyWith(
-            errorMessage: 'Password is too weak. Use at least 6 characters.',
-          );
+          setError('Password is too weak. Use at least 6 characters.');
           break;
         case 'invalid-email':
-          state = state.copyWith(errorMessage: 'Invalid email format.');
+          setError('Invalid email format.');
           break;
         default:
-          state = state.copyWith(errorMessage: 'Error: ${e.message}');
+          setError('Error: ${e.message}');
       }
     } catch (_) {
-      state = state.copyWith(
-        errorMessage: 'An unexpected error occurred. Please try again.',
-      );
+      setError('An unexpected error occurred. Please try again.');
     } finally {
-      state = state.copyWith(isLoading: false);
+      setLoading(false);
     }
     return false;
   }
+
+  @override
+  void onClose() {
+    loginEmailController.dispose();
+    loginPasswordController.dispose();
+    registerNameController.dispose();
+    registerEmailController.dispose();
+    registerPasswordController.dispose();
+    super.onClose();
+  }
 }
 
-final loginRegisterControllerProvider =
-    StateNotifierProvider<LoginRegisterController, LoginRegisterState>(
-      (ref) => LoginRegisterController(),
-    );
-final loginEmailControllerProvider = Provider.autoDispose(
-  (ref) => TextEditingController(),
-);
+// --- ENUMs
 
-final loginPasswordControllerProvider = Provider.autoDispose(
-  (ref) => TextEditingController(),
-);
-
-final registerNameControllerProvider = Provider.autoDispose(
-  (ref) => TextEditingController(),
-);
-
-final registerEmailControllerProvider = Provider.autoDispose(
-  (ref) => TextEditingController(),
-);
-
-final registerPasswordControllerProvider = Provider.autoDispose(
-  (ref) => TextEditingController(),
-);
 enum LoginError {
   network,
   userNotFound,
@@ -190,6 +157,7 @@ enum LoginError {
   invalidCredential,
   unknown,
 }
+
 extension LoginErrorMessage on LoginError {
   String get message {
     switch (this) {
@@ -204,7 +172,6 @@ extension LoginErrorMessage on LoginError {
       case LoginError.invalidCredential:
         return 'Invalid email or password.';
       case LoginError.unknown:
-
         return 'An unexpected error occurred. Please try again.';
     }
   }

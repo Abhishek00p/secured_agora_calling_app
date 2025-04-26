@@ -24,7 +24,6 @@ class MeetingUtil {
       final meetingData = doc.data() as Map<String, dynamic>;
 
       if (instant) {
-        await firebaseService.startMeeting(doc.id);
 
         if (context.mounted) {
           Navigator.pushNamed(

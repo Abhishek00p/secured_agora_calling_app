@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 
 class AppFirebaseService {
@@ -70,8 +71,14 @@ class AppFirebaseService {
     }
   }
 
-  Future<void> signOut() async {
+  Future<bool> signOut() async {
+    try{
     await _auth.signOut();
+    return true;
+    }catch(e){
+      AppLogger.print("cant signout user from firebase : $e");
+      return false;
+    }
   }
 
   // Firestore methods
@@ -194,7 +201,7 @@ class AppFirebaseService {
     try {
       return await meetingsCollection.doc(meetId).get();
     } catch (e) {
-      debugPrint("can not find meet : $e");
+      AppLogger.print("can not find meet : $e");
       return null;
     }
   }

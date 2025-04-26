@@ -22,7 +22,7 @@
 //   // Initialize Firebase if not already initialized
 //   await Firebase.initializeApp();
 
-//   debugPrint('Handling a background message: ${message.messageId}');
+//   AppLogger.print('Handling a background message: ${message.messageId}');
 
 //   // Initialize notification service for background messages
 //   await NotificationService.instance.setupFlutterNotifications();
@@ -188,7 +188,7 @@
 //       sound: true,
 //     );
 
-//     debugPrint('User granted permission: ${settings.authorizationStatus}');
+//     AppLogger.print('User granted permission: ${settings.authorizationStatus}');
 
 //     // Request permission from Flutter Local Notifications
 //     if (Platform.isIOS || Platform.isMacOS) {
@@ -386,11 +386,11 @@
 
 //   // Handle a foreground message from FCM
 //   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-//     debugPrint('Got a message whilst in the foreground!');
-//     debugPrint('Message data: ${message.data}');
+//     AppLogger.print('Got a message whilst in the foreground!');
+//     AppLogger.print('Message data: ${message.data}');
 
 //     if (message.notification != null) {
-//       debugPrint(
+//       AppLogger.print(
 //         'Message also contained a notification: ${message.notification}',
 //       );
 //     }
@@ -413,7 +413,7 @@
 
 //   // Handle a background message from FCM
 //   Future<void> handleBackgroundMessage(RemoteMessage message) async {
-//     debugPrint('Handling a background message: ${message.messageId}');
+//     AppLogger.print('Handling a background message: ${message.messageId}');
 
 //     // Check if the message is a call notification
 //     if (message.data.containsKey('type') && message.data['type'] == 'call') {
@@ -445,7 +445,7 @@
 
 //   // Handle a message that opens the app from a terminated state
 //   void _handleInitialMessage(RemoteMessage message) {
-//     debugPrint(
+//     AppLogger.print(
 //       'App opened from terminated state with message: ${message.data}',
 //     );
 
@@ -463,7 +463,7 @@
 
 //   // Handle a message that opens the app from the background
 //   void _handleAppOpenedFromMessage(RemoteMessage message) {
-//     debugPrint('App opened from background with message: ${message.data}');
+//     AppLogger.print('App opened from background with message: ${message.data}');
 
 //     // Check if there's a pending call
 //     _checkForPendingCalls().then((hasPendingCall) {
@@ -540,7 +540,7 @@
 
 //         return true;
 //       } catch (e) {
-//         debugPrint('Error parsing pending call: $e');
+//         AppLogger.print('Error parsing pending call: $e');
 //         await prefs.remove('pending_call');
 //       }
 //     }
@@ -617,7 +617,7 @@
 //     //   'callerId': AppFirebaseService.instance.currentUser?.uid,
 //     // });
 
-//     debugPrint(
+//     AppLogger.print(
 //       'Would send call invitation to $recipientId for channel $channelName',
 //     );
 //   }
@@ -629,12 +629,12 @@
 //     String? body,
 //     String? payload,
 //   ) {
-//     debugPrint('Received local notification: $id, $title, $body, $payload');
+//     AppLogger.print('Received local notification: $id, $title, $body, $payload');
 //   }
 
 //   // Handle notification response when app is in foreground or background (not terminated)
 //   void _onDidReceiveNotificationResponse(NotificationResponse response) {
-//     debugPrint(
+//     AppLogger.print(
 //       'Notification response received: ${response.payload} with action ${response.actionId}',
 //     );
 
@@ -670,7 +670,7 @@
 //           }
 //         }
 //       } catch (e) {
-//         debugPrint('Error parsing notification payload: $e');
+//         AppLogger.print('Error parsing notification payload: $e');
 //       }
 //     }
 //   }
@@ -680,7 +680,7 @@
 //   static void _onDidReceiveBackgroundNotificationResponse(
 //     NotificationResponse response,
 //   ) {
-//     debugPrint(
+//     AppLogger.print(
 //       'Background notification response received: ${response.payload} with action ${response.actionId}',
 //     );
 

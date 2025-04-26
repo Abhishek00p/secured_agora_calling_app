@@ -1,6 +1,11 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:secured_calling/app_logger.dart';
+import 'package:secured_calling/app_tost_util.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppLocalStorage {
@@ -19,13 +24,19 @@ class AppLocalStorage {
   }
 
   static void storeUserDetails(AppUser user) {
-    _preferences.setString(userDetails, user.toJson().toString());
+    _preferences.setString(userDetails, jsonEncode(user.toJson()));
   }
 
   static AppUser getUserDetails() {
+    try{
+      
     return AppUser.fromJson(
       jsonDecode(_preferences.getString(userDetails) ?? '{}'),
     );
+    }catch(e){
+      AppLogger.print("error while fetching user detail from local  : $e");
+      return AppUser.toEmpty();
+    }
   }
 
   static void setLoggedIn(bool value) {
@@ -34,5 +45,15 @@ class AppLocalStorage {
 
   static bool getLoggedInStatus() {
     return _preferences.getBool(isUserLoggedIn) ?? false;
+  }
+
+   static Future<bool> signOut(BuildContext context) async {
+    try {
+      setLoggedIn(false);
+      return await AppFirebaseService.instance.signOut();
+    } catch (e) {
+      AppToastUtil.showErrorToast(context, 'Error signing out: $e');
+      return false;
+    }
   }
 }
