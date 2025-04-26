@@ -9,7 +9,10 @@ void showPendingRequestsDialog(BuildContext context) {
         (context) => GetBuilder<MeetingController>(
           builder: (controller) {
             return AlertDialog(
-              title: const Text('Pending Join Requests',style: TextStyle(color: Colors.white),),
+              title: const Text(
+                'Pending Join Requests',
+                style: TextStyle(color: Colors.white),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

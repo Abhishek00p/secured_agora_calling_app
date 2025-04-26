@@ -40,11 +40,21 @@ class MeetingModel {
       pendingApprovals: List<String>.from(json['pendingApprovals'] ?? []),
       requiresApproval: json['requiresApproval'] ?? false,
       status: json['status'] ?? '',
-      scheduledStartTime: DateTime.tryParse(json['scheduledStartTime']?.toString() ?? '') ?? DateTime(2000),
-      scheduledEndTime: DateTime.tryParse(json['scheduledEndTime']?.toString() ?? '') ?? DateTime(2000),
-      actualStartTime: DateTime.tryParse(json['actualStartTime']?.toString() ?? '') ?? DateTime(2000),
-      actualEndTime: DateTime.tryParse(json['actualEndTime']?.toString() ?? '') ?? DateTime(2000),
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime(2000),
+      scheduledStartTime:
+          DateTime.tryParse(json['scheduledStartTime']?.toString() ?? '') ??
+          DateTime(2000),
+      scheduledEndTime:
+          DateTime.tryParse(json['scheduledEndTime']?.toString() ?? '') ??
+          DateTime(2000),
+      actualStartTime:
+          DateTime.tryParse(json['actualStartTime']?.toString() ?? '') ??
+          DateTime(2000),
+      actualEndTime:
+          DateTime.tryParse(json['actualEndTime']?.toString() ?? '') ??
+          DateTime(2000),
+      createdAt:
+          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime(2000),
     );
   }
 
@@ -69,20 +79,20 @@ class MeetingModel {
   bool get isEmpty => this == MeetingModel.empty();
 
   factory MeetingModel.empty() => MeetingModel(
-        channelName: '',
-        hostId: '',
-        meetingName: '',
-        participants: [],
-        password: '',
-        pendingApprovals: [],
-        requiresApproval: false,
-        status: '',
-        scheduledStartTime: DateTime(2000),
-        scheduledEndTime: DateTime(2000),
-        actualStartTime: DateTime(2000),
-        actualEndTime: DateTime(2000),
-        createdAt: DateTime(2000),
-      );
+    channelName: '',
+    hostId: '',
+    meetingName: '',
+    participants: [],
+    password: '',
+    pendingApprovals: [],
+    requiresApproval: false,
+    status: '',
+    scheduledStartTime: DateTime(2000),
+    scheduledEndTime: DateTime(2000),
+    actualStartTime: DateTime(2000),
+    actualEndTime: DateTime(2000),
+    createdAt: DateTime(2000),
+  );
 
   @override
   String toString() {

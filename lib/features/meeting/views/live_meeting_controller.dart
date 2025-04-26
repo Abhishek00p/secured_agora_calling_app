@@ -1,12 +1,14 @@
 import 'package:get/get.dart';
 import 'package:secured_calling/app_logger.dart';
+import 'package:secured_calling/app_tost_util.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/features/meeting/services/agora_service.dart';
+import 'package:secured_calling/features/meeting/services/agora_service_controller.dart';
 
 class MeetingController extends GetxController {
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
-   String meetingId = '';
-   bool isHost = false;
+  String meetingId = '';
+  bool isHost = false;
   bool get agoraInitialized => AgoraService().isInitialized;
   // Rx variables
   var isLoading = false.obs;
@@ -15,25 +17,27 @@ class MeetingController extends GetxController {
 
   int remainingSeconds = 25200;
   RxBool isMuted = false.obs;
-  MeetingController();
+  RxBool isOnSpeaker = false.obs;
+  final AgoraController agoraController = Get.find<AgoraController>();
 
   void inint(String meetingid, bool isUserHost) async {
-    try{
-    meetingId = meetingid;
-    isHost = isUserHost;
+    try {
+      meetingId = meetingid;
+      isHost = isUserHost;
 
-    AgoraService().initialize().then((V) {
-      if (V) {
-        if(meetingId.trim().isEmpty){
-  
+      final result = await AgoraService().initialize();
+      if (result) {
+        if (meetingId.trim().isEmpty) {
           AppLogger.print('meetingId is empty or null');
           return;
         }
+        await agoraController.joinChannel();
         startTimer();
         AppFirebaseService.instance.startMeeting(meetingId);
+      } else {
+        AppToastUtil.showErrorToast(Get.context!, 'Faild to init Agora');
       }
-    });
-    }catch(e){
+    } catch (e) {
       AppLogger.print('Something went wrong in init of controller : $e');
     }
     update();
@@ -48,8 +52,6 @@ class MeetingController extends GetxController {
   }
 
   Future<void> fetchPendingRequests() async {
-    if (meetingId == null) return;
-
     isLoading.value = true;
     error.value = null;
 
@@ -81,10 +83,8 @@ class MeetingController extends GetxController {
   }
 
   Future<void> rejectJoinRequest(String userId) async {
-    if (meetingId == null) return;
-
     try {
-      await _firebaseService.rejectMeetingJoinRequest(meetingId!, userId);
+      await _firebaseService.rejectMeetingJoinRequest(meetingId, userId);
       await fetchPendingRequests();
     } catch (e) {
       error.value = 'Error rejecting request: $e';
@@ -105,5 +105,18 @@ class MeetingController extends GetxController {
 
   Future<void> toggleMute() async {
     isMuted.toggle();
+    update();
+    if (isMuted.value) {
+      AgoraService().engine?.pauseAudio();
+    } else {
+      AgoraService().engine?.resumeAudio();
+    }
+  }
+
+  Future<void> toggleSpeaker() async {
+    isOnSpeaker.toggle();
+    update();
+
+    AgoraService().engine?.setEnableSpeakerphone(isOnSpeaker.value);
   }
 }

@@ -47,10 +47,11 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
     try {
       final channelName = _meetingIdController.text.trim();
       final documentSnapshot = await _firebaseService.searchMeetingByMeetId(
-        _meetingIdController.text,channelName
+        _meetingIdController.text,
+        channelName,
       );
 
-      if (documentSnapshot==null|| !documentSnapshot.exists) {
+      if (documentSnapshot == null || !documentSnapshot.exists) {
         setState(() {
           _errorMessage = 'No active meeting found with this ID';
           _isLoading = false;
@@ -154,7 +155,11 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
     Navigator.pushNamed(
       context,
       AppRouter.meetingRoomRoute,
-      arguments: {'channelName': _meetingData!['channelName'], 'isHost': false},
+      arguments: {
+        'channelName': _meetingData!['channelName'],
+        'isHost': false,
+        'meetingId': _meetingId,
+      },
     );
   }
 

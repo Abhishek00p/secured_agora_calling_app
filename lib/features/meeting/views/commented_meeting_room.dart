@@ -30,7 +30,7 @@
 //   bool _isLoading = true;
 //   bool _isMuted = false;
 //   bool _isVideoEnabled = true;
-  
+
 //   // TODO: Uncomment when remote user functionality is implemented
 //   // List<int> remoteUsers = []; // Mock remote users for now
 //   // final Map<int, bool> _remoteUserAudioStates = {}; // uid -> isEnabled

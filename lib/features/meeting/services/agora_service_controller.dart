@@ -15,12 +15,13 @@ class AgoraController extends GetxController {
     await _agoraService.initialize();
   }
 
-  Future<void> joinChannel(
-    String channelName, {
+  Future<void> joinChannel({
+    String channelName = 'testing',
     String token =
         '007eJxTYLhb8rs4LJpTaIHshGNX9v35fnH260TX5JDS4D6l23ofzcwUGIyMTBPNjNJMkkwTE01SLU0Sk0zM0iwNUwwSDYxMzVMNHRayZDQEMjIsW1/AysgAgSA+O0NJanFJZl46AwMACO8haw==',
   }) async {
     await _agoraService.joinChannel(channelName: channelName, token: token);
+
     isJoined.value = true;
   }
 

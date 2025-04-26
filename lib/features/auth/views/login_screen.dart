@@ -8,15 +8,10 @@ class LoginForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final VoidCallback onSubmit;
 
-  const LoginForm({
-    super.key,
-    required this.formKey,
-    required this.onSubmit,
-  });
+  const LoginForm({super.key, required this.formKey, required this.onSubmit});
 
   @override
-  Widget build(BuildContext context, ) {
-
+  Widget build(BuildContext context) {
     return GetBuilder<LoginRegisterController>(
       builder: (loginRegisterController) {
         return Form(
@@ -24,13 +19,17 @@ class LoginForm extends StatelessWidget {
           child: Column(
             children: [
               AppTextFormField(
-                controller:loginRegisterController.loginEmailController,
+                controller: loginRegisterController.loginEmailController,
                 labelText: 'Email',
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your email';
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  ).hasMatch(value)) {
                     return 'Please enter a valid email';
                   }
                   return null;
@@ -43,18 +42,25 @@ class LoginForm extends StatelessWidget {
                 prefixIcon: Icons.lock_outline,
                 obscureText: loginRegisterController.obscureLoginPassword.value,
                 suffixIcon: IconButton(
-                  icon: Icon(loginRegisterController.obscureLoginPassword.value
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined),
-                  onPressed: loginRegisterController.toggleLoginPasswordVisibility,
+                  icon: Icon(
+                    loginRegisterController.obscureLoginPassword.value
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                  onPressed:
+                      loginRegisterController.toggleLoginPasswordVisibility,
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Please enter your password' : null,
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Please enter your password'
+                            : null,
               ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed:() {
+                  onPressed: () {
                     AppLogger.print("pressed login button");
                     onSubmit();
                   },
@@ -64,7 +70,7 @@ class LoginForm extends StatelessWidget {
             ],
           ),
         );
-      }
+      },
     );
   }
 }

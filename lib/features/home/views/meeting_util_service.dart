@@ -24,7 +24,6 @@ class MeetingUtil {
       final meetingData = doc.data() as Map<String, dynamic>;
 
       if (instant) {
-
         if (context.mounted) {
           Navigator.pushNamed(
             context,
@@ -32,7 +31,7 @@ class MeetingUtil {
             arguments: {
               'channelName': meetingData['channelName'] ?? 'default_channel',
               'isHost': true,
-              'meetingId':doc.id,
+              'meetingId': doc.id,
             },
           );
         }

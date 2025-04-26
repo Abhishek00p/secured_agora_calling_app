@@ -1,4 +1,3 @@
-
 import 'package:get/get.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/features/auth/views/login_register_screen.dart';
@@ -17,10 +16,7 @@ class AppRouter {
   static const String meetingRoomRoute = '/meeting';
 
   static List<GetPage> routes = [
-    GetPage(
-      name: welcomeRoute,
-      page: () => const WelcomeScreen(),
-    ),
+    GetPage(name: welcomeRoute, page: () => const WelcomeScreen()),
     GetPage(
       name: loginRegisterRoute,
       page: () => const LoginRegisterScreen(),
@@ -42,8 +38,7 @@ class AppRouter {
           meetingId: args['meetingId'] ?? '',
         );
       },
-      binding: MeetingBinding( 
-   ), // Inject Meeting Controller
+      binding: MeetingBinding(), // Inject Meeting Controller
     ),
   ];
 }

@@ -347,7 +347,7 @@
 
 //   @override
 //   Widget build(BuildContext context) {
-  
+
 //     return PopScope(
 //       canPop: true,
 //       onPopInvokedWithResult: (didPop, _) async {
@@ -399,9 +399,9 @@
 //                       : Expanded(
 //                         child: Stack(
 //                           children: [
-//                             _buildVideoGrid([]),//TODO: implement dynamic 
+//                             _buildVideoGrid([]),//TODO: implement dynamic
 //                             _buildLocalVideo(),
-            
+
 //                             // Bottom Control Bar
 //                             Positioned(
 //                               right: 10,
@@ -685,7 +685,7 @@
 //               color: _isVideoEnabled ? Colors.white : Colors.red,
 //               onPressed: _toggleVideo,
 //             ),
-       
+
 //           ],
 //         ),
 //       ),

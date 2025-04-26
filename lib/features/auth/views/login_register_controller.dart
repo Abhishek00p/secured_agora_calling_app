@@ -54,7 +54,7 @@ class LoginRegisterController extends GetxController {
           );
       AppLogger.print("login button presed :  ${result.user}");
       AppToastUtil.showSuccessToast(context, 'Success ${result.user != null}');
-    
+
       if (result.user != null) {
         await AppFirebaseService.instance.getLoggedInUserDataAsModel().then((
           e,

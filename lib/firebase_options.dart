@@ -84,5 +84,4 @@ class DefaultFirebaseOptions {
     authDomain: 'calling-2025.firebaseapp.com',
     storageBucket: 'secure-calling-2025.firebasestorage.app',
   );
-
 }

@@ -13,17 +13,20 @@ class AppUser {
     this.isMember = false,
     DateTime? createdAt,
     Subscription? subscription,
-  })  : createdAt = createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
-        subscription = subscription ?? Subscription.toEmpty();
+  }) : createdAt = createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+       subscription = subscription ?? Subscription.toEmpty();
 
   factory AppUser.fromJson(Map<String, dynamic>? json) {
     if (json == null) return AppUser.toEmpty();
-  
+
     return AppUser(
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       isMember: json['isMember'] as bool? ?? false,
-      createdAt:json['createdAt'] is String? DateTime.parse(json['createdAt']): (json['createdAt'] as Timestamp?)?.toDate(),
+      createdAt:
+          json['createdAt'] is String
+              ? DateTime.parse(json['createdAt'])
+              : (json['createdAt'] as Timestamp?)?.toDate(),
       subscription: Subscription.fromJson(json['subscription']),
     );
   }
@@ -62,25 +65,29 @@ class AppUser {
     return 'AppUser(name: $name, email: $email, isMember: $isMember, createdAt: $createdAt, subscription: $subscription)';
   }
 }
+
 class Subscription {
   final String plan;
   final DateTime startDate;
   final DateTime expiryDate;
 
-  Subscription({
-    this.plan = '',
-    DateTime? startDate,
-    DateTime? expiryDate,
-  })  : startDate = startDate ?? DateTime.fromMillisecondsSinceEpoch(0),
-        expiryDate = expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+  Subscription({this.plan = '', DateTime? startDate, DateTime? expiryDate})
+    : startDate = startDate ?? DateTime.fromMillisecondsSinceEpoch(0),
+      expiryDate = expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   factory Subscription.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Subscription.toEmpty();
 
     return Subscription(
       plan: json['plan'] as String? ?? '',
-      startDate:json['startDate'] is String?DateTime.parse(json['startDate']): (json['startDate'] as Timestamp?)?.toDate(),
-      expiryDate:json['expiryDate'] is String?DateTime.parse(json['expiryDate']): (json['expiryDate'] as Timestamp?)?.toDate(),
+      startDate:
+          json['startDate'] is String
+              ? DateTime.parse(json['startDate'])
+              : (json['startDate'] as Timestamp?)?.toDate(),
+      expiryDate:
+          json['expiryDate'] is String
+              ? DateTime.parse(json['expiryDate'])
+              : (json['expiryDate'] as Timestamp?)?.toDate(),
     );
   }
 

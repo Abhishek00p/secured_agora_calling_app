@@ -15,7 +15,7 @@ class SecuredCallingApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       initialRoute: AppRouter.welcomeRoute,
-   getPages: AppRouter.routes,
+      getPages: AppRouter.routes,
     );
   }
 }

@@ -1,5 +1,3 @@
-
-import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:get/get_state_manager/src/simple/get_state.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/app_tost_util.dart';
@@ -14,8 +12,7 @@ class LoginRegisterScreen extends StatefulWidget {
   const LoginRegisterScreen({super.key});
 
   @override
-  State<LoginRegisterScreen> createState() =>
-      _LoginRegisterScreenState();
+  State<LoginRegisterScreen> createState() => _LoginRegisterScreenState();
 }
 
 class _LoginRegisterScreenState extends State<LoginRegisterScreen>
@@ -28,7 +25,6 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-
   }
 
   @override
@@ -41,27 +37,26 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
     AppLogger.print("login button preseed in ui");
     if (!_loginFormKey.currentState!.validate()) return;
     loginRegisterController.update();
-    final result =await loginRegisterController.login( context: context);
+    final result = await loginRegisterController.login(context: context);
 
-      if (result==null) {
-        Navigator.pushReplacementNamed(context, AppRouter.homeRoute);
-      } else {
-        AppToastUtil.showErrorToast(
-          context,result,
-        );
-      }
-    
+    if (result == null) {
+      Navigator.pushReplacementNamed(context, AppRouter.homeRoute);
+    } else {
+      AppToastUtil.showErrorToast(context, result);
+    }
   }
 
-  Future<void> _register( LoginRegisterController loginRegisterController) async {
+  Future<void> _register(
+    LoginRegisterController loginRegisterController,
+  ) async {
     if (!_registerFormKey.currentState!.validate()) return;
-loginRegisterController.register();
+    loginRegisterController.register();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GetBuilder<LoginRegisterController >(
+      body: GetBuilder<LoginRegisterController>(
         builder: (loginRegisterController) {
           return Container(
             width: double.infinity,
@@ -71,7 +66,7 @@ loginRegisterController.register();
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Theme.of(context).colorScheme.background,
+                  Theme.of(context).colorScheme.surface,
                   Theme.of(context).colorScheme.surface,
                 ],
               ),
@@ -100,11 +95,11 @@ loginRegisterController.register();
                           ),
                         ),
                         const SizedBox(height: 24),
-          
+
                         // App Name
                         Text('SecuredCalling', style: TextStyle(fontSize: 24)),
                         const SizedBox(height: 36),
-          
+
                         // Tab Bar
                         Container(
                           decoration: BoxDecoration(
@@ -126,11 +121,14 @@ loginRegisterController.register();
                             labelStyle: const TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
-                            tabs: const [Tab(text: 'Login'), Tab(text: 'Register')],
+                            tabs: const [
+                              Tab(text: 'Login'),
+                              Tab(text: 'Register'),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 32),
-          
+
                         // Error Message
                         // if (loginRegisterController.errorMessage.string.isNotEmpty) ...[
                         //   Container(
@@ -160,24 +158,26 @@ loginRegisterController.register();
                         //   ),
                         //   const SizedBox(height: 24),
                         // ],
-          
+
                         // Tab Views
                         Expanded(
                           child: TabBarView(
                             controller: _tabController,
                             children: [
-                              LoginForm(formKey: _loginFormKey, onSubmit:() {
-                                
-                                _login(loginRegisterController);
-                              }, ),
+                              LoginForm(
+                                formKey: _loginFormKey,
+                                onSubmit: () {
+                                  _login(loginRegisterController);
+                                },
+                              ),
                               RegisterForm(
                                 formKey: _registerFormKey,
-                                onSubmit:()=> _register,
+                                onSubmit: () => _register,
                               ),
                             ],
                           ),
                         ),
-          
+
                         // Animated Loading Indicator
                         if (loginRegisterController.isLoading.value) ...[
                           const SizedBox(height: 24),
@@ -190,7 +190,7 @@ loginRegisterController.register();
               ),
             ),
           );
-        }
+        },
       ),
     );
   }

@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/app_tost_util.dart';
@@ -28,12 +27,11 @@ class AppLocalStorage {
   }
 
   static AppUser getUserDetails() {
-    try{
-      
-    return AppUser.fromJson(
-      jsonDecode(_preferences.getString(userDetails) ?? '{}'),
-    );
-    }catch(e){
+    try {
+      return AppUser.fromJson(
+        jsonDecode(_preferences.getString(userDetails) ?? '{}'),
+      );
+    } catch (e) {
       AppLogger.print("error while fetching user detail from local  : $e");
       return AppUser.toEmpty();
     }
@@ -47,7 +45,7 @@ class AppLocalStorage {
     return _preferences.getBool(isUserLoggedIn) ?? false;
   }
 
-   static Future<bool> signOut(BuildContext context) async {
+  static Future<bool> signOut(BuildContext context) async {
     try {
       setLoggedIn(false);
       return await AppFirebaseService.instance.signOut();

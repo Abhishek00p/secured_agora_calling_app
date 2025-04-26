@@ -26,20 +26,43 @@ class AgoraService {
   bool get isInitialized => _isInitialized;
 
   Future<bool> initialize() async {
-    try{
-    if (_isInitialized) return true;
+    try {
+      if (_isInitialized) {
+        AppLogger.print('already initi  agora returnning...');
+        return true;
+      }
 
-    await _requestPermissions();
-    _engine = createAgoraRtcEngine();
-    await _engine!.initialize(
-      const RtcEngineContext(appId: agoraAppId),
-    );
-    await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-    await _engine!.enableAudio();
-    
-    _isInitialized = true;
-    return true;
-    }catch(e){
+      await _requestPermissions();
+      _engine = createAgoraRtcEngine();
+      await _engine!.initialize(const RtcEngineContext(appId: agoraAppId));
+      await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+      await _engine!.enableAudio();
+
+      _engine!.registerEventHandler(
+        RtcEngineEventHandler(
+          onUserMuteAudio: (connection, remoteUid, muted) {
+            //
+          },
+          onActiveSpeaker: (conn, uid) {
+            AppLogger.print('✅ current Speaker: $uid');
+          },
+          onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+            AppLogger.print(
+              '✅ Successfully joined channel: ${connection.channelId}',
+            );
+          },
+          onLeaveChannel: (RtcConnection connection, RtcStats stats) {
+            AppLogger.print('👋 Left the channel: ${connection.channelId}');
+          },
+          onError: (ErrorCodeType error, String message) {
+            AppLogger.print('❌ Agora error: $error, message: $message');
+          },
+        ),
+      );
+
+      _isInitialized = true;
+      return true;
+    } catch (e) {
       AppLogger.print('error while init agora service : $e');
       return false;
     }
@@ -93,10 +116,7 @@ class AgoraService {
   Future<void> startScreenSharing() async {
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       await _engine!.startScreenCapture(
-        const ScreenCaptureParameters2(
-          captureAudio: true,
-          captureVideo: true,
-        ),
+        const ScreenCaptureParameters2(captureAudio: true, captureVideo: true),
       );
     }
   }

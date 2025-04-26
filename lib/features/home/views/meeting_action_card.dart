@@ -34,7 +34,11 @@ class ActionCard extends StatelessWidget {
                     color: Theme.of(context).primaryColor.withAlpha(25),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: Theme.of(context).primaryColor, size: 28),
+                  child: Icon(
+                    icon,
+                    color: Theme.of(context).primaryColor,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

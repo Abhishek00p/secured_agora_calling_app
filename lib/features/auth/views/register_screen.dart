@@ -14,7 +14,7 @@ class RegisterForm extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context,) {
+  Widget build(BuildContext context) {
     return GetBuilder<LoginRegisterController>(
       builder: (loginRegisterController) {
         return Form(
@@ -22,10 +22,14 @@ class RegisterForm extends StatelessWidget {
           child: Column(
             children: [
               AppTextFormField(
-                controller:loginRegisterController.registerNameController ,
+                controller: loginRegisterController.registerNameController,
                 labelText: 'Full Name',
                 prefixIcon: Icons.person_outline,
-                validator: (value) => value == null || value.isEmpty ? 'Please enter your name' : null,
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Please enter your name'
+                            : null,
               ),
               const SizedBox(height: 16),
               AppTextFormField(
@@ -34,8 +38,12 @@ class RegisterForm extends StatelessWidget {
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your email';
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  ).hasMatch(value)) {
                     return 'Please enter a valid email';
                   }
                   return null;
@@ -46,16 +54,24 @@ class RegisterForm extends StatelessWidget {
                 controller: loginRegisterController.registerPasswordController,
                 labelText: 'Password',
                 prefixIcon: Icons.lock_outline,
-                obscureText: loginRegisterController.obscureRegisterPassword.value,
+                obscureText:
+                    loginRegisterController.obscureRegisterPassword.value,
                 suffixIcon: IconButton(
-                  icon: Icon(loginRegisterController.obscureRegisterPassword.value
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined),
-                  onPressed: loginRegisterController.toggleRegisterPasswordVisibility,
+                  icon: Icon(
+                    loginRegisterController.obscureRegisterPassword.value
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                  onPressed:
+                      loginRegisterController.toggleRegisterPasswordVisibility,
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter a password';
-                  if (value.length < 6) return 'Password must be at least 6 characters';
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
                   return null;
                 },
               ),
@@ -63,14 +79,15 @@ class RegisterForm extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: loginRegisterController.isLoading.value ? null : onSubmit,
+                  onPressed:
+                      loginRegisterController.isLoading.value ? null : onSubmit,
                   child: const Text('Create Account'),
                 ),
               ),
             ],
           ),
         );
-      }
+      },
     );
   }
 }

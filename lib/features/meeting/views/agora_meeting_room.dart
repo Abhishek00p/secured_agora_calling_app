@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
@@ -95,6 +94,20 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                 onPressed: meetingController.toggleMute,
               ),
             ),
+            Obx(
+              () => _buildControlButton(
+                icon:
+                    meetingController.isOnSpeaker.value
+                        ? Icons.volume_up
+                        : Icons.volume_off,
+                label: 'Speaker',
+                color:
+                    meetingController.isOnSpeaker.value
+                        ? Colors.red
+                        : Colors.white,
+                onPressed: meetingController.toggleSpeaker,
+              ),
+            ),
             // _buildControlButton(
             //   icon: _isVideoEnabled ? Icons.videocam : Icons.videocam_off,
             //   label: _isVideoEnabled ? 'Stop Video' : 'Start Video',
@@ -150,39 +163,40 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
             ],
           ),
           body: GetBuilder<MeetingController>(
-          builder: (meetingController) {
-            return SafeArea(
-              child:   Column(
-                children: [
-                  meetingController.isLoading.value
-                      ? const Center(child: CircularProgressIndicator())
-                      :! meetingController.agoraInitialized?Center(child: Text('Agora not intialized yet...!'),): Expanded(
-                        child: Stack(
-                          children: [
-                            // _buildVideoGrid([]),//TODO: implement dynamic 
-                            // _buildLocalVideo(),
-                            Center(child: Text(widget.meetingId),),
-                            // Bottom Control Bar
-                            Positioned(
-                              right: 10,
-                              top: 0,
-                              child: IconButton(
-                                onPressed: () async {
-                                  // await fetchPendingRequests();
-                                  showPendingRequestsDialog(context);
-                                },
-                                icon: Icon(Icons.settings),
+            builder: (meetingController) {
+              return SafeArea(
+                child: Column(
+                  children: [
+                    meetingController.isLoading.value
+                        ? const Center(child: CircularProgressIndicator())
+                        : !meetingController.agoraInitialized
+                        ? Center(child: Text('Agora not intialized yet...!'))
+                        : Expanded(
+                          child: Stack(
+                            children: [
+                              // _buildVideoGrid([]),//TODO: implement dynamic
+                              // _buildLocalVideo(),
+                              Center(child: Text(widget.meetingId)),
+                              // Bottom Control Bar
+                              Positioned(
+                                right: 10,
+                                top: 0,
+                                child: IconButton(
+                                  onPressed: () async {
+                                    // await fetchPendingRequests();
+                                    showPendingRequestsDialog(context);
+                                  },
+                                  icon: Icon(Icons.settings),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                ],
-              ),
-            );
-          }
-        ),
-    
+                  ],
+                ),
+              );
+            },
+          ),
         );
       },
     );

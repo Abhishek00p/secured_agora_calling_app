@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
