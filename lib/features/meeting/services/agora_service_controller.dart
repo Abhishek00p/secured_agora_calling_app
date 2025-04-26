@@ -1,6 +1,8 @@
 // agora_controller.dart
 
 import 'package:get/get.dart';
+import 'package:secured_calling/app_tost_util.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'agora_service.dart';
 
 class AgoraController extends GetxController {
@@ -18,8 +20,13 @@ class AgoraController extends GetxController {
   Future<void> joinChannel({
     String channelName = 'testing',
     String token =
-        '007eJxTYLhb8rs4LJpTaIHshGNX9v35fnH260TX5JDS4D6l23ofzcwUGIyMTBPNjNJMkkwTE01SLU0Sk0zM0iwNUwwSDYxMzVMNHRayZDQEMjIsW1/AysgAgSA+O0NJanFJZl46AwMACO8haw==',
+        '',
   }) async {
+    final token= await AppFirebaseService.instance.getAgoraToken();
+    if(token.trim().isEmpty){
+      AppToastUtil.showErrorToast(Get.context!, 'Token not found');
+      return;
+    }
     await _agoraService.joinChannel(channelName: channelName, token: token);
 
     isJoined.value = true;

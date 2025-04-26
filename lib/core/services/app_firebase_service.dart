@@ -251,4 +251,8 @@ class AppFirebaseService {
   Future<List<String>> getAllMeetDocIds() async {
     return (await meetingsCollection.get()).docs.map((e) => e.id).toList();
   }
+
+  Future<String> getAgoraToken()async{
+    return (await _firestore.collection('token').doc('temptoken').get()).data()?['token']??'';
+  }
 }
