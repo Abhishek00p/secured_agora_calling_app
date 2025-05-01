@@ -116,6 +116,7 @@ class LoginRegisterController extends GetxController {
       );
       if (resp) {
         if (context.mounted) {
+          
           AppToastUtil.showSuccessToast(context, 'Registeration Success...');
         }
       } else {

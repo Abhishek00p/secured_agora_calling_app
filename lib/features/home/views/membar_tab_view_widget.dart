@@ -67,7 +67,7 @@ class MembarTabViewWidget extends StatelessWidget {
           ActionCard(
             title: 'New Meeting',
             icon: Icons.videocam,
-            description: 'Start an instant meeting with video',
+            description: 'Start an instant meeting Only Audio',
             buttonText: 'Start Now',
             onPressed:
                 () => MeetingUtil.createNewMeeting(
@@ -75,20 +75,20 @@ class MembarTabViewWidget extends StatelessWidget {
                   instant: true,
                 ),
           ),
-
+    
           // Schedule meeting card
-          ActionCard(
-            title: 'Schedule Meeting',
-            icon: Icons.schedule,
-            description: 'Plan a meeting for later with invites',
-            buttonText: 'Schedule',
-            onPressed:
-                () => MeetingUtil.createNewMeeting(
-                  context: context,
-                  instant: false,
-                ),
-          ),
-
+          // ActionCard(
+          //   title: 'Schedule Meeting',
+          //   icon: Icons.schedule,
+          //   description: 'Plan a meeting for later with invites',
+          //   buttonText: 'Schedule',
+          //   onPressed:
+          //       () => MeetingUtil.createNewMeeting(
+          //         context: context,
+          //         instant: false,
+          //       ),
+          // ),
+    
           const SizedBox(height: 24),
           Text(
             'Your Meetings',
@@ -97,7 +97,7 @@ class MembarTabViewWidget extends StatelessWidget {
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-
+    
           // Meetings list
           StreamBuilder<QuerySnapshot>(
             stream: AppFirebaseService.instance.getHostMeetingsStream(
@@ -107,13 +107,13 @@ class MembarTabViewWidget extends StatelessWidget {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-
+    
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
-
+    
               final meetings = snapshot.data?.docs ?? [];
-
+    
               if (meetings.isEmpty) {
                 return Center(
                   child: Padding(
@@ -141,7 +141,7 @@ class MembarTabViewWidget extends StatelessWidget {
                   ),
                 );
               }
-
+    
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -154,7 +154,7 @@ class MembarTabViewWidget extends StatelessWidget {
                   final status = meeting.status;
                   final isLive = status == 'live';
                   final isScheduled = status == 'scheduled';
-
+    
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
@@ -277,6 +277,7 @@ class MembarTabViewWidget extends StatelessWidget {
               );
             },
           ),
+       
         ],
       ),
     );

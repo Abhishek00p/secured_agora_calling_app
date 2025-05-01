@@ -66,6 +66,8 @@ class MeetingController extends GetxController {
     }
     AppLogger.print('agora token :' + token);
     await _agoraService.joinChannel(channelName: channelName, token: token,userId: AppLocalStorage.getUserDetails().userId);
+    final currentUser =AppLocalStorage.getUserDetails();
+    participants.add(ParticipantModel(userId: currentUser.userId, firebaseUid: currentUser.firebaseUserId, name: currentUser.name, isUserMuted: isMuted.value));
     isJoined.value = true;
   }
 

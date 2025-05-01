@@ -27,36 +27,38 @@ class UserTab extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          Text(
-            'Recent Meetings',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
+          // Text(
+          //   'Recent Meetings',
+          //   style: Theme.of(
+          //     context,
+          //   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          // ),
+          // const SizedBox(height: 16),
 
           // Placeholder for call history
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.history, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No recent meetings',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Meetings you join will appear here',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Expanded(
+          //   child: Center(
+          //     child: Column(
+          //       mainAxisAlignment: MainAxisAlignment.center,
+          //       children: [
+          //         const Icon(Icons.history, size: 64, color: Colors.grey),
+          //         const SizedBox(height: 16),
+          //         Text(
+          //           'No recent meetings',
+          //           style: Theme.of(context).textTheme.titleMedium,
+          //         ),
+          //         const SizedBox(height: 8),
+          //         Text(
+          //           'Meetings you join will appear here',
+          //           textAlign: TextAlign.center,
+          //           style: Theme.of(context).textTheme.bodyMedium,
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
+
+          
         ],
       ),
     );

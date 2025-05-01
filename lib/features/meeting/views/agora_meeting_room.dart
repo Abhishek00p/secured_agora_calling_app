@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/features/meeting/services/agora_service_controller.dart';
+import 'package:secured_calling/features/meeting/views/glowing_text.dart';
 import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/showPendingRequestDialog.dart';
 
@@ -28,12 +29,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16),
         height: 50,
-        color: Colors.red,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.red,
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('End Call'),
+            Text(
+              'End Call',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             SizedBox(width: 10),
             Icon(Icons.call_end),
           ],
@@ -125,7 +132,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
   @override
   void initState() {
     AppLogger.print('meeting id before init  :${widget.meetingId}');
-    meetingController.initializeMeeting(meetingId:widget.meetingId,isUserHost:  widget.isHost,context: context);
+    meetingController.initializeMeeting(
+      meetingId: widget.meetingId,
+      isUserHost: widget.isHost,
+      context: context,
+    );
     super.initState();
   }
 
@@ -135,6 +146,15 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
       builder: (meetingController) {
         return Scaffold(
           appBar: AppBar(
+            actions: [
+              IconButton(
+                onPressed: () async {
+                  // await fetchPendingRequests();
+                  showPendingRequestsDialog(context);
+                },
+                icon: Icon(Icons.settings),
+              ),
+            ],
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -149,19 +169,22 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
             ),
             //
           ),
-          bottomNavigationBar: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildControlBar(meetingController),
-              _buildEndCallButton(() async {
-                await meetingController.endMeeting();
+          bottomNavigationBar: Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildControlBar(meetingController),
+                _buildEndCallButton(() async {
+                  await meetingController.endMeeting();
 
-                if (mounted) {
-                  AppLogger.print("popping context from meeting room.....");
-                  Navigator.pop(context);
-                }
-              }),
-            ],
+                  if (mounted) {
+                    AppLogger.print("popping context from meeting room.....");
+                    Navigator.pop(context);
+                  }
+                }),
+              ],
+            ),
           ),
           body: GetBuilder<MeetingController>(
             builder: (meetingController) {
@@ -173,45 +196,33 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                         : !meetingController.agoraInitialized
                         ? Center(child: Text('Agora not intialized yet...!'))
                         : Expanded(
-                          child: Stack(
-                            children: [
-                              // _buildVideoGrid([]),//TODO: implement dynamic
-                              // _buildLocalVideo(),
-                           GridView.builder(
-                                  itemCount: meetingController.participants.length,
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                      ),
-                                  itemBuilder: (context, index) {
-                                    final user = meetingController.participants[index];
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.white),
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(user.name),
-                                      ),
-                                    );
-                                  },
+                          child: GridView.builder(
+                            itemCount: meetingController.participants.length,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
                                 ),
-                              
-                              Center(child: Text(widget.meetingId)),
-                              // Bottom Control Bar
-                              Positioned(
-                                right: 10,
-                                top: 0,
-                                child: IconButton(
-                                  onPressed: () async {
-                                    // await fetchPendingRequests();
-                                    showPendingRequestsDialog(context);
-                                  },
-                                  icon: Icon(Icons.settings),
+                            itemBuilder: (context, index) {
+                              final user =
+                                  meetingController.participants[index];
+                              return Container(
+                                margin: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.white),
+                                  // border: Border.all(color:user.isUserMuted? Colors.white:Colors.deepPurple),
                                 ),
-                              ),
-                            ],
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Center(
+                                    child: GlowingText(
+                                      text: user.name,
+                                      style: TextStyle(fontSize: 24),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                   ],

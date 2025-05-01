@@ -186,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               labelColor: Colors.white,
               indicatorPadding: EdgeInsets.all(8),
+              dividerColor: Colors.transparent,
               unselectedLabelColor:
                   Theme.of(context).textTheme.bodyLarge?.color,
               labelStyle: const TextStyle(fontWeight: FontWeight.bold),
@@ -195,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen>
               ],
             ),
           ),
-
+          Divider(),
           // Tab content
           Expanded(
             child: TabBarView(

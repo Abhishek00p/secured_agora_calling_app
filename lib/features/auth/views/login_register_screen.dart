@@ -3,6 +3,7 @@ import 'package:get/get_state_manager/src/simple/get_state.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
@@ -57,6 +58,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
     if (_registerFormKey.currentState!.validate()) {
       loginRegisterController.register(context).then((v){
         if(v){
+          AppLocalStorage.setLoggedIn(true);
           Get.offAllNamed(AppRouter.homeRoute);
         }
       });

@@ -10,15 +10,15 @@ void showPendingRequestsDialog(BuildContext context) {
           builder: (controller) {
             return AlertDialog(
               title: const Text(
-                'Pending Join Requests',
-                style: TextStyle(color: Colors.white),
+                'Meeting Info',
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SelectableText('Meeting Id  : ${controller.meetingId}'),
+                  SizedBox(height: 12,),
                   controller.pendingRequests.isEmpty
-                      ? const Center(child: Text('No pending requests'))
+                      ? const Center(child: Text('No pending requests...'))
                       : ListView.builder(
                         shrinkWrap: true,
                         itemCount: controller.pendingRequests.length,
