@@ -9,14 +9,12 @@ void showPendingRequestsDialog(BuildContext context) {
         (context) => GetBuilder<MeetingController>(
           builder: (controller) {
             return AlertDialog(
-              title: const Text(
-                'Meeting Info',
-              ),
+              title: const Text('Meeting Info'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SelectableText('Meeting Id  : ${controller.meetingId}'),
-                  SizedBox(height: 12,),
+                  SizedBox(height: 12),
                   controller.pendingRequests.isEmpty
                       ? const Center(child: Text('No pending requests...'))
                       : ListView.builder(

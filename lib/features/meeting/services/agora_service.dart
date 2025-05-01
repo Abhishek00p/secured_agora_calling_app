@@ -25,7 +25,9 @@ class AgoraService {
   RtcEngine? get engine => _engine;
   bool get isInitialized => _isInitialized;
 
-  Future<bool> initialize({required  RtcEngineEventHandler rtcEngineEventHandler}) async {
+  Future<bool> initialize({
+    required RtcEngineEventHandler rtcEngineEventHandler,
+  }) async {
     try {
       if (_isInitialized) {
         AppLogger.print('already initi  agora returnning...');
@@ -38,8 +40,7 @@ class AgoraService {
       await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
       await _engine!.enableAudio();
 
-      _engine!.registerEventHandler(
-      rtcEngineEventHandler);
+      _engine!.registerEventHandler(rtcEngineEventHandler);
 
       _isInitialized = true;
       return true;

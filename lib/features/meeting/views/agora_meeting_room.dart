@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/app_logger.dart';
-import 'package:secured_calling/core/extensions/app_int_extension.dart';
-import 'package:secured_calling/features/meeting/services/agora_service_controller.dart';
 import 'package:secured_calling/features/meeting/views/glowing_text.dart';
 import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/showPendingRequestDialog.dart';

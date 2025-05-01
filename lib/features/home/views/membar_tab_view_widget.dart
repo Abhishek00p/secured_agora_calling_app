@@ -75,7 +75,7 @@ class MembarTabViewWidget extends StatelessWidget {
                   instant: true,
                 ),
           ),
-    
+
           // Schedule meeting card
           // ActionCard(
           //   title: 'Schedule Meeting',
@@ -88,7 +88,6 @@ class MembarTabViewWidget extends StatelessWidget {
           //         instant: false,
           //       ),
           // ),
-    
           const SizedBox(height: 24),
           Text(
             'Your Meetings',
@@ -97,7 +96,7 @@ class MembarTabViewWidget extends StatelessWidget {
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-    
+
           // Meetings list
           StreamBuilder<QuerySnapshot>(
             stream: AppFirebaseService.instance.getHostMeetingsStream(
@@ -107,13 +106,13 @@ class MembarTabViewWidget extends StatelessWidget {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-    
+
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
-    
+
               final meetings = snapshot.data?.docs ?? [];
-    
+
               if (meetings.isEmpty) {
                 return Center(
                   child: Padding(
@@ -141,7 +140,7 @@ class MembarTabViewWidget extends StatelessWidget {
                   ),
                 );
               }
-    
+
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -154,7 +153,7 @@ class MembarTabViewWidget extends StatelessWidget {
                   final status = meeting.status;
                   final isLive = status == 'live';
                   final isScheduled = status == 'scheduled';
-    
+
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
@@ -277,7 +276,6 @@ class MembarTabViewWidget extends StatelessWidget {
               );
             },
           ),
-       
         ],
       ),
     );

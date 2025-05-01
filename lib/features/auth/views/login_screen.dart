@@ -27,14 +27,16 @@ class LoginForm extends StatelessWidget {
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      loginRegisterController.errorMessage.value ='Please enter your email';
+                      loginRegisterController.errorMessage.value =
+                          'Please enter your email';
                       loginRegisterController.update();
                       return 'Please enter your email';
                     }
                     if (!RegExp(
                       r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                     ).hasMatch(value)) {
-                           loginRegisterController.errorMessage.value ='Please enter a valid email';
+                      loginRegisterController.errorMessage.value =
+                          'Please enter a valid email';
                       loginRegisterController.update();
                       return 'Please enter a valid email';
                     }
@@ -46,7 +48,8 @@ class LoginForm extends StatelessWidget {
                   controller: loginRegisterController.loginPasswordController,
                   labelText: 'Password',
                   prefixIcon: Icons.lock_outline,
-                  obscureText: loginRegisterController.obscureLoginPassword.value,
+                  obscureText:
+                      loginRegisterController.obscureLoginPassword.value,
                   suffixIcon: IconButton(
                     icon: Icon(
                       loginRegisterController.obscureLoginPassword.value

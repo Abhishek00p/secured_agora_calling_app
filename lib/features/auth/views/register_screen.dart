@@ -53,7 +53,8 @@ class RegisterForm extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 AppTextFormField(
-                  controller: loginRegisterController.registerPasswordController,
+                  controller:
+                      loginRegisterController.registerPasswordController,
                   labelText: 'Password',
                   prefixIcon: Icons.lock_outline,
                   obscureText:
@@ -65,7 +66,8 @@ class RegisterForm extends StatelessWidget {
                           : Icons.visibility_off_outlined,
                     ),
                     onPressed:
-                        loginRegisterController.toggleRegisterPasswordVisibility,
+                        loginRegisterController
+                            .toggleRegisterPasswordVisibility,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -81,8 +83,7 @@ class RegisterForm extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed:
-                   onSubmit,
+                    onPressed: onSubmit,
                     child: const Text('Create Account'),
                   ),
                 ),

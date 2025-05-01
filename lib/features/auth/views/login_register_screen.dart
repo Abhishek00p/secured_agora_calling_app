@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:get/get_state_manager/src/simple/get_state.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
@@ -56,8 +55,8 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
     LoginRegisterController loginRegisterController,
   ) async {
     if (_registerFormKey.currentState!.validate()) {
-      loginRegisterController.register(context).then((v){
-        if(v){
+      loginRegisterController.register(context).then((v) {
+        if (v) {
           AppLocalStorage.setLoggedIn(true);
           Get.offAllNamed(AppRouter.homeRoute);
         }
@@ -187,7 +186,8 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
                             ),
                             RegisterForm(
                               formKey: _registerFormKey,
-                              onSubmit: () => _register(loginRegisterController),
+                              onSubmit:
+                                  () => _register(loginRegisterController),
                             ),
                           ],
                         ),

@@ -45,7 +45,7 @@ class AppFirebaseService {
       if (userCredential.user != null) {
         final unqiueUserId = await generateUniqueUserId();
         // Create user profile in Firestore
-        final userData={
+        final userData = {
           'name': name,
           'email': email,
           'userId': unqiueUserId,
@@ -98,11 +98,11 @@ class AppFirebaseService {
 
   // Firestore methods
   Future<QueryDocumentSnapshot?> getUserDataWhereUserId(int uid) async {
-    try{
-    return (await usersCollection.where('userId', isEqualTo: uid).get())
-        .docs
-        .firstOrNull;
-    }catch(e){
+    try {
+      return (await usersCollection.where('userId', isEqualTo: uid).get())
+          .docs
+          .firstOrNull;
+    } catch (e) {
       AppLogger.print('error caught in getting user DAta from id:$e');
       return null;
     }
@@ -137,10 +137,13 @@ class AppFirebaseService {
   }
 
   Future<AppUser> getLoggedInUserDataAsModel() async {
-    final uid = _auth.currentUser?.uid??'';
+    final uid = _auth.currentUser?.uid ?? '';
     if (uid.trim().isNotEmpty) {
       AppLogger.print('curretn user ID : $uid');
-      final res = (await usersCollection.where('firebaseUserId',isEqualTo: uid).get()).docs.firstOrNull;
+      final res =
+          (await usersCollection.where('firebaseUserId', isEqualTo: uid).get())
+              .docs
+              .firstOrNull;
       if (res != null) {
         return AppUser.fromJson((res.data() as Map<String, dynamic>));
       }

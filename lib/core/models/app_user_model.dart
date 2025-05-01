@@ -12,8 +12,8 @@ class AppUser {
   AppUser({
     this.name = '',
     this.email = '',
-    this.userId=0,
-    this.firebaseUserId='',
+    this.userId = 0,
+    this.firebaseUserId = '',
     this.isMember = false,
     DateTime? createdAt,
     Subscription? subscription,
@@ -27,8 +27,8 @@ class AppUser {
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       isMember: json['isMember'] as bool? ?? false,
-      userId: json['userId']??0,
-      firebaseUserId: json['firebaseUserId']??'',
+      userId: json['userId'] ?? 0,
+      firebaseUserId: json['firebaseUserId'] ?? '',
       createdAt:
           json['createdAt'] is String
               ? DateTime.parse(json['createdAt'])
@@ -44,8 +44,8 @@ class AppUser {
       'isMember': isMember,
       'createdAt': createdAt.toIso8601String(),
       'subscription': subscription.toJson(),
-      'userId':userId,
-      'firebaseUserId':firebaseUserId,
+      'userId': userId,
+      'firebaseUserId': firebaseUserId,
     };
   }
 
@@ -60,12 +60,11 @@ class AppUser {
     Subscription? subscription,
     int? userId,
     String? firebaseUserId,
-
   }) {
     return AppUser(
       name: name ?? this.name,
-      userId:userId??this.userId,
-      firebaseUserId:firebaseUserId??this.firebaseUserId,
+      userId: userId ?? this.userId,
+      firebaseUserId: firebaseUserId ?? this.firebaseUserId,
       email: email ?? this.email,
       isMember: isMember ?? this.isMember,
       createdAt: createdAt ?? this.createdAt,
