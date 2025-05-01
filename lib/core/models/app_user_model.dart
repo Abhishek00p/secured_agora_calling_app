@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AppUser {
+  final int userId;
+  final String firebaseUserId;
   final String name;
   final String email;
   final bool isMember;
@@ -10,6 +12,8 @@ class AppUser {
   AppUser({
     this.name = '',
     this.email = '',
+    this.userId=0,
+    this.firebaseUserId='',
     this.isMember = false,
     DateTime? createdAt,
     Subscription? subscription,
@@ -23,6 +27,8 @@ class AppUser {
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       isMember: json['isMember'] as bool? ?? false,
+      userId: json['userId']??0,
+      firebaseUserId: json['firebaseUserId']??'',
       createdAt:
           json['createdAt'] is String
               ? DateTime.parse(json['createdAt'])
@@ -38,6 +44,8 @@ class AppUser {
       'isMember': isMember,
       'createdAt': createdAt.toIso8601String(),
       'subscription': subscription.toJson(),
+      'userId':userId,
+      'firebaseUserId':firebaseUserId,
     };
   }
 
@@ -50,9 +58,14 @@ class AppUser {
     bool? isMember,
     DateTime? createdAt,
     Subscription? subscription,
+    int? userId,
+    String? firebaseUserId,
+
   }) {
     return AppUser(
       name: name ?? this.name,
+      userId:userId??this.userId,
+      firebaseUserId:firebaseUserId??this.firebaseUserId,
       email: email ?? this.email,
       isMember: isMember ?? this.isMember,
       createdAt: createdAt ?? this.createdAt,
@@ -62,7 +75,7 @@ class AppUser {
 
   @override
   String toString() {
-    return 'AppUser(name: $name, email: $email, isMember: $isMember, createdAt: $createdAt, subscription: $subscription)';
+    return 'AppUser(userId: $userId, firebaseUserId: $firebaseUserId ,name: $name, email: $email, isMember: $isMember, createdAt: $createdAt, subscription: $subscription)';
   }
 }
 

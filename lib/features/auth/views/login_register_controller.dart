@@ -39,7 +39,8 @@ class LoginRegisterController extends GetxController {
   }
 
   void toggleRegisterPasswordVisibility() {
-    obscureRegisterPassword.value = !obscureRegisterPassword.value;
+    obscureRegisterPassword.toggle();
+    update();
   }
 
   Future<String?> login({required BuildContext context}) async {
@@ -104,16 +105,25 @@ class LoginRegisterController extends GetxController {
     }
   }
 
-  Future<bool> register() async {
+  Future<bool> register(BuildContext context) async {
     setLoading(true);
     clearError();
     try {
-      await AppFirebaseService.instance.signUpWithEmailAndPassword(
+      final resp = await AppFirebaseService.instance.signUpWithEmailAndPassword(
         name: registerNameController.text.trim(),
         email: registerEmailController.text.trim(),
         password: registerPasswordController.text.trim(),
       );
-      return true;
+      if (resp) {
+        if (context.mounted) {
+          AppToastUtil.showSuccessToast(context, 'Registeration Success...');
+        }
+      } else {
+        if (context.mounted) {
+          AppToastUtil.showErrorToast(context, 'Registeration Failed...');
+        }
+      }
+      return resp;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'email-already-in-use':

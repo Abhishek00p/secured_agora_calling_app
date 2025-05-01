@@ -25,7 +25,7 @@ class AgoraService {
   RtcEngine? get engine => _engine;
   bool get isInitialized => _isInitialized;
 
-  Future<bool> initialize() async {
+  Future<bool> initialize({required  RtcEngineEventHandler rtcEngineEventHandler}) async {
     try {
       if (_isInitialized) {
         AppLogger.print('already initi  agora returnning...');
@@ -39,26 +39,7 @@ class AgoraService {
       await _engine!.enableAudio();
 
       _engine!.registerEventHandler(
-        RtcEngineEventHandler(
-          onUserMuteAudio: (connection, remoteUid, muted) {
-            //
-          },
-          onActiveSpeaker: (conn, uid) {
-            AppLogger.print('✅ current Speaker: $uid');
-          },
-          onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-            AppLogger.print(
-              '✅ Successfully joined channel: ${connection.channelId}',
-            );
-          },
-          onLeaveChannel: (RtcConnection connection, RtcStats stats) {
-            AppLogger.print('👋 Left the channel: ${connection.channelId}');
-          },
-          onError: (ErrorCodeType error, String message) {
-            AppLogger.print('❌ Agora error: $error, message: $message');
-          },
-        ),
-      );
+      rtcEngineEventHandler);
 
       _isInitialized = true;
       return true;
@@ -78,14 +59,15 @@ class AgoraService {
   Future<void> joinChannel({
     required String channelName,
     required String token,
+    required int userId,
   }) async {
     if (!_isInitialized) {
-      await initialize();
+      throw Exception('Agora Not Initialize , ........');
     }
     await _engine!.joinChannel(
       token: token,
       channelId: channelName,
-      uid: 0,
+      uid: userId,
       options: const ChannelMediaOptions(
         clientRoleType: ClientRoleType.clientRoleBroadcaster,
         channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,

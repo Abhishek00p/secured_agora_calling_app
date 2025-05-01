@@ -1,8 +1,11 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 
 class AppFirebaseService {
   // Singleton pattern
@@ -27,7 +30,7 @@ class AppFirebaseService {
       _firestore.collection('call_logs');
 
   // User methods
-  Future<UserCredential> signUpWithEmailAndPassword({
+  Future<bool> signUpWithEmailAndPassword({
     required String email,
     required String password,
     required String name,
@@ -39,20 +42,27 @@ class AppFirebaseService {
         password: password,
       );
 
-      // Create user profile in Firestore
-      await usersCollection.doc(userCredential.user!.uid).set({
-        'name': name,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-        'isMember': false, // By default, new users are not members
-        'subscription': null,
-      });
+      if (userCredential.user != null) {
+        final unqiueUserId = await generateUniqueUserId();
+        // Create user profile in Firestore
+        final userData={
+          'name': name,
+          'email': email,
+          'userId': unqiueUserId,
+          'firebaseUserId': userCredential.user!.uid,
+          'createdAt': DateTime.now().toIso8601String(),
+          'isMember': false, // By default, new users are not members
+          'subscription': null,
+        };
+        await usersCollection.doc('$unqiueUserId').set(userData);
+        AppLocalStorage.storeUserDetails(AppUser.fromJson(userData));
+        // Update display name
+        await userCredential.user!.updateDisplayName(name);
+      }
 
-      // Update display name
-      await userCredential.user!.updateDisplayName(name);
-
-      return userCredential;
+      return userCredential.user != null;
     } catch (e) {
+      AppLogger.print('error caught in fireb service :$e');
       rethrow;
     }
   }
@@ -86,12 +96,53 @@ class AppFirebaseService {
     return await usersCollection.doc(uid).get();
   }
 
+  // Firestore methods
+  Future<QueryDocumentSnapshot?> getUserDataWhereUserId(int uid) async {
+    try{
+    return (await usersCollection.where('userId', isEqualTo: uid).get())
+        .docs
+        .firstOrNull;
+    }catch(e){
+      AppLogger.print('error caught in getting user DAta from id:$e');
+      return null;
+    }
+  }
+
+  Future<int> generateUniqueUserId() async {
+    final Random random = Random();
+
+    int maxAttempts = 10; // Prevents infinite loop
+    int attempt = 0;
+
+    while (attempt < maxAttempts) {
+      int randomId = random.nextInt(10000000); // 0 to 9,999,999
+
+      // Check if any user has this userId
+      final query =
+          await AppFirebaseService.instance.usersCollection
+              .where('userId', isEqualTo: randomId)
+              .limit(1)
+              .get();
+
+      if (query.docs.isEmpty) {
+        return randomId; // Unique ID found
+      }
+
+      attempt++;
+    }
+
+    throw Exception(
+      'Failed to generate a unique userId after $maxAttempts attempts',
+    );
+  }
+
   Future<AppUser> getLoggedInUserDataAsModel() async {
-    final uid = _auth.currentUser?.uid ?? '';
+    final uid = _auth.currentUser?.uid??'';
     if (uid.trim().isNotEmpty) {
-      final res = (await usersCollection.doc(uid).get()).data();
+      AppLogger.print('curretn user ID : $uid');
+      final res = (await usersCollection.where('firebaseUserId',isEqualTo: uid).get()).docs.firstOrNull;
       if (res != null) {
-        return AppUser.fromJson((res as Map<String, dynamic>));
+        return AppUser.fromJson((res.data() as Map<String, dynamic>));
       }
     }
     return AppUser.toEmpty();
@@ -252,7 +303,9 @@ class AppFirebaseService {
     return (await meetingsCollection.get()).docs.map((e) => e.id).toList();
   }
 
-  Future<String> getAgoraToken()async{
-    return (await _firestore.collection('token').doc('temptoken').get()).data()?['token']??'';
+  Future<String> getAgoraToken() async {
+    return (await _firestore.collection('token').doc('temptoken').get())
+            .data()?['token'] ??
+        '';
   }
 }

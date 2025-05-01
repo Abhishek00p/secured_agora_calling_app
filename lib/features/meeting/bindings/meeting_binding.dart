@@ -6,6 +6,5 @@ class MeetingBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut(() => MeetingController());
-    Get.lazyPut(() => AgoraController());
   }
 }

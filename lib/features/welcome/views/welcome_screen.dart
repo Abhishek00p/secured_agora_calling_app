@@ -1,4 +1,5 @@
 import 'package:secured_calling/core/routes/app_router.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -51,18 +52,18 @@ class WelcomeScreen extends StatelessWidget {
                   'SecuredCalling',
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    background:
-                        Paint()
-                          ..shader = const LinearGradient(
-                            colors: [
-                              AppTheme.primaryColor,
-                              AppTheme.secondaryColor,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ).createShader(
-                            const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0),
-                          ),
+                    // background:
+                    //     Paint()
+                    //       ..shader = const LinearGradient(
+                    //         colors: [
+                    //           AppTheme.primaryColor,
+                    //           AppTheme.secondaryColor,
+                    //         ],
+                    //         begin: Alignment.topLeft,
+                    //         end: Alignment.bottomRight,
+                    //       ).createShader(
+                    //         const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0),
+                    //       ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -163,15 +164,27 @@ class WelcomeScreen extends StatelessWidget {
                 // Get Started Button
                 ElevatedButton(
                   onPressed: () {
-                    AppLocalStorage.getLoggedInStatus()
-                        ? Navigator.pushReplacementNamed(
-                          context,
-                          AppRouter.homeRoute,
-                        )
-                        : Navigator.pushReplacementNamed(
-                          context,
-                          AppRouter.loginRegisterRoute,
-                        );
+                    if (AppLocalStorage.getLoggedInStatus()) {
+                      if (AppLocalStorage.getUserDetails().isEmpty) {
+                        AppFirebaseService.instance
+                            .getLoggedInUserDataAsModel()
+                            .then((v) {
+                              if (v.isEmpty) {
+                                return;
+                              }
+                              AppLocalStorage.storeUserDetails(v);
+                            });
+                      }
+                      Navigator.pushReplacementNamed(
+                        context,
+                        AppRouter.homeRoute,
+                      );
+                    } else {
+                      Navigator.pushReplacementNamed(
+                        context,
+                        AppRouter.loginRegisterRoute,
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(

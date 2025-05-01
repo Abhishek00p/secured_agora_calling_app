@@ -48,6 +48,7 @@ class AppLocalStorage {
   static Future<bool> signOut(BuildContext context) async {
     try {
       setLoggedIn(false);
+      _preferences.clear();
       return await AppFirebaseService.instance.signOut();
     } catch (e) {
       AppToastUtil.showErrorToast(context, 'Error signing out: $e');

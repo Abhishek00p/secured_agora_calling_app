@@ -185,6 +185,7 @@ class _HomeScreenState extends State<HomeScreen>
                 color: AppTheme.primaryColor,
               ),
               labelColor: Colors.white,
+              indicatorPadding: EdgeInsets.all(8),
               unselectedLabelColor:
                   Theme.of(context).textTheme.bodyLarge?.color,
               labelStyle: const TextStyle(fontWeight: FontWeight.bold),
@@ -198,6 +199,7 @@ class _HomeScreenState extends State<HomeScreen>
           // Tab content
           Expanded(
             child: TabBarView(
+              physics: NeverScrollableScrollPhysics(),
               controller: _tabController,
               children: [
                 MembarTabViewWidget(isMember: user.isMember),

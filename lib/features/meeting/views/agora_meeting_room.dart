@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/features/meeting/services/agora_service_controller.dart';
 import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/showPendingRequestDialog.dart';
 
@@ -124,7 +125,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
   @override
   void initState() {
     AppLogger.print('meeting id before init  :${widget.meetingId}');
-    meetingController.inint(widget.meetingId, widget.isHost);
+    meetingController.initializeMeeting(meetingId:widget.meetingId,isUserHost:  widget.isHost,context: context);
     super.initState();
   }
 
@@ -138,12 +139,12 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text('Meeting Room'),
-                if (meetingController.remainingSeconds >= 0) ...[
-                  Text(
-                    'Time remaining: ${meetingController.remainingSeconds.formatDuration}',
-                    style: const TextStyle(fontSize: 12, color: Colors.red),
-                  ),
-                ],
+                // if (meetingController.remainingSeconds >= 0) ...[
+                //   Text(
+                //     'Time remaining: ${meetingController.remainingSeconds.formatDuration}',
+                //     style: const TextStyle(fontSize: 12, color: Colors.red),
+                //   ),
+                // ],
               ],
             ),
             //
@@ -153,7 +154,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
             children: [
               _buildControlBar(meetingController),
               _buildEndCallButton(() async {
-                await meetingController.endMeeting(meetingId: widget.meetingId);
+                await meetingController.endMeeting();
 
                 if (mounted) {
                   AppLogger.print("popping context from meeting room.....");
@@ -176,6 +177,27 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                             children: [
                               // _buildVideoGrid([]),//TODO: implement dynamic
                               // _buildLocalVideo(),
+                           GridView.builder(
+                                  itemCount: meetingController.participants.length,
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                      ),
+                                  itemBuilder: (context, index) {
+                                    final user = meetingController.participants[index];
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.white),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(user.name),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              
                               Center(child: Text(widget.meetingId)),
                               // Bottom Control Bar
                               Positioned(

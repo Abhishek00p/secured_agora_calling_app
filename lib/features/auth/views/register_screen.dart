@@ -19,72 +19,75 @@ class RegisterForm extends StatelessWidget {
       builder: (loginRegisterController) {
         return Form(
           key: formKey,
-          child: Column(
-            children: [
-              AppTextFormField(
-                controller: loginRegisterController.registerNameController,
-                labelText: 'Full Name',
-                prefixIcon: Icons.person_outline,
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty
-                            ? 'Please enter your name'
-                            : null,
-              ),
-              const SizedBox(height: 16),
-              AppTextFormField(
-                controller: loginRegisterController.registerEmailController,
-                labelText: 'Email',
-                prefixIcon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(
-                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                  ).hasMatch(value)) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              AppTextFormField(
-                controller: loginRegisterController.registerPasswordController,
-                labelText: 'Password',
-                prefixIcon: Icons.lock_outline,
-                obscureText:
-                    loginRegisterController.obscureRegisterPassword.value,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    loginRegisterController.obscureRegisterPassword.value
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                AppTextFormField(
+                  controller: loginRegisterController.registerNameController,
+                  labelText: 'Full Name',
+                  prefixIcon: Icons.person_outline,
+                  validator:
+                      (value) =>
+                          value == null || value.isEmpty
+                              ? 'Please enter your name'
+                              : null,
+                ),
+                const SizedBox(height: 16),
+                AppTextFormField(
+                  controller: loginRegisterController.registerEmailController,
+                  labelText: 'Email',
+                  prefixIcon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    ).hasMatch(value)) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                AppTextFormField(
+                  controller: loginRegisterController.registerPasswordController,
+                  labelText: 'Password',
+                  prefixIcon: Icons.lock_outline,
+                  obscureText:
+                      loginRegisterController.obscureRegisterPassword.value,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      loginRegisterController.obscureRegisterPassword.value
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                    onPressed:
+                        loginRegisterController.toggleRegisterPasswordVisibility,
                   ),
-                  onPressed:
-                      loginRegisterController.toggleRegisterPasswordVisibility,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed:
-                      loginRegisterController.isLoading.value ? null : onSubmit,
-                  child: const Text('Create Account'),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed:
+                   onSubmit,
+                    child: const Text('Create Account'),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
