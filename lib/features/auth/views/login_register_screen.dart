@@ -100,7 +100,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Icon(
-                          Icons.video_call_rounded,
+                          Icons.call,
                           size: 40,
                           color: Colors.white,
                         ),
@@ -114,7 +114,8 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
                       // Tab Bar
                       Container(
                         decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
+                          color: Colors.grey[200],
+                          // Theme.of(context).cardTheme.color,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: TabBar(
@@ -140,10 +141,10 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
                       ),
                       const SizedBox(height: 16),
                       // Error Message
-                      if (loginRegisterController
+                      if (loginRegisterController.errorMessage.value!=null && loginRegisterController
                           .errorMessage
                           .string
-                          .isNotEmpty) ...[
+                          .isNotEmpty ) ...[
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(

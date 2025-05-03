@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
@@ -7,6 +9,7 @@ import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/meeting/services/agora_service.dart';
 import 'package:secured_calling/participant_model.dart';
+import 'package:secured_calling/warm_color_generator.dart';
 
 class MeetingController extends GetxController {
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
@@ -27,10 +30,22 @@ class MeetingController extends GetxController {
 
   String meetingId = '';
   bool isHost = false;
-  int remainingSeconds = 25200;
+  int remainingSeconds =
+      AppLocalStorage.getUserDetails().isMember ? 25200 : 300;
   String currentSpeaker = '';
 
   bool get agoraInitialized => _agoraService.isInitialized;
+
+  void startTimer() {
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      if (remainingSeconds == 0) {
+        timer.cancel();
+      } else {
+        remainingSeconds--;
+      }
+      update();
+    });
+  }
 
   Future<void> initializeMeeting({
     required String meetingId,
@@ -76,8 +91,10 @@ class MeetingController extends GetxController {
         firebaseUid: currentUser.firebaseUserId,
         name: currentUser.name,
         isUserMuted: isMuted.value,
+        color: WarmColorGenerator.getRandomWarmColor(),
       ),
     );
+    startTimer();
     isJoined.value = true;
   }
 
@@ -161,18 +178,23 @@ class MeetingController extends GetxController {
 
   Future<void> addUser(int remoteUid) async {
     if (participants.any((e) => e.userId == remoteUid)) return;
-    AppToastUtil.showInfoToast(Get.context!, 'New user Added :$remoteUid');
 
     final result = await _firebaseService.getUserDataWhereUserId(remoteUid);
     if (result != null) {
       final userData = result.data() as Map<dynamic, dynamic>;
-      AppToastUtil.showInfoToast(Get.context!, 'New user Added : $userData');
+      AppToastUtil.showInfoToast(
+        Get.context!,
+        AppLocalStorage.getUserDetails().userId == remoteUid
+            ? 'You have joined'
+            : '${userData['name']} has Joined',
+      );
       participants.add(
         ParticipantModel(
           userId: remoteUid,
           firebaseUid: result.id,
           name: userData['name'],
           isUserMuted: true,
+          color: WarmColorGenerator.getRandomWarmColor(),
         ),
       );
     }
@@ -180,7 +202,7 @@ class MeetingController extends GetxController {
   }
 
   void removeUser(int remoteUid) {
-    AppToastUtil.showInfoToast(Get.context!, ' user Left');
+    AppToastUtil.showInfoToast(Get.context!, 'user Left');
 
     participants.removeWhere((e) => e.userId == remoteUid);
     update();

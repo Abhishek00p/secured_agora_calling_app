@@ -17,6 +17,7 @@ class LoginRegisterController extends GetxController {
   final loginEmailController = TextEditingController();
   final loginPasswordController = TextEditingController();
   final registerNameController = TextEditingController();
+  final registerMemberCodeController = TextEditingController();
   final registerEmailController = TextEditingController();
   final registerPasswordController = TextEditingController();
 
@@ -113,6 +114,7 @@ class LoginRegisterController extends GetxController {
         name: registerNameController.text.trim(),
         email: registerEmailController.text.trim(),
         password: registerPasswordController.text.trim(),
+        memberCode : registerMemberCodeController.text.trim(),
       );
       if (resp) {
         if (context.mounted) {

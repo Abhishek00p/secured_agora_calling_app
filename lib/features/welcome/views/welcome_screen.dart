@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:secured_calling/app_icon_constants.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
@@ -33,15 +36,15 @@ class WelcomeScreen extends StatelessWidget {
                 SizedBox(height: size.height * 0.08),
                 // App Logo
                 Container(
-                  width: 120,
-                  height: 120,
+                  width: 80,
+                  height: 80,
                   decoration: BoxDecoration(
                     gradient: AppTheme.primaryGradient,
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Icon(
-                    Icons.video_call_rounded,
-                    size: 60,
+                    Icons.call,
+                    size: 40,
                     color: Colors.white,
                   ),
                 ),
@@ -78,58 +81,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: size.height * 0.04),
-
-                // App Features Description
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      _buildFeatureItem(
-                        context,
-                        Icons.groups_rounded,
-                        'High-quality video meetings',
-                        'Connect with up to 45 participants',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildFeatureItem(
-                        context,
-                        Icons.record_voice_over_rounded,
-                        'Advanced audio controls',
-                        'Speaker focus & selective muting',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildFeatureItem(
-                        context,
-                        Icons.screen_share_rounded,
-                        'Seamless screen sharing',
-                        'Present your ideas with clarity',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildFeatureItem(
-                        context,
-                        Icons.chat_rounded,
-                        'Integrated chat system',
-                        'Communicate via text during meetings',
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: size.height * 0.05),
-
-                // Company Description
-                Container(
+ Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -160,7 +112,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: size.height * 0.05),
-
+               
                 // Get Started Button
                 ElevatedButton(
                   onPressed: () {
@@ -208,14 +160,65 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(
-                        Icons.arrow_forward_rounded,
+                       Icon(
+                       forwardArrow,
                         color: Colors.white,
                       ),
                     ],
                   ),
                 ),
                 SizedBox(height: size.height * 0.08),
+                // App Features Description
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _buildFeatureItem(
+                        context,
+                        Icons.groups_rounded,
+                        'High-quality video meetings',
+                        'Connect with up to 45 participants',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildFeatureItem(
+                        context,
+                        Icons.record_voice_over_rounded,
+                        'Advanced audio controls',
+                        'Speaker focus & selective muting',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildFeatureItem(
+                        context,
+                        Icons.screen_share_rounded,
+                        'Seamless screen sharing',
+                        'Present your ideas with clarity',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildFeatureItem(
+                        context,
+                        Icons.chat_rounded,
+                        'Integrated chat system',
+                        'Communicate via text during meetings',
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Company Description
+                SizedBox(height: size.height * 0.05),
+
               ],
             ),
           ),

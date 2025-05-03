@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/app_logger.dart';
+import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/meeting/views/glowing_text.dart';
 import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/showPendingRequestDialog.dart';
+import 'package:secured_calling/warm_color_generator.dart';
 
 class AgoraMeetingRoom extends StatefulWidget {
   final String meetingId;
@@ -37,10 +40,14 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
           children: [
             Text(
               'End Call',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             SizedBox(width: 10),
-            Icon(Icons.call_end),
+            Icon(Icons.call_end, color: Colors.white),
           ],
         ),
       ),
@@ -127,6 +134,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
   }
 
   final meetingController = Get.find<MeetingController>();
+  int _remainingSeconds = 300;
   @override
   void initState() {
     AppLogger.print('meeting id before init  :${widget.meetingId}');
@@ -157,12 +165,13 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text('Meeting Room'),
-                // if (meetingController.remainingSeconds >= 0) ...[
-                //   Text(
-                //     'Time remaining: ${meetingController.remainingSeconds.formatDuration}',
-                //     style: const TextStyle(fontSize: 12, color: Colors.red),
-                //   ),
-                // ],
+
+                if (meetingController.remainingSeconds >= 0) ...[
+                  Text(
+                    'Time remaining: ${meetingController.remainingSeconds.formatDuration}',
+                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                  ),
+                ],
               ],
             ),
             //
@@ -207,15 +216,19 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                 margin: EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.white),
+                                  border: Border.all(color: user.color),
                                   // border: Border.all(color:user.isUserMuted? Colors.white:Colors.deepPurple),
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Center(
-                                    child: GlowingText(
-                                      text: user.name,
-                                      style: TextStyle(fontSize: 24),
+                                    child: Text(
+                                      user.name,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        color:
+                                         user.color  ,
+                                      ),
                                     ),
                                   ),
                                 ),

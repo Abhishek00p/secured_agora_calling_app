@@ -33,6 +33,18 @@ class RegisterForm extends StatelessWidget {
                               ? 'Please enter your name'
                               : null,
                 ),
+
+                const SizedBox(height: 16),
+                 AppTextFormField(
+                  controller: loginRegisterController.registerMemberCodeController,
+                  labelText: 'Member Code',
+                  prefixIcon: Icons.people_outline_rounded,
+                  validator:
+                      (value) =>
+                          value == null || value.isEmpty
+                              ? 'Please enter MemberCode'
+                              : null,
+                ),
                 const SizedBox(height: 16),
                 AppTextFormField(
                   controller: loginRegisterController.registerEmailController,

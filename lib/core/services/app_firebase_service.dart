@@ -33,7 +33,7 @@ class AppFirebaseService {
   Future<bool> signUpWithEmailAndPassword({
     required String email,
     required String password,
-    required String name,
+    required String name, required String memberCode,
   }) async {
     try {
       // Create user with email and password
@@ -49,6 +49,7 @@ class AppFirebaseService {
           'name': name,
           'email': email,
           'userId': unqiueUserId,
+          'memberCode':memberCode,
           'firebaseUserId': userCredential.user!.uid,
           'createdAt': DateTime.now().toIso8601String(),
           'isMember': false, // By default, new users are not members

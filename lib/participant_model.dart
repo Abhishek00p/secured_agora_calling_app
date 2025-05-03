@@ -1,14 +1,19 @@
+import 'package:flutter/material.dart';
+import 'package:secured_calling/warm_color_generator.dart';
+
 class ParticipantModel {
   final int userId;
   final String firebaseUid;
   final String name;
   final bool isUserMuted;
+  final Color color;
 
   ParticipantModel({
     required this.userId,
     required this.firebaseUid,
     required this.name,
     required this.isUserMuted,
+    required this.color,
   });
 
   factory ParticipantModel.fromJson(Map<String, dynamic> json) {
@@ -17,6 +22,7 @@ class ParticipantModel {
       firebaseUid: json['firebaseUid'] ?? '',
       name: json['name'] ?? '',
       isUserMuted: json['isUserMuted'] ?? false,
+      color: WarmColorGenerator.getRandomWarmColor(),
     );
   }
 
@@ -34,12 +40,14 @@ class ParticipantModel {
     String? firebaseUid,
     String? name,
     bool? isUserMuted,
+    Color?  color,
   }) {
     return ParticipantModel(
       userId: userId ?? this.userId,
       firebaseUid: firebaseUid ?? this.firebaseUid,
       name: name ?? this.name,
       isUserMuted: isUserMuted ?? this.isUserMuted,
+      color: color?? WarmColorGenerator.getRandomWarmColor()
     );
   }
 

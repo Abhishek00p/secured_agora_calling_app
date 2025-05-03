@@ -16,7 +16,9 @@ void showPendingRequestsDialog(BuildContext context) {
                   SelectableText('Meeting Id  : ${controller.meetingId}'),
                   SizedBox(height: 12),
                   controller.pendingRequests.isEmpty
-                      ? const Center(child: Text('No pending requests...'))
+                      ? 
+                      SizedBox.shrink()
+                      // const Center(child: Text('No pending requests...'))
                       : ListView.builder(
                         shrinkWrap: true,
                         itemCount: controller.pendingRequests.length,
