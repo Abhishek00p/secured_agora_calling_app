@@ -25,7 +25,10 @@ class ParticipantModel {
       name: json['name'] ?? '',
       isUserMuted: json['isUserMuted'] ?? false,
       isUserSpeaking: json['isUserSpeaking'] ?? false,
-      color:json['color']==null? WarmColorGenerator.getRandomWarmColor(): Color(json['color']),
+      color:
+          json['color'] == null
+              ? WarmColorGenerator.getRandomWarmColor()
+              : Color(json['color']),
     );
   }
 
@@ -35,8 +38,8 @@ class ParticipantModel {
       'firebaseUid': firebaseUid,
       'name': name,
       'isUserMuted': isUserMuted,
-      'isUserSpeaking':isUserSpeaking,
-      'color':color.toARGB32(),
+      'isUserSpeaking': isUserSpeaking,
+      'color': color.toARGB32(),
     };
   }
 
@@ -53,7 +56,7 @@ class ParticipantModel {
       firebaseUid: firebaseUid ?? this.firebaseUid,
       name: name ?? this.name,
       isUserMuted: isUserMuted ?? this.isUserMuted,
-      isUserSpeaking:isUserSpeaking?? this.isUserSpeaking,
+      isUserSpeaking: isUserSpeaking ?? this.isUserSpeaking,
       color: color ?? this.color,
     );
   }

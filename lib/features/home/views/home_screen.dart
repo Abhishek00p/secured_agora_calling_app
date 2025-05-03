@@ -43,8 +43,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('SecuredCalling'),
-        
-        
+
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),
@@ -59,14 +58,19 @@ class _HomeScreenState extends State<HomeScreen>
       ),
 
       drawer: Drawer(
-        child: Column(children: [
-          50.h,
-          ListTile(
-            onTap: (){
-              Get.to(()=>AdminScreen());
-            },
-            tileColor: Colors.grey[200],title: Text('Admin'),trailing: Icon(Icons.arrow_forward_ios_outlined),)
-        ],),
+        child: Column(
+          children: [
+            50.h,
+            ListTile(
+              onTap: () {
+                Get.to(() => AdminScreen());
+              },
+              tileColor: Colors.grey[200],
+              title: Text('Admin'),
+              trailing: Icon(Icons.arrow_forward_ios_outlined),
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [

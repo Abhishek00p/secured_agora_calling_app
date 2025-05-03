@@ -35,12 +35,13 @@ class _WaterRippleState extends State<WaterRipple>
     );
   }
 }
+
 class RipplePainter extends CustomPainter {
   final Animation<double> animation;
   final Color color;
 
   RipplePainter({required this.animation, required this.color})
-      : super(repaint: animation);
+    : super(repaint: animation);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -52,10 +53,11 @@ class RipplePainter extends CustomPainter {
       final progress = ((animation.value + i / rippleCount) % 1.0);
       final radius = maxRadius * progress;
       final opacity = (1.0 - progress).clamp(0.0, 1.0);
-      final paint = Paint()
-        ..color = color.withOpacity(opacity)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
+      final paint =
+          Paint()
+            ..color = color.withOpacity(opacity)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.0;
 
       canvas.drawCircle(center, radius, paint);
     }

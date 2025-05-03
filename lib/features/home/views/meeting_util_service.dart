@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/app_tost_util.dart';
-import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 
@@ -142,8 +141,9 @@ class MeetingUtil {
                               )
                               .toList(),
                       onChanged: (val) {
-                        if (val != null)
+                        if (val != null) {
                           controller.selectedDuration.value = val;
+                        }
                       },
                       decoration: const InputDecoration(labelText: 'Duration'),
                     ),

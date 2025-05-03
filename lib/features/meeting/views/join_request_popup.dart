@@ -6,11 +6,11 @@ class JoinRequestPopup extends StatelessWidget {
   final VoidCallback onDeny;
 
   const JoinRequestPopup({
-    Key? key,
+    super.key,
     required this.userName,
     required this.onAdmit,
     required this.onDeny,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,15 +60,15 @@ class JoinRequestPopup extends StatelessWidget {
                   const SizedBox(width: 4),
                   ElevatedButton(
                     onPressed: onAdmit,
-                    child: Text(
-                      'Admit',
-                      style: TextStyle(fontSize: isMobile ? 12 : 14),
-                    ),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 10,
                       ),
+                    ),
+                    child: Text(
+                      'Admit',
+                      style: TextStyle(fontSize: isMobile ? 12 : 14),
                     ),
                   ),
                 ],

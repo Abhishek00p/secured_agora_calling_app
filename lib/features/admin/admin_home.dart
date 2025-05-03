@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/features/admin/member_form.dart';
+import 'package:secured_calling/reminder_dialog.dart';
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
@@ -15,8 +16,9 @@ class AdminScreen extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('members').snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData)
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
+          }
 
           final members =
               snapshot.data!.docs
@@ -51,7 +53,7 @@ class AdminScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                     Text(
+                                Text(
                                   "Name: ${member.name}",
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 ),
@@ -147,19 +149,13 @@ class AdminScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-12.h,
+                      12.h,
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           OutlinedButton.icon(
                             onPressed: () {
-                              FirebaseFirestore.instance
-                                  .collection('members')
-                                  .doc(member.id)
-                                  .update({'planDays': member.planDays});
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Reminder sent!")),
-                              );
+                              showReminderDialog(context, member);
                             },
                             icon: const Icon(Icons.notifications),
                             label: const Text("Reminder"),

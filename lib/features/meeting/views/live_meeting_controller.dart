@@ -236,8 +236,8 @@ class MeetingController extends GetxController {
             .map(
               (e) =>
                   e.userId == userId
-                      ? e.copyWith(isUserSpeaking: true,isUserMuted: false)
-                      : e.copyWith(isUserSpeaking: false,isUserMuted: true),
+                      ? e.copyWith(isUserSpeaking: true, isUserMuted: false)
+                      : e.copyWith(isUserSpeaking: false, isUserMuted: true),
             )
             .toList();
     update();
@@ -261,6 +261,7 @@ class MeetingController extends GetxController {
       onUserJoined: (connection, remoteUid, elapsed) => addUser(remoteUid),
       onUserOffline: (connection, remoteUid, reason) => removeUser(remoteUid),
       onJoinChannelSuccess: (connection, elapsed) => onJoinSuccess(),
+
       // onAudioVolumeIndication: (
       //   connection,
       //   speakers,
@@ -268,7 +269,7 @@ class MeetingController extends GetxController {
       //   totalVolume,
       // ) {
 
-            // final loudestSpeaker = speakers.reduce((a, b) => a.volume > b.volume ? a : b);
+      // final loudestSpeaker = speakers.reduce((a, b) => a.volume > b.volume ? a : b);
 
       //     participants =
       //         participants
@@ -280,9 +281,8 @@ class MeetingController extends GetxController {
       //             )
       //             .toList();
       //     update();
-      //   
+      //
       // },
-     
       onUserMuteAudio:
           (connection, remoteUid, muted) => updateMuteStatus(remoteUid, muted),
       onActiveSpeaker: onActiveSpeaker,

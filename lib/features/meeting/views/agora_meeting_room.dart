@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
-import 'package:secured_calling/features/meeting/views/join_request_popup.dart';
 import 'package:secured_calling/features/meeting/views/join_request_widget.dart';
 import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/showPendingRequestDialog.dart';
@@ -157,7 +155,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
               IconButton(
                 onPressed: () async {
                   // await fetchPendingRequests();
-                  await meetingController.fetchPendingRequests();
+                  meetingController.fetchPendingRequests();
 
                   showPendingRequestsDialog(context);
                 },
@@ -226,8 +224,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                   ),
                                   child: Stack(
                                     children: [
-                                      if(user.isUserSpeaking)...[
-                                     Positioned.fill(child: WaterRipple(color: user.color)),],
+                                      if (user.isUserSpeaking) ...[
+                                        Positioned.fill(
+                                          child: WaterRipple(color: user.color),
+                                        ),
+                                      ],
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
                                         child: Center(

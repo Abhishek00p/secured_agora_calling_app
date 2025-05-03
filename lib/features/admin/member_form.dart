@@ -22,8 +22,12 @@ class _MemberFormState extends State<MemberForm> {
     super.initState();
     name = TextEditingController(text: widget.member?.name ?? '');
     email = TextEditingController(text: widget.member?.email ?? '');
-    days = TextEditingController(text: widget.member?.planDays.toString() ?? '');
-    users = TextEditingController(text: widget.member?.totalUsers.toString() ?? '');
+    days = TextEditingController(
+      text: widget.member?.planDays.toString() ?? '',
+    );
+    users = TextEditingController(
+      text: widget.member?.totalUsers.toString() ?? '',
+    );
     purchaseDate = widget.member?.purchaseDate ?? DateTime.now();
     isActive = widget.member?.isActive ?? true;
   }
@@ -63,7 +67,9 @@ class _MemberFormState extends State<MemberForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.member == null ? "Add Member" : "Edit Member")),
+      appBar: AppBar(
+        title: Text(widget.member == null ? "Add Member" : "Edit Member"),
+      ),
       body: Form(
         key: _formKey,
         child: Padding(
@@ -71,19 +77,42 @@ class _MemberFormState extends State<MemberForm> {
           child: ListView(
             children: [
               24.h,
-              TextFormField(controller: name, decoration: const InputDecoration(labelText: "Name"), validator: (v) => v!.isEmpty ? "Required" : null),
+              TextFormField(
+                controller: name,
+                decoration: const InputDecoration(labelText: "Name"),
+                validator: (v) => v!.isEmpty ? "Required" : null,
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: email, decoration: const InputDecoration(labelText: "Email"), validator: (v) => v!.isEmpty ? "Required" : null),
+              TextFormField(
+                controller: email,
+                decoration: const InputDecoration(labelText: "Email"),
+                validator: (v) => v!.isEmpty ? "Required" : null,
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: days, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Subscription Days"), validator: (v) => v!.isEmpty ? "Required" : null),
+              TextFormField(
+                controller: days,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: "Subscription Days",
+                ),
+                validator: (v) => v!.isEmpty ? "Required" : null,
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: users, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Total Users"), validator: (v) => v!.isEmpty ? "Required" : null),
+              TextFormField(
+                controller: users,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: "Total Users"),
+                validator: (v) => v!.isEmpty ? "Required" : null,
+              ),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text("Active"),
-                  Switch(value: isActive, onChanged: (v) => setState(() => isActive = v)),
+                  Switch(
+                    value: isActive,
+                    onChanged: (v) => setState(() => isActive = v),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),

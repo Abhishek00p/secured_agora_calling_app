@@ -211,11 +211,11 @@ class AppFirebaseService {
       final meetingData =
           (await meetingsCollection.doc(meetId).get()).data()
               as Map<String, dynamic>?;
-      final _participants =
+      final participants =
           (meetingData?['participants'] as List<dynamic>? ?? []);
-      _participants.add(userId);
+      participants.add(userId);
       await meetingsCollection.doc(meetId).update({
-        'participants': _participants,
+        'participants': participants,
       });
       return true;
     } catch (e) {
@@ -228,14 +228,14 @@ class AppFirebaseService {
       final meetingData =
           (await meetingsCollection.doc(meetId).get()).data()
               as Map<String, dynamic>?;
-      final _participants =
+      final participants =
           (meetingData?['participants'] as List<dynamic>? ?? []);
-      _participants.removeWhere((item) => item == userId);
+      participants.removeWhere((item) => item == userId);
       await meetingsCollection.doc(meetId).update({
-        'participants': _participants,
+        'participants': participants,
       });
 
-      if (_participants.isEmpty) {
+      if (participants.isEmpty) {
         await meetingsCollection.doc(meetId).update({
           'status': 'ended',
           'actualEndTime': FieldValue.serverTimestamp(),
@@ -293,10 +293,9 @@ class AppFirebaseService {
         .get();
   }
 
-  Future<Map<String,dynamic>?> getMeetingData(String meetindID)async{
-    return 
-          (await meetingsCollection.doc(meetindID).get()).data()
-              as Map<String, dynamic>?;
+  Future<Map<String, dynamic>?> getMeetingData(String meetindID) async {
+    return (await meetingsCollection.doc(meetindID).get()).data()
+        as Map<String, dynamic>?;
   }
 
   Future<DocumentSnapshot<Object?>?> searchMeetingByMeetId(

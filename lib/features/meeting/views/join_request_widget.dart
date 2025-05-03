@@ -7,14 +7,15 @@ import 'package:secured_calling/features/meeting/views/join_request_popup.dart';
 import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
 
 class JoinRequestWidget extends StatefulWidget {
-  const JoinRequestWidget({Key? key}) : super(key: key);
+  const JoinRequestWidget({super.key});
   @override
   State<JoinRequestWidget> createState() => _JoinRequestWidgetState();
 }
 
 class _JoinRequestWidgetState extends State<JoinRequestWidget> {
   final MeetingController meetingController = Get.find<MeetingController>();
-  final ValueNotifier<List<Map<String, dynamic>>> _requestsNotifier = ValueNotifier([]);
+  final ValueNotifier<List<Map<String, dynamic>>> _requestsNotifier =
+      ValueNotifier([]);
   List<Map<String, dynamic>> _previousRequests = [];
 
   @override
@@ -23,7 +24,9 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
 
     meetingController.fetchPendingRequests().listen((newRequests) {
       if (!_areListsEqual(_previousRequests, newRequests)) {
-        AppLogger.print('prv list: $_previousRequests \nnew list: $newRequests');
+        AppLogger.print(
+          'prv list: $_previousRequests \nnew list: $newRequests',
+        );
 
         if (newRequests.length > _previousRequests.length) {
           AudioService().playJoinRequestSound(AssetPaths.joinSound);
@@ -53,8 +56,14 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
             requests.length,
             (i) => JoinRequestPopup(
               userName: requests[i]['name'],
-              onAdmit: () => meetingController.approveJoinRequest(requests[i]['userId']),
-              onDeny: () => meetingController.rejectJoinRequest(requests[i]['userId']),
+              onAdmit:
+                  () => meetingController.approveJoinRequest(
+                    requests[i]['userId'],
+                  ),
+              onDeny:
+                  () => meetingController.rejectJoinRequest(
+                    requests[i]['userId'],
+                  ),
             ),
           ),
         );
@@ -62,7 +71,10 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
     );
   }
 
-  bool _areListsEqual(List<Map<String, dynamic>> a, List<Map<String, dynamic>> b) {
+  bool _areListsEqual(
+    List<Map<String, dynamic>> a,
+    List<Map<String, dynamic>> b,
+  ) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
       if (a[i]['userId'] != b[i]['userId']) return false;
