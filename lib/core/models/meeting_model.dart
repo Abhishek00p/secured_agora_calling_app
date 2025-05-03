@@ -1,5 +1,6 @@
 class MeetingModel {
   final String channelName;
+  final String meetingId;
   final String hostId;
   final String meetingName;
   final List<String> participants;
@@ -15,8 +16,9 @@ class MeetingModel {
   final DateTime createdAt;
 
   const MeetingModel({
-    required this.channelName,
     required this.hostId,
+    required this.channelName,
+    required this.meetingId,
     required this.meetingName,
     required this.participants,
     required this.password,
@@ -55,6 +57,7 @@ class MeetingModel {
       createdAt:
           DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
           DateTime(2000),
+          meetingId: json['meet_id']??''
     );
   }
 
@@ -62,6 +65,7 @@ class MeetingModel {
     return {
       'channelName': channelName,
       'hostId': hostId,
+      'meet_id':meetingId,
       'meetingName': meetingName,
       'participants': participants,
       'password': password,
@@ -82,6 +86,7 @@ class MeetingModel {
     channelName: '',
     hostId: '',
     meetingName: '',
+    meetingId: '',
     participants: [],
     password: '',
     pendingApprovals: [],
@@ -96,7 +101,7 @@ class MeetingModel {
 
   @override
   String toString() {
-    return 'MeetingModel(channelName: $channelName, hostId: $hostId, meetingName: $meetingName, participants: $participants, password: $password, pendingApprovals: $pendingApprovals, requiresApproval: $requiresApproval, status: $status, scheduledStartTime: $scheduledStartTime, scheduledEndTime: $scheduledEndTime, actualStartTime: $actualStartTime, actualEndTime: $actualEndTime, createdAt: $createdAt)';
+    return 'MeetingModel(channelName: $channelName,meet_id: $meetingId, hostId: $hostId, meetingName: $meetingName, participants: $participants, password: $password, pendingApprovals: $pendingApprovals, requiresApproval: $requiresApproval, status: $status, scheduledStartTime: $scheduledStartTime, scheduledEndTime: $scheduledEndTime, actualStartTime: $actualStartTime, actualEndTime: $actualEndTime, createdAt: $createdAt)';
   }
 
   MeetingModel copyWith({
@@ -113,6 +118,7 @@ class MeetingModel {
     DateTime? actualStartTime,
     DateTime? actualEndTime,
     DateTime? createdAt,
+    String? meetingId,
   }) {
     return MeetingModel(
       channelName: channelName ?? this.channelName,
@@ -128,6 +134,7 @@ class MeetingModel {
       actualStartTime: actualStartTime ?? this.actualStartTime,
       actualEndTime: actualEndTime ?? this.actualEndTime,
       createdAt: createdAt ?? this.createdAt,
+      meetingId: meetingId ?? this.meetingId,
     );
   }
 }

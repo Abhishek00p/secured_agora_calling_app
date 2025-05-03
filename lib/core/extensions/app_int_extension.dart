@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 extension AppIntExtension on int {
   String get formatDuration {
     final hours = this ~/ 3600;
@@ -11,5 +13,19 @@ extension AppIntExtension on int {
     } else {
       return '$seconds';
     }
+  }
+}
+
+extension AppNumExtension on num {
+  SizedBox get h {
+    return SizedBox(height: toDouble());
+  }
+
+  SizedBox get w {
+    return SizedBox(width: toDouble());
+  }
+
+  SizedBox get hw {
+    return SizedBox(width: toDouble(), height: toDouble());
   }
 }

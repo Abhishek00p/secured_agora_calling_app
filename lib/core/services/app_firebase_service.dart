@@ -165,6 +165,7 @@ class AppFirebaseService {
   Future<DocumentReference> createMeeting({
     required String hostId,
     required String meetingName,
+    required String channelName,
     required DateTime scheduledStartTime,
     required int duration, // in minutes
     String? password,
@@ -173,14 +174,15 @@ class AppFirebaseService {
     final meetingDocId = await AppMeetingIdGenrator.generateMeetingId();
     await meetingsCollection.doc(meetingDocId).set({
       'hostId': hostId,
+      'meet_id':meetingDocId,
       'meetingName': meetingName,
-      'channelName': _generateRandomChannelName(),
+      'channelName':channelName,
       'password': password,
-      'scheduledStartTime': scheduledStartTime,
-      'scheduledEndTime': scheduledStartTime.add(Duration(minutes: duration)),
+      'scheduledStartTime': scheduledStartTime.toIso8601String(),
+      'scheduledEndTime': scheduledStartTime.add(Duration(minutes: duration)).toIso8601String(),
       'actualStartTime': null,
       'actualEndTime': null,
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': DateTime.now().toIso8601String(),
       'requiresApproval': requiresApproval,
       'status': 'scheduled', // scheduled, live, ended, cancelled
       'participants': [],

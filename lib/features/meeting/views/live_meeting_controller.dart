@@ -79,6 +79,14 @@ class MeetingController extends GetxController {
       return;
     }
     AppLogger.print('agora token :$token');
+
+    if (participants.length >= 45) {
+      AppToastUtil.showErrorToast(
+        Get.context!,
+        'Meet Participants Limit Exceeds, you cannot join Meeting as of now',
+      );
+      return;
+    }
     await _agoraService.joinChannel(
       channelName: channelName,
       token: token,
