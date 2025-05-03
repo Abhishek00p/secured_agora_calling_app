@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/features/meeting/views/join_request_popup.dart';
+import 'package:secured_calling/features/meeting/views/join_request_widget.dart';
 import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/showPendingRequestDialog.dart';
 
@@ -153,6 +155,8 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
               IconButton(
                 onPressed: () async {
                   // await fetchPendingRequests();
+                  await meetingController.fetchPendingRequests();
+
                   showPendingRequestsDialog(context);
                 },
                 icon: Icon(Icons.settings),
@@ -232,7 +236,8 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                             },
                           ),
                         ),
-                  ],
+
+                   JoinRequestWidget()  ],
                 ),
               );
             },

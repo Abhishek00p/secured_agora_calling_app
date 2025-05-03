@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -97,7 +98,7 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   StreamSubscription<DocumentSnapshot>? _listener;
 
-  void listenForParticipantAddition(String meetingId, String userId) {
+  void listenForParticipantAddition(String meetingId, int userId) {
     _listener = _firestore
         .collection('meetings')
         .doc(meetingId)
@@ -126,7 +127,7 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
     });
 
     try {
-      final userId = _firebaseService.currentUser!.uid;
+      final userId = AppLocalStorage.getUserDetails().userId;
       await _firebaseService.requestToJoinMeeting(_meetingId!, userId);
 
       if (mounted) {

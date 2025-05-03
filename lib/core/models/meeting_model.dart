@@ -3,9 +3,9 @@ class MeetingModel {
   final String meetingId;
   final String hostId;
   final String meetingName;
-  final List<String> participants;
+  final List<int> participants;
   final String password;
-  final List<String> pendingApprovals;
+  final List<int> pendingApprovals;
   final bool requiresApproval;
   final String status;
 
@@ -37,9 +37,9 @@ class MeetingModel {
       channelName: json['channelName'] ?? '',
       hostId: json['hostId'] ?? '',
       meetingName: json['meetingName'] ?? '',
-      participants: List<String>.from(json['participants'] ?? []),
+      participants: List<int>.from(json['participants'] ?? []),
       password: json['password'] ?? '',
-      pendingApprovals: List<String>.from(json['pendingApprovals'] ?? []),
+      pendingApprovals: List<int>.from(json['pendingApprovals'] ?? []),
       requiresApproval: json['requiresApproval'] ?? false,
       status: json['status'] ?? '',
       scheduledStartTime:
@@ -57,7 +57,7 @@ class MeetingModel {
       createdAt:
           DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
           DateTime(2000),
-          meetingId: json['meet_id']??''
+      meetingId: json['meet_id'] ?? '',
     );
   }
 
@@ -65,7 +65,7 @@ class MeetingModel {
     return {
       'channelName': channelName,
       'hostId': hostId,
-      'meet_id':meetingId,
+      'meet_id': meetingId,
       'meetingName': meetingName,
       'participants': participants,
       'password': password,
@@ -108,9 +108,9 @@ class MeetingModel {
     String? channelName,
     String? hostId,
     String? meetingName,
-    List<String>? participants,
+    List<int>? participants,
     String? password,
-    List<String>? pendingApprovals,
+    List<int>? pendingApprovals,
     bool? requiresApproval,
     String? status,
     DateTime? scheduledStartTime,

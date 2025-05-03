@@ -74,6 +74,8 @@ class MeetingController extends GetxController {
 
   Future<void> joinChannel({required String channelName}) async {
     final token = await _firebaseService.getAgoraToken();
+
+    final currentUserId = AppLocalStorage.getUserDetails().userId;
     if (token.trim().isEmpty) {
       AppToastUtil.showErrorToast(Get.context!, 'Token not found');
       return;
@@ -90,18 +92,14 @@ class MeetingController extends GetxController {
     await _agoraService.joinChannel(
       channelName: channelName,
       token: token,
-      userId: AppLocalStorage.getUserDetails().userId,
+      userId: currentUserId,
     );
-    final currentUser = AppLocalStorage.getUserDetails();
-    participants.add(
-      ParticipantModel(
-        userId: currentUser.userId,
-        firebaseUid: currentUser.firebaseUserId,
-        name: currentUser.name,
-        isUserMuted: isMuted.value,
-        color: WarmColorGenerator.getRandomWarmColor(),
-      ),
-    );
+    _firebaseService.addParticipants(meetingId, currentUserId).then((v) {
+      if (v) {
+        addUser(currentUserId);
+      }
+    });
+
     startTimer();
     isJoined.value = true;
   }
@@ -139,46 +137,51 @@ class MeetingController extends GetxController {
 
   Future<void> endMeeting() async {
     await _agoraService.leaveChannel();
-    if (meetingId.isNotEmpty && isHost) {
+    if (meetingId.isNotEmpty) {
       await _firebaseService.endMeeting(meetingId);
     }
   }
 
-  Future<void> fetchPendingRequests() async {
-    isLoading.value = true;
-    error.value = null;
+  Stream<List<Map<String, dynamic>>> fetchPendingRequests() async* {
+    yield* _firebaseService.meetingsCollection
+        .doc(meetingId)
+        .snapshots()
+        .asyncMap((docSnapshot) async {
+          final meetingData = docSnapshot.data() as Map<String, dynamic>?;
+          if (meetingData == null) return [];
 
+          final pendingUserIds =
+              meetingData['pendingApprovals'] as List<dynamic>;
+          final List<Map<String, dynamic>> requests = [];
+
+          for (final userId in pendingUserIds) {
+            final userDoc = await _firebaseService.getUserData(
+              userId.toString(),
+            );
+            final userData = userDoc.data() as Map<String, dynamic>?;
+            if (userData != null) {
+              requests.add({
+                'userId': userId,
+                'name': userData['name'] ?? 'Unknown User',
+              });
+            }
+          }
+
+          return requests;
+        });
+  }
+
+  Future<void> approveJoinRequest(int userId) async {
     try {
-      final meetingDoc =
-          await _firebaseService.meetingsCollection.doc(meetingId).get();
-      final meetingData = meetingDoc.data() as Map<String, dynamic>;
-      final pendingUserIds = meetingData['pendingApprovals'] as List<dynamic>;
-
-      final List<Map<String, dynamic>> requests = [];
-
-      for (final userId in pendingUserIds) {
-        final userDoc = await _firebaseService.getUserData(userId as String);
-        final userData = userDoc.data() as Map<String, dynamic>?;
-        if (userData != null) {
-          requests.add({
-            'userId': userId,
-            'name': userData['name'] ?? 'Unknown User',
-          });
-        }
-      }
-
-      pendingRequests.value = requests;
+      await _firebaseService.approveMeetingJoinRequest(meetingId, userId);
     } catch (e) {
-      error.value = e.toString();
-    } finally {
-      isLoading.value = false;
+      AppLogger.print("error approving request: $e");
     }
   }
 
-  Future<void> rejectJoinRequest(String userId) async {
+  Future<void> rejectJoinRequest(int userId) async {
     try {
       await _firebaseService.rejectMeetingJoinRequest(meetingId, userId);
-      await fetchPendingRequests();
     } catch (e) {
       error.value = 'Error rejecting request: $e';
     }

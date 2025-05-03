@@ -174,12 +174,13 @@ class AppFirebaseService {
     final meetingDocId = await AppMeetingIdGenrator.generateMeetingId();
     await meetingsCollection.doc(meetingDocId).set({
       'hostId': hostId,
-      'meet_id':meetingDocId,
+      'meet_id': meetingDocId,
       'meetingName': meetingName,
-      'channelName':channelName,
+      'channelName': channelName,
       'password': password,
       'scheduledStartTime': scheduledStartTime.toIso8601String(),
-      'scheduledEndTime': scheduledStartTime.add(Duration(minutes: duration)).toIso8601String(),
+      'scheduledEndTime':
+          scheduledStartTime.add(Duration(minutes: duration)).toIso8601String(),
       'actualStartTime': null,
       'actualEndTime': null,
       'createdAt': DateTime.now().toIso8601String(),
@@ -199,10 +200,51 @@ class AppFirebaseService {
   }
 
   Future<void> endMeeting(String meetingId) async {
-    await meetingsCollection.doc(meetingId).update({
-      'status': 'ended',
-      'actualEndTime': FieldValue.serverTimestamp(),
-    });
+    await removeParticipants(
+      meetingId,
+      AppLocalStorage.getUserDetails().userId,
+    );
+  }
+
+  Future<bool> addParticipants(String meetId, int userId) async {
+    try {
+      final meetingData =
+          (await meetingsCollection.doc(meetId).get()).data()
+              as Map<String, dynamic>?;
+      final _participants =
+          (meetingData?['participants'] as List<dynamic>? ?? []);
+      _participants.add(userId);
+      await meetingsCollection.doc(meetId).update({
+        'participants': _participants,
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> removeParticipants(String meetId, int userId) async {
+    try {
+      final meetingData =
+          (await meetingsCollection.doc(meetId).get()).data()
+              as Map<String, dynamic>?;
+      final _participants =
+          (meetingData?['participants'] as List<dynamic>? ?? []);
+      _participants.removeWhere((item) => item == userId);
+      await meetingsCollection.doc(meetId).update({
+        'participants': _participants,
+      });
+
+      if (_participants.isEmpty) {
+        await meetingsCollection.doc(meetId).update({
+          'status': 'ended',
+          'actualEndTime': FieldValue.serverTimestamp(),
+        });
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<void> extendMeeting(String meetingId, int additionalMinutes) async {
@@ -218,23 +260,20 @@ class AppFirebaseService {
     });
   }
 
-  Future<void> requestToJoinMeeting(String meetingId, String userId) async {
+  Future<void> requestToJoinMeeting(String meetingId, int userId) async {
     await meetingsCollection.doc(meetingId).update({
       'pendingApprovals': FieldValue.arrayUnion([userId]),
     });
   }
 
-  Future<void> approveMeetingJoinRequest(
-    String meetingId,
-    String userId,
-  ) async {
+  Future<void> approveMeetingJoinRequest(String meetingId, int userId) async {
     await meetingsCollection.doc(meetingId).update({
       'pendingApprovals': FieldValue.arrayRemove([userId]),
       'participants': FieldValue.arrayUnion([userId]),
     });
   }
 
-  Future<void> rejectMeetingJoinRequest(String meetingId, String userId) async {
+  Future<void> rejectMeetingJoinRequest(String meetingId, int userId) async {
     await meetingsCollection.doc(meetingId).update({
       'pendingApprovals': FieldValue.arrayRemove([userId]),
     });
