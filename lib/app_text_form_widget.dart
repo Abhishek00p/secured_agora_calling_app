@@ -31,7 +31,8 @@ class AppTextFormField extends StatelessWidget {
         labelText: labelText,
         prefixIcon: Icon(prefixIcon),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey,),borderRadius: BorderRadius.circular(12)
+          borderSide: BorderSide(color: Colors.grey),
+          borderRadius: BorderRadius.circular(12),
         ),
         suffixIcon: suffixIcon,
       ),

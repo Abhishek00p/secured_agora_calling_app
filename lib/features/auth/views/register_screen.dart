@@ -35,8 +35,9 @@ class RegisterForm extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 16),
-                 AppTextFormField(
-                  controller: loginRegisterController.registerMemberCodeController,
+                AppTextFormField(
+                  controller:
+                      loginRegisterController.registerMemberCodeController,
                   labelText: 'Member Code',
                   prefixIcon: Icons.people_outline_rounded,
                   validator:

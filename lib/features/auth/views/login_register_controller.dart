@@ -114,7 +114,7 @@ class LoginRegisterController extends GetxController {
         name: registerNameController.text.trim(),
         email: registerEmailController.text.trim(),
         password: registerPasswordController.text.trim(),
-        memberCode : registerMemberCodeController.text.trim(),
+        memberCode: registerMemberCodeController.text.trim(),
       );
       if (resp) {
         if (context.mounted) {

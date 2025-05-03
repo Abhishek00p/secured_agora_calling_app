@@ -40,14 +40,14 @@ class ParticipantModel {
     String? firebaseUid,
     String? name,
     bool? isUserMuted,
-    Color?  color,
+    Color? color,
   }) {
     return ParticipantModel(
       userId: userId ?? this.userId,
       firebaseUid: firebaseUid ?? this.firebaseUid,
       name: name ?? this.name,
       isUserMuted: isUserMuted ?? this.isUserMuted,
-      color: color?? WarmColorGenerator.getRandomWarmColor()
+      color: color ?? WarmColorGenerator.getRandomWarmColor(),
     );
   }
 

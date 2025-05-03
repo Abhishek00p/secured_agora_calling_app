@@ -141,10 +141,11 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
                       ),
                       const SizedBox(height: 16),
                       // Error Message
-                      if (loginRegisterController.errorMessage.value!=null && loginRegisterController
-                          .errorMessage
-                          .string
-                          .isNotEmpty ) ...[
+                      if (loginRegisterController.errorMessage.value != null &&
+                          loginRegisterController
+                              .errorMessage
+                              .string
+                              .isNotEmpty) ...[
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(

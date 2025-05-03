@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:secured_calling/app_icon_constants.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
@@ -42,11 +40,7 @@ class WelcomeScreen extends StatelessWidget {
                     gradient: AppTheme.primaryGradient,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Icon(
-                    Icons.call,
-                    size: 40,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.call, size: 40, color: Colors.white),
                 ),
                 SizedBox(height: size.height * 0.04),
 
@@ -81,7 +75,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: size.height * 0.04),
- Container(
+                Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -112,7 +106,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: size.height * 0.05),
-               
+
                 // Get Started Button
                 ElevatedButton(
                   onPressed: () {
@@ -160,10 +154,7 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                       Icon(
-                       forwardArrow,
-                        color: Colors.white,
-                      ),
+                      Icon(forwardArrow, color: Colors.white),
                     ],
                   ),
                 ),
@@ -218,7 +209,6 @@ class WelcomeScreen extends StatelessWidget {
 
                 // Company Description
                 SizedBox(height: size.height * 0.05),
-
               ],
             ),
           ),
