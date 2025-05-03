@@ -7,6 +7,7 @@ import 'package:secured_calling/features/meeting/views/join_request_popup.dart';
 import 'package:secured_calling/features/meeting/views/join_request_widget.dart';
 import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/showPendingRequestDialog.dart';
+import 'package:secured_calling/speaker_ripple_effect.dart';
 
 class AgoraMeetingRoom extends StatefulWidget {
   final String meetingId;
@@ -225,11 +226,8 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                   ),
                                   child: Stack(
                                     children: [
-                                      if (!user.isUserSpeaking) ...[
-                                        Lottie.asset(
-                                          'assets/lottie/ripple.json',
-                                        ),
-                                      ],
+                                      if(user.isUserSpeaking)...[
+                                     Positioned.fill(child: WaterRipple(color: user.color)),],
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
                                         child: Center(

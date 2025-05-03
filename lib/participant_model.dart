@@ -25,7 +25,7 @@ class ParticipantModel {
       name: json['name'] ?? '',
       isUserMuted: json['isUserMuted'] ?? false,
       isUserSpeaking: json['isUserSpeaking'] ?? false,
-      color: WarmColorGenerator.getRandomWarmColor(),
+      color:json['color']==null? WarmColorGenerator.getRandomWarmColor(): Color(json['color']),
     );
   }
 
@@ -36,6 +36,7 @@ class ParticipantModel {
       'name': name,
       'isUserMuted': isUserMuted,
       'isUserSpeaking':isUserSpeaking,
+      'color':color.toARGB32(),
     };
   }
 
@@ -53,7 +54,7 @@ class ParticipantModel {
       name: name ?? this.name,
       isUserMuted: isUserMuted ?? this.isUserMuted,
       isUserSpeaking:isUserSpeaking?? this.isUserSpeaking,
-      color: color ?? WarmColorGenerator.getRandomWarmColor(),
+      color: color ?? this.color,
     );
   }
 

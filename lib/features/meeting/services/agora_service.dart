@@ -39,7 +39,7 @@ class AgoraService {
       await _engine!.initialize(const RtcEngineContext(appId: agoraAppId));
       await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
       await _engine!.enableAudio();
-
+    await _engine!.enableAudioVolumeIndication(interval: 200, smooth: 3, reportVad: true);
       _engine!.registerEventHandler(rtcEngineEventHandler);
 
       _isInitialized = true;

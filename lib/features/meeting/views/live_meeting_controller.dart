@@ -18,7 +18,6 @@ class MeetingController extends GetxController {
   // State variables
   final isLoading = false.obs;
   final error = RxnString();
-  final pendingRequests = <Map<String, dynamic>>[].obs;
 
   final isMuted = false.obs;
   final isOnSpeaker = false.obs;
@@ -94,7 +93,6 @@ class MeetingController extends GetxController {
       token: token,
       userId: currentUserId,
     );
-   
   }
 
   Future<void> leaveChannel() async {
@@ -184,6 +182,7 @@ class MeetingController extends GetxController {
     if (participants.any((e) => e.userId == remoteUid)) return;
 
     final result = await _firebaseService.getUserDataWhereUserId(remoteUid);
+
     if (result != null) {
       final userData = result.data() as Map<dynamic, dynamic>;
       AppToastUtil.showInfoToast(
@@ -192,13 +191,14 @@ class MeetingController extends GetxController {
             ? 'You have joined'
             : '${userData['name']} has Joined',
       );
+      _firebaseService.addParticipants(meetingId, remoteUid);
       participants.add(
         ParticipantModel(
           userId: remoteUid,
-          firebaseUid: result.id,
+          firebaseUid: userData['firebaseUserId'],
           name: userData['name'],
           isUserMuted: true,
-          isUserSpeaking:false,
+          isUserSpeaking: false,
           color: WarmColorGenerator.getRandomWarmColor(),
         ),
       );
@@ -217,7 +217,13 @@ class MeetingController extends GetxController {
     participants =
         participants
             .map(
-              (e) => e.userId == remoteUid ? e.copyWith(isUserMuted: muted) : e,
+              (e) =>
+                  e.userId == remoteUid
+                      ? e.copyWith(
+                        isUserMuted: muted,
+                        isUserSpeaking: muted ? false : e.isUserSpeaking,
+                      )
+                      : e,
             )
             .toList();
     update();
@@ -230,34 +236,55 @@ class MeetingController extends GetxController {
             .map(
               (e) =>
                   e.userId == userId
-                      ? e.copyWith(isUserSpeaking: true)
-                      : e.copyWith(isUserMuted: false),
+                      ? e.copyWith(isUserSpeaking: true,isUserMuted: false)
+                      : e.copyWith(isUserSpeaking: false,isUserMuted: true),
             )
             .toList();
     update();
   }
 
-  void onJoinSuccess(){
-    isJoined.value=true;
+  void onJoinSuccess() {
+    isJoined.value = true;
     final currentUserId = AppLocalStorage.getUserDetails().userId;
-     _firebaseService.addParticipants(meetingId, currentUserId).then((v) {
+    _firebaseService.addParticipants(meetingId, currentUserId).then((v) {
       if (v) {
         addUser(currentUserId);
       }
     });
 
     startTimer();
+    update();
   }
 
   RtcEngineEventHandler _rtcEngineEventHandler(BuildContext context) {
     return RtcEngineEventHandler(
-
       onUserJoined: (connection, remoteUid, elapsed) => addUser(remoteUid),
       onUserOffline: (connection, remoteUid, reason) => removeUser(remoteUid),
-      onJoinChannelSuccess: (connection, elapsed) => onJoinSuccess,
+      onJoinChannelSuccess: (connection, elapsed) => onJoinSuccess(),
+      // onAudioVolumeIndication: (
+      //   connection,
+      //   speakers,
+      //   speakerNumber,
+      //   totalVolume,
+      // ) {
+      //   for (var speaker in speakers) {
+      //     participants =
+      //         participants
+      //             .map(
+      //               (e) =>
+      //                   e.userId == speaker.uid
+      //                       ? e.copyWith(isUserSpeaking: true)
+      //                       : e.copyWith(isUserSpeaking: false),
+      //             )
+      //             .toList();
+      //     update();
+      //   }
+      // },
+     
       onUserMuteAudio:
           (connection, remoteUid, muted) => updateMuteStatus(remoteUid, muted),
       onActiveSpeaker: onActiveSpeaker,
+
       onError: (error, message) {
         AppToastUtil.showErrorToast(context, '❌ Agora error: $error\n$message');
       },
