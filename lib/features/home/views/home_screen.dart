@@ -1,8 +1,11 @@
+import 'package:get/get.dart';
+import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/features/admin/admin_home.dart';
 import 'package:secured_calling/features/home/views/membar_tab_view_widget.dart';
 import 'package:secured_calling/features/home/views/user_tab.dart';
 import 'package:flutter/material.dart';
@@ -40,7 +43,8 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('SecuredCalling'),
-        automaticallyImplyLeading: false,
+        
+        
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),
@@ -52,6 +56,17 @@ class _HomeScreenState extends State<HomeScreen>
             tooltip: 'Sign Out',
           ),
         ],
+      ),
+
+      drawer: Drawer(
+        child: Column(children: [
+          50.h,
+          ListTile(
+            onTap: (){
+              Get.to(()=>AdminScreen());
+            },
+            tileColor: Colors.grey[200],title: Text('Admin'),trailing: Icon(Icons.arrow_forward_ios_outlined),)
+        ],),
       ),
       body: Column(
         children: [

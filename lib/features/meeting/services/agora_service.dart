@@ -41,7 +41,6 @@ class AgoraService {
       await _engine!.enableAudio();
     await _engine!.enableAudioVolumeIndication(interval: 200, smooth: 3, reportVad: true);
       _engine!.registerEventHandler(rtcEngineEventHandler);
-
       _isInitialized = true;
       return true;
     } catch (e) {

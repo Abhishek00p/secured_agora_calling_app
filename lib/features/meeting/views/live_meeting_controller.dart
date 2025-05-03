@@ -267,18 +267,20 @@ class MeetingController extends GetxController {
       //   speakerNumber,
       //   totalVolume,
       // ) {
-      //   for (var speaker in speakers) {
+
+            // final loudestSpeaker = speakers.reduce((a, b) => a.volume > b.volume ? a : b);
+
       //     participants =
       //         participants
       //             .map(
       //               (e) =>
-      //                   e.userId == speaker.uid
+      //                   e.userId == loudestSpeaker.uid
       //                       ? e.copyWith(isUserSpeaking: true)
       //                       : e.copyWith(isUserSpeaking: false),
       //             )
       //             .toList();
       //     update();
-      //   }
+      //   
       // },
      
       onUserMuteAudio:
