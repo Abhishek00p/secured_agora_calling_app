@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/features/meeting/views/join_request_popup.dart';
@@ -197,47 +198,60 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
           body: GetBuilder<MeetingController>(
             builder: (meetingController) {
               return SafeArea(
-                child: Column(
-                  children: [
-                    meetingController.isLoading.value
-                        ? const Center(child: CircularProgressIndicator())
-                        : !meetingController.agoraInitialized
-                        ? Center(child: Text('Agora not intialized yet...!'))
-                        : Expanded(
-                          child: GridView.builder(
-                            itemCount: meetingController.participants.length,
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                ),
-                            itemBuilder: (context, index) {
-                              final user =
-                                  meetingController.participants[index];
-                              return Container(
-                                margin: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: user.color),
-                                  // border: Border.all(color:user.isUserMuted? Colors.white:Colors.deepPurple),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Center(
-                                    child: Text(
-                                      user.name,
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        color: user.color,
-                                      ),
-                                    ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Column(
+                    children: [
+                      meetingController.isLoading.value
+                          ? const Center(child: CircularProgressIndicator())
+                          : !meetingController.agoraInitialized
+                          ? Center(child: Text('Agora not intialized yet...!'))
+                          : Expanded(
+                            child: GridView.builder(
+                              itemCount: meetingController.participants.length,
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
                                   ),
-                                ),
-                              );
-                            },
+                              itemBuilder: (context, index) {
+                                final user =
+                                    meetingController.participants[index];
+                                return Container(
+                                  margin: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: user.color),
+                                    // border: Border.all(color:user.isUserMuted? Colors.white:Colors.deepPurple),
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      if (!user.isUserSpeaking) ...[
+                                        Lottie.asset(
+                                          'assets/lottie/ripple.json',
+                                        ),
+                                      ],
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Center(
+                                          child: Text(
+                                            user.name,
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              color: user.color,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
 
-                   JoinRequestWidget()  ],
+                      JoinRequestWidget(),
+                    ],
+                  ),
                 ),
               );
             },

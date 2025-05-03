@@ -293,6 +293,12 @@ class AppFirebaseService {
         .get();
   }
 
+  Future<Map<String,dynamic>?> getMeetingData(String meetindID)async{
+    return 
+          (await meetingsCollection.doc(meetindID).get()).data()
+              as Map<String, dynamic>?;
+  }
+
   Future<DocumentSnapshot<Object?>?> searchMeetingByMeetId(
     String meetId,
     String channelName,

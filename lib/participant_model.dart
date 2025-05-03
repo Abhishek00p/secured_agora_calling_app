@@ -6,6 +6,7 @@ class ParticipantModel {
   final String firebaseUid;
   final String name;
   final bool isUserMuted;
+  final bool isUserSpeaking;
   final Color color;
 
   ParticipantModel({
@@ -13,6 +14,7 @@ class ParticipantModel {
     required this.firebaseUid,
     required this.name,
     required this.isUserMuted,
+    required this.isUserSpeaking,
     required this.color,
   });
 
@@ -22,6 +24,7 @@ class ParticipantModel {
       firebaseUid: json['firebaseUid'] ?? '',
       name: json['name'] ?? '',
       isUserMuted: json['isUserMuted'] ?? false,
+      isUserSpeaking: json['isUserSpeaking'] ?? false,
       color: WarmColorGenerator.getRandomWarmColor(),
     );
   }
@@ -32,6 +35,7 @@ class ParticipantModel {
       'firebaseUid': firebaseUid,
       'name': name,
       'isUserMuted': isUserMuted,
+      'isUserSpeaking':isUserSpeaking,
     };
   }
 
@@ -40,6 +44,7 @@ class ParticipantModel {
     String? firebaseUid,
     String? name,
     bool? isUserMuted,
+    bool? isUserSpeaking,
     Color? color,
   }) {
     return ParticipantModel(
@@ -47,12 +52,13 @@ class ParticipantModel {
       firebaseUid: firebaseUid ?? this.firebaseUid,
       name: name ?? this.name,
       isUserMuted: isUserMuted ?? this.isUserMuted,
+      isUserSpeaking:isUserSpeaking?? this.isUserSpeaking,
       color: color ?? WarmColorGenerator.getRandomWarmColor(),
     );
   }
 
   @override
   String toString() {
-    return 'ParticipantModel(userId: $userId, firebaseUid: $firebaseUid, name: $name, isUserMuted: $isUserMuted)';
+    return 'ParticipantModel(userId: $userId, firebaseUid: $firebaseUid, name: $name, isUserMuted: $isUserMuted, isUserSpeaking : $isUserSpeaking)';
   }
 }

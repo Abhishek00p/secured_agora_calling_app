@@ -94,14 +94,7 @@ class MeetingController extends GetxController {
       token: token,
       userId: currentUserId,
     );
-    _firebaseService.addParticipants(meetingId, currentUserId).then((v) {
-      if (v) {
-        addUser(currentUserId);
-      }
-    });
-
-    startTimer();
-    isJoined.value = true;
+   
   }
 
   Future<void> leaveChannel() async {
@@ -205,6 +198,7 @@ class MeetingController extends GetxController {
           firebaseUid: result.id,
           name: userData['name'],
           isUserMuted: true,
+          isUserSpeaking:false,
           color: WarmColorGenerator.getRandomWarmColor(),
         ),
       );
@@ -236,17 +230,31 @@ class MeetingController extends GetxController {
             .map(
               (e) =>
                   e.userId == userId
-                      ? e.copyWith(isUserMuted: false)
-                      : e.copyWith(isUserMuted: true),
+                      ? e.copyWith(isUserSpeaking: true)
+                      : e.copyWith(isUserMuted: false),
             )
             .toList();
     update();
   }
 
+  void onJoinSuccess(){
+    isJoined.value=true;
+    final currentUserId = AppLocalStorage.getUserDetails().userId;
+     _firebaseService.addParticipants(meetingId, currentUserId).then((v) {
+      if (v) {
+        addUser(currentUserId);
+      }
+    });
+
+    startTimer();
+  }
+
   RtcEngineEventHandler _rtcEngineEventHandler(BuildContext context) {
     return RtcEngineEventHandler(
+
       onUserJoined: (connection, remoteUid, elapsed) => addUser(remoteUid),
       onUserOffline: (connection, remoteUid, reason) => removeUser(remoteUid),
+      onJoinChannelSuccess: (connection, elapsed) => onJoinSuccess,
       onUserMuteAudio:
           (connection, remoteUid, muted) => updateMuteStatus(remoteUid, muted),
       onActiveSpeaker: onActiveSpeaker,
