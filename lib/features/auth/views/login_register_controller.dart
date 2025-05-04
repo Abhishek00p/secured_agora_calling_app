@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:secured_calling/app_logger.dart';
-import 'package:secured_calling/app_tost_util.dart';
+import 'package:secured_calling/utils/app_logger.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 

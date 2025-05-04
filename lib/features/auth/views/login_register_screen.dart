@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:secured_calling/app_logger.dart';
-import 'package:secured_calling/app_tost_util.dart';
+import 'package:secured_calling/utils/app_logger.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';

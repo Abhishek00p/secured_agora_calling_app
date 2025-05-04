@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:secured_calling/app_logger.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/features/auth/views/login_register_screen.dart';
 import 'package:secured_calling/features/home/views/home_screen.dart';
 import 'package:secured_calling/features/meeting/views/agora_meeting_room.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:secured_calling/app_text_form_widget.dart';
+import 'package:secured_calling/widgets/app_text_form_widget.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
 
 class RegisterForm extends StatelessWidget {

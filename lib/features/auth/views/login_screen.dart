@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
-import 'package:secured_calling/app_logger.dart';
-import 'package:secured_calling/app_text_form_widget.dart';
+import 'package:secured_calling/utils/app_logger.dart';
+import 'package:secured_calling/widgets/app_text_form_widget.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
 
 class LoginForm extends StatelessWidget {

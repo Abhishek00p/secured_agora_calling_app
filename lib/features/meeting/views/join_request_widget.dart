@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:secured_calling/app_logger.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/core/services/app_sound_service.dart';
 import 'package:secured_calling/core/services/asset_paths.dart';
 import 'package:secured_calling/features/meeting/views/join_request_popup.dart';

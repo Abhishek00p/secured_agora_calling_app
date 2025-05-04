@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:secured_calling/app_logger.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 
 // Replace with your Agora App ID
 const String agoraAppId = '225a62f4b5aa4e94ab46f91d0a0257e1';

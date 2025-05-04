@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:secured_calling/app_logger.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/features/meeting/views/join_request_widget.dart';
 import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/showPendingRequestDialog.dart';
-import 'package:secured_calling/speaker_ripple_effect.dart';
+import 'package:secured_calling/widgets/speaker_ripple_effect.dart';
 
 class AgoraMeetingRoom extends StatefulWidget {
   final String meetingId;

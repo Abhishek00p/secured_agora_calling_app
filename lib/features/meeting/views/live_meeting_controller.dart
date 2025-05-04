@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:secured_calling/app_logger.dart';
-import 'package:secured_calling/app_tost_util.dart';
+import 'package:secured_calling/utils/app_logger.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/meeting/services/agora_service.dart';
-import 'package:secured_calling/participant_model.dart';
-import 'package:secured_calling/warm_color_generator.dart';
+import 'package:secured_calling/core/models/participant_model.dart';
+import 'package:secured_calling/utils/warm_color_generator.dart';
 
 class MeetingController extends GetxController {
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;

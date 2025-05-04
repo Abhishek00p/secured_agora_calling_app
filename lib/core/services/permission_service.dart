@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:secured_calling/permission_popup.dart';
+import 'package:secured_calling/utils/permission_popup.dart';
 
 
 class PermissionService {
