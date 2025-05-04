@@ -134,6 +134,17 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
 
   final meetingController = Get.find<MeetingController>();
   final int _remainingSeconds = 300;
+
+  void onPopInvoked() async {
+    if (!meetingController.isMeetEneded) {
+      await meetingController.endMeeting();
+    }
+    if (mounted) {
+      AppLogger.print("popping context from meeting room.....");
+      Navigator.pop(context);
+    }
+  }
+
   @override
   void initState() {
     AppLogger.print('meeting id before init  :${widget.meetingId}');
@@ -151,27 +162,22 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
       builder: (meetingController) {
         return PopScope(
           canPop: false,
-          onPopInvokedWithResult: (didPop, result) async{
-          await  meetingController.endMeeting();
-            if (mounted) {  
-              AppLogger.print("popping context from meeting room.....");
-              Navigator.pop(context);
+          onPopInvokedWithResult: (didPop, result) async {
+            if (!didPop) {
+              onPopInvoked();
             }
-            
           },
           child: Scaffold(
             backgroundColor: Colors.black12,
             appBar: AppBar(
               backgroundColor: Colors.black,
-              iconTheme: const IconThemeData(
-                color: Colors.white,
-              ),
+              iconTheme: const IconThemeData(color: Colors.white),
               actions: [
                 IconButton(
                   onPressed: () async {
                     // await fetchPendingRequests();
                     meetingController.fetchPendingRequests();
-          
+
                     showPendingRequestsDialog(context);
                   },
                   icon: Icon(Icons.settings),
@@ -180,13 +186,15 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text('Meeting Room',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      )),
-          
+                  const Text(
+                    'Meeting Room',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+
                   if (meetingController.remainingSeconds >= 0) ...[
                     Text(
                       'Time remaining: ${meetingController.remainingSeconds.formatDuration}',
@@ -204,12 +212,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                 children: [
                   _buildControlBar(meetingController),
                   _buildEndCallButton(() async {
-                    await meetingController.endMeeting();
-          
-                    if (mounted) {
-                      AppLogger.print("popping context from meeting room.....");
-                      Navigator.pop(context);
-                    }
+                    onPopInvoked();
                   }),
                 ],
               ),
@@ -224,10 +227,13 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                         meetingController.isLoading.value
                             ? const Center(child: CircularProgressIndicator())
                             : !meetingController.agoraInitialized
-                            ? Center(child: Text('Agora not intialized yet...!'))
+                            ? Center(
+                              child: Text('Agora not intialized yet...!'),
+                            )
                             : Expanded(
                               child: GridView.builder(
-                                itemCount: meetingController.participants.length,
+                                itemCount:
+                                    meetingController.participants.length,
                                 gridDelegate:
                                     SliverGridDelegateWithFixedCrossAxisCount(
                                       crossAxisCount: 2,
@@ -246,7 +252,9 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                       children: [
                                         if (user.isUserSpeaking) ...[
                                           Positioned.fill(
-                                            child: WaterRipple(color: user.color),
+                                            child: WaterRipple(
+                                              color: user.color,
+                                            ),
                                           ),
                                         ],
                                         Padding(
@@ -271,45 +279,49 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                             color: Colors.white,
                                           ),
                                         ),
-                                   if(meetingController.isHost)... [    Positioned(
-                                          right: 2,
-                                          top: 0,
-                                          child: PopupMenuButton<String>(
-                                            onSelected: (value) {
-                                              if (value == 'mute') {
-                                                meetingController
-                                                    .muteThisParticipantsForAllUser(
-                                                      user,
-                                                    );
-                                              } else if (value == 'unmute') {
-                                                meetingController
-                                                    .unMuteThisParticipantsForAllUser(
-                                                      user,
-                                                    );
-                                              }
-                                            },
-                                            itemBuilder:
-                                                (context) => [
-                                                  PopupMenuItem(
-                                                    value: 'mute_all',
-                                                    child: Text('Mute All'),
-                                                  ),
-                                                  PopupMenuItem(
-                                                    value: 'unmute_all',
-                                                    child: Text('Unmute All'),
-                                                  ),
-                                                ],
-                                            icon: Icon(Icons.more_vert,color: Colors.white,),
+                                        if (meetingController.isHost) ...[
+                                          Positioned(
+                                            right: 2,
+                                            top: 0,
+                                            child: PopupMenuButton<String>(
+                                              onSelected: (value) {
+                                                if (value == 'mute') {
+                                                  meetingController
+                                                      .muteThisParticipantsForAllUser(
+                                                        user,
+                                                      );
+                                                } else if (value == 'unmute') {
+                                                  meetingController
+                                                      .unMuteThisParticipantsForAllUser(
+                                                        user,
+                                                      );
+                                                }
+                                              },
+                                              itemBuilder:
+                                                  (context) => [
+                                                    PopupMenuItem(
+                                                      value: 'mute',
+                                                      child: Text('Mute'),
+                                                    ),
+                                                    PopupMenuItem(
+                                                      value: 'unmute',
+                                                      child: Text('Unmute'),
+                                                    ),
+                                                  ],
+                                              icon: Icon(
+                                                Icons.more_vert,
+                                                color: Colors.white,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                     ]
+                                        ],
                                       ],
                                     ),
                                   );
                                 },
                               ),
                             ),
-          
+
                         JoinRequestWidget(),
                       ],
                     ),

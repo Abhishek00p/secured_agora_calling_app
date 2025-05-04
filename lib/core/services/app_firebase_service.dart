@@ -364,11 +364,39 @@ class AppFirebaseService {
     final userId = AppLocalStorage.getUserDetails().userId;
     yield* meetingsCollection.doc(meetingId).snapshots().map((snapshot) {
       final data = snapshot.data() as Map<String, dynamic>?;
-      if (data != null) {
-        final result = data['isParticipantsMuted'] as Map<int, bool>? ??{};
-        return result.isEmpty?false: result[userId] ?? false;
+      if (data != null && data['isParticipantsMuted'] != null) {
+        final rawMap = data['isParticipantsMuted'] as Map<String, dynamic>;
+        final mutedMap = rawMap.map(
+          (key, value) => MapEntry(key, value as bool),
+        );
+        return mutedMap[userId.toString()] ?? false;
       }
       return false;
     });
+  }
+
+  void muteParticipants(String meetingId, int userId, bool isMute) async {
+    final meetingDoc = await meetingsCollection.doc(meetingId).get();
+    final data = meetingDoc.data() as Map<String, dynamic>?;
+
+    if (data != null) {
+      final Map<String, dynamic> mutedMap = data['isParticipantsMuted'] ?? {};
+      final Map<int, bool> isParticipantsMuted = {
+        for (var entry in mutedMap.entries)
+          int.parse(entry.key): entry.value as bool,
+      };
+
+      isParticipantsMuted[userId] = isMute;
+
+      // Convert keys back to String before uploading
+      final Map<String, bool> updatedMutedMap = {
+        for (var entry in isParticipantsMuted.entries)
+          entry.key.toString(): entry.value,
+      };
+
+      await meetingsCollection.doc(meetingId).update({
+        'isParticipantsMuted': updatedMutedMap,
+      });
+    }
   }
 }

@@ -25,7 +25,7 @@ class MeetingController extends GetxController {
   final isJoined = false.obs;
   final isVideoEnabled = true.obs;
   final isScreenSharing = false.obs;
-
+  bool isMeetEneded = false;
   List<ParticipantModel> participants = <ParticipantModel>[].obs;
 
   String meetingId = '';
@@ -37,23 +37,31 @@ class MeetingController extends GetxController {
   bool get agoraInitialized => _agoraService.isInitialized;
   MeetingModel meetingModel = MeetingModel.empty();
 
-
   void startTimer() {
-    try{
-    _firebaseService.getMeetingData(meetingId).then((value) {
-      meetingModel = MeetingModel.fromJson(value ??{});
-      isHost = meetingModel.hostId == AppLocalStorage.getUserDetails().firebaseUserId;
-    });
+    try {
+      _firebaseService.getMeetingData(meetingId).then((value) {
+        meetingModel = MeetingModel.fromJson(value ?? {});
+        isHost =
+            meetingModel.hostId ==
+            AppLocalStorage.getUserDetails().firebaseUserId;
+      });
 
-    Timer.periodic(Duration(seconds: 1), (timer) {
-      if (remainingSeconds == 0) {
-        timer.cancel();
-      } else {
-        remainingSeconds--;
-      }
-      update();
-    });
-    }catch(e){
+      Timer.periodic(Duration(seconds: 1), (timer) {
+        if (remainingSeconds <= 0) {
+          endMeeting().then((c){
+            AppToastUtil.showInfoToast(
+              Get.context!,
+              'Your Free Trial Time is over, please contact support',
+            );
+          });
+          Navigator.pop(Get.context!);
+          timer.cancel();
+        } else {
+          remainingSeconds--;
+        }
+        update();
+      });
+    } catch (e) {
       AppLogger.print('Error starting timer: $e');
     }
   }
@@ -231,6 +239,7 @@ class MeetingController extends GetxController {
   }
 
   void updateMuteStatus(int remoteUid, bool muted) {
+    AppLogger.print('User $remoteUid muted: $muted');
     participants =
         participants
             .map(
@@ -271,15 +280,6 @@ class MeetingController extends GetxController {
       });
       _firebaseService.isCurrentUserMutedByHost(meetingId).listen((event) {
         _agoraService.engine?.muteLocalAudioStream(event);
-        participants =
-            participants
-                .map(
-                  (e) =>
-                      e.userId == currentUserId
-                          ? e.copyWith(isUserMuted: event)
-                          : e,
-                )
-                .toList();
         update();
       });
       startTimer();
@@ -294,7 +294,10 @@ class MeetingController extends GetxController {
       onUserJoined: (connection, remoteUid, elapsed) => addUser(remoteUid),
       onUserOffline: (connection, remoteUid, reason) => removeUser(remoteUid),
       onJoinChannelSuccess: (connection, elapsed) => onJoinSuccess(),
-
+      onLeaveChannel: (connection, stats) {
+        isMeetEneded = true;
+        update();
+      },
       // onAudioVolumeIndication: (
       //   connection,
       //   speakers,
@@ -333,24 +336,13 @@ class MeetingController extends GetxController {
   }
 
   void muteThisParticipantsForAllUser(ParticipantModel user) {
-    participants =
-        participants
-            .map(
-              (e) =>
-                  e.userId == user.userId ? e.copyWith(isUserMuted: true) : e,
-            )
-            .toList();
+    _firebaseService.muteParticipants(meetingId, user.userId, true);
     update();
   }
 
   void unMuteThisParticipantsForAllUser(ParticipantModel user) {
-    participants =
-        participants
-            .map(
-              (e) =>
-                  e.userId == user.userId ? e.copyWith(isUserMuted: false) : e,
-            )
-            .toList();
+    _firebaseService.muteParticipants(meetingId, user.userId, false);
+
     update();
   }
 }
