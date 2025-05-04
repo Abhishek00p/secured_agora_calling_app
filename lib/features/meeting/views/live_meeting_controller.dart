@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/app_tost_util.dart';
+import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/meeting/services/agora_service.dart';
@@ -34,8 +35,16 @@ class MeetingController extends GetxController {
   String currentSpeaker = '';
 
   bool get agoraInitialized => _agoraService.isInitialized;
+  MeetingModel meetingModel = MeetingModel.empty();
+
 
   void startTimer() {
+    try{
+    _firebaseService.getMeetingData(meetingId).then((value) {
+      meetingModel = MeetingModel.fromJson(value ??{});
+      isHost = meetingModel.hostId == AppLocalStorage.getUserDetails().firebaseUserId;
+    });
+
     Timer.periodic(Duration(seconds: 1), (timer) {
       if (remainingSeconds == 0) {
         timer.cancel();
@@ -44,6 +53,9 @@ class MeetingController extends GetxController {
       }
       update();
     });
+    }catch(e){
+      AppLogger.print('Error starting timer: $e');
+    }
   }
 
   Future<void> initializeMeeting({
@@ -72,29 +84,29 @@ class MeetingController extends GetxController {
   }
 
   Future<void> joinChannel({required String channelName}) async {
-    try{
-    final token = await _firebaseService.getAgoraToken();
+    try {
+      final token = await _firebaseService.getAgoraToken();
 
-    final currentUserId = AppLocalStorage.getUserDetails().userId;
-    if (token.trim().isEmpty) {
-      AppToastUtil.showErrorToast(Get.context!, 'Token not found');
-      return;
-    }
-    AppLogger.print('agora token :$token');
+      final currentUserId = AppLocalStorage.getUserDetails().userId;
+      if (token.trim().isEmpty) {
+        AppToastUtil.showErrorToast(Get.context!, 'Token not found');
+        return;
+      }
+      AppLogger.print('agora token :$token');
 
-    if (participants.length >= 45) {
-      AppToastUtil.showErrorToast(
-        Get.context!,
-        'Meet Participants Limit Exceeds, you cannot join Meeting as of now',
+      if (participants.length >= 45) {
+        AppToastUtil.showErrorToast(
+          Get.context!,
+          'Meet Participants Limit Exceeds, you cannot join Meeting as of now',
+        );
+        return;
+      }
+      await _agoraService.joinChannel(
+        channelName: channelName,
+        token: token,
+        userId: currentUserId,
       );
-      return;
-    }
-    await _agoraService.joinChannel(
-      channelName: channelName,
-      token: token,
-      userId: currentUserId,
-    );
-    }catch(e){
+    } catch (e) {
       AppLogger.print('Error joining channel: $e');
       AppToastUtil.showErrorToast(Get.context!, 'Error joining channel: $e');
     }
@@ -249,30 +261,30 @@ class MeetingController extends GetxController {
   }
 
   void onJoinSuccess() {
-    try{
-    isJoined.value = true;
-    final currentUserId = AppLocalStorage.getUserDetails().userId;
-    _firebaseService.addParticipants(meetingId, currentUserId).then((v) {
-      if (v) {
-        addUser(currentUserId);
-      }
-    });
-    _firebaseService.isCurrentUserMutedByHost(meetingId).listen((event) {
-      _agoraService.engine?.muteLocalAudioStream(event);
-      participants =
-          participants
-              .map(
-                (e) =>
-                    e.userId == currentUserId
-                        ? e.copyWith(isUserMuted: event)
-                        : e,
-              )
-              .toList();
+    try {
+      isJoined.value = true;
+      final currentUserId = AppLocalStorage.getUserDetails().userId;
+      _firebaseService.addParticipants(meetingId, currentUserId).then((v) {
+        if (v) {
+          addUser(currentUserId);
+        }
+      });
+      _firebaseService.isCurrentUserMutedByHost(meetingId).listen((event) {
+        _agoraService.engine?.muteLocalAudioStream(event);
+        participants =
+            participants
+                .map(
+                  (e) =>
+                      e.userId == currentUserId
+                          ? e.copyWith(isUserMuted: event)
+                          : e,
+                )
+                .toList();
+        update();
+      });
+      startTimer();
       update();
-    });
-    startTimer();
-    update();
-    }catch(e){
+    } catch (e) {
       AppLogger.print('Error in onJoinSuccess: $e');
     }
   }
