@@ -40,6 +40,7 @@ class MeetingController extends GetxController {
   void startTimer() async {
     try {
       final value = await _firebaseService.getMeetingData(meetingId);
+      AppLogger.print('meeting data: $value');
       meetingModel = MeetingModel.fromJson(value ?? {});
       isHost =
           meetingModel.hostId ==
@@ -274,7 +275,7 @@ class MeetingController extends GetxController {
           userId: remoteUid,
           firebaseUid: userData['firebaseUserId'],
           name: userData['name'],
-          isUserMuted: true,
+          isUserMuted: false,
           isUserSpeaking: false,
           color: WarmColorGenerator.getRandomWarmColor(),
         ),

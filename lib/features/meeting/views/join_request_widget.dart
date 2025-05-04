@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/core/services/app_sound_service.dart';
 import 'package:secured_calling/core/services/asset_paths.dart';
-import 'package:secured_calling/features/meeting/views/join_request_popup.dart';
-import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
+import 'package:secured_calling/features/meeting/views/user_join_request_popup.dart';
+import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
 
 class JoinRequestWidget extends StatefulWidget {
   const JoinRequestWidget({super.key});

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/widgets/app_text_form_widget.dart';
 
 class MeetingDialogController extends GetxController {
   final titleController = TextEditingController();
@@ -10,7 +12,9 @@ class MeetingDialogController extends GetxController {
 
   final durations = List.generate(14, (i) => (i + 1) * 30); // in minutes
   final selectedDuration = 30.obs;
+  final maxParticipants = RxInt(45); // default value
   final isScheduled = false.obs;
+  final isApprovalRequired = true.obs;
   final selectedDate = Rxn<DateTime>();
   final selectedTime = Rxn<TimeOfDay>();
   @override
@@ -31,7 +35,7 @@ class MeetingUtil {
     final now = DateTime.now();
     final meetingName = 'Meeting ${now.hour}:${now.minute}';
 
-    final result = await showMeetCreateDialog();
+    final result = await showMeetCreateBottomSheet();
 
     if (result == null) return;
 
@@ -40,8 +44,9 @@ class MeetingUtil {
         hostId: firebaseService.currentUser!.uid,
         meetingName: result['title'],
         scheduledStartTime: now,
-        requiresApproval: true,
+        requiresApproval: result['isApprovalRequired'] ?? false,
         channelName: 'testing',
+        maxParticipants: result['maxParticipants'] ?? 45,
         password:
             result['password']?.isEmpty ?? true ? null : result['password'],
         duration: result['duration'] ?? 60,
@@ -90,76 +95,148 @@ class MeetingUtil {
     }
   }
 
-  static Future<Map<String, dynamic>?> showMeetCreateDialog() async {
+  static Future<Map<String, dynamic>?> showMeetCreateBottomSheet() async {
     final controller = Get.put(MeetingDialogController());
 
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: Get.context!,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Theme.of(Get.context!).dialogBackgroundColor,
       builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 24,
           ),
-          backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: SingleChildScrollView(
-              child: Obx(
-                () => Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Create Meeting',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: controller.titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Meeting Title',
+          child: SingleChildScrollView(
+            child: Obx(
+              () => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Create Meeting',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 20),
+                  AppTextFormField(
+                    controller: controller.titleController,
+                    prefixIcon: Icons.event_note_sharp,
+                    labelText: 'Meeting Title',
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextFormField(
+                    controller: controller.passwordController,
+                    prefixIcon: Icons.lock_outline,
+                    labelText: 'Meeting Password (optional)',
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          menuMaxHeight: 500,
+
+                          value: controller.selectedDuration.value,
+                          items:
+                              controller.durations
+                                  .map(
+                                    (mins) => DropdownMenuItem(
+                                      value: mins,
+                                      child: Text(
+                                        '${mins ~/ 60}h ${mins % 60 != 0 ? '${mins % 60}m' : ''}',
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              controller.selectedDuration.value = val;
+                            }
+                          },
+
+                          decoration: const InputDecoration(
+                            labelText: 'Duration',
+                            enabledBorder: OutlineInputBorder(),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: controller.passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Meeting Password (optional)',
+                      16.w,
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          menuMaxHeight: 500,
+                          value: controller.maxParticipants.value,
+                          items:
+                              List.generate(40, (i) => (i + 1) * 5)
+                                  .map(
+                                    (val) => DropdownMenuItem(
+                                      value: val,
+                                      child: Text('$val'),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              controller.maxParticipants.value = val;
+                            }
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'Max Participants',
+                            enabledBorder: OutlineInputBorder(),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
-                      value: controller.selectedDuration.value,
-                      items:
-                          controller.durations
-                              .map(
-                                (mins) => DropdownMenuItem(
-                                  value: mins,
-                                  child: Text(
-                                    '${mins ~/ 60}h ${mins % 60 != 0 ? '${mins % 60}m' : ''}',
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          controller.selectedDuration.value = val;
-                        }
-                      },
-                      decoration: const InputDecoration(labelText: 'Duration'),
-                    ),
-                    const SizedBox(height: 16),
-                    CheckboxListTile(
-                      title: const Text('Schedule Meeting'),
-                      value: controller.isScheduled.value,
-                      onChanged:
-                          (val) => controller.isScheduled.value = val ?? false,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    if (controller.isScheduled.value) ...[
-                      const SizedBox(height: 10),
-                      ListTile(
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CheckboxListTile(
+                          title: const Text('Schedule Meeting'),
+                          value: controller.isScheduled.value,
+                          onChanged:
+                              (val) =>
+                                  controller.isScheduled.value = val ?? false,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      12.w,
+                      Expanded(
+                        child: CheckboxListTile(
+                          title: const Text('Require Approval'),
+                          value: controller.isApprovalRequired.value,
+                          onChanged:
+                              (val) =>
+                                  controller.isApprovalRequired.value =
+                                      val ?? false,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (controller.isScheduled.value) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey, // Border color
+                          width: 1.0, // Border width
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          12,
+                        ), // Optional: Rounded corners
+                      ),
+                      child: ListTile(
                         title: const Text('Select Date'),
+
                         subtitle: Text(
                           controller.selectedDate.value != null
                               ? controller.selectedDate.value!
@@ -182,8 +259,19 @@ class MeetingUtil {
                           }
                         },
                       ),
-                      const SizedBox(height: 8),
-                      ListTile(
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey, // Border color
+                          width: 1.0, // Border width
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          12,
+                        ), // Optional: Rounded corners
+                      ),
+                      child: ListTile(
                         title: const Text('Select Time'),
                         subtitle: Text(
                           controller.selectedTime.value != null
@@ -201,72 +289,75 @@ class MeetingUtil {
                           }
                         },
                       ),
-                    ],
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.pop(context); // Cancel
-                            },
-                            child: const Text('Cancel'),
-                          ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              final title =
-                                  controller.titleController.text.trim();
-                              final password =
-                                  controller.passwordController.text.trim();
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final title =
+                                controller.titleController.text.trim();
+                            final password =
+                                controller.passwordController.text.trim();
 
-                              if (title.isEmpty) {
+                            if (title.isEmpty) {
+                              Get.snackbar(
+                                'Error',
+                                'Meeting title is required',
+                              );
+                              return;
+                            }
+
+                            if (controller.isScheduled.value) {
+                              if (controller.selectedDate.value == null ||
+                                  controller.selectedTime.value == null) {
                                 Get.snackbar(
                                   'Error',
-                                  'Meeting title is required',
+                                  'Please select date and time for scheduling',
                                 );
                                 return;
                               }
+                            }
 
-                              if (controller.isScheduled.value) {
-                                if (controller.selectedDate.value == null ||
-                                    controller.selectedTime.value == null) {
-                                  Get.snackbar(
-                                    'Error',
-                                    'Please select date and time for scheduling',
-                                  );
-                                  return;
-                                }
-                              }
+                            final scheduledStart =
+                                controller.isScheduled.value
+                                    ? DateTime(
+                                      controller.selectedDate.value!.year,
+                                      controller.selectedDate.value!.month,
+                                      controller.selectedDate.value!.day,
+                                      controller.selectedTime.value!.hour,
+                                      controller.selectedTime.value!.minute,
+                                    )
+                                    : DateTime.now();
 
-                              final scheduledStart =
-                                  controller.isScheduled.value
-                                      ? DateTime(
-                                        controller.selectedDate.value!.year,
-                                        controller.selectedDate.value!.month,
-                                        controller.selectedDate.value!.day,
-                                        controller.selectedTime.value!.hour,
-                                        controller.selectedTime.value!.minute,
-                                      )
-                                      : DateTime.now();
-
-                              Navigator.pop(context, {
-                                'title': title,
-                                'password': password.isEmpty ? null : password,
-                                'duration': controller.selectedDuration.value,
-                                'scheduledStart': scheduledStart,
-                                'isInstant': !controller.isScheduled.value,
-                              });
-                            },
-                            child: const Text('Create'),
-                          ),
+                            Navigator.pop(context, {
+                              'title': title,
+                              'password': password.isEmpty ? null : password,
+                              'duration': controller.selectedDuration.value,
+                              'scheduledStart': scheduledStart,
+                              'isInstant': !controller.isScheduled.value,
+                              'isApprovalRequired':
+                                  controller.isApprovalRequired.value,
+                              'maxParticipants':
+                                  controller.maxParticipants.value,
+                            });
+                          },
+                          child: const Text('Create'),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ),
             ),
           ),

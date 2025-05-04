@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/state_manager.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
-import 'package:secured_calling/features/meeting/views/live_meeting_controller.dart';
+import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
 
-void showPendingRequestsDialog(BuildContext context) {
+void showMeetingInfo(BuildContext context) {
   showDialog(
     context: context,
     builder:

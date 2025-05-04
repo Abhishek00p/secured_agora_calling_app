@@ -1,147 +1,160 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class MeetingModel {
-  final String channelName;
-  final String meetingId;
-  final String hostId;
+  final String meetId;
   final String meetingName;
-  final List<int> participants;
+  final String channelName;
+  final String hostId;
   final String password;
-  final List<int> pendingApprovals;
   final bool requiresApproval;
   final String status;
+  final bool isParticipantsMuted;
+  final int maxParticipants;
   final int duration;
+
+  final List<String> participants;
+  final List<String> pendingApprovals;
 
   final DateTime scheduledStartTime;
   final DateTime scheduledEndTime;
+  final DateTime createdAt;
   final DateTime actualStartTime;
   final DateTime actualEndTime;
-  final DateTime createdAt;
 
   const MeetingModel({
-    required this.hostId,
-    required this.channelName,
-    required this.meetingId,
+    required this.meetId,
     required this.meetingName,
-    required this.participants,
+    required this.channelName,
+    required this.hostId,
     required this.password,
-    required this.pendingApprovals,
     required this.requiresApproval,
     required this.status,
+    required this.isParticipantsMuted,
+    required this.maxParticipants,
+    required this.duration,
+    required this.participants,
+    required this.pendingApprovals,
     required this.scheduledStartTime,
     required this.scheduledEndTime,
+    required this.createdAt,
     required this.actualStartTime,
     required this.actualEndTime,
-    required this.createdAt,
-    this.duration = 0,
   });
+
+  /// Default empty instance
+  factory MeetingModel.toEmpty() => MeetingModel(
+        meetId: '',
+        meetingName: '',
+        channelName: '',
+        hostId: '',
+        password: '',
+        requiresApproval: false,
+        status: '',
+        isParticipantsMuted: false,
+        maxParticipants: 0,
+        duration: 0,
+        participants: [],
+        pendingApprovals: [],
+        scheduledStartTime: DateTime.fromMillisecondsSinceEpoch(0),
+        scheduledEndTime: DateTime.fromMillisecondsSinceEpoch(0),
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        actualStartTime: DateTime.fromMillisecondsSinceEpoch(0),
+        actualEndTime: DateTime.fromMillisecondsSinceEpoch(0),
+      );
+
+  bool get isEmpty => this == MeetingModel.toEmpty();
 
   factory MeetingModel.fromJson(Map<String, dynamic> json) {
     return MeetingModel(
+      meetId: json['meet_id'] ?? '',
+      meetingName: json['meetingName'] ?? '',
       channelName: json['channelName'] ?? '',
       hostId: json['hostId'] ?? '',
-      meetingName: json['meetingName'] ?? '',
-      participants: List<int>.from(json['participants'] ?? []),
       password: json['password'] ?? '',
-      pendingApprovals: List<int>.from(json['pendingApprovals'] ?? []),
       requiresApproval: json['requiresApproval'] ?? false,
       status: json['status'] ?? '',
-      scheduledStartTime:
-          DateTime.tryParse(json['scheduledStartTime']?.toString() ?? '') ??
-          DateTime(2000),
-      scheduledEndTime:
-          DateTime.tryParse(json['scheduledEndTime']?.toString() ?? '') ??
-          DateTime(2000),
-      actualStartTime:
-          DateTime.tryParse(json['actualStartTime']?.toString() ?? '') ??
-          DateTime(2000),
-      actualEndTime:
-          DateTime.tryParse(json['actualEndTime']?.toString() ?? '') ??
-          DateTime(2000),
-      createdAt:
-          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
-          DateTime(2000),
-      meetingId: json['meet_id'] ?? '',
+      isParticipantsMuted: (json['isParticipantsMuted'] as Map?)?.isNotEmpty ?? false,
+      maxParticipants: json['maxParticipants'] ?? 0,
       duration: json['duration'] ?? 0,
+      participants: List<String>.from(json['participants'] ?? []),
+      pendingApprovals: List<String>.from(json['pendingApprovals'] ?? []),
+      scheduledStartTime: _toDateTime(json['scheduledStartTime']),
+      scheduledEndTime: _toDateTime(json['scheduledEndTime']),
+      createdAt: _toDateTime(json['createdAt']),
+      actualStartTime: _toDateTime(json['actualStartTime']),
+      actualEndTime: _toDateTime(json['actualEndTime']),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'channelName': channelName,
-      'hostId': hostId,
-      'meet_id': meetingId,
-      'meetingName': meetingName,
-      'participants': participants,
-      'password': password,
-      'pendingApprovals': pendingApprovals,
-      'requiresApproval': requiresApproval,
-      'status': status,
-      'scheduledStartTime': scheduledStartTime.toIso8601String(),
-      'scheduledEndTime': scheduledEndTime.toIso8601String(),
-      'actualStartTime': actualStartTime.toIso8601String(),
-      'actualEndTime': actualEndTime.toIso8601String(),
-      'createdAt': createdAt.toIso8601String(),
-      'duration': duration,
-    };
+  Map<String, dynamic> toJson() => {
+        'meet_id': meetId,
+        'meetingName': meetingName,
+        'channelName': channelName,
+        'hostId': hostId,
+        'password': password,
+        'requiresApproval': requiresApproval,
+        'status': status ,
+        'isParticipantsMuted': isParticipantsMuted,
+        'maxParticipants': maxParticipants,
+        'duration': duration,
+        'participants': participants,
+        'pendingApprovals': pendingApprovals,
+        'scheduledStartTime': scheduledStartTime.toIso8601String(),
+        'scheduledEndTime': scheduledEndTime.toIso8601String(),
+        'createdAt': createdAt.toIso8601String(),
+        'actualStartTime': actualStartTime.toIso8601String(),
+        'actualEndTime': actualEndTime.toIso8601String(),
+      };
+
+  MeetingModel copyWith({
+    String? meetId,
+    String? meetingName,
+    String? channelName,
+    String? hostId,
+    String? password,
+    bool? requiresApproval,
+    String? status,
+    bool? isParticipantsMuted,
+    int? maxParticipants,
+    int? duration,
+    List<String>? participants,
+    List<String>? pendingApprovals,
+    DateTime? scheduledStartTime,
+    DateTime? scheduledEndTime,
+    DateTime? createdAt,
+    DateTime? actualStartTime,
+    DateTime? actualEndTime,
+  }) {
+    return MeetingModel(
+      meetId: meetId ?? this.meetId,
+      meetingName: meetingName ?? this.meetingName,
+      channelName: channelName ?? this.channelName,
+      hostId: hostId ?? this.hostId,
+      password: password ?? this.password,
+      requiresApproval: requiresApproval ?? this.requiresApproval,
+      status: status ?? this.status,
+      isParticipantsMuted: isParticipantsMuted ?? this.isParticipantsMuted,
+      maxParticipants: maxParticipants ?? this.maxParticipants,
+      duration: duration ?? this.duration,
+      participants: participants ?? this.participants,
+      pendingApprovals: pendingApprovals ?? this.pendingApprovals,
+      scheduledStartTime: scheduledStartTime ?? this.scheduledStartTime,
+      scheduledEndTime: scheduledEndTime ?? this.scheduledEndTime,
+      createdAt: createdAt ?? this.createdAt,
+      actualStartTime: actualStartTime ?? this.actualStartTime,
+      actualEndTime: actualEndTime ?? this.actualEndTime,
+    );
   }
-
-  bool get isEmpty => this == MeetingModel.empty();
-
-  factory MeetingModel.empty() => MeetingModel(
-    channelName: '',
-    hostId: '',
-    meetingName: '',
-    meetingId: '',
-    participants: [],
-    password: '',
-    pendingApprovals: [],
-    requiresApproval: false,
-    status: '',
-    scheduledStartTime: DateTime(2000),
-    scheduledEndTime: DateTime(2000),
-    actualStartTime: DateTime(2000),
-    actualEndTime: DateTime(2000),
-    createdAt: DateTime(2000),
-    duration: 0,
-  );
 
   @override
   String toString() {
-    return 'MeetingModel(channelName: $channelName,meet_id: $meetingId, hostId: $hostId, meetingName: $meetingName, participants: $participants, password: $password, pendingApprovals: $pendingApprovals, requiresApproval: $requiresApproval, status: $status, scheduledStartTime: $scheduledStartTime, scheduledEndTime: $scheduledEndTime, actualStartTime: $actualStartTime, actualEndTime: $actualEndTime, createdAt: $createdAt duration: $duration)';
+    return 'MeetingModel(meetId: $meetId, title: $meetingName, statusLive: $status)';
   }
 
-  MeetingModel copyWith({
-    String? channelName,
-    String? hostId,
-    String? meetingName,
-    List<int>? participants,
-    String? password,
-    List<int>? pendingApprovals,
-    bool? requiresApproval,
-    String? status,
-    DateTime? scheduledStartTime,
-    DateTime? scheduledEndTime,
-    DateTime? actualStartTime,
-    DateTime? actualEndTime,
-    DateTime? createdAt,
-    String? meetingId,
-    int? duration,
-  }) {
-    return MeetingModel(
-      channelName: channelName ?? this.channelName,
-      hostId: hostId ?? this.hostId,
-      meetingName: meetingName ?? this.meetingName,
-      participants: participants ?? this.participants,
-      password: password ?? this.password,
-      pendingApprovals: pendingApprovals ?? this.pendingApprovals,
-      requiresApproval: requiresApproval ?? this.requiresApproval,
-      status: status ?? this.status,
-      scheduledStartTime: scheduledStartTime ?? this.scheduledStartTime,
-      scheduledEndTime: scheduledEndTime ?? this.scheduledEndTime,
-      actualStartTime: actualStartTime ?? this.actualStartTime,
-      actualEndTime: actualEndTime ?? this.actualEndTime,
-      createdAt: createdAt ?? this.createdAt,
-      meetingId: meetingId ?? this.meetingId,
-      duration: duration ?? this.duration,
-    );
+  static DateTime _toDateTime(dynamic value) {
+    if (value == null) return DateTime.fromMillisecondsSinceEpoch(0);
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 }

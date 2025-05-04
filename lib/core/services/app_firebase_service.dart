@@ -169,7 +169,7 @@ class AppFirebaseService {
     required DateTime scheduledStartTime,
     required int duration, // in minutes
     String? password,
-    bool requiresApproval = false,
+    bool requiresApproval = false, required int maxParticipants,
   }) async {
     final meetingDocId = await AppMeetingIdGenrator.generateMeetingId();
     await meetingsCollection.doc(meetingDocId).set({
@@ -177,6 +177,7 @@ class AppFirebaseService {
       'meet_id': meetingDocId,
       'meetingName': meetingName,
       'channelName': channelName,
+      'maxParticipants': maxParticipants,
       'password': password,
       'duration': duration,
       'isParticipantsMuted': {},

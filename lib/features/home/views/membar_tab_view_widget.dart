@@ -236,7 +236,7 @@ class MembarTabViewWidget extends StatelessWidget {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'ID: ${meeting.meetingId}',
+                                  'ID: ${meeting.meetId}',
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
