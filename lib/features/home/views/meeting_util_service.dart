@@ -10,7 +10,7 @@ class MeetingDialogController extends GetxController {
   final titleController = TextEditingController();
   final passwordController = TextEditingController();
 
-  final durations = List.generate(14, (i) => (i + 1) * 30); // in minutes
+  final durations =[...List.generate(5, (i)=> (i+1)*5), ...List.generate(14, (i) => (i + 1) * 30)]; // in minutes
   final selectedDuration = 30.obs;
   final maxParticipants = RxInt(45); // default value
   final isScheduled = false.obs;

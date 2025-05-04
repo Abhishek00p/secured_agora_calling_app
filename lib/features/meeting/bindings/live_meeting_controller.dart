@@ -35,7 +35,7 @@ class MeetingController extends GetxController {
   String currentSpeaker = '';
 
   bool get agoraInitialized => _agoraService.isInitialized;
-  MeetingModel meetingModel = MeetingModel.empty();
+  MeetingModel meetingModel = MeetingModel.toEmpty();
 
   void startTimer() async {
     try {
@@ -153,9 +153,9 @@ class MeetingController extends GetxController {
         AppToastUtil.showErrorToast(Get.context!, 'Token not found');
         return;
       }
-      AppLogger.print('agora token :$token');
-
-      if (participants.length >= 45) {
+      AppLogger.print('agora token :$token  \n data  :${meetingModel.toJson()}');
+      
+      if (participants.length >= meetingModel.maxParticipants) {
         AppToastUtil.showErrorToast(
           Get.context!,
           'Meet Participants Limit Exceeds, you cannot join Meeting as of now',

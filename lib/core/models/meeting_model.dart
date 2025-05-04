@@ -12,7 +12,7 @@ class MeetingModel {
   final int maxParticipants;
   final int duration;
 
-  final List<String> participants;
+  final List<int> participants;
   final List<String> pendingApprovals;
 
   final DateTime scheduledStartTime;
@@ -76,7 +76,7 @@ class MeetingModel {
       isParticipantsMuted: (json['isParticipantsMuted'] as Map?)?.isNotEmpty ?? false,
       maxParticipants: json['maxParticipants'] ?? 0,
       duration: json['duration'] ?? 0,
-      participants: List<String>.from(json['participants'] ?? []),
+      participants: List<int>.from(json['participants'] ?? []),
       pendingApprovals: List<String>.from(json['pendingApprovals'] ?? []),
       scheduledStartTime: _toDateTime(json['scheduledStartTime']),
       scheduledEndTime: _toDateTime(json['scheduledEndTime']),
@@ -117,7 +117,7 @@ class MeetingModel {
     bool? isParticipantsMuted,
     int? maxParticipants,
     int? duration,
-    List<String>? participants,
+    List<int>? participants,
     List<String>? pendingApprovals,
     DateTime? scheduledStartTime,
     DateTime? scheduledEndTime,
