@@ -8,6 +8,7 @@ class MeetingModel {
   final List<int> pendingApprovals;
   final bool requiresApproval;
   final String status;
+  final int duration;
 
   final DateTime scheduledStartTime;
   final DateTime scheduledEndTime;
@@ -30,6 +31,7 @@ class MeetingModel {
     required this.actualStartTime,
     required this.actualEndTime,
     required this.createdAt,
+    this.duration = 0,
   });
 
   factory MeetingModel.fromJson(Map<String, dynamic> json) {
@@ -58,6 +60,7 @@ class MeetingModel {
           DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
           DateTime(2000),
       meetingId: json['meet_id'] ?? '',
+      duration: json['duration'] ?? 0,
     );
   }
 
@@ -77,6 +80,7 @@ class MeetingModel {
       'actualStartTime': actualStartTime.toIso8601String(),
       'actualEndTime': actualEndTime.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
+      'duration': duration,
     };
   }
 
@@ -97,11 +101,12 @@ class MeetingModel {
     actualStartTime: DateTime(2000),
     actualEndTime: DateTime(2000),
     createdAt: DateTime(2000),
+    duration: 0,
   );
 
   @override
   String toString() {
-    return 'MeetingModel(channelName: $channelName,meet_id: $meetingId, hostId: $hostId, meetingName: $meetingName, participants: $participants, password: $password, pendingApprovals: $pendingApprovals, requiresApproval: $requiresApproval, status: $status, scheduledStartTime: $scheduledStartTime, scheduledEndTime: $scheduledEndTime, actualStartTime: $actualStartTime, actualEndTime: $actualEndTime, createdAt: $createdAt)';
+    return 'MeetingModel(channelName: $channelName,meet_id: $meetingId, hostId: $hostId, meetingName: $meetingName, participants: $participants, password: $password, pendingApprovals: $pendingApprovals, requiresApproval: $requiresApproval, status: $status, scheduledStartTime: $scheduledStartTime, scheduledEndTime: $scheduledEndTime, actualStartTime: $actualStartTime, actualEndTime: $actualEndTime, createdAt: $createdAt duration: $duration)';
   }
 
   MeetingModel copyWith({
@@ -119,6 +124,7 @@ class MeetingModel {
     DateTime? actualEndTime,
     DateTime? createdAt,
     String? meetingId,
+    int? duration,
   }) {
     return MeetingModel(
       channelName: channelName ?? this.channelName,
@@ -135,6 +141,7 @@ class MeetingModel {
       actualEndTime: actualEndTime ?? this.actualEndTime,
       createdAt: createdAt ?? this.createdAt,
       meetingId: meetingId ?? this.meetingId,
+      duration: duration ?? this.duration,
     );
   }
 }

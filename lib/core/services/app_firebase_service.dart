@@ -178,6 +178,8 @@ class AppFirebaseService {
       'meetingName': meetingName,
       'channelName': channelName,
       'password': password,
+      'duration': duration,
+      'isParticipantsMuted': {},
       'scheduledStartTime': scheduledStartTime.toIso8601String(),
       'scheduledEndTime':
           scheduledStartTime.add(Duration(minutes: duration)).toIso8601String(),

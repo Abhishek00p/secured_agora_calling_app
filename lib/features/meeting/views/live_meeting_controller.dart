@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/app_logger.dart';
 import 'package:secured_calling/app_tost_util.dart';
@@ -37,24 +37,76 @@ class MeetingController extends GetxController {
   bool get agoraInitialized => _agoraService.isInitialized;
   MeetingModel meetingModel = MeetingModel.empty();
 
-  void startTimer() {
+  void startTimer() async {
     try {
-      _firebaseService.getMeetingData(meetingId).then((value) {
-        meetingModel = MeetingModel.fromJson(value ?? {});
-        isHost =
-            meetingModel.hostId ==
-            AppLocalStorage.getUserDetails().firebaseUserId;
-      });
+      final value = await _firebaseService.getMeetingData(meetingId);
+      meetingModel = MeetingModel.fromJson(value ?? {});
+      isHost =
+          meetingModel.hostId ==
+          AppLocalStorage.getUserDetails().firebaseUserId;
+
+      remainingSeconds = meetingModel.duration * 60;
 
       Timer.periodic(Duration(seconds: 1), (timer) {
         if (remainingSeconds <= 0) {
-          endMeeting().then((c){
-            AppToastUtil.showInfoToast(
-              Get.context!,
-              'Your Free Trial Time is over, please contact support',
+          if (!isHost) {
+            endMeeting().then((c) {
+              AppToastUtil.showInfoToast(
+                Get.context!,
+                'Your Free Trial Time is over, please contact support',
+              );
+            });
+            Navigator.pop(Get.context!);
+          } else {
+            int remainingTime = 10; // Countdown timer in seconds
+            Timer? countdownTimer;
+
+            // Start the countdown timer
+            countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+              if (remainingTime > 0) {
+                remainingTime--;
+              } else {
+                timer.cancel();
+                endMeeting(); // Automatically end the meeting after 10 seconds
+                Navigator.pop(Get.context!); // Close the dialog and meeting
+              }
+            });
+
+            // Show the dialog
+            showDialog(
+              context: Get.context!,
+              barrierDismissible:
+                  false, // Prevent dismissing the dialog by tapping outside
+              builder: (context) {
+                return StatefulBuilder(
+                  builder: (context, setState) {
+                    return AlertDialog(
+                      title: Text('Meeting Time Ended'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'This meeting will close in $remainingTime seconds.',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              countdownTimer?.cancel(); // Stop the countdown
+                              Navigator.pop(context); // Close the dialog
+                              // Extend meeting logic here
+                              extendMeetingTime();
+                            },
+                            child: Text('Extend Meeting Time'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
             );
-          });
-          Navigator.pop(Get.context!);
+          }
           timer.cancel();
         } else {
           remainingSeconds--;
@@ -344,5 +396,9 @@ class MeetingController extends GetxController {
     _firebaseService.muteParticipants(meetingId, user.userId, false);
 
     update();
+  }
+
+  void extendMeetingTime() {
+    remainingSeconds += 3600; // Add 1 hour (3600 seconds) to the remaining time
   }
 }
