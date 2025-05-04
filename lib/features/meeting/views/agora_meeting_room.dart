@@ -241,6 +241,45 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                           ),
                                         ),
                                       ),
+                                      Positioned(
+                                        bottom: 8,
+                                        right: 8,
+                                        child: Icon(
+                                          user.isUserMuted
+                                              ? Icons.mic_off
+                                              : Icons.mic,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        child: PopupMenuButton<String>(
+                                          onSelected: (value) {
+                                            if (value == 'mute_all') {
+                                              meetingController
+                                                  .muteThisParticipantsForAllUser(
+                                                    user,
+                                                  );
+                                            } else if (value == 'unmute_all') {
+                                              meetingController
+                                                  .unMuteThisParticipantsForAllUser(
+                                                    user,
+                                                  );
+                                            }
+                                          },
+                                          itemBuilder:
+                                              (context) => [
+                                                PopupMenuItem(
+                                                  value: 'mute_all',
+                                                  child: Text('Mute All'),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'unmute_all',
+                                                  child: Text('Unmute All'),
+                                                ),
+                                              ],
+                                          icon: Icon(Icons.more_vert),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 );

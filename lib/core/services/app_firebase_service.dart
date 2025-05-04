@@ -359,4 +359,16 @@ class AppFirebaseService {
             .data()?['token'] ??
         '';
   }
+
+  Stream<bool> isCurrentUserMutedByHost(String meetingId) async* {
+    final userId = AppLocalStorage.getUserDetails().userId;
+    yield* meetingsCollection.doc(meetingId).snapshots().map((snapshot) {
+      final data = snapshot.data() as Map<String, dynamic>?;
+      if (data != null) {
+        final result = data['isParticipantsMuted'] as Map<int, bool>? ??{};
+        return result.isEmpty?false: result[userId] ?? false;
+      }
+      return false;
+    });
+  }
 }

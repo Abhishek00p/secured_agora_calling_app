@@ -72,6 +72,7 @@ class MeetingController extends GetxController {
   }
 
   Future<void> joinChannel({required String channelName}) async {
+    try{
     final token = await _firebaseService.getAgoraToken();
 
     final currentUserId = AppLocalStorage.getUserDetails().userId;
@@ -93,6 +94,10 @@ class MeetingController extends GetxController {
       token: token,
       userId: currentUserId,
     );
+    }catch(e){
+      AppLogger.print('Error joining channel: $e');
+      AppToastUtil.showErrorToast(Get.context!, 'Error joining channel: $e');
+    }
   }
 
   Future<void> leaveChannel() async {
@@ -244,6 +249,7 @@ class MeetingController extends GetxController {
   }
 
   void onJoinSuccess() {
+    try{
     isJoined.value = true;
     final currentUserId = AppLocalStorage.getUserDetails().userId;
     _firebaseService.addParticipants(meetingId, currentUserId).then((v) {
@@ -251,9 +257,24 @@ class MeetingController extends GetxController {
         addUser(currentUserId);
       }
     });
-
+    _firebaseService.isCurrentUserMutedByHost(meetingId).listen((event) {
+      _agoraService.engine?.muteLocalAudioStream(event);
+      participants =
+          participants
+              .map(
+                (e) =>
+                    e.userId == currentUserId
+                        ? e.copyWith(isUserMuted: event)
+                        : e,
+              )
+              .toList();
+      update();
+    });
     startTimer();
     update();
+    }catch(e){
+      AppLogger.print('Error in onJoinSuccess: $e');
+    }
   }
 
   RtcEngineEventHandler _rtcEngineEventHandler(BuildContext context) {
@@ -297,5 +318,27 @@ class MeetingController extends GetxController {
   void onClose() {
     _agoraService.destroy();
     super.onClose();
+  }
+
+  void muteThisParticipantsForAllUser(ParticipantModel user) {
+    participants =
+        participants
+            .map(
+              (e) =>
+                  e.userId == user.userId ? e.copyWith(isUserMuted: true) : e,
+            )
+            .toList();
+    update();
+  }
+
+  void unMuteThisParticipantsForAllUser(ParticipantModel user) {
+    participants =
+        participants
+            .map(
+              (e) =>
+                  e.userId == user.userId ? e.copyWith(isUserMuted: false) : e,
+            )
+            .toList();
+    update();
   }
 }

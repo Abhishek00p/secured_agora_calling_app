@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/services/permission_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/home/views/meeting_action_card.dart';
 import 'package:secured_calling/features/home/views/meeting_util_service.dart';
@@ -69,11 +70,20 @@ class MembarTabViewWidget extends StatelessWidget {
             icon: Icons.videocam,
             description: 'Start an instant meeting Only Audio',
             buttonText: 'Start Now',
-            onPressed:
-                () => MeetingUtil.createNewMeeting(
-                  context: context,
-                  instant: true,
-                ),
+            onPressed: () async {
+              final _permissionStatus =
+                  await PermissionService.requestPermission(
+                    context: context,
+                    type: AppPermissionType.microphone,
+                  );
+              await PermissionService.requestPermission(
+                context: context,
+                type: AppPermissionType.camera,
+              );
+              if (_permissionStatus) {
+                MeetingUtil.createNewMeeting(context: context, instant: true);
+              }
+            },
           ),
 
           // Schedule meeting card
