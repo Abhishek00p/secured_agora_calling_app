@@ -57,6 +57,26 @@ class AppFirebaseService {
           'subscription': null,
         };
         await usersCollection.doc('$unqiueUserId').set(userData);
+        final memberSnapshot =
+            await FirebaseFirestore.instance
+                .collection('members')
+                .where('memberCode', isEqualTo: memberCode)
+                .limit(1)
+                .get();
+
+        if (memberSnapshot.docs.isNotEmpty) {
+          final memberDocRef = memberSnapshot.docs.first.reference;
+
+          await FirebaseFirestore.instance.runTransaction((transaction) async {
+            final freshSnap = await transaction.get(memberDocRef);
+            final currentTotalUsers = freshSnap.get('totalUsers') ?? 0;
+
+            transaction.update(memberDocRef, {
+              'totalUsers': currentTotalUsers + 1,
+            });
+          });
+        }
+
         AppLocalStorage.storeUserDetails(AppUser.fromJson(userData));
         // Update display name
         await userCredential.user!.updateDisplayName(name);
@@ -169,7 +189,8 @@ class AppFirebaseService {
     required DateTime scheduledStartTime,
     required int duration, // in minutes
     String? password,
-    bool requiresApproval = false, required int maxParticipants,
+    bool requiresApproval = false,
+    required int maxParticipants,
   }) async {
     final meetingDocId = await AppMeetingIdGenrator.generateMeetingId();
     await meetingsCollection.doc(meetingDocId).set({
@@ -401,5 +422,14 @@ class AppFirebaseService {
         'isParticipantsMuted': updatedMutedMap,
       });
     }
+  }
+
+  Future<List<AppUser>> getAllUserOfMember(String memberCode) async {
+    final QuerySnapshot querySnapshot =
+        await usersCollection.where('memberCode', isEqualTo: memberCode).get();
+
+    return querySnapshot.docs
+        .map((doc) => AppUser.fromJson(doc.data() as Map<String, dynamic>))
+        .toList();
   }
 }

@@ -117,6 +117,7 @@ class LoginRegisterController extends GetxController {
         memberCode: registerMemberCodeController.text.trim(),
       );
       if (resp) {
+        
         if (context.mounted) {
           AppToastUtil.showSuccessToast(context, 'Registeration Success...');
         }

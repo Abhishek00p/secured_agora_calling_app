@@ -13,9 +13,14 @@ class MemberForm extends StatefulWidget {
 
 class _MemberFormState extends State<MemberForm> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController name, email, days, users;
+  late TextEditingController name, email, days;
   DateTime purchaseDate = DateTime.now();
   bool isActive = true;
+
+  Function() get generateMemberCode => () {
+    final random = DateTime.now().millisecondsSinceEpoch.toString();
+    return () => "MEM-${random.substring(random.length - 6)}";
+  };
 
   @override
   void initState() {
@@ -25,9 +30,9 @@ class _MemberFormState extends State<MemberForm> {
     days = TextEditingController(
       text: widget.member?.planDays.toString() ?? '',
     );
-    users = TextEditingController(
-      text: widget.member?.totalUsers.toString() ?? '',
-    );
+    // users = TextEditingController(
+    //   text: widget.member?.totalUsers.toString() ?? '',
+    // );
     purchaseDate = widget.member?.purchaseDate ?? DateTime.now();
     isActive = widget.member?.isActive ?? true;
   }
@@ -37,7 +42,6 @@ class _MemberFormState extends State<MemberForm> {
     name.dispose();
     email.dispose();
     days.dispose();
-    users.dispose();
     super.dispose();
   }
 
@@ -51,14 +55,16 @@ class _MemberFormState extends State<MemberForm> {
       purchaseDate: purchaseDate,
       planDays: int.parse(days.text),
       isActive: isActive,
-      totalUsers: int.parse(users.text),
+      totalUsers: 0,
     );
 
     final ref = FirebaseFirestore.instance.collection('members');
     if (widget.member == null) {
-      await ref.add(data.toMap());
+      await ref.add(data.toMap().putIfAbsent('memberCode', generateMemberCode));
     } else {
-      await ref.doc(data.id).set(data.toMap());
+      await ref
+          .doc(data.id)
+          .set(data.toMap().putIfAbsent('memberCode', generateMemberCode));
     }
 
     Navigator.pop(context);
@@ -97,13 +103,7 @@ class _MemberFormState extends State<MemberForm> {
                 ),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: users,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Total Users"),
-                validator: (v) => v!.isEmpty ? "Required" : null,
-              ),
+
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

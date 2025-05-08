@@ -8,7 +8,7 @@ class Member {
   int planDays;
   bool isActive;
   int totalUsers;
-
+  String memberCode;
   Member({
     required this.id,
     required this.name,
@@ -17,6 +17,7 @@ class Member {
     required this.planDays,
     required this.isActive,
     required this.totalUsers,
+    this.memberCode = '',
   });
 
   factory Member.fromMap(String id, Map<String, dynamic> data) {
@@ -28,6 +29,8 @@ class Member {
       planDays: data['planDays'],
       isActive: data['isActive'],
       totalUsers: data['totalUsers'],
+      memberCode: data['memberCode'] ?? '',
+      
     );
   }
 
@@ -39,6 +42,7 @@ class Member {
       'planDays': planDays,
       'isActive': isActive,
       'totalUsers': totalUsers,
+      'memberCode': memberCode,
     };
   }
 

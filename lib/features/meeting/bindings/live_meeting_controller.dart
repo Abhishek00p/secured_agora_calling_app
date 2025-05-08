@@ -39,9 +39,6 @@ class MeetingController extends GetxController {
 
   void startTimer() async {
     try {
-      final value = await _firebaseService.getMeetingData(meetingId);
-      AppLogger.print('meeting data: $value');
-      meetingModel = MeetingModel.fromJson(value ?? {});
       isHost =
           meetingModel.hostId ==
           AppLocalStorage.getUserDetails().firebaseUserId;
@@ -147,14 +144,16 @@ class MeetingController extends GetxController {
   Future<void> joinChannel({required String channelName}) async {
     try {
       final token = await _firebaseService.getAgoraToken();
-
+      final value = await _firebaseService.getMeetingData(meetingId);
+      AppLogger.print('meeting data: $value');
+      meetingModel = MeetingModel.fromJson(value ?? {});
       final currentUserId = AppLocalStorage.getUserDetails().userId;
       if (token.trim().isEmpty) {
         AppToastUtil.showErrorToast(Get.context!, 'Token not found');
         return;
       }
-      AppLogger.print('agora token :$token  \n data  :${meetingModel.toJson()}');
-      
+      AppLogger.print('agora token :$token ');
+
       if (participants.length >= meetingModel.maxParticipants) {
         AppToastUtil.showErrorToast(
           Get.context!,
@@ -293,18 +292,14 @@ class MeetingController extends GetxController {
 
   void updateMuteStatus(int remoteUid, bool muted) {
     AppLogger.print('User $remoteUid muted: $muted');
-    participants =
-        participants
-            .map(
-              (e) =>
-                  e.userId == remoteUid
-                      ? e.copyWith(
-                        isUserMuted: muted,
-                        isUserSpeaking: muted ? false : e.isUserSpeaking,
-                      )
-                      : e,
-            )
-            .toList();
+    final index = participants.indexWhere((e) => e.userId == remoteUid);
+    if (index != -1) {
+      participants[index] = participants[index].copyWith(
+        isUserMuted: muted,
+        isUserSpeaking: muted ? false : null,
+      );
+    }
+
     update();
   }
 
