@@ -71,7 +71,7 @@ class MembarTabViewWidget extends StatelessWidget {
             description: 'Start an instant meeting Only Audio',
             buttonText: 'Start Now',
             onPressed: () async {
-              final _permissionStatus =
+              final permissionStatus =
                   await PermissionService.requestPermission(
                     context: context,
                     type: AppPermissionType.microphone,
@@ -80,7 +80,7 @@ class MembarTabViewWidget extends StatelessWidget {
                 context: context,
                 type: AppPermissionType.camera,
               );
-              if (_permissionStatus) {
+              if (permissionStatus) {
                 MeetingUtil.createNewMeeting(context: context, instant: true);
               }
             },

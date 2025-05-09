@@ -16,18 +16,17 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
   @override
   Widget build(BuildContext context) {
     final member = widget.member;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Member Details")),
+      appBar: AppBar(
+        title: const Text("Member Details"),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -35,19 +34,18 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                   children: [
                     Text(
                       "Member Info",
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: theme.textTheme.titleLarge,
                     ),
                     const SizedBox(height: 12),
-                    _infoRow("Name", member.name),
-                    _infoRow("Email", member.email),
-                    _infoRow("Code", member.memberCode),
-                    _infoRow("Plan Days", member.planDays.toString()),
+                    _infoRow("Name", member.name, theme),
+                    _infoRow("Email", member.email, theme),
+                    _infoRow("Code", member.memberCode, theme),
+                    _infoRow("Plan Days", member.planDays.toString(), theme),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
-
             FutureBuilder<List<AppUser>>(
               future: AppFirebaseService.instance.getAllUserOfMember(
                 member.memberCode,
@@ -60,33 +58,51 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                   );
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                    ),
+                  );
                 }
                 final users = snapshot.data ?? [];
                 if (users.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text("No users found."),
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      "No users found.",
+                      style: theme.textTheme.bodyMedium,
+                    ),
                   );
                 }
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       "Users under this Member (${users.length})",
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
                     ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: users.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder: (_, __) => const Divider(),
                       itemBuilder: (context, index) {
                         final user = users[index];
                         return ListTile(
-                          leading: CircleAvatar(child: Text(user.name[0].capitalizeAll)),
-                          title: Text(user.name),
-                          subtitle: Text(user.email),
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                            child: Text(
+                              user.name[0].capitalizeAll,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                          title: Text(user.name, style: theme.textTheme.bodyLarge),
+                          subtitle: Text(user.email, style: theme.textTheme.bodyMedium),
                         );
                       },
                     ),
@@ -100,7 +116,7 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
     );
   }
 
-  Widget _infoRow(String title, String value) {
+  Widget _infoRow(String title, String value, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -109,10 +125,18 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
             flex: 2,
             child: Text(
               "$title:",
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          Expanded(flex: 3, child: Text(value)),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
         ],
       ),
     );

@@ -117,7 +117,6 @@ class LoginRegisterController extends GetxController {
         memberCode: registerMemberCodeController.text.trim(),
       );
       if (resp) {
-        
         if (context.mounted) {
           AppToastUtil.showSuccessToast(context, 'Registeration Success...');
         }
@@ -158,6 +157,8 @@ class LoginRegisterController extends GetxController {
     registerPasswordController.dispose();
     super.onClose();
   }
+
+
 }
 
 // --- ENUMs

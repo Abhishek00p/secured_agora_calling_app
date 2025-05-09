@@ -55,23 +55,21 @@ class _HomeScreenState extends State<HomeScreen>
             tooltip: 'Sign Out',
           ),
         ],
+        leading:
+            !AppLocalStorage.getUserDetails().email.contains('abhi')
+                ? null
+                : IconButton(
+                  icon: const Icon(Icons.people_alt_outlined),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AdminScreen()),
+                    );
+                  },
+                  tooltip: 'Admin Section',
+                ),
       ),
 
-      drawer: Drawer(
-        child: Column(
-          children: [
-            50.h,
-            ListTile(
-              onTap: () {
-                Get.to(() => AdminScreen());
-              },
-              tileColor: Colors.grey[200],
-              title: Text('Admin'),
-              trailing: Icon(Icons.arrow_forward_ios_outlined),
-            ),
-          ],
-        ),
-      ),
       body: Column(
         children: [
           // User profile card

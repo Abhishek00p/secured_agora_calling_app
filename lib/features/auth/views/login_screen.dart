@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
+import 'package:secured_calling/features/auth/views/reset_pass_screen.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
@@ -65,12 +66,25 @@ class LoginForm extends StatelessWidget {
                               ? 'Please enter your password'
                               : null,
                 ),
+              
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(context,MaterialPageRoute(builder: (route)=> ResetPasswordScreen()));
+                      // Get.toNamed(AppRouter.resetPasswordRoute);
+                    },
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(color: Colors.blue),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      AppLogger.print("pressed login button");
                       onSubmit();
                     },
                     child: const Text('Log In'),

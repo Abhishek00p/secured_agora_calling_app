@@ -2,10 +2,13 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart';
+import 'package:secured_calling/features/auth/views/reset_pass_screen.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 
 class AppFirebaseService {
   // Singleton pattern
@@ -102,6 +105,55 @@ class AppFirebaseService {
       rethrow;
     }
   }
+
+  Future<bool?> sendResetPasswordEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      AppToastUtil.showSuccessToast(
+        Get.context!,
+        'Password reset email sent successfully',
+      );
+      return true;
+    } on FirebaseAuthException catch (e) {
+      AppToastUtil.showErrorToast(
+        Get.context!,
+        e.message ?? 'Error occurred while sending reset email',
+      );
+
+    }
+  }
+
+  Future<void> updateLoginPassword({
+    required String email,
+    required String oldPassword,
+    required String newPassword,
+  }) async {  
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        // Re-authenticate the user
+        final credential = EmailAuthProvider.credential(
+          email: email,
+          password: oldPassword,
+        );
+        await user.reauthenticateWithCredential(credential);
+
+        // Update the password
+        await user.updatePassword(newPassword);
+        AppToastUtil.showSuccessToast(
+          Get.context!,
+          'Password updated successfully',
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      AppToastUtil.showErrorToast(
+        Get.context!,
+        e.message ?? 'Error occurred while updating password',
+      );
+    }
+  }
+
+
 
   Future<bool> signOut() async {
     try {

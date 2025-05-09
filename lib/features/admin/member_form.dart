@@ -17,10 +17,10 @@ class _MemberFormState extends State<MemberForm> {
   DateTime purchaseDate = DateTime.now();
   bool isActive = true;
 
-  Function() get generateMemberCode => () {
+  String get generateMemberCode  {
     final random = DateTime.now().millisecondsSinceEpoch.toString();
-    return () => "MEM-${random.substring(random.length - 6)}";
-  };
+    return "MEM-${random.substring(random.length - 6)}";
+  }
 
   @override
   void initState() {
@@ -59,12 +59,12 @@ class _MemberFormState extends State<MemberForm> {
     );
 
     final ref = FirebaseFirestore.instance.collection('members');
+    final mapData = data.toMap();
+    mapData['memberCode'] = generateMemberCode;
     if (widget.member == null) {
-      await ref.add(data.toMap().putIfAbsent('memberCode', generateMemberCode));
+      await ref.add(mapData);
     } else {
-      await ref
-          .doc(data.id)
-          .set(data.toMap().putIfAbsent('memberCode', generateMemberCode));
+      await ref.doc(data.id).set(mapData);
     }
 
     Navigator.pop(context);
