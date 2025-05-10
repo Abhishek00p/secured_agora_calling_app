@@ -22,10 +22,25 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
   final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
   final GlobalKey<FormState> _registerFormKey = GlobalKey<FormState>();
 
+  int currentTab = 0;
+  late List<Widget> _tabs;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabs = [
+      LoginForm(
+        formKey: _loginFormKey,
+        onSubmit: () {
+          _login();
+        },
+      ),
+      RegisterForm(
+        formKey: _registerFormKey,
+        onSubmit: () => _register(),
+      ),
+    ];
   }
 
   @override
@@ -34,7 +49,8 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
     super.dispose();
   }
 
-  Future<void> _login(LoginRegisterController loginRegisterController) async {
+  Future<void> _login() async {
+    final loginRegisterController = Get.find<LoginRegisterController>();
     AppLogger.print("login button preseed in ui");
     if (!_loginFormKey.currentState!.validate()) {
       AppToastUtil.showErrorToast(context, 'Form Invalid');
@@ -51,14 +67,20 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
     }
   }
 
-  Future<void> _register(
-    LoginRegisterController loginRegisterController,
-  ) async {
+  Future<void> _register() async {
+    final loginRegisterController = Get.find<LoginRegisterController>();
     if (_registerFormKey.currentState!.validate()) {
-      loginRegisterController.register(context).then((v) {
+      loginRegisterController.register().then((v) {
         if (v) {
-          AppLocalStorage.setLoggedIn(true);
-          Get.offAllNamed(AppRouter.homeRoute);
+          _tabController.animateTo(0); // Switch to login tab
+          AppToastUtil.showSuccessToast(
+            context,
+            'Registration successful! Please login to continue.',
+          );
+        } else {
+          if (context.mounted) {
+            AppToastUtil.showErrorToast(context, 'Registeration Failed...');
+          }
         }
       });
     } else {
@@ -88,119 +110,113 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // App Logo
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          Icons.call,
-                          size: 40,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // App Name
-                      Text('SecuredCalling', style: TextStyle(fontSize: 24)),
-                      const SizedBox(height: 36),
-
-                      // Tab Bar
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          // Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: TabBar(
-                          controller: _tabController,
-                          indicatorPadding: EdgeInsets.all(8),
-                          padding: EdgeInsets.all(16),
-                          indicator: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: AppTheme.primaryColor,
-                          ),
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          labelColor: Colors.white,
-                          unselectedLabelColor:
-                              Theme.of(context).textTheme.bodyLarge?.color,
-                          labelStyle: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          tabs: const [
-                            Tab(text: 'Login'),
-                            Tab(text: 'Register'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Error Message
-                      if (loginRegisterController.errorMessage.value != null &&
-                          loginRegisterController
-                              .errorMessage
-                              .string
-                              .isNotEmpty) ...[
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: Get.height - 48, // Account for padding
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // App Logo
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          width: 80,
+                          height: 80,
                           decoration: BoxDecoration(
-                            color: AppTheme.errorColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppTheme.errorColor.withOpacity(0.5),
-                            ),
+                            gradient: AppTheme.primaryGradient,
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: AppTheme.errorColor,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  loginRegisterController.errorMessage.string,
-                                  style: TextStyle(color: AppTheme.errorColor),
-                                ),
-                              ),
-                            ],
+                          child: const Icon(
+                            Icons.call,
+                            size: 40,
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 24),
-                      ],
-                      // Tab Views
-                      SizedBox(
-                        height: Get.height * 0.5,
-                        child: TabBarView(
-                          physics: NeverScrollableScrollPhysics(),
-                          controller: _tabController,
-                          children: [
-                            LoginForm(
-                              formKey: _loginFormKey,
-                              onSubmit: () {
-                                _login(loginRegisterController);
-                              },
-                            ),
-                            RegisterForm(
-                              formKey: _registerFormKey,
-                              onSubmit:
-                                  () => _register(loginRegisterController),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                      // Animated Loading Indicator
-                      if (loginRegisterController.isLoading.value) ...[
-                        const SizedBox(height: 24),
-                        const Center(child: CircularProgressIndicator()),
+                        // App Name
+                        Text('SecuredCalling', style: TextStyle(fontSize: 24)),
+                        const SizedBox(height: 36),
+
+                        // Tab Bar
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TabBar(
+                            controller: _tabController,
+                            padding: EdgeInsets.all(16),
+                            indicator: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: AppTheme.primaryColor,
+                            ),
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            labelColor: Colors.white,
+                            unselectedLabelColor:
+                                Theme.of(context).textTheme.bodyLarge?.color,
+                            labelStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            dividerColor: Colors.transparent,
+                            tabs: const [
+                              Tab(text: 'Login'),
+                              Tab(text: 'Register'),
+                            ],
+
+                            onTap: (e){
+                              setState(() {
+                                currentTab = e;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Error Message
+                        if (loginRegisterController.errorMessage.value !=
+                                null &&
+                            loginRegisterController
+                                .errorMessage
+                                .string
+                                .isNotEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.errorColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppTheme.errorColor.withOpacity(0.5),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: AppTheme.errorColor,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    loginRegisterController.errorMessage.string,
+                                    style: TextStyle(
+                                      color: AppTheme.errorColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                        // Tab Views
+                        _tabs[_tabController.index],
+
+                        // Animated Loading Indicator
+                        if (loginRegisterController.isLoading.value) ...[
+                          const SizedBox(height: 24),
+                          const Center(child: CircularProgressIndicator()),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),

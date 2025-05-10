@@ -5,6 +5,7 @@ import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginRegisterController extends GetxController {
   // State Variables
@@ -54,6 +55,54 @@ class LoginRegisterController extends GetxController {
             email: loginEmailController.text.trim(),
             password: loginPasswordController.text,
           );
+          final isEmailVerified =  AppFirebaseService.instance.auth.currentUser?.emailVerified??false;
+            
+            if (!isEmailVerified) {
+              if (context.mounted) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Email Verification Required'),
+                    content: const Text(
+                      'Please verify your email before logging in. Would you like to resend the verification email?'
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          try {
+                            await AppFirebaseService.instance.auth.currentUser?.sendEmailVerification();
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              AppToastUtil.showSuccessToast(
+                                context,
+                                'Verification email sent. Please check your inbox.',
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              AppToastUtil.showErrorToast(
+                                context,
+                                'Failed to send verification email. Please try again.',
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('Resend Email'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return 'Please verify your email before logging in.';
+            }
       AppLogger.print("login button presed :  ${result.user}");
       AppToastUtil.showSuccessToast(context, 'Success ${result.user != null}');
 
@@ -106,25 +155,43 @@ class LoginRegisterController extends GetxController {
     }
   }
 
-  Future<bool> register(BuildContext context) async {
+  Future<bool> register() async {
     setLoading(true);
+    update();
     clearError();
     try {
+      // First validate if member code exists (case-insensitive)
+      final inputCode = registerMemberCodeController.text.trim().toUpperCase();
+      final memberSnapshot = await FirebaseFirestore.instance
+          .collection('members')
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      QueryDocumentSnapshot? matchingDoc;
+      try {
+        matchingDoc = memberSnapshot.docs.firstWhere(
+          (doc) => (doc['memberCode'] as String).toUpperCase() == inputCode,
+        );
+      } catch (_) {
+        matchingDoc = null;
+      }
+
+      if (matchingDoc == null) {
+        setError('Invalid or inactive member code. Please check and try again.');
+        setLoading(false);
+        update();
+        return false;
+      }
+
       final resp = await AppFirebaseService.instance.signUpWithEmailAndPassword(
         name: registerNameController.text.trim(),
         email: registerEmailController.text.trim(),
         password: registerPasswordController.text.trim(),
-        memberCode: registerMemberCodeController.text.trim(),
+        memberCode: registerMemberCodeController.text.trim().toUpperCase(),
       );
-      if (resp) {
-        if (context.mounted) {
-          AppToastUtil.showSuccessToast(context, 'Registeration Success...');
-        }
-      } else {
-        if (context.mounted) {
-          AppToastUtil.showErrorToast(context, 'Registeration Failed...');
-        }
-      }
+      
+      setLoading(false);
+      update();
       return resp;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
@@ -140,10 +207,11 @@ class LoginRegisterController extends GetxController {
         default:
           setError('Error: ${e.message}');
       }
-    } catch (_) {
-      setError('An unexpected error occurred. Please try again.');
+    } catch (e) {
+      setError(e.toString());
     } finally {
       setLoading(false);
+      update();
     }
     return false;
   }

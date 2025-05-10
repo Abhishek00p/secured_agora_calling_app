@@ -3,13 +3,11 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'package:secured_calling/features/auth/views/reset_pass_screen.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
-
 class AppFirebaseService {
   // Singleton pattern
   AppFirebaseService._();
@@ -47,6 +45,8 @@ class AppFirebaseService {
       );
 
       if (userCredential.user != null) {
+        await FirebaseAuth.instance.currentUser?.sendEmailVerification();
+
         final unqiueUserId = await generateUniqueUserId();
         // Create user profile in Firestore
         final userData = {
@@ -60,24 +60,28 @@ class AppFirebaseService {
           'subscription': null,
         };
         await usersCollection.doc('$unqiueUserId').set(userData);
-        final memberSnapshot =
-            await FirebaseFirestore.instance
-                .collection('members')
-                .where('memberCode', isEqualTo: memberCode)
-                .limit(1)
-                .get();
+        final inputCode = memberCode.toLowerCase();
+        final memberSnapshot = await FirebaseFirestore.instance
+            .collection('members')
+            .get(); 
 
-        if (memberSnapshot.docs.isNotEmpty) {
-          final memberDocRef = memberSnapshot.docs.first.reference;
+        QueryDocumentSnapshot? matchingDoc;
+        try {
+          matchingDoc = memberSnapshot.docs.firstWhere(
+            (doc) => (doc['memberCode'] as String).toLowerCase() == inputCode,
+          );
+        } catch (_) {
+          matchingDoc = null;
+        }
 
-          await FirebaseFirestore.instance.runTransaction((transaction) async {
-            final freshSnap = await transaction.get(memberDocRef);
-            final currentTotalUsers = freshSnap.get('totalUsers') ?? 0;
-
-            transaction.update(memberDocRef, {
-              'totalUsers': currentTotalUsers + 1,
-            });
-          });
+        if (matchingDoc != null) {
+          await FirebaseFirestore.instance
+              .collection('members')
+              .doc(matchingDoc.id)
+              .update({
+                'userId': unqiueUserId,
+                'totalUsers': FieldValue.increment(1)
+              });
         }
 
         AppLocalStorage.storeUserDetails(AppUser.fromJson(userData));
@@ -97,10 +101,12 @@ class AppFirebaseService {
     required String password,
   }) async {
     try {
+
       return await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      
     } catch (e) {
       rethrow;
     }
@@ -121,6 +127,7 @@ class AppFirebaseService {
       );
 
     }
+    return null;
   }
 
   Future<void> updateLoginPassword({
@@ -219,7 +226,9 @@ class AppFirebaseService {
               .docs
               .firstOrNull;
       if (res != null) {
-        return AppUser.fromJson((res.data() as Map<String, dynamic>));
+        final data = res.data() as Map<String, dynamic>;
+        AppLogger.print('user data : $data');
+        return AppUser.fromJson(data);
       }
     }
     return AppUser.toEmpty();
@@ -483,5 +492,19 @@ class AppFirebaseService {
     return querySnapshot.docs
         .map((doc) => AppUser.fromJson(doc.data() as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<List<AppUser>> getAllUsers() async {
+    try {
+      final snapshot = await _firestore.collection('users').get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return AppUser.fromJson(data);
+      }).toList();
+    } catch (e) {
+      AppLogger.print('Error getting users: $e');
+      rethrow;
+    }
   }
 }

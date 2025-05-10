@@ -8,6 +8,7 @@ class AppUser {
   final bool isMember;
   final DateTime createdAt;
   final Subscription subscription;
+  final String memberCode;
 
   AppUser({
     this.name = '',
@@ -15,6 +16,7 @@ class AppUser {
     this.userId = 0,
     this.firebaseUserId = '',
     this.isMember = false,
+    this.memberCode = '',
     DateTime? createdAt,
     Subscription? subscription,
   }) : createdAt = createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
@@ -29,6 +31,7 @@ class AppUser {
       isMember: json['isMember'] as bool? ?? false,
       userId: json['userId'] ?? 0,
       firebaseUserId: json['firebaseUserId'] ?? '',
+      memberCode: json['memberCode'] as String? ?? '',
       createdAt:
           json['createdAt'] is String
               ? DateTime.parse(json['createdAt'])
@@ -46,6 +49,7 @@ class AppUser {
       'subscription': subscription.toJson(),
       'userId': userId,
       'firebaseUserId': firebaseUserId,
+      'memberCode': memberCode,
     };
   }
 
@@ -60,6 +64,7 @@ class AppUser {
     Subscription? subscription,
     int? userId,
     String? firebaseUserId,
+    String? memberCode,
   }) {
     return AppUser(
       name: name ?? this.name,
@@ -69,12 +74,13 @@ class AppUser {
       isMember: isMember ?? this.isMember,
       createdAt: createdAt ?? this.createdAt,
       subscription: subscription ?? this.subscription,
+      memberCode: memberCode ?? this.memberCode,
     );
   }
 
   @override
   String toString() {
-    return 'AppUser(userId: $userId, firebaseUserId: $firebaseUserId ,name: $name, email: $email, isMember: $isMember, createdAt: $createdAt, subscription: $subscription)';
+    return 'AppUser(userId: $userId, firebaseUserId: $firebaseUserId, name: $name, email: $email, isMember: $isMember, memberCode: $memberCode, createdAt: $createdAt, subscription: $subscription)';
   }
 }
 

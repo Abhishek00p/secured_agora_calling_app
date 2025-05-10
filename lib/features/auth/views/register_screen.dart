@@ -40,6 +40,7 @@ class RegisterForm extends StatelessWidget {
                       loginRegisterController.registerMemberCodeController,
                   labelText: 'Member Code',
                   prefixIcon: Icons.people_outline_rounded,
+                  helperText: 'Enter the member code provided by your organization',
                   validator:
                       (value) =>
                           value == null || value.isEmpty
@@ -72,16 +73,12 @@ class RegisterForm extends StatelessWidget {
                   prefixIcon: Icons.lock_outline,
                   obscureText:
                       loginRegisterController.obscureRegisterPassword.value,
-                  suffixIcon: IconButton(
-                    icon: Icon(
+                      onSuffixIconPressed: loginRegisterController.toggleRegisterPasswordVisibility,
+                  suffixIcon: 
                       loginRegisterController.obscureRegisterPassword.value
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                    ),
-                    onPressed:
-                        loginRegisterController
-                            .toggleRegisterPasswordVisibility,
-                  ),
+                   
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a password';
@@ -96,8 +93,17 @@ class RegisterForm extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: onSubmit,
-                    child: const Text('Create Account'),
+                    onPressed: loginRegisterController.isLoading.value ? null : onSubmit,
+                    child: loginRegisterController.isLoading.value
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('Create Account'),
                   ),
                 ),
               ],

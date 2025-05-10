@@ -1,5 +1,3 @@
-import 'package:get/get.dart';
-import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
@@ -8,6 +6,7 @@ import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/admin/admin_home.dart';
 import 'package:secured_calling/features/home/views/membar_tab_view_widget.dart';
 import 'package:secured_calling/features/home/views/user_tab.dart';
+import 'package:secured_calling/features/home/views/users_screen.dart';
 import 'package:flutter/material.dart';
 
 enum UserType { user, member }
@@ -56,18 +55,31 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
         leading:
-            !AppLocalStorage.getUserDetails().email.contains('abhi')
+            !AppLocalStorage.getUserDetails().email.contains('flutter') &&
+                    !AppLocalStorage.getUserDetails().isMember
                 ? null
                 : IconButton(
-                  icon: const Icon(Icons.people_alt_outlined),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AdminScreen()),
-                    );
-                  },
-                  tooltip: 'Admin Section',
-                ),
+                    icon: const Icon(Icons.people_alt_outlined),
+                    onPressed: () {
+                      final user = AppLocalStorage.getUserDetails();
+                      if (user.email.contains('flutter')) {
+                        // Admin navigation
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminScreen()),
+                        );
+                      } else if (user.isMember) {
+                        // Member navigation
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const UsersScreen()),
+                        );
+                      }
+                    },
+                    tooltip: user.email.contains('flutter') 
+                        ? 'Admin Section' 
+                        : 'View Associated Users',
+                  ),
       ),
 
       body: Column(
@@ -147,6 +159,38 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                             ),
                           ),
+                          if (user.isMember && user.memberCode.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.key,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Code: ${user.memberCode}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
