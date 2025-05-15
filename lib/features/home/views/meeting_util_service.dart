@@ -11,7 +11,10 @@ class MeetingDialogController extends GetxController {
   final titleController = TextEditingController();
   final passwordController = TextEditingController();
 
-  final durations =[...List.generate(5, (i)=> (i+1)*5), ...List.generate(14, (i) => (i + 1) * 30)]; // in minutes
+  final durations = [
+    ...List.generate(5, (i) => (i + 1) * 5),
+    ...List.generate(14, (i) => (i + 1) * 30),
+  ]; // in minutes
   final selectedDuration = 30.obs;
   final maxParticipants = RxInt(5); // default value
   final isScheduled = false.obs;
@@ -29,22 +32,22 @@ class MeetingDialogController extends GetxController {
 class MeetingUtil {
   static final AppFirebaseService firebaseService = AppFirebaseService.instance;
 
-  static Future<void> createNewMeeting({
-    required BuildContext context,
-    required bool instant,
-  }) async {
+  static Future<void> createNewMeeting({required BuildContext context}) async {
     final now = DateTime.now();
-    final meetingName = 'Meeting ${now.hour}:${now.minute}';
+    String meetingName = 'Meeting ${now.hour}:${now.minute}';
 
     final result = await showMeetCreateBottomSheet();
 
     if (result == null) return;
 
     try {
+      meetingName=
+      result['title'];
+
       final docRef = await firebaseService.createMeeting(
         hostId: firebaseService.currentUser!.uid,
-        meetingName: result['title'],
-        scheduledStartTime: now,
+        meetingName: meetingName,
+        scheduledStartTime: result['scheduledStart']??now,
         requiresApproval: result['isApprovalRequired'] ?? false,
         channelName: 'testing',
         maxParticipants: result['maxParticipants'] ?? 45,
@@ -55,7 +58,7 @@ class MeetingUtil {
 
       final doc = await docRef.get();
       final meetingData = doc.data() as Map<String, dynamic>;
-
+      final instant = result['isInstant'] ?? false;
       if (instant) {
         Navigator.pushNamed(
           context,
@@ -67,7 +70,7 @@ class MeetingUtil {
           },
         );
       } else {
-        AppToastUtil.showErrorToast(
+        AppToastUtil.showInfoToast(
           context,
           'Meeting "$meetingName" scheduled successfully',
         );
@@ -98,7 +101,9 @@ class MeetingUtil {
 
   static Future<Map<String, dynamic>?> showMeetCreateBottomSheet() async {
     final controller = Get.put(MeetingDialogController());
-    final member =await firebaseService.getMemberData(AppLocalStorage.getUserDetails().memberCode);
+    final member = await firebaseService.getMemberData(
+      AppLocalStorage.getUserDetails().memberCode,
+    );
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: Get.context!,
       isScrollControlled: true,
@@ -167,34 +172,34 @@ class MeetingUtil {
                         ),
                       ),
                       16.w,
-                      if(member.isNotEmpty) ...
-                    [  Expanded(
-                        child: DropdownButtonFormField<int>(
-                          menuMaxHeight: 500,
-                          value: controller.maxParticipants.value,
-                          items:
-                              List.generate((member.maxParticipantsAllowed/5).ceil(), (i) => (i + 1) * 5)
-                                  .map(
-                                    (val) {
-                                      print('max participants: $val');
-                                      return DropdownMenuItem(
-                                      value: val,
-                                      child: Text('$val'),
-                                    );
-                                    },
-                                  )
-                                  .toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              controller.maxParticipants.value = val;
-                            }
-                          },
-                          decoration: const InputDecoration(
-                            labelText: 'Max Participants',
-                            enabledBorder: OutlineInputBorder(),
+                      if (member.isNotEmpty) ...[
+                        Expanded(
+                          child: DropdownButtonFormField<int>(
+                            menuMaxHeight: 500,
+                            value: controller.maxParticipants.value,
+                            items:
+                                List.generate(
+                                  (member.maxParticipantsAllowed / 5).ceil(),
+                                  (i) => (i + 1) * 5,
+                                ).map((val) {
+                                  print('max participants: $val');
+                                  return DropdownMenuItem(
+                                    value: val,
+                                    child: Text('$val'),
+                                  );
+                                }).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                controller.maxParticipants.value = val;
+                              }
+                            },
+                            decoration: const InputDecoration(
+                              labelText: 'Max Participants',
+                              enabledBorder: OutlineInputBorder(),
+                            ),
                           ),
                         ),
-                      ),]
+                      ],
                     ],
                   ),
 

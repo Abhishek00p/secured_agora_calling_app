@@ -274,6 +274,7 @@ class AppFirebaseService {
       'status': 'scheduled', // scheduled, live, ended, cancelled
       'participants': [],
       'pendingApprovals': [],
+      'memberCode': AppLocalStorage.getUserDetails().memberCode.toUpperCase(),
     });
     return meetingsCollection.doc(meetingDocId);
   }
@@ -370,6 +371,17 @@ class AppFirebaseService {
         .where('hostId', isEqualTo: hostId)
         .orderBy('scheduledStartTime', descending: true)
         .snapshots();
+  }
+
+    Stream<QuerySnapshot> getAllMeetingsFromCodeStream(String memberCode) {
+      try{
+    return meetingsCollection
+        .where('memberCode', isEqualTo: memberCode.toUpperCase())
+        .snapshots();
+      }catch(e){
+        AppLogger.print('error caught in getting all meetings from code : $e');
+        return Stream.empty();
+      }
   }
 
   Future<QuerySnapshot> searchMeetingByChannelName(String channelName) {

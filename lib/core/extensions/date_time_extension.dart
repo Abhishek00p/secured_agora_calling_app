@@ -14,10 +14,22 @@ extension AppDateTimeExtension on DateTime? {
     return '${date.day}/${date.month}/${date.year}';
   }
 
+       String get formatTime {
+    final date = this;
+    if (date == null) return 'N/A';
+    return '${date.hour}:${date.minute}';
+  }
+
   int get differenceInDays {
     final date = this;
     if (date == null) return 0;
     final now = DateTime.now();
     return now.difference(date).inDays;
+  }
+  int get differenceInMinutes {
+    final date = this;
+    if (date == null) return 0;
+    final now = DateTime.now();
+    return now.difference(date).inMinutes;
   }
 }

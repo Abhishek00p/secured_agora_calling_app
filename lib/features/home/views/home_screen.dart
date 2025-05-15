@@ -25,11 +25,20 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
-
+final  List<Widget> _pages = [MembarTabViewWidget(), UserTab()];
+int _selectedIndex = 0;
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() {
+          _selectedIndex = _tabController.index;
+        });
+      }
+    });
   }
 
   @override
@@ -109,189 +118,193 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
       ),
 
-      body: Column(
-        children: [
-          // User profile card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  user.name.sentenceCase,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                if (user.isMember && user.memberCode.isNotEmpty) ...[
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Code: ${user.memberCode}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
-                      4.w,
-                      IconButton(
-                        icon: const Icon(
-                          Icons.copy,
-                          color: Colors.white,
-                          size: 14,
-                        ),
-                        padding: EdgeInsets.zero,
-
-                        onPressed: () {
-                          // Copy member code to clipboard
-                          Clipboard.setData(
-                            ClipboardData(text: user.memberCode),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              duration: Duration(seconds: 2),
-                              behavior: SnackBarBehavior.floating,
-                              content: Text('Member code copied!'),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // User profile card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
                 ],
-
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Role : ${user.isMember ? 'Member' : 'User'}',
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    user.name.sentenceCase,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
                   ),
-                ),
-
-                if (user.isMember && !user.subscription.isEmpty) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'Expires On : ${user.subscription.expiryDate.formatDate}',
+                  const SizedBox(height: 4),
+                  if (user.isMember && user.memberCode.isNotEmpty) ...[
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Code: ${user.memberCode}',
                           style: const TextStyle(
-                            fontWeight: FontWeight.bold,
                             color: Colors.white,
-                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
                           ),
                         ),
-                      ),
+                        4.w,
+                        IconButton(
+                          icon: const Icon(
+                            Icons.copy,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          padding: EdgeInsets.zero,
 
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
+                          onPressed: () {
+                            // Copy member code to clipboard
+                            Clipboard.setData(
+                              ClipboardData(text: user.memberCode),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                duration: Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                                content: Text('Member code copied!'),
+                              ),
+                            );
+                          },
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          user.subscription.expiryDate.differenceInDays < 0
-                              ? 'Days Left : ${-user.subscription.expiryDate.differenceInDays}'
-                              : user.subscription.expiryDate.differenceInDays ==
-                                  0
-                              ? 'Expiring Today'
-                              : 'Expired',
-                          style: const TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Role : ${user.isMember ? 'Member' : 'User'}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
                       ),
-                    ],
+                    ),
                   ),
-                ],
-              ],
-            ),
-          ),
 
-          // Tab Bar
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicatorSize: TabBarIndicatorSize.tab,
-              indicator: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: AppTheme.primaryColor,
+                  if (user.isMember && !user.subscription.isEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Expires On : ${user.subscription.expiryDate.formatDate}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontSize: 8,
+                            ),
+                          ),
+                        ),
+
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            user.subscription.expiryDate.differenceInDays < 0
+                                ? 'Days Left : ${-user.subscription.expiryDate.differenceInDays}'
+                                : user
+                                        .subscription
+                                        .expiryDate
+                                        .differenceInDays ==
+                                    0
+                                ? 'Expiring Today'
+                                : 'Expired',
+                            style: const TextStyle(
+                              color: AppTheme.primaryColor,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
-              labelColor: Colors.white,
-              indicatorPadding: EdgeInsets.all(8),
-              dividerColor: Colors.transparent,
-              unselectedLabelColor:
-                  Theme.of(context).textTheme.bodyLarge?.color,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-              tabs: const [
-                Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'),
-                Tab(icon: Icon(Icons.people), text: 'Join Meeting'),
-              ],
             ),
-          ),
-          Divider(),
-          // Tab content
-          Expanded(
-            child: TabBarView(
-              physics: NeverScrollableScrollPhysics(),
-              controller: _tabController,
-              children: [
-                MembarTabViewWidget(isMember: user.isMember),
-                UserTab(),
-              ],
+
+            // Tab Bar
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(12),
+
+              ),
+              // height: 50,
+              // width: double.infinity,
+              child: TabBar(
+                onTap: (index) {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                },
+                controller: _tabController,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: AppTheme.primaryColor,
+                ),
+                labelColor: Colors.white,
+                indicatorPadding: EdgeInsets.all(8),
+                dividerColor: Colors.transparent,
+                unselectedLabelColor:
+                    Theme.of(context).textTheme.bodyLarge?.color,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                tabs: const [
+                  Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'),
+                  Tab(icon: Icon(Icons.people), text: 'Join Meeting'),
+                ],
+              ),
             ),
-          ),
-        ],
+            Divider(),
+            // Tab content
+            _pages[_selectedIndex],
+          ],
+        ),
       ),
     );
   }

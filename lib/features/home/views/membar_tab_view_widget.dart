@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/permission_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/home/views/meeting_action_card.dart';
 import 'package:secured_calling/features/home/views/meeting_util_service.dart';
 
 class MembarTabViewWidget extends StatelessWidget {
-  const MembarTabViewWidget({super.key, required this.isMember});
-  final bool isMember;
+   MembarTabViewWidget({super.key,});
+  final bool isMember = AppLocalStorage.getUserDetails().isMember;
   @override
   Widget build(BuildContext context) {
     if (!isMember) {
@@ -81,7 +82,7 @@ class MembarTabViewWidget extends StatelessWidget {
                 type: AppPermissionType.camera,
               );
               if (permissionStatus) {
-                MeetingUtil.createNewMeeting(context: context, instant: true);
+                MeetingUtil.createNewMeeting(context: context);
               }
             },
           ),
