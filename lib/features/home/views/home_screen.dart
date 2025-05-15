@@ -1,3 +1,6 @@
+import 'package:flutter/services.dart';
+import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
@@ -44,14 +47,37 @@ class _HomeScreenState extends State<HomeScreen>
         title: const Text('SecuredCalling'),
 
         actions: [
-          IconButton(
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: () async {
-              if (await AppLocalStorage.signOut(context)) {
-                Navigator.pushReplacementNamed(context, AppRouter.welcomeRoute);
+          PopupMenuButton<String>(
+            offset: Offset(0, 50),
+            icon: const Icon(
+              Icons.logout_rounded,
+            ), // You can use Icons.exit_to_app if preferred
+            onSelected: (value) async {
+              if (value == 'sign_out') {
+                if (await AppLocalStorage.signOut(context)) {
+                  Navigator.pushReplacementNamed(
+                    context,
+                    AppRouter.welcomeRoute,
+                  );
+                }
               }
             },
-            tooltip: 'Sign Out',
+            itemBuilder:
+                (BuildContext context) => <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    value: 'sign_out',
+                    padding: EdgeInsets.zero,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        8.w,
+                        Text('Sign Out'),
+                        10.w,
+                        const Icon(Icons.logout_rounded, color: Colors.red),
+                      ],
+                    ),
+                  ),
+                ],
           ),
         ],
         leading:
@@ -59,27 +85,28 @@ class _HomeScreenState extends State<HomeScreen>
                     !AppLocalStorage.getUserDetails().isMember
                 ? null
                 : IconButton(
-                    icon: const Icon(Icons.people_alt_outlined),
-                    onPressed: () {
-                      final user = AppLocalStorage.getUserDetails();
-                      if (user.email.contains('flutter')) {
-                        // Admin navigation
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const AdminScreen()),
-                        );
-                      } else if (user.isMember) {
-                        // Member navigation
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const UsersScreen()),
-                        );
-                      }
-                    },
-                    tooltip: user.email.contains('flutter') 
-                        ? 'Admin Section' 
-                        : 'View Associated Users',
-                  ),
+                  icon: const Icon(Icons.people_alt_outlined),
+                  onPressed: () {
+                    final user = AppLocalStorage.getUserDetails();
+                    if (user.email.contains('flutter')) {
+                      // Admin navigation
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AdminScreen()),
+                      );
+                    } else if (user.isMember) {
+                      // Member navigation
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const UsersScreen()),
+                      );
+                    }
+                  },
+                  tooltip:
+                      user.email.contains('flutter')
+                          ? 'Admin Section'
+                          : 'View Associated Users',
+                ),
       ),
 
       body: Column(
@@ -87,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen>
           // User profile card
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: AppTheme.primaryGradient,
@@ -102,129 +129,124 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white.withOpacity(0.9),
-                      child: Text(
-                        user.name.isEmpty
-                            ? ''
-                            : user.name.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            user.email,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              user.isMember ? 'Premium Member' : 'Free User',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          if (user.isMember && user.memberCode.isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.key,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Code: ${user.memberCode}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
+                Text(
+                  user.name.sentenceCase,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
-                if (user.isMember && !user.subscription.isEmpty) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
+                const SizedBox(height: 4),
+                if (user.isMember && user.memberCode.isNotEmpty) ...[
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Code: ${user.memberCode}',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
                         ),
-
-                        children: [
-                          const TextSpan(
-                            text: 'Subscription Status: ',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          TextSpan(
-                            text:
-                                'Active until ${user.subscription.expiryDate.formatDateTime}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
                       ),
+                      4.w,
+                      IconButton(
+                        icon: const Icon(
+                          Icons.copy,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                        padding: EdgeInsets.zero,
+
+                        onPressed: () {
+                          // Copy member code to clipboard
+                          Clipboard.setData(
+                            ClipboardData(text: user.memberCode),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              duration: Duration(seconds: 2),
+                              behavior: SnackBarBehavior.floating,
+                              content: Text('Member code copied!'),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Role : ${user.isMember ? 'Member' : 'User'}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
                     ),
+                  ),
+                ),
+
+                if (user.isMember && !user.subscription.isEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Expires On : ${user.subscription.expiryDate.formatDate}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 8,
+                          ),
+                        ),
+                      ),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          user.subscription.expiryDate.differenceInDays < 0
+                              ? 'Days Left : ${-user.subscription.expiryDate.differenceInDays}'
+                              : user.subscription.expiryDate.differenceInDays ==
+                                  0
+                              ? 'Expiring Today'
+                              : 'Expired',
+                          style: const TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ],

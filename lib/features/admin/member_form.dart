@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
+import 'package:secured_calling/widgets/app_text_container.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
 
 class MemberForm extends StatefulWidget {
@@ -17,7 +19,11 @@ class MemberForm extends StatefulWidget {
 
 class _MemberFormState extends State<MemberForm> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController name, email, days, password;
+  late TextEditingController name,
+      email,
+      days,
+      password,
+      maxParticipantsAllowed;
   DateTime purchaseDate = DateTime.now();
   bool isActive = true;
   bool _isLoading = false;
@@ -38,6 +44,9 @@ class _MemberFormState extends State<MemberForm> {
     password = TextEditingController();
     purchaseDate = widget.member?.purchaseDate ?? DateTime.now();
     isActive = widget.member?.isActive ?? true;
+    maxParticipantsAllowed = TextEditingController(
+      text: widget.member?.maxParticipantsAllowed.toString() ?? '',
+    );
   }
 
   @override
@@ -46,6 +55,7 @@ class _MemberFormState extends State<MemberForm> {
     email.dispose();
     days.dispose();
     password.dispose();
+    maxParticipantsAllowed.dispose();
     super.dispose();
   }
 
@@ -60,18 +70,21 @@ class _MemberFormState extends State<MemberForm> {
       if (widget.member == null) {
         // New member registration flow
         final memberCode = generateMemberCode;
-        
+
         // Register user in Firebase Auth
-        final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email.text.trim(),
-          password: password.text,
-        );
+        final userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
+              email: email.text.trim(),
+              password: password.text,
+            );
 
         // Send email verification
         await userCredential.user?.sendEmailVerification();
 
         // Create user profile in Firestore
         final userId = await AppFirebaseService.instance.generateUniqueUserId();
+        final expiryDate=purchaseDate.add(
+              Duration(days: int.parse(days.text)));
         final userData = {
           'name': name.text.trim(),
           'email': email.text.trim(),
@@ -80,7 +93,14 @@ class _MemberFormState extends State<MemberForm> {
           'firebaseUserId': userCredential.user!.uid,
           'createdAt': DateTime.now().toIso8601String(),
           'isMember': true,
-          'subscription': null,
+          'subscription': {
+            'plan':expiryDate.differenceInDays< -30? 'Premium':'Gold',
+            'expiryDate':expiryDate.toIso8601String(), 
+            
+          },
+          'planExpiryDate': purchaseDate.add(
+            Duration(days: int.parse(days.text)),
+          ),
         };
 
         // Save user data
@@ -98,6 +118,7 @@ class _MemberFormState extends State<MemberForm> {
           planDays: int.parse(days.text),
           isActive: isActive,
           totalUsers: 0,
+          maxParticipantsAllowed: int.parse(maxParticipantsAllowed.text)<=0? 45:int.parse(maxParticipantsAllowed.text),
         );
 
         final ref = FirebaseFirestore.instance.collection('members');
@@ -130,10 +151,11 @@ class _MemberFormState extends State<MemberForm> {
         await ref.doc(memberData.id).set(mapData);
 
         // Update user data in users collection
-        final userQuery = await FirebaseFirestore.instance
-            .collection('users')
-            .where('memberCode', isEqualTo: widget.member!.memberCode)
-            .get();
+        final userQuery =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .where('memberCode', isEqualTo: widget.member!.memberCode)
+                .get();
 
         if (userQuery.docs.isNotEmpty) {
           await userQuery.docs.first.reference.update({
@@ -175,110 +197,139 @@ class _MemberFormState extends State<MemberForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.member == null ? "Add Member" : "Edit Member"),
-      ),
-      body: Form(
-        key: _formKey,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: ListView(
-            children: [
-              24.h,
-              AppTextFormField(
-                controller: name,
-                labelText: "Name",
-                prefixIcon: Icons.person,
-                validator: (v) => v!.isEmpty ? "Required" : null,
-              ),
-              const SizedBox(height: 12),
-              AppTextFormField(
-                controller: email,
-                labelText: "Email",
-                prefixIcon: Icons.email,
-                keyboardType: TextInputType.emailAddress,
-                validator: (v) => v!.isEmpty ? "Required" : null,
-              ),
-              const SizedBox(height: 12),
-              if (widget.member == null) ...[
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _saveMember,
+            child:
+                _isLoading
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : Text(
+                      widget.member == null
+                          ? "Save & Register Member"
+                          : "Update Member Details",
+                    ),
+          ),
+        ),
+        appBar: AppBar(
+          title: Text(widget.member == null ? "Add Member" : "Edit Member"),
+        ),
+        body: Form(
+          key: _formKey,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ListView(
+              children: [
+                24.h,
                 AppTextFormField(
-                  controller: password,
-                  labelText: "Password",
-                  prefixIcon: Icons.lock,
-                  obscureText: true,
-                  helperText: "Enter password for member login",
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return "Required";
-                    }
-                    if (v.length < 6) {
-                      return "Password must be at least 6 characters";
-                    }
-                    return null;
-                  },
+                  controller: name,
+                  labelText: "Name",
+                  prefixIcon: Icons.person,
+                  validator: (v) => v!.isEmpty ? "Required" : null,
                 ),
                 const SizedBox(height: 12),
-              ],
-              AppTextFormField(
-                controller: days,
-                labelText: "Subscription Days",
-                prefixIcon: Icons.calendar_today,
-                keyboardType: TextInputType.number,
-                validator: (v) => v!.isEmpty ? "Required" : null,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Active"),
-                  Switch(
-                    value: isActive,
-                    onChanged: (v) => setState(() => isActive = v),
+                AppTextFormField(
+                  controller: email,
+                  labelText: "Email",
+                  prefixIcon: Icons.email,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (v) => v!.isEmpty ? "Required" : null,
+                ),
+                const SizedBox(height: 12),
+                if (widget.member == null) ...[
+                  AppTextFormField(
+                    controller: password,
+                    labelText: "Password",
+                    prefixIcon: Icons.lock,
+                    obscureText: true,
+                    helperText: "Enter a Temporary password for member login",
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return "Required";
+                      }
+                      if (v.length < 6) {
+                        return "Password must be at least 6 characters";
+                      }
+                      return null;
+                    },
                   ),
+                  const SizedBox(height: 12),
                 ],
-              ),
-              const SizedBox(height: 24),
-              if (widget.member == null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'A verification email will be sent to the provided email address. The member must verify their email to complete the registration process.',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontSize: 12,
+                 AppTextContainer(
+                  text: purchaseDate.formatDate,
+                  label: "Purchase Date",
+                  prefixIcon: Icons.calendar_month,
+                  onPressed: () => showDatePicker(
+                    context: context,
+                    initialDate: purchaseDate,
+                    firstDate: DateTime.now().subtract(Duration(days:60)),
+                    lastDate: DateTime(2100),
+                  ).then((value) {
+                    if (value != null) {
+                      setState(() => purchaseDate = value);
+                    }
+                  }),
+                ),
+                const SizedBox(height: 12),
+                AppTextFormField(
+                  controller: days,
+                  labelText: "Subscription Days",
+                  prefixIcon: Icons.calendar_today,
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isEmpty ? "Required" : null,
+                ),
+                const SizedBox(height: 12),
+                AppTextFormField(
+                  controller: maxParticipantsAllowed,
+                  labelText: "Max Participants Allowed",
+                  helperText: "Max number of participants allowed in a Meeting",
+                  prefixIcon: Icons.calendar_today,
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isEmpty ? "Required" : null,
+                ),
+                const SizedBox(height: 8),
+      
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Active"),
+                    Switch(
+                      value: isActive,
+                      onChanged: (v) => setState(() => isActive = v),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                if (widget.member == null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'A verification email will be sent to the provided email address. The member must verify their email to complete the registration process.',
+                            style: TextStyle(color: Colors.blue, fontSize: 12),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveMember,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Text(widget.member == null 
-                        ? "Save & Register Member" 
-                        : "Update Member Details"),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

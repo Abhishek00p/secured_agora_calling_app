@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:secured_calling/core/extensions/app_string_extension.dart';
+import 'package:secured_calling/core/extensions/date_time_extension.dart';
 
 class AppUser {
   final int userId;
@@ -9,6 +11,7 @@ class AppUser {
   final DateTime createdAt;
   final Subscription subscription;
   final String memberCode;
+  final String? planExpiryDate;
 
   AppUser({
     this.name = '',
@@ -17,6 +20,7 @@ class AppUser {
     this.firebaseUserId = '',
     this.isMember = false,
     this.memberCode = '',
+    this.planExpiryDate,
     DateTime? createdAt,
     Subscription? subscription,
   }) : createdAt = createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
@@ -37,6 +41,7 @@ class AppUser {
               ? DateTime.parse(json['createdAt'])
               : (json['createdAt'] as Timestamp?)?.toDate(),
       subscription: Subscription.fromJson(json['subscription']),
+      planExpiryDate: json['planExpiryDate']==null ||  json['planExpiryDate'].toString().trim().isEmpty? null: json['planExpiryDate'].toString().toDateTime.formatDate,
     );
   }
 
@@ -50,6 +55,7 @@ class AppUser {
       'userId': userId,
       'firebaseUserId': firebaseUserId,
       'memberCode': memberCode,
+      'planExpiryDate': planExpiryDate,
     };
   }
 

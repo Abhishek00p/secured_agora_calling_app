@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
@@ -505,6 +506,24 @@ class AppFirebaseService {
     } catch (e) {
       AppLogger.print('Error getting users: $e');
       rethrow;
+    }
+  }
+
+  Future<Member> getMemberData(String memberCode) async {
+    try {
+      final snapshot = await _firestore
+          .collection('members')
+          .where('memberCode', isEqualTo: memberCode)
+          .get();
+      if (snapshot.docs.isNotEmpty) {
+        final data = snapshot.docs.first.data();
+        return Member.fromMap(snapshot.docs.first.id, data);
+      } else {
+        return Member.toEmpty();
+      }
+    } catch (e) {
+      AppLogger.print('Error getting member data: $e');
+      return Member.toEmpty();
     }
   }
 }

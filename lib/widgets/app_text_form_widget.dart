@@ -28,7 +28,9 @@ class AppTextFormField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      
       decoration: InputDecoration(
+        isDense: true,
         labelText: labelText,
         prefixIcon: Icon(prefixIcon),
         suffixIcon: suffixIcon != null

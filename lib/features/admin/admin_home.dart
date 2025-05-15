@@ -270,18 +270,30 @@ class _AdminScreenState extends State<AdminScreen> {
                     children: [
                       FilterChip(
                         label: const Text("All"),
+                        labelStyle:  TextStyle(
+                          color:_filter == 'All'?Colors.white: Colors.black,
+                          fontSize: 12,
+                        ),
                         selected: _filter == 'All',
                         onSelected: (_) => setState(() => _filter = 'All'),
                       ),
                       const SizedBox(width: 8),
                       FilterChip(
                         label: const Text("Close Expiry"),
+                         labelStyle:  TextStyle(
+                          color:_filter == 'Close'?Colors.white: Colors.black,
+                          fontSize: 12,
+                        ),
                         selected: _filter == 'Close',
                         onSelected: (_) => setState(() => _filter = 'Close'),
                       ),
                       const SizedBox(width: 8),
                       FilterChip(
                         label: const Text("Long Expiry"),
+                         labelStyle:  TextStyle(
+                          color:_filter == 'Long'?Colors.white: Colors.black,
+                          fontSize: 12,
+                        ),
                         selected: _filter == 'Long',
                         onSelected: (_) => setState(() => _filter = 'Long'),
                       ),

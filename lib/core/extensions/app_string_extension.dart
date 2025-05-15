@@ -14,4 +14,16 @@ extension AppStringExtension on String {
           : split(' ')
               .map((e) => e.trim().isEmpty ? '' : e.trim()[0].capitalizeAll)
               .join(' ');
+
+  DateTime get toDateTimeFromEpoch {
+    final date = this;
+    if (date.isEmpty) return DateTime.fromMillisecondsSinceEpoch(0);
+    return DateTime.parse(date);
+  }
+
+  DateTime get toDateTime {
+    if (trim().isEmpty) return DateTime.fromMillisecondsSinceEpoch(0);
+
+    return DateTime.parse(this);
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
@@ -12,7 +13,7 @@ class MeetingDialogController extends GetxController {
 
   final durations =[...List.generate(5, (i)=> (i+1)*5), ...List.generate(14, (i) => (i + 1) * 30)]; // in minutes
   final selectedDuration = 30.obs;
-  final maxParticipants = RxInt(45); // default value
+  final maxParticipants = RxInt(5); // default value
   final isScheduled = false.obs;
   final isApprovalRequired = true.obs;
   final selectedDate = Rxn<DateTime>();
@@ -97,7 +98,7 @@ class MeetingUtil {
 
   static Future<Map<String, dynamic>?> showMeetCreateBottomSheet() async {
     final controller = Get.put(MeetingDialogController());
-
+    final member =await firebaseService.getMemberData(AppLocalStorage.getUserDetails().memberCode);
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: Get.context!,
       isScrollControlled: true,
@@ -166,17 +167,21 @@ class MeetingUtil {
                         ),
                       ),
                       16.w,
-                      Expanded(
+                      if(member.isNotEmpty) ...
+                    [  Expanded(
                         child: DropdownButtonFormField<int>(
                           menuMaxHeight: 500,
                           value: controller.maxParticipants.value,
                           items:
-                              List.generate(40, (i) => (i + 1) * 5)
+                              List.generate((member.maxParticipantsAllowed/5).ceil(), (i) => (i + 1) * 5)
                                   .map(
-                                    (val) => DropdownMenuItem(
+                                    (val) {
+                                      print('max participants: $val');
+                                      return DropdownMenuItem(
                                       value: val,
                                       child: Text('$val'),
-                                    ),
+                                    );
+                                    },
                                   )
                                   .toList(),
                           onChanged: (val) {
@@ -189,7 +194,7 @@ class MeetingUtil {
                             enabledBorder: OutlineInputBorder(),
                           ),
                         ),
-                      ),
+                      ),]
                     ],
                   ),
 

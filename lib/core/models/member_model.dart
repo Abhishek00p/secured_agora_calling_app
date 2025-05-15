@@ -9,6 +9,7 @@ class Member {
   bool isActive;
   int totalUsers;
   String memberCode;
+  int maxParticipantsAllowed;
   Member({
     required this.id,
     required this.name,
@@ -18,6 +19,7 @@ class Member {
     required this.isActive,
     required this.totalUsers,
     this.memberCode = '',
+    this.maxParticipantsAllowed = 0,
   });
 
   factory Member.fromMap(String id, Map<String, dynamic> data) {
@@ -30,6 +32,7 @@ class Member {
       isActive: data['isActive'],
       totalUsers: data['totalUsers'],
       memberCode: data['memberCode'] ?? '',
+      maxParticipantsAllowed: data['maxParticipantsAllowed'] ?? 0,
       
     );
   }
@@ -43,8 +46,24 @@ class Member {
       'isActive': isActive,
       'totalUsers': totalUsers,
       'memberCode': memberCode,
+      'maxParticipantsAllowed': maxParticipantsAllowed,
     };
   }
 
   DateTime get expiryDate => purchaseDate.add(Duration(days: planDays));
+
+  bool get isEmpty => name.isEmpty && email.isEmpty;
+  bool get isNotEmpty => !isEmpty;
+  
+  static Future<Member> toEmpty() {
+    return Future.value(Member(
+      id: '',
+      name: '',
+      email: '',
+      purchaseDate: DateTime.fromMillisecondsSinceEpoch(0),
+      planDays: 0,
+      isActive: false,
+      totalUsers: 0,
+    ));
+  }
 }
