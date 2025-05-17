@@ -52,7 +52,20 @@ class ViewAllMeetingList extends StatelessWidget {
                                 meeting.scheduledStartTime.differenceInMinutes <
                                     0
                             ? OutlinedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                     Navigator.pushNamed(
+                                    context,
+                                    AppRouter.meetingRoomRoute,
+                                    arguments: {
+                                      'channelName': meeting.channelName,
+                                      'isHost':
+                                          meeting.hostId ==
+                                          AppLocalStorage.getUserDetails()
+                                              .firebaseUserId,
+                                      'meetingId': meeting.meetId,
+                                    },
+                                  );
+                              },
                               child: Text("Start"),
                             )
                             : const Icon(Icons.arrow_forward),

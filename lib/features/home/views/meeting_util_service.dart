@@ -46,6 +46,7 @@ class MeetingUtil {
 
       final docRef = await firebaseService.createMeeting(
         hostId: firebaseService.currentUser!.uid,
+        hostName: AppLocalStorage.getUserDetails().name,
         meetingName: meetingName,
         scheduledStartTime: result['scheduledStart']??now,
         requiresApproval: result['isApprovalRequired'] ?? false,
@@ -91,7 +92,7 @@ class MeetingUtil {
       Navigator.pushNamed(
         context,
         AppRouter.meetingRoomRoute,
-        arguments: {'channelName': channelName, 'isHost': true},
+        arguments: {'channelName': channelName, 'isHost': true,'meetingId': meetingId},
       );
     } catch (e) {
       AppToastUtil.showErrorToast('Error starting meeting: $e');

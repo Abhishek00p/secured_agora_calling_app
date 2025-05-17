@@ -239,11 +239,12 @@ class AppFirebaseService {
     required int duration, // in minutes
     String? password,
     bool requiresApproval = false,
-    required int maxParticipants,
+    required int maxParticipants, required String hostName,
   }) async {
     final meetingDocId = await AppMeetingIdGenrator.generateMeetingId();
     await meetingsCollection.doc(meetingDocId).set({
       'hostId': hostId,
+      'hostName': hostName,
       'meet_id': meetingDocId,
       'meetingName': meetingName,
       'channelName': channelName,
@@ -267,6 +268,7 @@ class AppFirebaseService {
   }
 
   Future<void> startMeeting(String meetingId) async {
+    AppLogger.print('meeting id : $meetingId');
     await meetingsCollection.doc(meetingId).update({
       'status': 'live',
       'actualStartTime': FieldValue.serverTimestamp(),

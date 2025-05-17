@@ -100,7 +100,20 @@ class UserTab extends StatelessWidget {
                                                 .differenceInMinutes <
                                             0
                                     ? OutlinedButton(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                             Navigator.pushNamed(
+                                    context,
+                                    AppRouter.meetingRoomRoute,
+                                    arguments: {
+                                      'channelName': meeting.channelName,
+                                      'isHost':
+                                          meeting.hostId ==
+                                          AppLocalStorage.getUserDetails()
+                                              .firebaseUserId,
+                                      'meetingId': meeting.meetId,
+                                    },
+                                  );
+                                      },
                                       child: Text("Start"),
                                     )
                                     : const Icon(Icons.arrow_forward),
@@ -164,6 +177,7 @@ class UserTab extends StatelessWidget {
                                 return;
                               }
                             },
+                          
                           );
                         }),
 

@@ -27,6 +27,13 @@ class AppTheme {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+  static const List<Color> cardBackgroundColors = [
+  Color(0xFFF0FFF0), // Honeydew
+  Color(0xFFE0F7FA), // Powder Blue
+  Color(0xFFE0FFFF), // Light Cyan
+  Color(0xFFF0FFFF), // Azure Mist
+  Color(0xFFEDF6FF), // Baby Blue
+];
 
   static ThemeData get lightTheme {
     return ThemeData(

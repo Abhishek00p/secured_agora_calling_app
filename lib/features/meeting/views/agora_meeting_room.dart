@@ -58,30 +58,20 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
     required String label,
     required Color color,
     required VoidCallback onPressed,
-    bool isEndCall = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: isEndCall ? Colors.red : Colors.black54,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: IconButton(
-              icon: Icon(icon),
-              color: color,
-              onPressed: onPressed,
-            ),
+          InkWell(
+            onTap: onPressed,
+            child: Icon(icon,size: 32,color: Colors.white,),
           ),
-          const SizedBox(height: 4),
+
           Text(
             label,
-            style: const TextStyle(fontSize: 12, color: Colors.white),
+            style: const TextStyle(fontSize: 8, color: Colors.white),
           ),
         ],
       ),
@@ -90,7 +80,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
 
   Widget _buildControlBar(MeetingController meetingController) {
     return SizedBox(
-      height: 70,
+      // height: 70,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -205,18 +195,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
               ),
               //
             ),
-            bottomNavigationBar: Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildControlBar(meetingController),
-                  _buildEndCallButton(() async {
-                    onPopInvoked();
-                  }),
-                ],
-              ),
-            ),
+            // bottomNavigationBar:
             body: GetBuilder<MeetingController>(
               builder: (meetingController) {
                 return SafeArea(
@@ -323,6 +302,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                             ),
 
                         JoinRequestWidget(),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildControlBar(meetingController),
+                              _buildEndCallButton(() async {
+                                onPopInvoked();
+                              }),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),

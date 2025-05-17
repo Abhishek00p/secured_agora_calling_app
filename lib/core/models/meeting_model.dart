@@ -5,6 +5,7 @@ class MeetingModel {
   final String meetingName;
   final String channelName;
   final String hostId;
+  final String hostName;
   final String password;
   final bool requiresApproval;
   final String status;
@@ -26,6 +27,7 @@ class MeetingModel {
     required this.meetingName,
     required this.channelName,
     required this.hostId,
+    required this.hostName,
     required this.password,
     required this.requiresApproval,
     required this.status,
@@ -47,6 +49,7 @@ class MeetingModel {
         meetingName: '',
         channelName: '',
         hostId: '',
+        hostName: '',
         password: '',
         requiresApproval: false,
         status: '',
@@ -70,6 +73,7 @@ class MeetingModel {
       meetingName: json['meetingName'] ?? '',
       channelName: json['channelName'] ?? '',
       hostId: json['hostId'] ?? '',
+      hostName: json['hostName'] ?? '',
       password: json['password'] ?? '',
       requiresApproval: json['requiresApproval'] ?? false,
       status: json['status'] ?? '',
@@ -91,6 +95,7 @@ class MeetingModel {
         'meetingName': meetingName,
         'channelName': channelName,
         'hostId': hostId,
+        'hostName': hostName,
         'password': password,
         'requiresApproval': requiresApproval,
         'status': status ,
@@ -111,6 +116,7 @@ class MeetingModel {
     String? meetingName,
     String? channelName,
     String? hostId,
+    String? hostName,
     String? password,
     bool? requiresApproval,
     String? status,
@@ -130,6 +136,7 @@ class MeetingModel {
       meetingName: meetingName ?? this.meetingName,
       channelName: channelName ?? this.channelName,
       hostId: hostId ?? this.hostId,
+      hostName: hostName ?? this.hostName,
       password: password ?? this.password,
       requiresApproval: requiresApproval ?? this.requiresApproval,
       status: status ?? this.status,
@@ -148,7 +155,7 @@ class MeetingModel {
 
   @override
   String toString() {
-    return 'MeetingModel(meetId: $meetId, title: $meetingName, statusLive: $status)';
+    return 'MeetingModel(meetId: $meetId, title: $meetingName, statusLive: $status), scheduledStartTime: $scheduledStartTime, scheduledEndTime: $scheduledEndTime, createdAt: $createdAt, actualStartTime: $actualStartTime, actualEndTime: $actualEndTime, hostName: $hostName, hostId: $hostId, password: $password, requiresApproval: $requiresApproval, status: $status, isParticipantsMuted: $isParticipantsMuted, maxParticipants: $maxParticipants, duration: $duration, participants: $participants, pendingApprovals: $pendingApprovals)';
   }
 
   static DateTime _toDateTime(dynamic value) {

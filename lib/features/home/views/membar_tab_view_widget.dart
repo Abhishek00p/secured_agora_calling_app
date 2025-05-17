@@ -8,9 +8,10 @@ import 'package:secured_calling/core/services/permission_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/home/views/meeting_action_card.dart';
 import 'package:secured_calling/features/home/views/meeting_util_service.dart';
+import 'package:secured_calling/features/meeting/views/meeting_tile_widget.dart';
 
 class MembarTabViewWidget extends StatelessWidget {
-   MembarTabViewWidget({super.key,});
+  MembarTabViewWidget({super.key});
   final bool isMember = AppLocalStorage.getUserDetails().isMember;
   @override
   Widget build(BuildContext context) {
@@ -156,133 +157,137 @@ class MembarTabViewWidget extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: meetings.length,
+                // itemCount: 5,
                 itemBuilder: (context, index) {
+                  // final meeting = MeetingModel.fromJson(
+                  //   meetings[index].data() as Map<String, dynamic>,
+                  // );
                   final meeting = MeetingModel.fromJson(
                     meetings[index].data() as Map<String, dynamic>,
                   );
-                  final meetingId = meetings[index].id;
-                  final status = meeting.status;
-                  final isLive = status == 'live';
-                  final isScheduled = status == 'scheduled';
-
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(16),
-                      title: Row(
-                        children: [
-                          Text(
-                            meeting.meetingName,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  isLive
-                                      ? AppTheme.successColor
-                                      : isScheduled
-                                      ? AppTheme.warningColor
-                                      : Colors.grey,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              isLive
-                                  ? 'Live'
-                                  : isScheduled
-                                  ? 'Scheduled'
-                                  : 'Ended',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.calendar_today,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                isLive
-                                    ? 'Started ${meeting.actualStartTime.formatDateTime}'
-                                    : isScheduled
-                                    ? 'Scheduled for ${meeting.scheduledStartTime.formatDateTime}'
-                                    : 'Ended ${meeting.actualEndTime.formatDateTime}',
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.link,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'ID: ${meeting.meetId}',
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              if (isLive) ...[
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.login, size: 16),
-                                  label: const Text('Join'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.successColor,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                  ),
-                                  onPressed:
-                                      () => MeetingUtil.startScheduledMeeting(
-                                        channelName: meeting.channelName,
-                                        context: context,
-                                        meetingId: meetingId,
-                                      ),
-                                ),
-                              ] else if (isScheduled) ...[
-                                OutlinedButton.icon(
-                                  icon: const Icon(Icons.play_arrow, size: 16),
-                                  label: const Text('Start'),
-                                  onPressed:
-                                      () => MeetingUtil.startScheduledMeeting(
-                                        context: context,
-                                        meetingId: meetingId,
-                                        channelName: meeting.channelName,
-                                      ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  // final meetingId = meetings[index].id;
+                  // final status = meeting.status;
+                  // final isLive = status == 'live';
+                  // final isScheduled = status == 'scheduled';
+                  return MeetingTileWidget(model: meeting);
+                  // return Card(
+                  //   margin: const EdgeInsets.only(bottom: 12),
+                  //   child: ListTile(
+                  //     contentPadding: const EdgeInsets.all(16),
+                  //     title: Row(
+                  //       children: [
+                  //         Text(
+                  //           meeting.meetingName,
+                  //           style: const TextStyle(fontWeight: FontWeight.bold),
+                  //         ),
+                  //         const SizedBox(width: 8),
+                  //         Container(
+                  //           padding: const EdgeInsets.symmetric(
+                  //             horizontal: 8,
+                  //             vertical: 4,
+                  //           ),
+                  //           decoration: BoxDecoration(
+                  //             color:
+                  //                 isLive
+                  //                     ? AppTheme.successColor
+                  //                     : isScheduled
+                  //                     ? AppTheme.warningColor
+                  //                     : Colors.grey,
+                  //             borderRadius: BorderRadius.circular(12),
+                  //           ),
+                  //           child: Text(
+                  //             isLive
+                  //                 ? 'Live'
+                  //                 : isScheduled
+                  //                 ? 'Scheduled'
+                  //                 : 'Ended',
+                  //             style: const TextStyle(
+                  //               color: Colors.white,
+                  //               fontSize: 12,
+                  //               fontWeight: FontWeight.bold,
+                  //             ),
+                  //           ),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //     subtitle: Column(
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         const SizedBox(height: 8),
+                  //         Row(
+                  //           children: [
+                  //             const Icon(
+                  //               Icons.calendar_today,
+                  //               size: 16,
+                  //               color: Colors.grey,
+                  //             ),
+                  //             const SizedBox(width: 8),
+                  //             Text(
+                  //               isLive
+                  //                   ? 'Started ${meeting.actualStartTime.formatDateTime}'
+                  //                   : isScheduled
+                  //                   ? 'Scheduled for ${meeting.scheduledStartTime.formatDateTime}'
+                  //                   : 'Ended ${meeting.actualEndTime.formatDateTime}',
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         const SizedBox(height: 4),
+                  //         Row(
+                  //           children: [
+                  //             const Icon(
+                  //               Icons.link,
+                  //               size: 16,
+                  //               color: Colors.grey,
+                  //             ),
+                  //             const SizedBox(width: 8),
+                  //             Expanded(
+                  //               child: Text(
+                  //                 'ID: ${meeting.meetId}',
+                  //                 overflow: TextOverflow.ellipsis,
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         const SizedBox(height: 12),
+                  //         Row(
+                  //           mainAxisAlignment: MainAxisAlignment.end,
+                  //           children: [
+                  //             if (isLive) ...[
+                  //               ElevatedButton.icon(
+                  //                 icon: const Icon(Icons.login, size: 16),
+                  //                 label: const Text('Join'),
+                  //                 style: ElevatedButton.styleFrom(
+                  //                   backgroundColor: AppTheme.successColor,
+                  //                   padding: const EdgeInsets.symmetric(
+                  //                     horizontal: 16,
+                  //                     vertical: 8,
+                  //                   ),
+                  //                 ),
+                  //                 onPressed:
+                  //                     () => MeetingUtil.startScheduledMeeting(
+                  //                       channelName: meeting.channelName,
+                  //                       context: context,
+                  //                       meetingId: meetingId,
+                  //                     ),
+                  //               ),
+                  //             ] else if (isScheduled) ...[
+                  //               OutlinedButton.icon(
+                  //                 icon: const Icon(Icons.play_arrow, size: 16),
+                  //                 label: const Text('Start'),
+                  //                 onPressed:
+                  //                     () => MeetingUtil.startScheduledMeeting(
+                  //                       context: context,
+                  //                       meetingId: meetingId,
+                  //                       channelName: meeting.channelName,
+                  //                     ),
+                  //               ),
+                  //             ],
+                  //           ],
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // );
                 },
               );
             },
