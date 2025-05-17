@@ -50,7 +50,7 @@ class MeetingController extends GetxController {
           if (!isHost) {
             endMeeting().then((c) {
               AppToastUtil.showInfoToast(
-                Get.context!,
+                
                 'Your Free Trial Time is over, please contact support',
               );
             });
@@ -149,14 +149,14 @@ class MeetingController extends GetxController {
       meetingModel = MeetingModel.fromJson(value ?? {});
       final currentUserId = AppLocalStorage.getUserDetails().userId;
       if (token.trim().isEmpty) {
-        AppToastUtil.showErrorToast(Get.context!, 'Token not found');
+        AppToastUtil.showErrorToast( 'Token not found');
         return;
       }
       AppLogger.print('agora token :$token ');
 
       if (participants.length >= meetingModel.maxParticipants) {
         AppToastUtil.showErrorToast(
-          Get.context!,
+          
           'Meet Participants Limit Exceeds, you cannot join Meeting as of now',
         );
         return;
@@ -168,7 +168,7 @@ class MeetingController extends GetxController {
       );
     } catch (e) {
       AppLogger.print('Error joining channel: $e');
-      AppToastUtil.showErrorToast(Get.context!, 'Error joining channel: $e');
+      AppToastUtil.showErrorToast( 'Error joining channel: $e');
     }
   }
 
@@ -263,7 +263,7 @@ class MeetingController extends GetxController {
     if (result != null) {
       final userData = result.data() as Map<dynamic, dynamic>;
       AppToastUtil.showInfoToast(
-        Get.context!,
+        
         AppLocalStorage.getUserDetails().userId == remoteUid
             ? 'You have joined'
             : '${userData['name']} has Joined',
@@ -284,7 +284,7 @@ class MeetingController extends GetxController {
   }
 
   void removeUser(int remoteUid) {
-    AppToastUtil.showInfoToast(Get.context!, 'user Left');
+    AppToastUtil.showInfoToast( 'user Left');
 
     participants.removeWhere((e) => e.userId == remoteUid);
     update();
@@ -372,7 +372,7 @@ class MeetingController extends GetxController {
       onActiveSpeaker: onActiveSpeaker,
 
       onError: (error, message) {
-        AppToastUtil.showErrorToast(context, '❌ Agora error: $error\n$message');
+        AppToastUtil.showErrorToast('❌ Agora error: $error\n$message');
       },
     );
   }

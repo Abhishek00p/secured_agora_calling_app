@@ -131,7 +131,7 @@ class LoginForm extends StatelessWidget {
                       : () async {
                           if (emailController.text.isEmpty) {
                             AppToastUtil.showErrorToast(
-                                context, 'Please enter your email');
+                                 'Please enter your email');
                             return;
                           }
                           setState(() => isLoading = true);
@@ -142,12 +142,12 @@ class LoginForm extends StatelessWidget {
                               if (context.mounted) {
                                 Navigator.pop(context);
                                 AppToastUtil.showSuccessToast(
-                                    context, 'Reset link sent to your email');
+                                     'Reset link sent to your email');
                               }
                             } else {
                               if (context.mounted) {
                                 AppToastUtil.showErrorToast(
-                                    context, 'Failed to send reset link');
+                                     'Failed to send reset link');
                               }
                             }
                           } finally {
@@ -203,48 +203,14 @@ class LoginForm extends StatelessWidget {
                 AppTextFormField(
                   controller: loginRegisterController.loginEmailController,
                   labelText: 'Email',
-                  prefixIcon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      loginRegisterController.errorMessage.value =
-                          'Please enter your email';
-                      loginRegisterController.update();
-                      return 'Please enter your email';
-                    }
-                    if (!RegExp(
-                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                    ).hasMatch(value)) {
-                      loginRegisterController.errorMessage.value =
-                          'Please enter a valid email';
-                      loginRegisterController.update();
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
+                  type: AppTextFormFieldType.email,
                 ),
                 const SizedBox(height: 16),
                 AppTextFormField(
                   controller: loginRegisterController.loginPasswordController,
                   labelText: 'Password',
-                  prefixIcon: Icons.lock_outline,
-                  obscureText:
-                      loginRegisterController.obscureLoginPassword.value,
-                      onSuffixIconPressed: loginRegisterController.toggleLoginPasswordVisibility,
-                  suffixIcon:  
-                      loginRegisterController.obscureLoginPassword.value
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    
-                
-                  
-                  validator:
-                      (value) =>
-                          value == null || value.isEmpty
-                              ? 'Please enter your password'
-                              : null,
+                  type: AppTextFormFieldType.password,
                 ),
-              
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(

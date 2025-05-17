@@ -46,7 +46,7 @@ class _UsersScreenState extends State<UsersScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = 'Failed to load users';
+        _error = 'Failed to load users \n $e';
         _isLoading = false;
       });
     }

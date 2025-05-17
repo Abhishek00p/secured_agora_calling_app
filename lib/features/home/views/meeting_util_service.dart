@@ -71,7 +71,6 @@ class MeetingUtil {
         );
       } else {
         AppToastUtil.showInfoToast(
-          context,
           'Meeting "$meetingName" scheduled successfully',
         );
       }
@@ -95,7 +94,7 @@ class MeetingUtil {
         arguments: {'channelName': channelName, 'isHost': true},
       );
     } catch (e) {
-      AppToastUtil.showErrorToast(context, 'Error starting meeting: $e');
+      AppToastUtil.showErrorToast('Error starting meeting: $e');
     }
   }
 
@@ -131,27 +130,28 @@ class MeetingUtil {
                   const SizedBox(height: 20),
                   AppTextFormField(
                     controller: controller.titleController,
-                    prefixIcon: Icons.event_note_sharp,
                     labelText: 'Meeting Title',
+                    type: AppTextFormFieldType.text,
                   ),
                   const SizedBox(height: 16),
                   AppTextFormField(
                     controller: controller.passwordController,
-                    prefixIcon: Icons.lock_outline,
                     labelText: 'Meeting Password (optional)',
+                    type: AppTextFormFieldType.password,
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<int>(
-                          menuMaxHeight: 500,
+                          menuMaxHeight: 300,
 
                           value: controller.selectedDuration.value,
                           items:
                               controller.durations
                                   .map(
                                     (mins) => DropdownMenuItem(
+                                      alignment: AlignmentDirectional.center,
                                       value: mins,
                                       child: Text(
                                         '${mins ~/ 60}h ${mins % 60 != 0 ? '${mins % 60}m' : ''}',
@@ -175,7 +175,7 @@ class MeetingUtil {
                       if (member.isNotEmpty) ...[
                         Expanded(
                           child: DropdownButtonFormField<int>(
-                            menuMaxHeight: 500,
+                            menuMaxHeight: 300,
                             value: controller.maxParticipants.value,
                             items:
                                 List.generate(
@@ -184,6 +184,7 @@ class MeetingUtil {
                                 ).map((val) {
                                   print('max participants: $val');
                                   return DropdownMenuItem(
+                                    alignment: AlignmentDirectional.center,
                                     value: val,
                                     child: Text('$val'),
                                   );

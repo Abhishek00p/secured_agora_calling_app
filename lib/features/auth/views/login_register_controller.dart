@@ -81,7 +81,7 @@ class LoginRegisterController extends GetxController {
                             if (context.mounted) {
                               Navigator.pop(context);
                               AppToastUtil.showSuccessToast(
-                                context,
+                                
                                 'Verification email sent. Please check your inbox.',
                               );
                             }
@@ -89,7 +89,7 @@ class LoginRegisterController extends GetxController {
                             if (context.mounted) {
                               Navigator.pop(context);
                               AppToastUtil.showErrorToast(
-                                context,
+                                
                                 'Failed to send verification email. Please try again.',
                               );
                             }
@@ -104,12 +104,13 @@ class LoginRegisterController extends GetxController {
               return 'Please verify your email before logging in.';
             }
       AppLogger.print("login button presed :  ${result.user}");
-      AppToastUtil.showSuccessToast(context, 'Success ${result.user != null}');
+      AppToastUtil.showSuccessToast( 'Success ${result.user != null}');
 
       if (result.user != null) {
         await AppFirebaseService.instance.getLoggedInUserDataAsModel().then((
           e,
         ) {
+          AppLogger.print("user data : ${e.toString()}");
           if (!e.isEmpty) {
             AppLocalStorage.storeUserDetails(e);
           }

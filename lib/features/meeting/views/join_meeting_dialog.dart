@@ -6,6 +6,7 @@ import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:secured_calling/widgets/app_text_form_widget.dart';
 
 class JoinMeetingDialog extends StatefulWidget {
   const JoinMeetingDialog({super.key});
@@ -202,31 +203,18 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
               const SizedBox(height: 24),
 
               // Meeting ID Field
-              TextFormField(
+              AppTextFormField(
                 controller: _meetingIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Meeting ID',
-                  prefixIcon: Icon(Icons.meeting_room),
-                  hintText: 'Enter the meeting ID',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a meeting ID';
-                  }
-                  return null;
-                },
+                labelText: 'Meeting ID',
+                type: AppTextFormFieldType.text,
               ),
               const SizedBox(height: 16),
 
               // Password Field (Optional)
-              TextFormField(
+              AppTextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password (Optional)',
-                  prefixIcon: Icon(Icons.lock_outline),
-                  hintText: 'Enter meeting password if required',
-                ),
-                obscureText: true,
+                labelText: 'Password (Optional)',
+                type: AppTextFormFieldType.password,
               ),
               const SizedBox(height: 24),
 

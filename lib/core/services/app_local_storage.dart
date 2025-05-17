@@ -23,13 +23,16 @@ class AppLocalStorage {
   }
 
   static void storeUserDetails(AppUser user) {
+    AppLogger.print("storing user details in local storage : ${user.toJson()}");
     _preferences.setString(userDetails, jsonEncode(user.toJson()));
   }
 
   static AppUser getUserDetails() {
     try {
+      final _userDetails = _preferences.getString(userDetails);
+      AppLogger.print("fetching user details from local storage : $_userDetails");
       return AppUser.fromJson(
-        jsonDecode(_preferences.getString(userDetails) ?? '{}'),
+        jsonDecode(_userDetails ?? '{}'),
       );
     } catch (e) {
       AppLogger.print("error while fetching user detail from local  : $e");
@@ -51,7 +54,7 @@ class AppLocalStorage {
       _preferences.clear();
       return await AppFirebaseService.instance.signOut();
     } catch (e) {
-      AppToastUtil.showErrorToast(context, 'Error signing out: $e');
+      AppToastUtil.showErrorToast('Error signing out: $e');
       return false;
     }
   }

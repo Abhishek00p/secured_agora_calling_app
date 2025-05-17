@@ -53,8 +53,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
     final loginRegisterController = Get.find<LoginRegisterController>();
     AppLogger.print("login button preseed in ui");
     if (!_loginFormKey.currentState!.validate()) {
-      AppToastUtil.showErrorToast(context, 'Form Invalid');
-
+      AppToastUtil.showErrorToast('Form Invalid');
       return;
     }
     loginRegisterController.update();
@@ -63,28 +62,32 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
     if (result == null) {
       Navigator.pushReplacementNamed(context, AppRouter.homeRoute);
     } else {
-      AppToastUtil.showErrorToast(context, result);
+      AppToastUtil.showErrorToast(result);
     }
   }
 
   Future<void> _register() async {
     final loginRegisterController = Get.find<LoginRegisterController>();
     if (_registerFormKey.currentState!.validate()) {
-      loginRegisterController.register().then((v) {
-        if (v) {
-          _tabController.animateTo(0); // Switch to login tab
-          AppToastUtil.showSuccessToast(
-            context,
-            'Registration successful! Please login to continue.',
-          );
-        } else {
-          if (context.mounted) {
-            AppToastUtil.showErrorToast(context, 'Registeration Failed...');
-          }
+      try {
+        final result = await loginRegisterController.register(
+      
+        );
+
+        if (loginRegisterController.errorMessage.value != null) {
+          AppToastUtil.showErrorToast(loginRegisterController.errorMessage.value!);
+          return;
         }
-      });
+
+        AppToastUtil.showSuccessToast(
+          'Registration successful! Please check your email for verification.',
+        );
+        Get.back();
+      } catch (e) {
+        AppToastUtil.showErrorToast('Registration Failed...');
+      }
     } else {
-      AppToastUtil.showErrorToast(context, 'Form Invalid');
+      AppToastUtil.showErrorToast('Form Invalid');
     }
   }
 

@@ -49,8 +49,8 @@ class UserTab extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Placeholder for call history
-              StreamBuilder(
-                stream: AppFirebaseService.instance
+              FutureBuilder(
+                future: AppFirebaseService.instance
                     .getAllMeetingsFromCodeStream(
                       AppLocalStorage.getUserDetails().memberCode,
                     ),
@@ -65,88 +65,122 @@ class UserTab extends StatelessWidget {
                     // Display the list of meetings
 
                     final meetings = getSortedMeetingList(snapshot.data!.docs);
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: snapshot.data!.docs.length,
-                      itemBuilder: (context, index) {
-                        final meeting = meetings[index];
-                        return ListTile(
-                          title: Text(meeting.meetingName),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Title: ${meeting.meetingName}'),
-                              Text(
-                                'start on: ${meeting.scheduledStartTime.formatDate}',
-                              ),
-                              Text(
-                                'when : ${meeting.scheduledStartTime.formatTime}',
-                              ),
-                            ],
-                          ),
-                          isThreeLine: true,
-                          leading: const Icon(Icons.video_call),
-                          trailing: const Icon(Icons.arrow_forward),
-                          onTap: () {
-                            // Handle meeting tap
-                            AppLogger.print(
-                              'meeting.scheduledStartTime.differenceInMinutes : ${meeting.scheduledStartTime.differenceInMinutes}',
-                            );
-                            if (meeting.scheduledStartTime.differenceInMinutes <
-                                0) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  behavior: SnackBarBehavior.floating,
-                                  content: Text('Meeting will start soon...'),
+                    return Column(
+                      children: [
+                        ...List.generate(meetings.length > 10 ? 10 : meetings.length, (
+                          index,
+                        ) {
+                          final meeting = meetings[index];
+                          return ListTile(
+                            title: Text(
+                              meeting.meetingName,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'start on: ${meeting.scheduledStartTime.formatDate}',
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
+                                Text(
+                                  'when : ${meeting.scheduledStartTime.formatTime}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                            isThreeLine: true,
+                            leading: const Icon(Icons.video_call),
+                            trailing:
+                                meeting.hostId ==
+                                            AppLocalStorage.getUserDetails()
+                                                .firebaseUserId &&
+                                        meeting
+                                                .scheduledStartTime
+                                                .differenceInMinutes <
+                                            0
+                                    ? OutlinedButton(
+                                      onPressed: () {},
+                                      child: Text("Start"),
+                                    )
+                                    : const Icon(Icons.arrow_forward),
+                            onTap: () {
+                              // Handle meeting tap
+                              AppLogger.print(
+                                'meeting.scheduledStartTime.differenceInMinutes : ${meeting.scheduledStartTime.differenceInMinutes}',
                               );
-                              return;
-                            } else if (meeting
-                                    .scheduledStartTime
-                                    .differenceInMinutes >
-                                0) {
-                              if (meeting.requiresApproval &&
-                                  meeting.hostId !=
-                                      AppLocalStorage.getUserDetails()
-                                          .firebaseUserId) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Meeting Requires approval from the host.',
-                                    ),
-                                    behavior: SnackBarBehavior.floating,
 
-                                    action: SnackBarAction(
-                                      label: 'Send Request',
-                                      onPressed: () {
-                                        requuestMeetingApproval(
-                                          context,
-                                          meeting,
-                                        );
-                                      },
-                                    ),
+                              if (meeting
+                                      .scheduledStartTime
+                                      .differenceInMinutes <
+                                  0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    content: Text('Meeting will start soon...'),
                                   ),
                                 );
-                              } else {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRouter.meetingRoomRoute,
-                                  arguments: {
-                                    'channelName': meeting.channelName,
-                                    'isHost':
-                                        meeting.hostId ==
+                                return;
+                              } else if (meeting
+                                      .scheduledStartTime
+                                      .differenceInMinutes >
+                                  0) {
+                                if (meeting.requiresApproval &&
+                                    meeting.hostId !=
                                         AppLocalStorage.getUserDetails()
-                                            .firebaseUserId,
-                                    'meetingId': meeting.meetId,
-                                  },
-                                );
+                                            .firebaseUserId) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Meeting Requires approval from the host.',
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+
+                                      action: SnackBarAction(
+                                        label: 'Send Request',
+                                        onPressed: () {
+                                          requuestMeetingApproval(
+                                            context,
+                                            meeting,
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppRouter.meetingRoomRoute,
+                                    arguments: {
+                                      'channelName': meeting.channelName,
+                                      'isHost':
+                                          meeting.hostId ==
+                                          AppLocalStorage.getUserDetails()
+                                              .firebaseUserId,
+                                      'meetingId': meeting.meetId,
+                                    },
+                                  );
+                                }
+                                return;
                               }
-                              return;
-                            }
+                            },
+                          );
+                        }),
+
+                        TextButton(
+                          onPressed: () {
+                            // Navigate to the Meeting view all page and pass the full list of meetings
+                            Navigator.pushNamed(
+                              context,
+                              AppRouter
+                                  .meetingViewAllRoute, // Ensure this route is defined
+                              arguments:
+                                  meetings, // Pass the full list of meetings
+                            );
                           },
-                        );
-                      },
+                          child: Text('View All'),
+                        ),
+                      ],
                     );
                   }
                 },

@@ -9,6 +9,7 @@ import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
+
 class AppFirebaseService {
   // Singleton pattern
   AppFirebaseService._();
@@ -62,9 +63,8 @@ class AppFirebaseService {
         };
         await usersCollection.doc('$unqiueUserId').set(userData);
         final inputCode = memberCode.toLowerCase();
-        final memberSnapshot = await FirebaseFirestore.instance
-            .collection('members')
-            .get(); 
+        final memberSnapshot =
+            await FirebaseFirestore.instance.collection('members').get();
 
         QueryDocumentSnapshot? matchingDoc;
         try {
@@ -81,7 +81,7 @@ class AppFirebaseService {
               .doc(matchingDoc.id)
               .update({
                 'userId': unqiueUserId,
-                'totalUsers': FieldValue.increment(1)
+                'totalUsers': FieldValue.increment(1),
               });
         }
 
@@ -102,12 +102,10 @@ class AppFirebaseService {
     required String password,
   }) async {
     try {
-
       return await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
     } catch (e) {
       rethrow;
     }
@@ -116,17 +114,12 @@ class AppFirebaseService {
   Future<bool?> sendResetPasswordEmail(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
-      AppToastUtil.showSuccessToast(
-        Get.context!,
-        'Password reset email sent successfully',
-      );
+      AppToastUtil.showSuccessToast('Password reset email sent successfully');
       return true;
     } on FirebaseAuthException catch (e) {
       AppToastUtil.showErrorToast(
-        Get.context!,
         e.message ?? 'Error occurred while sending reset email',
       );
-
     }
     return null;
   }
@@ -135,7 +128,7 @@ class AppFirebaseService {
     required String email,
     required String oldPassword,
     required String newPassword,
-  }) async {  
+  }) async {
     try {
       final user = _auth.currentUser;
       if (user != null) {
@@ -148,20 +141,14 @@ class AppFirebaseService {
 
         // Update the password
         await user.updatePassword(newPassword);
-        AppToastUtil.showSuccessToast(
-          Get.context!,
-          'Password updated successfully',
-        );
+        AppToastUtil.showSuccessToast('Password updated successfully');
       }
     } on FirebaseAuthException catch (e) {
       AppToastUtil.showErrorToast(
-        Get.context!,
         e.message ?? 'Error occurred while updating password',
       );
     }
   }
-
-
 
   Future<bool> signOut() async {
     try {
@@ -373,15 +360,15 @@ class AppFirebaseService {
         .snapshots();
   }
 
-    Stream<QuerySnapshot> getAllMeetingsFromCodeStream(String memberCode) {
-      try{
-    return meetingsCollection
-        .where('memberCode', isEqualTo: memberCode.toUpperCase())
-        .snapshots();
-      }catch(e){
-        AppLogger.print('error caught in getting all meetings from code : $e');
-        return Stream.empty();
-      }
+  Future<QuerySnapshot?> getAllMeetingsFromCodeStream(String memberCode) async {
+    try {
+      return meetingsCollection
+          .where('memberCode', isEqualTo: memberCode.toUpperCase())
+          .get();
+    } catch (e) {
+      AppLogger.print('error caught in getting all meetings from code : $e');
+      return null;
+    }
   }
 
   Future<QuerySnapshot> searchMeetingByChannelName(String channelName) {
@@ -523,10 +510,11 @@ class AppFirebaseService {
 
   Future<Member> getMemberData(String memberCode) async {
     try {
-      final snapshot = await _firestore
-          .collection('members')
-          .where('memberCode', isEqualTo: memberCode)
-          .get();
+      final snapshot =
+          await _firestore
+              .collection('members')
+              .where('memberCode', isEqualTo: memberCode)
+              .get();
       if (snapshot.docs.isNotEmpty) {
         final data = snapshot.docs.first.data();
         return Member.fromMap(snapshot.docs.first.id, data);

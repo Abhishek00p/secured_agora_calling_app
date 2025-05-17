@@ -26,7 +26,7 @@ class RegisterForm extends StatelessWidget {
                 AppTextFormField(
                   controller: loginRegisterController.registerNameController,
                   labelText: 'Full Name',
-                  prefixIcon: Icons.person_outline,
+                  type: AppTextFormFieldType.text,
                   validator:
                       (value) =>
                           value == null || value.isEmpty
@@ -39,7 +39,7 @@ class RegisterForm extends StatelessWidget {
                   controller:
                       loginRegisterController.registerMemberCodeController,
                   labelText: 'Member Code',
-                  prefixIcon: Icons.people_outline_rounded,
+                  type: AppTextFormFieldType.text,
                   helperText: 'Enter the member code provided by your organization',
                   validator:
                       (value) =>
@@ -51,8 +51,7 @@ class RegisterForm extends StatelessWidget {
                 AppTextFormField(
                   controller: loginRegisterController.registerEmailController,
                   labelText: 'Email',
-                  prefixIcon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
+                  type: AppTextFormFieldType.email,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
@@ -70,24 +69,7 @@ class RegisterForm extends StatelessWidget {
                   controller:
                       loginRegisterController.registerPasswordController,
                   labelText: 'Password',
-                  prefixIcon: Icons.lock_outline,
-                  obscureText:
-                      loginRegisterController.obscureRegisterPassword.value,
-                      onSuffixIconPressed: loginRegisterController.toggleRegisterPasswordVisibility,
-                  suffixIcon: 
-                      loginRegisterController.obscureRegisterPassword.value
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                   
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
+                  type: AppTextFormFieldType.password,
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
