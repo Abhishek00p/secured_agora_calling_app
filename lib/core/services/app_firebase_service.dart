@@ -292,6 +292,7 @@ class AppFirebaseService {
       participants.add(userId);
       await meetingsCollection.doc(meetId).update({
         'participants': participants,
+        'allParticipants': FieldValue.arrayUnion([userId]),
       });
       return true;
     } catch (e) {
@@ -346,6 +347,7 @@ class AppFirebaseService {
     await meetingsCollection.doc(meetingId).update({
       'pendingApprovals': FieldValue.arrayRemove([userId]),
       'participants': FieldValue.arrayUnion([userId]),
+      'allParticipants': FieldValue.arrayUnion([userId]),
     });
   }
 

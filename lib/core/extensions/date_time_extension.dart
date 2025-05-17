@@ -5,7 +5,7 @@ extension AppDateTimeExtension on DateTime? {
     final date = this;
     if (date == null) return 'N/A';
     final formattedTime = DateFormat('h:mm a').format(date);
-    return '${date.day}/${date.month}/${date.year} $formattedTime';
+    return '${date.isToday ? 'Today' : '${date.day}/${date.month}/${date.year}'} $formattedTime';
   }
 
   bool get isToday {
@@ -17,11 +17,28 @@ extension AppDateTimeExtension on DateTime? {
         date.day == now.day;
   }
 
+  bool get isTomorrow {
+    final date = this;
+    if (date == null) return false;
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day + 1;
+  }
+  bool get isYesterday {
+    final date = this;
+    if (date == null) return false;
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day - 1;
+  }
+
   String get meetStartTime {
     final date = this;
     if (date == null) return 'N/A';
     final now = DateTime.now();
-    if (!now.isToday) {
+    if (!date.isToday) {
       return 'Scheduled for ${date.formatDate}';
     }
     final difference = date.difference(now);
@@ -34,6 +51,8 @@ extension AppDateTimeExtension on DateTime? {
       return 'Starts in $minutes minutes';
     } else if (seconds > 0) {
       return 'Starts in $seconds seconds';
+    } else if (seconds < 0) {
+      return 'Scheduled for ${date.formatTime}';
     } else {
       return 'Started';
     }
@@ -42,7 +61,7 @@ extension AppDateTimeExtension on DateTime? {
   String get formatDate {
     final date = this;
     if (date == null) return 'N/A';
-    return '${date.day}/${date.month}/${date.year}';
+    return  '${date.day}/${date.month}/${date.year}';
   }
 
   String get formatTime {

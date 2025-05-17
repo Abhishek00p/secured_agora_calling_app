@@ -3,25 +3,25 @@ import 'package:get/get.dart';
 
 class AppToastUtil {
   static void showSuccessToast(String message) {
-    _showToast(message, Colors.green, Icons.check_circle_outline);
+    _showToast(message, title: 'Success', bgColor: Colors.green, icon: Icons.check_circle_outline);
   }
 
   static void showErrorToast(String message) {
-    _showToast(message, Colors.red, Icons.error_outline);
+    _showToast(message, title: 'Error', bgColor: Colors.red, icon: Icons.error_outline);
   }
 
-  static void showInfoToast(String message) {
-    _showToast(message, Colors.blueGrey, Icons.info_outline);
+  static void showInfoToast(String message, {String? title}) {
+    _showToast(message, title: title, bgColor: Colors.blueGrey, icon: Icons.info_outline);
   }
 
-  static void _showToast(String message, Color bgColor, IconData icon) {
+  static void _showToast(String message, {String? title, required Color bgColor, required IconData icon}) {
     // Close any existing snackbar
     if (Get.isSnackbarOpen) {
       Get.closeCurrentSnackbar();
     }
 
     Get.snackbar(
-      '',
+      title ??  '',
       message,
       backgroundColor: bgColor,
       colorText: Colors.white,

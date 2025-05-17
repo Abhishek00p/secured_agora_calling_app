@@ -11,6 +11,7 @@ import 'package:secured_calling/features/home/views/membar_tab_view_widget.dart'
 import 'package:secured_calling/features/home/views/user_tab.dart';
 import 'package:secured_calling/features/home/views/users_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 
 enum UserType { user, member }
 
@@ -25,8 +26,10 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
-final  List<Widget> _pages = [MembarTabViewWidget(), UserTab()];
-int _selectedIndex = 0;
+  final List<Widget> _pages = [MembarTabViewWidget(), UserTab()];
+  int _selectedIndex = 0;
+
+  int poppedTimes = 0;
   @override
   void initState() {
     super.initState();
@@ -51,259 +54,284 @@ int _selectedIndex = 0;
   Widget build(BuildContext context) {
     final user = AppLocalStorage.getUserDetails();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('SecuredCalling'),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (poppedTimes == 0) {
+          setState(() {
+            poppedTimes++;
+          });
+          AppToastUtil.showInfoToast(
+            title: 'Exit Confirmation',
+            'Press back again to exit the app',
+          );
 
-        actions: [
-          PopupMenuButton<String>(
-            offset: Offset(0, 50),
-            icon: const Icon(
-              Icons.logout_rounded,
-            ), // You can use Icons.exit_to_app if preferred
-            onSelected: (value) async {
-              if (value == 'sign_out') {
-                if (await AppLocalStorage.signOut(context)) {
-                  Navigator.pushReplacementNamed(
-                    context,
-                    AppRouter.welcomeRoute,
-                  );
+          // Reset after a short delay (to avoid double count after timeout)
+          Future.delayed(const Duration(seconds: 2), () {
+            poppedTimes = 0;
+          });
+        } else {
+          // Exit the app
+          SystemNavigator.pop(); // or use exit(0) from 'dart:io' if needed
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('SecuredCalling'),
+
+          actions: [
+            PopupMenuButton<String>(
+              offset: Offset(0, 50),
+              icon: const Icon(
+                Icons.logout_rounded,
+              ), // You can use Icons.exit_to_app if preferred
+              onSelected: (value) async {
+                if (value == 'sign_out') {
+                  if (await AppLocalStorage.signOut(context)) {
+                    Navigator.pushReplacementNamed(
+                      context,
+                      AppRouter.welcomeRoute,
+                    );
+                  }
                 }
-              }
-            },
-            itemBuilder:
-                (BuildContext context) => <PopupMenuEntry<String>>[
-                  PopupMenuItem<String>(
-                    value: 'sign_out',
-                    padding: EdgeInsets.zero,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        8.w,
-                        Text('Sign Out'),
-                        10.w,
-                        const Icon(Icons.logout_rounded, color: Colors.red),
-                      ],
-                    ),
-                  ),
-                ],
-          ),
-        ],
-        leading:
-            !AppLocalStorage.getUserDetails().email.contains('flutter') &&
-                    !AppLocalStorage.getUserDetails().isMember
-                ? null
-                : IconButton(
-                  icon: const Icon(Icons.people_alt_outlined),
-                  onPressed: () {
-                    final user = AppLocalStorage.getUserDetails();
-                    if (user.email.contains('flutter')) {
-                      // Admin navigation
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AdminScreen()),
-                      );
-                    } else if (user.isMember) {
-                      // Member navigation
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const UsersScreen()),
-                      );
-                    }
-                  },
-                  tooltip:
-                      user.email.contains('flutter')
-                          ? 'Admin Section'
-                          : 'View Associated Users',
-                ),
-      ),
-
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // User profile card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    user.name.sentenceCase,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  if (user.isMember && user.memberCode.isNotEmpty) ...[
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Code: ${user.memberCode}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                        4.w,
-                        IconButton(
-                          icon: const Icon(
-                            Icons.copy,
-                            color: Colors.white,
-                            size: 14,
-                          ),
-                          padding: EdgeInsets.zero,
-
-                          onPressed: () {
-                            // Copy member code to clipboard
-                            Clipboard.setData(
-                              ClipboardData(text: user.memberCode),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                duration: Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                                content: Text('Member code copied!'),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Role : ${user.isMember ? 'Member' : 'User'}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
+              },
+              itemBuilder:
+                  (BuildContext context) => <PopupMenuEntry<String>>[
+                    PopupMenuItem<String>(
+                      value: 'sign_out',
+                      padding: EdgeInsets.zero,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          8.w,
+                          Text('Sign Out'),
+                          10.w,
+                          const Icon(Icons.logout_rounded, color: Colors.red),
+                        ],
                       ),
                     ),
+                  ],
+            ),
+          ],
+          leading:
+              !AppLocalStorage.getUserDetails().email.contains('flutter') &&
+                      !AppLocalStorage.getUserDetails().isMember
+                  ? null
+                  : IconButton(
+                    icon: const Icon(Icons.people_alt_outlined),
+                    onPressed: () {
+                      final user = AppLocalStorage.getUserDetails();
+                      if (user.email.contains('flutter')) {
+                        // Admin navigation
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminScreen(),
+                          ),
+                        );
+                      } else if (user.isMember) {
+                        // Member navigation
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const UsersScreen(),
+                          ),
+                        );
+                      }
+                    },
+                    tooltip:
+                        user.email.contains('flutter')
+                            ? 'Admin Section'
+                            : 'View Associated Users',
                   ),
+        ),
 
-                  if (user.isMember && !user.subscription.isEmpty) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'Expires On : ${user.subscription.expiryDate.formatDate}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontSize: 8,
-                            ),
-                          ),
-                        ),
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            user.subscription.expiryDate.differenceInDays < 0
-                                ? 'Days Left : ${-user.subscription.expiryDate.differenceInDays}'
-                                : user
-                                        .subscription
-                                        .expiryDate
-                                        .differenceInDays ==
-                                    0
-                                ? 'Expiring Today'
-                                : 'Expired',
-                            style: const TextStyle(
-                              color: AppTheme.primaryColor,
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              // User profile card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
                   ],
-                ],
-              ),
-            ),
-
-            // Tab Bar
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(12),
-
-              ),
-              // height: 50,
-              // width: double.infinity,
-              child: TabBar(
-                onTap: (index) {
-                  setState(() {
-                    _selectedIndex = index;
-                  });
-                },
-                controller: _tabController,
-                indicatorSize: TabBarIndicatorSize.tab,
-                indicator: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: AppTheme.primaryColor,
                 ),
-                labelColor: Colors.white,
-                indicatorPadding: EdgeInsets.all(8),
-                dividerColor: Colors.transparent,
-                unselectedLabelColor:
-                    Theme.of(context).textTheme.bodyLarge?.color,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                tabs: const [
-                  Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'),
-                  Tab(icon: Icon(Icons.people), text: 'Join Meeting'),
-                ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      user.name.titleCase,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (user.isMember && user.memberCode.isNotEmpty) ...[
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Code: ${user.memberCode}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                          4.w,
+                          IconButton(
+                            icon: const Icon(
+                              Icons.copy,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            padding: EdgeInsets.zero,
+
+                            onPressed: () {
+                              // Copy member code to clipboard
+                              Clipboard.setData(
+                                ClipboardData(text: user.memberCode),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  duration: Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                  content: Text('Member code copied!'),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Role : ${user.isMember ? 'Member' : 'User'}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+
+                    if (user.isMember && !user.subscription.isEmpty) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Expires On : ${user.subscription.expiryDate.formatDate}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontSize: 8,
+                              ),
+                            ),
+                          ),
+
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              user.subscription.expiryDate.differenceInDays < 0
+                                  ? 'Days Left : ${-user.subscription.expiryDate.differenceInDays}'
+                                  : user
+                                          .subscription
+                                          .expiryDate
+                                          .differenceInDays ==
+                                      0
+                                  ? 'Expiring Today'
+                                  : 'Expired',
+                              style: const TextStyle(
+                                color: AppTheme.primaryColor,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-            Divider(),
-            // Tab content
-            _pages[_selectedIndex],
-          ],
+
+              // Tab Bar
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                // height: 50,
+                // width: double.infinity,
+                child: TabBar(
+                  onTap: (index) {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                  },
+                  controller: _tabController,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.primaryColor,
+                  ),
+                  labelColor: Colors.white,
+                  indicatorPadding: EdgeInsets.all(8),
+                  dividerColor: Colors.transparent,
+                  unselectedLabelColor:
+                      Theme.of(context).textTheme.bodyLarge?.color,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  tabs: const [
+                    Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'),
+                    Tab(icon: Icon(Icons.people), text: 'Join Meeting'),
+                  ],
+                ),
+              ),
+              Divider(),
+              // Tab content
+              _pages[_selectedIndex],
+            ],
+          ),
         ),
       ),
     );

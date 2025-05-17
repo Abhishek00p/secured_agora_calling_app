@@ -14,7 +14,7 @@ extension AppStringExtension on String {
       trim().isEmpty
           ? ''
           : split(' ')
-              .map((e) => e.trim().isEmpty ? '' : e.trim()[0].capitalizeAll)
+              .map((e) => e.trim().isEmpty ? '' : '${e.trim()[0].capitalizeAll}${e.trim().substring(1)}')
               .join(' ');
 
   DateTime get toDateTimeFromEpoch {

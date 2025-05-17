@@ -3,6 +3,7 @@ import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/theme/app_theme.dart';
 
 class AllUserMemberList extends StatefulWidget {
   final Member member;
@@ -91,7 +92,8 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                       itemBuilder: (context, index) {
                         final user = users[index];
                         return ListTile(
-                          contentPadding: EdgeInsets.zero,
+                          tileColor: Colors.white54,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16),
                           leading: CircleAvatar(
                             backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                             child: Text(

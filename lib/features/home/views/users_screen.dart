@@ -69,6 +69,7 @@ class _UsersScreenState extends State<UsersScreen> {
       appBar: AppBar(
         title: const Text('Associated Users'),
       ),
+      backgroundColor: Colors.grey.shade50,
       body: Column(
         children: [
           Padding(
@@ -93,11 +94,17 @@ class _UsersScreenState extends State<UsersScreen> {
                     ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
                     : _filteredUsers.isEmpty
                         ? const Center(child: Text('No users found'))
-                        : ListView.builder(
+                        : ListView.separated(
                             itemCount: _filteredUsers.length,
+                            separatorBuilder: (context, index) => const Divider(),
                             itemBuilder: (context, index) {
                               final user = _filteredUsers[index];
                               return ListTile(
+                                tileColor: Colors.white54,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 leading: CircleAvatar(
                                   child: Text(user.name[0].toUpperCase()),
                                 ),

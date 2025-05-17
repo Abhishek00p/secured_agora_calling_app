@@ -1,8 +1,12 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 
@@ -16,19 +20,108 @@ class MeetingTileWidget extends StatefulWidget {
 class _MeetingTileWidgetState extends State<MeetingTileWidget> {
   List<Color> cardColors = AppTheme.cardBackgroundColors.toList();
   Color theCardColor = AppTheme.cardBackgroundColors[0];
+  bool isButtonEnabled = false;
+  bool isCurrentUserHost = false;
+  StreamSubscription<DocumentSnapshot>? _listener;
+
+  String meetingDate = '';
   @override
   void initState() {
     super.initState();
     cardColors.shuffle();
     theCardColor = cardColors[0];
+    isButtonEnabled =
+        widget.model.participants.isNotEmpty ||
+        (DateTime.now().isAfter(widget.model.scheduledStartTime) ||
+            (widget.model.scheduledStartTime.isToday &&
+                widget.model.hostId ==
+                    AppLocalStorage.getUserDetails().firebaseUserId));
+    isCurrentUserHost =
+        widget.model.hostId == AppLocalStorage.getUserDetails().firebaseUserId;
+
+    if (widget.model.scheduledStartTime.isToday) {
+      meetingDate = 'Today';
+    } else if (widget.model.scheduledStartTime.isTomorrow) {
+      meetingDate = 'Tomorrow';
+    } else if (widget.model.scheduledStartTime.isYesterday) {
+      meetingDate = 'Yesterday';
+    } else {
+      meetingDate =
+          '${widget.model.scheduledStartTime.day}/${widget.model.scheduledStartTime.month}/${widget.model.scheduledStartTime.year}';
+    }
+  }
+
+  void requuestMeetingApproval(
+    BuildContext context,
+    MeetingModel meeting,
+  ) async {
+    try {
+      final userId = AppLocalStorage.getUserDetails().userId;
+      await AppFirebaseService.instance.requestToJoinMeeting(
+        meeting.meetId,
+        userId,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Request sent to join ${meeting.meetingName} meeting',
+            ),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+        listenForParticipantAddition(meeting, userId, context);
+      }
+    } catch (e) {
+      SnackBar(
+        content: Text('Error sending request: $e'),
+        backgroundColor: AppTheme.errorColor,
+      );
+    }
+  }
+
+  void listenForParticipantAddition(
+    MeetingModel meeting,
+    int userId,
+    BuildContext context,
+  ) {
+    _listener = FirebaseFirestore.instance
+        .collection('meetings')
+        .doc(meeting.meetId)
+        .snapshots()
+        .listen((snapshot) {
+          if (snapshot.exists) {
+            final data = snapshot.data() as Map<String, dynamic>;
+            final List<dynamic> participants = data['participants'] ?? [];
+
+            if (participants.contains(userId)) {
+              // User has been added to the participants list, stop listening
+              _listener?.cancel(); // Stop listening to prevent further triggers
+
+              Navigator.pushNamed(
+                context,
+                AppRouter.meetingRoomRoute,
+                arguments: {
+                  'channelName': meeting.channelName,
+                  'isHost':
+                      meeting.hostId ==
+                      AppLocalStorage.getUserDetails().firebaseUserId,
+                  'meetingId': meeting.meetId,
+                },
+              );
+            }
+          }
+        });
   }
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: theCardColor,
+      color:widget.model.scheduledStartTime.isToday? theCardColor:Colors.grey.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -70,7 +163,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
             ),
             const SizedBox(height: 12),
             Text(
-              widget.model.meetingName,
+              widget.model.meetingName.sentenceCase,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
@@ -82,7 +175,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                   style: TextStyle(color: Colors.black54, fontSize: 12),
                 ),
                 Text(
-                  widget.model.hostName.sentenceCase,
+                  widget.model.hostName.titleCase,
                   style: TextStyle(color: Colors.black54, fontSize: 12),
                 ),
               ],
@@ -111,33 +204,59 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                 const Spacer(),
                 ElevatedButton(
                   onPressed:
-                      (widget.model.participants.isNotEmpty ||
-                              (DateTime.now().isAfter(
-                                    widget.model.scheduledStartTime,
-                                  ) ||
-                                  (widget.model.scheduledStartTime.isToday &&
-                                      widget.model.hostId ==
-                                          AppLocalStorage.getUserDetails()
-                                              .firebaseUserId)))
+                      isButtonEnabled
                           ? () {
-                            Navigator.pushNamed(
-                              context,
-                              AppRouter.meetingRoomRoute,
-                              arguments: {
-                                'channelName': widget.model.channelName,
-                                'isHost':
-                                    widget.model.hostId ==
-                                    AppLocalStorage.getUserDetails()
-                                        .firebaseUserId,
-                                'meetingId': widget.model.meetId,
-                              },
-                            );
+                            if (widget.model.requiresApproval && !isCurrentUserHost) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Meeting Requires approval from the host.',
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
+
+                                  action: SnackBarAction(
+                                    label: 'Send Request',
+                                    onPressed: () {
+                                      requuestMeetingApproval(
+                                        context,
+                                        widget.model,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            } else {
+                              Navigator.pushNamed(
+                                context,
+                                AppRouter.meetingRoomRoute,
+                                arguments: {
+                                  'channelName': widget.model.channelName,
+                                  'isHost':
+                                      widget.model.hostId ==
+                                      AppLocalStorage.getUserDetails()
+                                          .firebaseUserId,
+                                  'meetingId': widget.model.meetId,
+                                },
+                              );
+                            }
                           }
-                          : null,
+                          : () {
+                            if (widget
+                                    .model
+                                    .scheduledStartTime
+                                    .differenceInMinutes <
+                                0) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  behavior: SnackBarBehavior.floating,
+                                  content: Text('Meeting will start soon...'),
+                                ),
+                              );
+                              return;
+                            }
+                          },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4C5FE2),
-                    disabledBackgroundColor: Colors.grey,
-                    disabledForegroundColor: Colors.white,
+                    backgroundColor: isButtonEnabled ? const Color(0xFF4C5FE2) : Colors.grey,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -150,7 +269,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                   child: Text(
                     '${widget.model.participants.isNotEmpty
                         ? 'Join'
-                        : (widget.model.hostId == AppLocalStorage.getUserDetails().firebaseUserId && widget.model.scheduledStartTime.isToday)
+                        : (isCurrentUserHost && widget.model.scheduledStartTime.isToday)
                         ? 'Start'
                         : 'Join'} Now',
                     style: TextStyle(color: Colors.white, fontSize: 12),
