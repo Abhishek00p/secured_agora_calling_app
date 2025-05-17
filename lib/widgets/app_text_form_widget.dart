@@ -113,6 +113,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
         isDense: true,
         labelText: widget.labelText,
         prefixIcon: Icon(widget.prefixIcon??_prefixIcon),
+        errorStyle: const TextStyle(color: Colors.red,fontSize: 8),
         suffixIcon: widget.type == AppTextFormFieldType.password
             ? IconButton(
                 icon: Icon(
@@ -149,6 +150,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
+      
       obscureText: widget.type == AppTextFormFieldType.password ? _obscureText : false,
       keyboardType: _keyboardType,
       validator: widget.validator ?? _defaultValidator,

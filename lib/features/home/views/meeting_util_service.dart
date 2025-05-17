@@ -112,6 +112,7 @@ class MeetingUtil {
       ),
       backgroundColor: Theme.of(Get.context!).dialogBackgroundColor,
       builder: (context) {
+        print('member: ${member.toMap()}');
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,

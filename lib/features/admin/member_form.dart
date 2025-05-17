@@ -170,6 +170,7 @@ class _MemberFormState extends State<MemberForm> {
           planDays: planDays,
           isActive: isActive,
           totalUsers: widget.member!.totalUsers,
+          maxParticipantsAllowed: int.parse(maxParticipantsAllowed.text) <= 0 ? 45 : int.parse(maxParticipantsAllowed.text),  
         );
 
         final ref = FirebaseFirestore.instance.collection('members');
@@ -317,7 +318,16 @@ class _MemberFormState extends State<MemberForm> {
                   controller: maxParticipantsAllowed,
                   labelText: "Max Participants Allowed",
                   type: AppTextFormFieldType.number,
-                  helperText: "Max number of participants allowed in a Meeting",
+                  validator: (value) {
+                    if (value == null || int.parse(value) <= 0) {
+                      return 'Max participants allowed must be greater than 0';
+                    }
+                    if (int.parse(value) % 5 != 0) {
+                      return 'Max participants must be a multiple of 5';
+                    }
+                    return null;
+                  },
+                  helperText: "Max number of participants allowed in a Meeting in Multple of 5, eg: 5, 10, 15...",
                   prefixIcon: Icons.group,
                 ),
                 const SizedBox(height: 8),

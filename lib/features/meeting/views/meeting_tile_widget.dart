@@ -31,9 +31,9 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
     cardColors.shuffle();
     theCardColor = cardColors[0];
     isButtonEnabled =
-        widget.model.participants.isNotEmpty ||
-        (DateTime.now().isAfter(widget.model.scheduledStartTime) ||
-            (widget.model.scheduledStartTime.isToday &&
+        widget.model.scheduledStartTime.isToday &&
+        (widget.model.participants.isNotEmpty ||
+            (DateTime.now().isAfter(widget.model.scheduledStartTime) ||
                 widget.model.hostId ==
                     AppLocalStorage.getUserDetails().firebaseUserId));
     isCurrentUserHost =
@@ -121,7 +121,10 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color:widget.model.scheduledStartTime.isToday? theCardColor:Colors.grey.shade50,
+      color:
+          widget.model.scheduledStartTime.isToday
+              ? theCardColor
+              : Colors.grey.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -206,7 +209,8 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                   onPressed:
                       isButtonEnabled
                           ? () {
-                            if (widget.model.requiresApproval && !isCurrentUserHost) {
+                            if (widget.model.requiresApproval &&
+                                !isCurrentUserHost) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
@@ -256,7 +260,8 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                             }
                           },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isButtonEnabled ? const Color(0xFF4C5FE2) : Colors.grey,
+                    backgroundColor:
+                        isButtonEnabled ? const Color(0xFF4C5FE2) : Colors.grey,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,

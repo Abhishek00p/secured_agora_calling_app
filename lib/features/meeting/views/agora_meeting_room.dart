@@ -66,13 +66,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
         children: [
           InkWell(
             onTap: onPressed,
-            child: Icon(icon,size: 32,color: Colors.white,),
+            child: Icon(icon, size: 32, color: Colors.white),
           ),
 
-          Text(
-            label,
-            style: const TextStyle(fontSize: 8, color: Colors.white),
-          ),
+          Text(label, style: const TextStyle(fontSize: 8, color: Colors.white)),
         ],
       ),
     );
@@ -278,14 +275,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                               },
                                               itemBuilder:
                                                   (context) => [
-                                                    PopupMenuItem(
-                                                      value: 'mute',
-                                                      child: Text('Mute'),
-                                                    ),
-                                                    PopupMenuItem(
-                                                      value: 'unmute',
-                                                      child: Text('Unmute'),
-                                                    ),
+                                                    if (!user.isUserMuted) ...[
+                                                      PopupMenuItem(
+                                                        value: 'mute',
+                                                        child: Text('Mute'),
+                                                      ),
+                                                    ],
+                                                    if (user.isUserMuted) ...[
+                                                      PopupMenuItem(
+                                                        value: 'unmute',
+                                                        child: Text('Unmute'),
+                                                      ),
+                                                    ],
                                                   ],
                                               icon: Icon(
                                                 Icons.more_vert,
