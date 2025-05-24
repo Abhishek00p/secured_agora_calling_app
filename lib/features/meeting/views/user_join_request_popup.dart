@@ -42,7 +42,7 @@ class JoinRequestPopup extends StatelessWidget {
                     child: Text(
                       '$userName wants to join the meeting',
                       style: TextStyle(
-                        fontSize: isMobile ? 14 : 16,
+                        fontSize: isMobile ? 8 : 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

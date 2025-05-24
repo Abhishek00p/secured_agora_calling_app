@@ -15,7 +15,7 @@ import 'package:secured_calling/utils/warm_color_generator.dart';
 class MeetingController extends GetxController {
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
   final AgoraService _agoraService = AgoraService();
-
+  final currentUser = AppLocalStorage.getUserDetails();
   // State variables
   final isLoading = false.obs;
   final error = RxnString();
@@ -36,45 +36,41 @@ class MeetingController extends GetxController {
 
   bool get agoraInitialized => _agoraService.isInitialized;
   MeetingModel meetingModel = MeetingModel.toEmpty();
+  Timer? _meetingTimer;
 
-  void startTimer() async {
+  void startTimer() {
     try {
-      isHost =
-          meetingModel.hostId ==
-          AppLocalStorage.getUserDetails().firebaseUserId;
+      _meetingTimer?.cancel(); // Cancel any existing timer
 
-      remainingSeconds = meetingModel.duration * 60;
+      isHost = meetingModel.hostId == currentUser.firebaseUserId;
 
-      Timer.periodic(Duration(seconds: 1), (timer) {
-        if (remainingSeconds <= 0) {
-          if (!isHost) {
-            endMeeting().then((c) {
+      _meetingTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+        if (remainingSeconds <= 300 && isHost) {
+          timer.cancel(); // stop this timer first
+          if (!isHost && remainingSeconds <= 0) {
+            endMeeting().then((_) {
               AppToastUtil.showInfoToast(
-                
                 'Your Free Trial Time is over, please contact support',
               );
             });
             Navigator.pop(Get.context!);
           } else {
-            int remainingTime = 10; // Countdown timer in seconds
+            int remainingTime = 10;
             Timer? countdownTimer;
 
-            // Start the countdown timer
-            countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+            countdownTimer = Timer.periodic(Duration(seconds: 1), (countdown) {
               if (remainingTime > 0) {
                 remainingTime--;
               } else {
-                timer.cancel();
-                endMeeting(); // Automatically end the meeting after 10 seconds
-                Navigator.pop(Get.context!); // Close the dialog and meeting
+                countdown.cancel();
+                endMeeting();
+                Navigator.pop(Get.context!);
               }
             });
 
-            // Show the dialog
             showDialog(
               context: Get.context!,
-              barrierDismissible:
-                  false, // Prevent dismissing the dialog by tapping outside
+              barrierDismissible: false,
               builder: (context) {
                 return StatefulBuilder(
                   builder: (context, setState) {
@@ -84,15 +80,14 @@ class MeetingController extends GetxController {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'This meeting will close in $remainingTime seconds.',
+                            'This meeting will close in $remainingSeconds seconds.',
                             style: TextStyle(fontSize: 16),
                           ),
                           SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () {
-                              countdownTimer?.cancel(); // Stop the countdown
-                              Navigator.pop(context); // Close the dialog
-                              // Extend meeting logic here
+                              countdownTimer?.cancel();
+                              Navigator.pop(context);
                               extendMeetingTime();
                             },
                             child: Text('Extend Meeting Time'),
@@ -105,7 +100,6 @@ class MeetingController extends GetxController {
               },
             );
           }
-          timer.cancel();
         } else {
           remainingSeconds--;
         }
@@ -115,6 +109,85 @@ class MeetingController extends GetxController {
       AppLogger.print('Error starting timer: $e');
     }
   }
+
+  // void startTimer() async {
+  //   try {
+  //     isHost =
+  //         meetingModel.hostId ==
+  //         currentUser.firebaseUserId;
+
+  //     remainingSeconds = meetingModel.duration * 60;
+
+  //     Timer.periodic(Duration(seconds: 1), (timer) {
+  //       if (remainingSeconds <= 0) {
+  //         if (!isHost) {
+  //           endMeeting().then((c) {
+  //             AppToastUtil.showInfoToast(
+
+  //               'Your Free Trial Time is over, please contact support',
+  //             );
+  //           });
+  //           Navigator.pop(Get.context!);
+  //         } else {
+  //           int remainingTime = 10; // Countdown timer in seconds
+  //           Timer? countdownTimer;
+
+  //           // Start the countdown timer
+  //           countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+  //             if (remainingTime > 0) {
+  //               remainingTime--;
+  //             } else {
+  //               timer.cancel();
+  //               endMeeting(); // Automatically end the meeting after 10 seconds
+  //               Navigator.pop(Get.context!); // Close the dialog and meeting
+  //             }
+  //           });
+
+  //           // Show the dialog
+  //           showDialog(
+  //             context: Get.context!,
+  //             barrierDismissible:
+  //                 false, // Prevent dismissing the dialog by tapping outside
+  //             builder: (context) {
+  //               return StatefulBuilder(
+  //                 builder: (context, setState) {
+  //                   return AlertDialog(
+  //                     title: Text('Meeting Time Ended'),
+  //                     content: Column(
+  //                       mainAxisSize: MainAxisSize.min,
+  //                       children: [
+  //                         Text(
+  //                           'This meeting will close in $remainingTime seconds.',
+  //                           style: TextStyle(fontSize: 16),
+  //                         ),
+  //                         SizedBox(height: 16),
+  //                         ElevatedButton(
+  //                           onPressed: () {
+  //                             countdownTimer?.cancel(); // Stop the countdown
+  //                             Navigator.pop(context); // Close the dialog
+  //                             // Extend meeting logic here
+  //                             extendMeetingTime();
+  //                           },
+  //                           child: Text('Extend Meeting Time'),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   );
+  //                 },
+  //               );
+  //             },
+  //           );
+  //         }
+  //         timer.cancel();
+  //       } else {
+  //         remainingSeconds--;
+  //       }
+  //       update();
+  //     });
+  //   } catch (e) {
+  //     AppLogger.print('Error starting timer: $e');
+  //   }
+  // }
 
   Future<void> initializeMeeting({
     required String meetingId,
@@ -130,7 +203,9 @@ class MeetingController extends GetxController {
       );
 
       await joinChannel(channelName: 'testing');
-
+      await _agoraService.engine?.enableAudio();
+      await _agoraService.engine?.muteLocalAudioStream(true);
+      isMuted.value = true;
       if (isUserHost) {
         _firebaseService.startMeeting(meetingId);
       }
@@ -147,16 +222,15 @@ class MeetingController extends GetxController {
       final value = await _firebaseService.getMeetingData(meetingId);
       AppLogger.print('meeting data: $value');
       meetingModel = MeetingModel.fromJson(value ?? {});
-      final currentUserId = AppLocalStorage.getUserDetails().userId;
+      final currentUserId = currentUser.userId;
       if (token.trim().isEmpty) {
-        AppToastUtil.showErrorToast( 'Token not found');
+        AppToastUtil.showErrorToast('Token not found');
         return;
       }
       AppLogger.print('agora token :$token ');
 
       if (participants.length >= meetingModel.maxParticipants) {
         AppToastUtil.showErrorToast(
-          
           'Meet Participants Limit Exceeds, you cannot join Meeting as of now',
         );
         return;
@@ -168,7 +242,7 @@ class MeetingController extends GetxController {
       );
     } catch (e) {
       AppLogger.print('Error joining channel: $e');
-      AppToastUtil.showErrorToast( 'Error joining channel: $e');
+      AppToastUtil.showErrorToast('Error joining channel: $e');
     }
   }
 
@@ -180,6 +254,13 @@ class MeetingController extends GetxController {
   Future<void> toggleMute() async {
     isMuted.toggle();
     await _agoraService.muteLocalAudio(isMuted.value);
+    participants =
+        participants.map((e) {
+          if (e.userId == currentUser.userId) {
+            e = e.copyWith(isUserMuted: isMuted.value);
+          }
+          return e;
+        }).toList();
     update();
   }
 
@@ -263,18 +344,21 @@ class MeetingController extends GetxController {
     if (result != null) {
       final userData = result.data() as Map<dynamic, dynamic>;
       AppToastUtil.showInfoToast(
-        
-        AppLocalStorage.getUserDetails().userId == remoteUid
+        currentUser.userId == remoteUid
             ? 'You have joined'
             : '${userData['name']} has Joined',
       );
+      if (currentUser.userId == remoteUid) {
+        isMuted.value = true;
+        isOnSpeaker.value = true;
+      }
       _firebaseService.addParticipants(meetingId, remoteUid);
       participants.add(
         ParticipantModel(
           userId: remoteUid,
           firebaseUid: userData['firebaseUserId'],
           name: userData['name'],
-          isUserMuted: false,
+          isUserMuted: true,
           isUserSpeaking: false,
           color: WarmColorGenerator.getRandomWarmColor(),
         ),
@@ -284,7 +368,7 @@ class MeetingController extends GetxController {
   }
 
   void removeUser(int remoteUid) {
-    AppToastUtil.showInfoToast( 'user Left');
+    AppToastUtil.showInfoToast('user Left');
 
     participants.removeWhere((e) => e.userId == remoteUid);
     update();
@@ -328,8 +412,11 @@ class MeetingController extends GetxController {
       });
       _firebaseService.isCurrentUserMutedByHost(meetingId).listen((event) {
         _agoraService.engine?.muteLocalAudioStream(event);
+        isMuted.value = event;
         update();
       });
+      remainingSeconds = meetingModel.duration * 60;
+
       startTimer();
       update();
     } catch (e) {
@@ -380,6 +467,7 @@ class MeetingController extends GetxController {
   @override
   void onClose() {
     _agoraService.destroy();
+    _meetingTimer?.cancel();
     super.onClose();
   }
 
@@ -395,6 +483,9 @@ class MeetingController extends GetxController {
   }
 
   void extendMeetingTime() {
-    remainingSeconds += 3600; // Add 1 hour (3600 seconds) to the remaining time
+    remainingSeconds +=
+        1800; // Add 0.5 hour (1800 seconds) to the remaining time
+    update();
+    startTimer();
   }
 }

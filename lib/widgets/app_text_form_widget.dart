@@ -16,6 +16,7 @@ class AppTextFormField extends StatefulWidget {
   final String? Function(String?)? validator;
   final String? helperText;
   final IconData? prefixIcon;
+  final bool isPasswordRequired;
 
   const AppTextFormField({
     super.key,
@@ -25,6 +26,8 @@ class AppTextFormField extends StatefulWidget {
     this.validator,
     this.helperText,
     this.prefixIcon,
+    this.isPasswordRequired = true,
+
   });
 
   @override
@@ -68,6 +71,9 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
   }
 
   String? _defaultValidator(String? value) {
+    if(!widget.isPasswordRequired && widget.type==AppTextFormFieldType.password){
+      return null;
+    }
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }

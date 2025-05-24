@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/features/meeting/views/join_request_widget.dart';
@@ -59,18 +60,21 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
     required Color color,
     required VoidCallback onPressed,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            onTap: onPressed,
-            child: Icon(icon, size: 32, color: Colors.white),
-          ),
+    return InkWell(
+      onTap: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 32, color: color),
 
-          Text(label, style: const TextStyle(fontSize: 8, color: Colors.white)),
-        ],
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, color: Colors.white),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -101,7 +105,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                         : Icons.volume_off,
                 label: 'Speaker',
                 color:
-                    meetingController.isOnSpeaker.value
+                    !meetingController.isOnSpeaker.value
                         ? Colors.red
                         : Colors.white,
                 onPressed: meetingController.toggleSpeaker,
@@ -120,7 +124,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
   }
 
   final meetingController = Get.find<MeetingController>();
-  final int _remainingSeconds = 300;
+  final currentUser = AppLocalStorage.getUserDetails();
 
   void onPopInvoked() async {
     if (!meetingController.isMeetEneded) {
@@ -237,9 +241,16 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                           padding: const EdgeInsets.all(8.0),
                                           child: Center(
                                             child: Text(
-                                              user.name,
+                                              user.userId ==
+                                                      meetingController
+                                                          .currentUser
+                                                          .userId
+                                                  ? 'You'
+                                                  : user.name,
+                                              textAlign: TextAlign.center,
+                                              maxLines: 2,
                                               style: TextStyle(
-                                                fontSize: 24,
+                                                fontSize: 20,
                                                 color: user.color,
                                               ),
                                             ),
@@ -255,7 +266,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                             color: Colors.white,
                                           ),
                                         ),
-                                        if (meetingController.isHost) ...[
+                                        if (meetingController.isHost &&
+                                            meetingController
+                                                    .currentUser
+                                                    .userId !=
+                                                user.userId) ...[
                                           Positioned(
                                             right: 2,
                                             top: 0,
@@ -301,10 +316,9 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                 },
                               ),
                             ),
-
-                        JoinRequestWidget(),
+                        if (meetingController.isHost) ...[JoinRequestWidget()],
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
+                          padding: const EdgeInsets.only(bottom: 16.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [

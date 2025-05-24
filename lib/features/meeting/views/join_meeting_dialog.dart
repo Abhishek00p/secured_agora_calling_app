@@ -215,6 +215,7 @@ class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
                 controller: _passwordController,
                 labelText: 'Password (Optional)',
                 type: AppTextFormFieldType.password,
+                isPasswordRequired: false ,
               ),
               const SizedBox(height: 24),
 
