@@ -42,6 +42,9 @@ class MeetingController extends GetxController {
     try {
       _meetingTimer?.cancel(); // Cancel any existing timer
 
+      remainingSeconds =
+          meetingModel.scheduledEndTime.difference(DateTime.now()).inSeconds;
+
       isHost = meetingModel.hostId == currentUser.firebaseUserId;
 
       _meetingTimer = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -349,7 +352,7 @@ class MeetingController extends GetxController {
             : '${userData['name']} has Joined',
       );
       if (currentUser.userId == remoteUid) {
-        isMuted.value = true;
+        isMuted.value = false;
         isOnSpeaker.value = true;
       }
       _firebaseService.addParticipants(meetingId, remoteUid);
@@ -358,7 +361,7 @@ class MeetingController extends GetxController {
           userId: remoteUid,
           firebaseUid: userData['firebaseUserId'],
           name: userData['name'],
-          isUserMuted: true,
+          isUserMuted: false,
           isUserSpeaking: false,
           color: WarmColorGenerator.getRandomWarmColor(),
         ),
@@ -412,10 +415,20 @@ class MeetingController extends GetxController {
       });
       _firebaseService.isCurrentUserMutedByHost(meetingId).listen((event) {
         _agoraService.engine?.muteLocalAudioStream(event);
-        isMuted.value = event;
+        if (event) {
+          isMuted.value = event;
+          participants =
+              participants
+                  .map(
+                    (e) =>
+                        e.userId == currentUserId
+                            ? e.copyWith(isUserMuted: true)
+                            : e,
+                  )
+                  .toList();
+        }
         update();
       });
-      remainingSeconds = meetingModel.duration * 60;
 
       startTimer();
       update();
@@ -483,8 +496,13 @@ class MeetingController extends GetxController {
   }
 
   void extendMeetingTime() {
-    remainingSeconds +=
-        1800; // Add 0.5 hour (1800 seconds) to the remaining time
+    _firebaseService.meetingsCollection.doc(meetingId).update({
+      'scheduledEndTime':
+          meetingModel.scheduledEndTime
+              .add(Duration(minutes: 30))
+              .toIso8601String(),
+      'duration': meetingModel.duration + 30,
+    });
     update();
     startTimer();
   }
