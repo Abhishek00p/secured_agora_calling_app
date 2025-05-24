@@ -37,6 +37,8 @@ class MeetingController extends GetxController {
   bool get agoraInitialized => _agoraService.isInitialized;
   MeetingModel meetingModel = MeetingModel.toEmpty();
   Timer? _meetingTimer;
+  StreamSubscription? _leaveSubscription;
+  StreamSubscription? _muteSubscription;
 
   void startTimer() async {
     try {
@@ -113,12 +115,14 @@ class MeetingController extends GetxController {
         }
         update();
       });
-
-      _firebaseService.isInstructedToLeave(meetingId).listen((isInstructed) {
-        if (isInstructed) {
-          endMeeting();
-        }
-      });
+      _leaveSubscription?.cancel();
+      _leaveSubscription = _firebaseService
+          .isInstructedToLeave(meetingId)
+          .listen((isInstructed) {
+            if (isInstructed) {
+              endMeeting();
+            }
+          });
     } catch (e) {
       AppLogger.print('Error starting timer: $e');
     }
@@ -433,25 +437,25 @@ class MeetingController extends GetxController {
           addUser(currentUserId);
         }
       });
-      _firebaseService.isCurrentUserMutedByHost(meetingId).listen((event) {
-        if (event) {
-          AppToastUtil.showInfoToast('You are Muted by Host');
-        }
-        _agoraService.engine?.muteLocalAudioStream(event);
-        isMuted.value = event;
+      _muteSubscription?.cancel();
+      _muteSubscription = _firebaseService
+          .isCurrentUserMutedByHost(meetingId)
+          .listen((event) {
+            _agoraService.engine?.muteLocalAudioStream(event);
+            isMuted.value = event;
 
-        participants =
-            participants
-                .map(
-                  (e) =>
-                      e.userId == currentUserId
-                          ? e.copyWith(isUserMuted: event)
-                          : e,
-                )
-                .toList();
+            participants =
+                participants
+                    .map(
+                      (e) =>
+                          e.userId == currentUserId
+                              ? e.copyWith(isUserMuted: event)
+                              : e,
+                    )
+                    .toList();
 
-        update();
-      });
+            update();
+          });
 
       startTimer();
       update();
@@ -504,6 +508,8 @@ class MeetingController extends GetxController {
   void onClose() {
     _agoraService.destroy();
     _meetingTimer?.cancel();
+     _leaveSubscription?.cancel();
+    _muteSubscription?.cancel();
     super.onClose();
   }
 

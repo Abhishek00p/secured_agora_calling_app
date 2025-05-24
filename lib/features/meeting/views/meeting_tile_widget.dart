@@ -9,6 +9,7 @@ import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/utils/helper.dart';
 
 class MeetingTileWidget extends StatefulWidget {
   MeetingTileWidget({super.key, required this.model});
@@ -173,9 +174,22 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  widget.model.scheduledStartTime.meetStartTime,
-                  style: TextStyle(color: Colors.black54, fontSize: 12),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      color: Colors.black54,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                        AppHelper.timeDifference(
+                          widget.model.scheduledStartTime,
+                          widget.model.scheduledEndTime,
+                        ),
+                      style: TextStyle(color: Colors.black54, fontSize: 12),
+                    ),
+                  ],
                 ),
                 Text(
                   widget.model.hostName.titleCase,
@@ -192,8 +206,8 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                       radius: 16,
                       backgroundColor: Colors.black,
                       child: Text(
-                        '${widget.model.participants.length}+',
-                        style: TextStyle(color: Colors.white, fontSize: 8),
+                        '${widget.model.allParticipants.length}+',
+                        style: TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -205,81 +219,97 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                 ),
 
                 const Spacer(),
-                ElevatedButton(
-                  onPressed:
-                      isButtonEnabled
-                          ? () {
-                            if (widget.model.requiresApproval &&
-                                !isCurrentUserHost) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Meeting Requires approval from the host.',
-                                  ),
-                                  behavior: SnackBarBehavior.floating,
+                if(!widget.model.scheduledEndTime.isAfter(DateTime.now()))...[
+                  Icon(
+                    Icons.lock_clock,
+                    color: Colors.red,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Ended',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
 
-                                  action: SnackBarAction(
-                                    label: 'Send Request',
-                                    onPressed: () {
-                                      requuestMeetingApproval(
-                                        context,
-                                        widget.model,
-                                      );
-                                    },
+                ],
+                if (widget.model.scheduledEndTime.isAfter(DateTime.now()))
+                  ElevatedButton(
+                    onPressed:
+                        isButtonEnabled
+                            ? () {
+                              if (widget.model.requiresApproval &&
+                                  !isCurrentUserHost) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Meeting Requires approval from the host.',
+                                    ),
+                                    behavior: SnackBarBehavior.floating,
+
+                                    action: SnackBarAction(
+                                      label: 'Send Request',
+                                      onPressed: () {
+                                        requuestMeetingApproval(
+                                          context,
+                                          widget.model,
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
-                              );
-                            } else {
-                              Navigator.pushNamed(
-                                context,
-                                AppRouter.meetingRoomRoute,
-                                arguments: {
-                                  'channelName': widget.model.channelName,
-                                  'isHost':
-                                      widget.model.hostId ==
-                                      AppLocalStorage.getUserDetails()
-                                          .firebaseUserId,
-                                  'meetingId': widget.model.meetId,
-                                },
-                              );
+                                );
+                              } else {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRouter.meetingRoomRoute,
+                                  arguments: {
+                                    'channelName': widget.model.channelName,
+                                    'isHost':
+                                        widget.model.hostId ==
+                                        AppLocalStorage.getUserDetails()
+                                            .firebaseUserId,
+                                    'meetingId': widget.model.meetId,
+                                  },
+                                );
+                              }
                             }
-                          }
-                          : () {
-                            if (widget
-                                    .model
-                                    .scheduledStartTime
-                                    .differenceInMinutes <
-                                0) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  behavior: SnackBarBehavior.floating,
-                                  content: Text('Meeting will start soon...'),
-                                ),
-                              );
-                              return;
-                            }
-                          },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isButtonEnabled ? const Color(0xFF4C5FE2) : Colors.grey,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                            : () {
+                              if (widget
+                                      .model
+                                      .scheduledStartTime
+                                      .differenceInMinutes <
+                                  0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    content: Text('Meeting will start soon...'),
+                                  ),
+                                );
+                                return;
+                              }
+                            },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          isButtonEnabled
+                              ? const Color(0xFF4C5FE2)
+                              : Colors.grey,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                    child: Text(
+                      '${widget.model.participants.isNotEmpty
+                          ? 'Join'
+                          : (isCurrentUserHost && widget.model.scheduledStartTime.isToday)
+                          ? 'Start'
+                          : 'Join'} Now',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
-                  child: Text(
-                    '${widget.model.participants.isNotEmpty
-                        ? 'Join'
-                        : (isCurrentUserHost && widget.model.scheduledStartTime.isToday)
-                        ? 'Start'
-                        : 'Join'} Now',
-                    style: TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
               ],
             ),
           ],

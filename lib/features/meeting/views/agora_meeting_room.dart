@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
@@ -24,80 +27,78 @@ class AgoraMeetingRoom extends StatefulWidget {
 }
 
 class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
-Widget _buildEndCallButton({
-  required BuildContext context,
-  required bool isHost,
-  required VoidCallback onEndCallForAll,
-  required VoidCallback onLeaveMeeting,
-}) {
-  return InkWell(
-    onTap: () {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Confirmation',textAlign: TextAlign.center,),
-          content: Text(
-            isHost
-                ? 'Do you want to end the call for everyone or just leave the meeting?'
-                : 'Do you want to leave the meeting?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                onLeaveMeeting();
-                Navigator.of(context).pop();
-
-              },
-              child: const Text('Leave Meeting'),
-            ),
-            if (isHost)
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  onEndCallForAll();
-                Navigator.of(context).pop();
-
-                },
-                child: const Text(
-                  'End Call for All',
-                  style: TextStyle(color: Colors.red),
+  Widget _buildEndCallButton({
+    required BuildContext context,
+    required bool isHost,
+    required VoidCallback onEndCallForAll,
+    required VoidCallback onLeaveMeeting,
+  }) {
+    return InkWell(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder:
+              (_) => AlertDialog(
+                title: const Text('Confirmation', textAlign: TextAlign.center),
+                content: Text(
+                  isHost
+                      ? 'Do you want to end the call for everyone or just leave the meeting?'
+                      : 'Do you want to leave the meeting?',
                 ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      onLeaveMeeting();
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Leave Meeting'),
+                  ),
+                  if (isHost)
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        onEndCallForAll();
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text(
+                        'End Call for All',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                ],
               ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: 50,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.red,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Text(
+              'End Call',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
+            SizedBox(width: 10),
+            Icon(Icons.call_end, color: Colors.white),
           ],
         ),
-      );
-    },
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      height: 50,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.red,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Text(
-            'End Call',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(width: 10),
-          Icon(Icons.call_end, color: Colors.white),
-        ],
-      ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget _buildControlButton({
     required IconData icon,
@@ -244,6 +245,17 @@ Widget _buildEndCallButton({
             // bottomNavigationBar:
             body: GetBuilder<MeetingController>(
               builder: (meetingController) {
+                if (!meetingController.meetingModel.isEmpty) {
+                  AppFirebaseService.instance
+                      .getMeetingData(widget.meetingId)
+                      .then((v) {
+                        AppLogger.print(
+                          '\n <----------\nMeeting Model from ui : $v\n---------->\n',
+                        );
+                      });
+                } else {
+                  AppLogger.print('Meeting Model is empty');
+                }
                 return SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
