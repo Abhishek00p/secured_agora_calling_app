@@ -3,31 +3,52 @@ import 'package:get/get.dart';
 
 class AppToastUtil {
   static void showSuccessToast(String message) {
-    _showToast(message, title: 'Success', bgColor: Colors.green, icon: Icons.check_circle_outline);
+    _showToast(
+      message,
+      title: 'Success',
+      bgColor: Colors.green,
+      icon: Icons.check_circle_outline,
+    );
   }
 
   static void showErrorToast(String message) {
-    _showToast(message, title: 'Error', bgColor: Colors.red, icon: Icons.error_outline);
+    _showToast(
+      message,
+      title: 'Error',
+      bgColor: Colors.red,
+      icon: Icons.error_outline,
+    );
   }
 
   static void showInfoToast(String message, {String? title}) {
-    _showToast(message, title: title, bgColor: Colors.blueGrey, icon: Icons.info_outline);
+    _showToast(
+      message,
+      title: title,
+      bgColor: Colors.blueGrey,
+      icon: Icons.info_outline,
+    );
   }
 
-  static void _showToast(String message, {String? title, required Color bgColor, required IconData icon}) {
+  static void _showToast(
+    String message, {
+    String? title,
+    required Color bgColor,
+    required IconData icon,
+  }) {
     // Close any existing snackbar
     if (Get.isSnackbarOpen) {
       Get.closeCurrentSnackbar();
     }
 
     Get.snackbar(
-      title ??  '',
+      title ?? '',
       message,
       backgroundColor: bgColor,
+
       colorText: Colors.white,
       snackPosition: SnackPosition.BOTTOM,
       duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 40),
       borderRadius: 8,
       barBlur: 0,
       isDismissible: true,

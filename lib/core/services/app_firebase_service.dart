@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get/get.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
@@ -436,7 +435,7 @@ class AppFirebaseService {
   String _generateRandomChannelName() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
     final rnd = DateTime.now().millisecondsSinceEpoch.toString();
-    return 'meeting_${rnd.substring(rnd.length - 8)}';
+    return 'meeting_${chars.substring(rnd.length - 8)}';
   }
 
   Future<List<String>> getAllMeetDocIds() async {
@@ -529,5 +528,21 @@ class AppFirebaseService {
       AppLogger.print('Error getting member data: $e');
       return Member.toEmpty();
     }
+  }
+
+  removeAllParticipants(String meetingId) {
+    meetingsCollection.doc(meetingId).update({
+      'isInstructedToLeave': true,
+    });
+  }
+
+  Stream<bool> isInstructedToLeave(String meetingId) async* {
+    yield* meetingsCollection.doc(meetingId).snapshots().map((snapshot) {
+      final data = snapshot.data() as Map<String, dynamic>?;
+      if (data != null && data['isInstructedToLeave'] != null) {
+        return data['isInstructedToLeave'] as bool;
+      }
+      return false;
+    });
   }
 }

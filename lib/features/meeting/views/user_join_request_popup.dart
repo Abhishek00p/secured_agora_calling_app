@@ -39,11 +39,27 @@ class JoinRequestPopup extends StatelessWidget {
                   const Icon(Icons.person, size: 32, color: Colors.grey),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      '$userName wants to join the meeting',
-                      style: TextStyle(
-                        fontSize: isMobile ? 8 : 12,
-                        fontWeight: FontWeight.w500,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: userName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize:
+                                  isMobile
+                                      ? 10
+                                      : 14, // slightly larger than rest
+                            ),
+                          ),
+                          TextSpan(
+                            text: ' wants to join the meeting',
+                            style: TextStyle(
+                              fontSize: isMobile ? 8 : 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

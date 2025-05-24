@@ -2,7 +2,6 @@ import 'package:get/get.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
-import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
@@ -70,7 +69,7 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen>
     final loginRegisterController = Get.find<LoginRegisterController>();
     if (_registerFormKey.currentState!.validate()) {
       try {
-        final result = await loginRegisterController.register(
+         await loginRegisterController.register(
       
         );
 

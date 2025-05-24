@@ -24,35 +24,80 @@ class AgoraMeetingRoom extends StatefulWidget {
 }
 
 class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
-  Widget _buildEndCallButton(VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        height: 50,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: Colors.red,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'End Call',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+Widget _buildEndCallButton({
+  required BuildContext context,
+  required bool isHost,
+  required VoidCallback onEndCallForAll,
+  required VoidCallback onLeaveMeeting,
+}) {
+  return InkWell(
+    onTap: () {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Confirmation',textAlign: TextAlign.center,),
+          content: Text(
+            isHost
+                ? 'Do you want to end the call for everyone or just leave the meeting?'
+                : 'Do you want to leave the meeting?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onLeaveMeeting();
+                Navigator.of(context).pop();
+
+              },
+              child: const Text('Leave Meeting'),
             ),
-            SizedBox(width: 10),
-            Icon(Icons.call_end, color: Colors.white),
+            if (isHost)
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onEndCallForAll();
+                Navigator.of(context).pop();
+
+                },
+                child: const Text(
+                  'End Call for All',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
           ],
         ),
+      );
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: 50,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.red,
       ),
-    );
-  }
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Text(
+            'End Call',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(width: 10),
+          Icon(Icons.call_end, color: Colors.white),
+        ],
+      ),
+    ),
+  );
+}
+
 
   Widget _buildControlButton({
     required IconData icon,
@@ -318,14 +363,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                             ),
                         if (meetingController.isHost) ...[JoinRequestWidget()],
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
+                          padding: const EdgeInsets.only(bottom: 30.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
                               _buildControlBar(meetingController),
-                              _buildEndCallButton(() async {
-                                onPopInvoked();
-                              }),
+                              _buildEndCallButton(
+                                context: context,
+                                isHost: meetingController.isHost,
+                                onEndCallForAll:
+                                    meetingController.endMeetForAll,
+                                onLeaveMeeting: meetingController.endMeeting,
+                              ),
                             ],
                           ),
                         ),

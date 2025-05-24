@@ -2,14 +2,12 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/meeting/views/meeting_tile_widget.dart';
-import 'package:secured_calling/utils/app_logger.dart';
 
 class ViewAllMeetingList extends StatelessWidget {
   ViewAllMeetingList({super.key, required this.meetings, this.listener});

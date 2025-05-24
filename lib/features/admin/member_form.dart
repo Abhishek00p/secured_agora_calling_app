@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/member_model.dart';

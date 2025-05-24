@@ -38,10 +38,15 @@ class MeetingController extends GetxController {
   MeetingModel meetingModel = MeetingModel.toEmpty();
   Timer? _meetingTimer;
 
-  void startTimer() {
+  void startTimer() async {
     try {
       _meetingTimer?.cancel(); // Cancel any existing timer
-
+      final result = await _firebaseService.getMeetingData(meetingId);
+      if (result == null) {
+        AppToastUtil.showErrorToast('Meeting data not found');
+        return;
+      }
+      meetingModel = MeetingModel.fromJson(result);
       remainingSeconds =
           meetingModel.scheduledEndTime.difference(DateTime.now()).inSeconds;
 
@@ -107,6 +112,12 @@ class MeetingController extends GetxController {
           remainingSeconds--;
         }
         update();
+      });
+
+      _firebaseService.isInstructedToLeave(meetingId).listen((isInstructed) {
+        if (isInstructed) {
+          endMeeting();
+        }
       });
     } catch (e) {
       AppLogger.print('Error starting timer: $e');
@@ -294,6 +305,15 @@ class MeetingController extends GetxController {
     }
   }
 
+  Future<void> endMeetForAll() async {
+    endMeeting();
+    removeAllParticipants();
+  }
+
+  Future<void> removeAllParticipants() async {
+    await _firebaseService.removeAllParticipants(meetingId);
+  }
+
   Stream<List<Map<String, dynamic>>> fetchPendingRequests() async* {
     yield* _firebaseService.meetingsCollection
         .doc(meetingId)
@@ -414,19 +434,22 @@ class MeetingController extends GetxController {
         }
       });
       _firebaseService.isCurrentUserMutedByHost(meetingId).listen((event) {
-        _agoraService.engine?.muteLocalAudioStream(event);
         if (event) {
-          isMuted.value = event;
-          participants =
-              participants
-                  .map(
-                    (e) =>
-                        e.userId == currentUserId
-                            ? e.copyWith(isUserMuted: true)
-                            : e,
-                  )
-                  .toList();
+          AppToastUtil.showInfoToast('You are Muted by Host');
         }
+        _agoraService.engine?.muteLocalAudioStream(event);
+        isMuted.value = event;
+
+        participants =
+            participants
+                .map(
+                  (e) =>
+                      e.userId == currentUserId
+                          ? e.copyWith(isUserMuted: event)
+                          : e,
+                )
+                .toList();
+
         update();
       });
 
