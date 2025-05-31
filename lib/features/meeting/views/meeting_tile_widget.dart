@@ -176,17 +176,13 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.schedule,
-                      color: Colors.black54,
-                      size: 16,
-                    ),
+                    Icon(Icons.schedule, color: Colors.black54, size: 16),
                     const SizedBox(width: 4),
                     Text(
-                        AppHelper.timeDifference(
-                          widget.model.scheduledStartTime,
-                          widget.model.scheduledEndTime,
-                        ),
+                      AppHelper.timeDifference(
+                        widget.model.scheduledStartTime,
+                        widget.model.scheduledEndTime,
+                      ),
                       style: TextStyle(color: Colors.black54, fontSize: 12),
                     ),
                   ],
@@ -219,18 +215,13 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                 ),
 
                 const Spacer(),
-                if(!widget.model.scheduledEndTime.isAfter(DateTime.now()))...[
-                  Icon(
-                    Icons.lock_clock,
-                    color: Colors.red,
-                    size: 16,
-                  ),
+                if (!widget.model.scheduledEndTime.isAfter(DateTime.now())) ...[
+                  Icon(Icons.lock_clock, color: Colors.red, size: 16),
                   const SizedBox(width: 4),
                   Text(
                     'Ended',
                     style: TextStyle(color: Colors.red, fontSize: 12),
                   ),
-
                 ],
                 if (widget.model.scheduledEndTime.isAfter(DateTime.now()))
                   ElevatedButton(
@@ -286,6 +277,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                                 );
                                 return;
                               }
+                              setState(() {});
                             },
                     style: ElevatedButton.styleFrom(
                       backgroundColor:

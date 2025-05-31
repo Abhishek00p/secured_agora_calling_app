@@ -545,4 +545,20 @@ class AppFirebaseService {
       return false;
     });
   }
+
+  void cancelJoinRequest(int userId, String s) {
+    try{
+      meetingsCollection.doc(s).update({
+        'pendingApprovals': FieldValue.arrayRemove([userId]),
+      }).then((value) {
+        AppToastUtil.showSuccessToast('Request cancelled successfully');
+      }).catchError((error) {
+        AppLogger.print('Error cancelling request: $error');
+        AppToastUtil.showErrorToast('Failed to cancel request');
+      });
+    } catch (e) {
+      AppLogger.print('Error cancelling request: $e');
+      AppToastUtil.showErrorToast('Failed to cancel request');
+    }
+  }
 }

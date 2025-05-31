@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
@@ -60,6 +61,7 @@ class MeetingUtil {
       final doc = await docRef.get();
       final meetingData = doc.data() as Map<String, dynamic>;
       final instant = result['isInstant'] ?? false;
+      AppLogger.print( 'Meeting created: ${doc.id}, Instant: $instant, \n Data: $meetingData');
       if (instant) {
         Navigator.pushNamed(
           context,
@@ -76,6 +78,7 @@ class MeetingUtil {
         );
       }
     } catch (e) {
+      AppLogger.print('Error creating meeting: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error creating meeting: $e')));

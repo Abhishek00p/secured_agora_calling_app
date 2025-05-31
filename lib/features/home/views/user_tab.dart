@@ -29,7 +29,8 @@ class UserTab extends StatelessWidget {
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (context) => const JoinMeetingDialog(),
+                barrierDismissible: false,
+                builder: (context) =>  JoinMeetingDialog(),
               );
             },
           ),

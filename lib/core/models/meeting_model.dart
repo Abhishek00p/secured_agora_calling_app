@@ -185,7 +185,7 @@ class MeetingModel {
 
   final List<int> participants;
   final List<int> allParticipants;
-  final List<String> pendingApprovals;
+  final List<int> pendingApprovals;
 
   final DateTime scheduledStartTime;
   final DateTime scheduledEndTime;
@@ -257,7 +257,7 @@ class MeetingModel {
       duration: json['duration'] ?? 0,
       participants: List<int>.from(json['participants'] ?? []),
       allParticipants: List<int>.from(json['allParticipants'] ?? []),
-      pendingApprovals: List<String>.from(json['pendingApprovals'] ?? []),
+      pendingApprovals: List<int>.from(json['pendingApprovals'] ?? []),
       scheduledStartTime: _toDateTime(json['scheduledStartTime']),
       scheduledEndTime: _toDateTime(json['scheduledEndTime']),
       createdAt: _toDateTime(json['createdAt']),
