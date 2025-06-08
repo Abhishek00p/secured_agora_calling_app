@@ -2,7 +2,10 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:secured_calling/core/constants.dart';
 import 'package:secured_calling/core/models/member_model.dart';
+import 'package:secured_calling/core/models/private_meeting_model.dart';
+import 'package:secured_calling/core/services/http_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
@@ -229,16 +232,27 @@ class AppFirebaseService {
     await usersCollection.doc(uid).update(data);
   }
 
+/// return meeting id if created successfully, otherwise null
+  Future<String?> createPrivateMeeting(PrivateMeetingModel model) async {
+    try {
+      final meetingDoc = await meetingsCollection.add(model.toJson());
+      return meetingDoc.id;
+    } catch (e) {
+      AppLogger.print('Error creating private meeting: $e');
+      return null;
+    }
+  }
+
   // Meeting methods
   Future<DocumentReference> createMeeting({
     required String hostId,
     required String meetingName,
-    required String channelName,
     required DateTime scheduledStartTime,
     required int duration, // in minutes
     String? password,
     bool requiresApproval = false,
-    required int maxParticipants, required String hostName,
+    required int maxParticipants,
+    required String hostName,
   }) async {
     final meetingDocId = await AppMeetingIdGenrator.generateMeetingId();
     await meetingsCollection.doc(meetingDocId).set({
@@ -246,7 +260,7 @@ class AppFirebaseService {
       'hostName': hostName,
       'meet_id': meetingDocId,
       'meetingName': meetingName,
-      'channelName': channelName,
+      'channelName': meetingDocId,
       'maxParticipants': maxParticipants,
       'password': password,
       'duration': duration,
@@ -258,7 +272,8 @@ class AppFirebaseService {
       'actualEndTime': null,
       'createdAt': DateTime.now().toIso8601String(),
       'requiresApproval': requiresApproval,
-      'status': 'scheduled', // scheduled, live, ended, cancelled
+      'status':
+          MeetingStatus.scheduled.name, // scheduled, live, ended, cancelled
       'participants': [],
       'pendingApprovals': [],
       'memberCode': AppLocalStorage.getUserDetails().memberCode.toUpperCase(),
@@ -431,20 +446,19 @@ class AppFirebaseService {
     }
   }
 
-  // Helper methods
-  String _generateRandomChannelName() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
-    final rnd = DateTime.now().millisecondsSinceEpoch.toString();
-    return 'meeting_${chars.substring(rnd.length - 8)}';
-  }
-
   Future<List<String>> getAllMeetDocIds() async {
     return (await meetingsCollection.get()).docs.map((e) => e.id).toList();
   }
 
-  Future<String> getAgoraToken() async {
-    return (await _firestore.collection('token').doc('temptoken').get())
-            .data()?['token'] ??
+  Future<String> getAgoraToken({
+    required String channelName,
+    required int uid,
+    required bool isHost
+  }) async {
+    return await AppHttpService().fetchAgoraToken(
+          channelName: channelName,
+          uid: uid,userRole: isHost?1:0
+        ) ??
         '';
   }
 
@@ -531,9 +545,7 @@ class AppFirebaseService {
   }
 
   removeAllParticipants(String meetingId) {
-    meetingsCollection.doc(meetingId).update({
-      'isInstructedToLeave': true,
-    });
+    meetingsCollection.doc(meetingId).update({'isInstructedToLeave': true});
   }
 
   Stream<bool> isInstructedToLeave(String meetingId) async* {
@@ -547,15 +559,19 @@ class AppFirebaseService {
   }
 
   void cancelJoinRequest(int userId, String s) {
-    try{
-      meetingsCollection.doc(s).update({
-        'pendingApprovals': FieldValue.arrayRemove([userId]),
-      }).then((value) {
-        AppToastUtil.showSuccessToast('Request cancelled successfully');
-      }).catchError((error) {
-        AppLogger.print('Error cancelling request: $error');
-        AppToastUtil.showErrorToast('Failed to cancel request');
-      });
+    try {
+      meetingsCollection
+          .doc(s)
+          .update({
+            'pendingApprovals': FieldValue.arrayRemove([userId]),
+          })
+          .then((value) {
+            AppToastUtil.showSuccessToast('Request cancelled successfully');
+          })
+          .catchError((error) {
+            AppLogger.print('Error cancelling request: $error');
+            AppToastUtil.showErrorToast('Failed to cancel request');
+          });
     } catch (e) {
       AppLogger.print('Error cancelling request: $e');
       AppToastUtil.showErrorToast('Failed to cancel request');

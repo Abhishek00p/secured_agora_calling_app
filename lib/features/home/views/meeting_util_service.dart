@@ -51,7 +51,6 @@ class MeetingUtil {
         meetingName: meetingName,
         scheduledStartTime: result['scheduledStart']??now,
         requiresApproval: result['isApprovalRequired'] ?? false,
-        channelName: 'testing',
         maxParticipants: result['maxParticipants'] ?? 45,
         password:
             result['password']?.isEmpty ?? true ? null : result['password'],

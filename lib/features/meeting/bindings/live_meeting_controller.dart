@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:secured_calling/core/models/private_meeting_model.dart';
 import 'package:secured_calling/utils/app_logger.dart';
+import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
@@ -220,7 +222,7 @@ class MeetingController extends GetxController {
         rtcEngineEventHandler: _rtcEngineEventHandler(context),
       );
 
-      await joinChannel(channelName: 'testing');
+      await joinChannel(channelName: meetingId);
       await _agoraService.engine?.enableAudio();
       await _agoraService.engine?.muteLocalAudioStream(true);
       isMuted.value = true;
@@ -236,16 +238,9 @@ class MeetingController extends GetxController {
 
   Future<void> joinChannel({required String channelName}) async {
     try {
-      final token = await _firebaseService.getAgoraToken();
       final value = await _firebaseService.getMeetingData(meetingId);
-      AppLogger.print('meeting data: $value');
       meetingModel = MeetingModel.fromJson(value ?? {});
       final currentUserId = currentUser.userId;
-      if (token.trim().isEmpty) {
-        AppToastUtil.showErrorToast('Token not found');
-        return;
-      }
-      AppLogger.print('agora token :$token ');
 
       if (participants.length >= meetingModel.maxParticipants) {
         AppToastUtil.showErrorToast(
@@ -253,6 +248,16 @@ class MeetingController extends GetxController {
         );
         return;
       }
+      final token = await _firebaseService.getAgoraToken(
+        channelName: channelName,
+        uid: currentUser.userId,
+        isHost: isHost,
+      );
+      if (token.trim().isEmpty) {
+        AppToastUtil.showErrorToast('Token not found');
+        return;
+      }
+
       await _agoraService.joinChannel(
         channelName: channelName,
         token: token,
@@ -508,7 +513,7 @@ class MeetingController extends GetxController {
   void onClose() {
     _agoraService.destroy();
     _meetingTimer?.cancel();
-     _leaveSubscription?.cancel();
+    _leaveSubscription?.cancel();
     _muteSubscription?.cancel();
     super.onClose();
   }
@@ -534,5 +539,59 @@ class MeetingController extends GetxController {
     });
     update();
     startTimer();
+  }
+
+  Future<bool> createPrivateMeeting({
+    required String parentMeetingId,
+    required String channelName,
+    required int hostId,
+    required String hostName,
+    required int participantId,
+    required String participantName,
+    required int maxParticipants,
+  }) async {
+    try {
+      final hostToken = await _firebaseService.getAgoraToken(
+        channelName: channelName,
+        uid: hostId,
+        isHost: true,
+      );
+      if (hostToken.isEmpty) {
+        AppToastUtil.showErrorToast('Failed to generate host token');
+        return false;
+      }
+      final participantToken = await _firebaseService.getAgoraToken(
+        channelName: channelName,
+        uid: participantId,
+        isHost: false,
+      );
+      if (participantToken.isEmpty) {
+        AppToastUtil.showErrorToast('Failed to generate participant token');
+        return false;
+      }
+      final privateMeeting = PrivateMeetingModel(
+        meetId: await AppMeetingIdGenrator.generateMeetingId(),
+        parentMeetingId: parentMeetingId,
+        channelName: channelName,
+        hostId: hostId,
+        participantId: participantId,
+        hostName: hostName,
+        participantName: participantName,
+        maxParticipants: maxParticipants,
+        createdAt: DateTime.now(),
+        scheduledStartTime: DateTime.now(),
+        scheduledEndTime: DateTime.now().add(Duration(hours: 1)),
+        status: 'scheduled',
+        duration: 60, // Default duration in minutes
+        tokens: {},
+      );
+
+      await _firebaseService.createPrivateMeeting(privateMeeting);
+      return true;
+    } catch (e) {
+      AppLogger.print('Error creating private meeting: $e');
+      AppToastUtil.showErrorToast('Error creating private meeting: $e');
+      return false;
+    }
   }
 }

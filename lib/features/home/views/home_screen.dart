@@ -5,6 +5,8 @@ import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/services/notification_service.dart';
+import 'package:secured_calling/core/services/permission_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/admin/admin_home.dart';
 import 'package:secured_calling/features/home/views/membar_tab_view_widget.dart';
@@ -30,6 +32,55 @@ class _HomeScreenState extends State<HomeScreen>
   int _selectedIndex = 0;
 
   int poppedTimes = 0;
+
+  void _showNotificationPermissionSheet(BuildContext context) async {
+    final result = await PermissionService.requestPermission(
+      context: context,
+      type: AppPermissionType.notification,
+    );
+    if (result) {
+      return; // Permission granted, no need to show the sheet
+    }
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (_) => Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Enable Notifications",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  "We use notifications to remind you of meetings, alerts, and important messages. You can enable them now or later.",
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
+                ElevatedButton.icon(
+                  icon: Icon(Icons.notifications),
+                  label: Text("Enable Notifications"),
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await NotificationService()
+                        .requestPermissionAndInitialize();
+                  },
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Maybe later"),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +92,10 @@ class _HomeScreenState extends State<HomeScreen>
           _selectedIndex = _tabController.index;
         });
       }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showNotificationPermissionSheet(context);
     });
   }
 
