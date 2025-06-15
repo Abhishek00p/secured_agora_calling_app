@@ -343,6 +343,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                                       .unMuteThisParticipantsForAllUser(
                                                         user,
                                                       );
+                                                } else if (value == 'private_room') {
+                                                  meetingController
+                                                      .createPrivateRoomForUser(
+                                                        user,
+                                                      );
                                                 }
                                               },
                                               itemBuilder:
@@ -359,6 +364,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                                         child: Text('Unmute'),
                                                       ),
                                                     ],
+                                                    PopupMenuItem(
+                                                      value: 'private_room',
+                                                      child: Text('Create Private Room'),
+                                                    ),
                                                   ],
                                               icon: Icon(
                                                 Icons.more_vert,

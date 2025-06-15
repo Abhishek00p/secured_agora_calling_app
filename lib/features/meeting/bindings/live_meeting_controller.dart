@@ -4,6 +4,7 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/models/private_meeting_model.dart';
+import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
@@ -543,7 +544,6 @@ class MeetingController extends GetxController {
 
   Future<bool> createPrivateMeeting({
     required String parentMeetingId,
-    required String channelName,
     required int hostId,
     required String hostName,
     required int participantId,
@@ -551,8 +551,9 @@ class MeetingController extends GetxController {
     required int maxParticipants,
   }) async {
     try {
+      final meetId = await AppMeetingIdGenrator.generateMeetingId();
       final hostToken = await _firebaseService.getAgoraToken(
-        channelName: channelName,
+        channelName: meetId,
         uid: hostId,
         isHost: true,
       );
@@ -561,18 +562,19 @@ class MeetingController extends GetxController {
         return false;
       }
       final participantToken = await _firebaseService.getAgoraToken(
-        channelName: channelName,
+        channelName: meetId,
         uid: participantId,
         isHost: false,
       );
+    
       if (participantToken.isEmpty) {
         AppToastUtil.showErrorToast('Failed to generate participant token');
         return false;
       }
       final privateMeeting = PrivateMeetingModel(
-        meetId: await AppMeetingIdGenrator.generateMeetingId(),
+        meetId: meetId,
         parentMeetingId: parentMeetingId,
-        channelName: channelName,
+        channelName: meetId,
         hostId: hostId,
         participantId: participantId,
         hostName: hostName,
@@ -581,17 +583,49 @@ class MeetingController extends GetxController {
         createdAt: DateTime.now(),
         scheduledStartTime: DateTime.now(),
         scheduledEndTime: DateTime.now().add(Duration(hours: 1)),
-        status: 'scheduled',
+        status: 'live',
         duration: 60, // Default duration in minutes
-        tokens: {},
+        tokens: {
+          'hostToken': hostToken,
+          'participantToken': participantToken,
+        },
       );
 
       await _firebaseService.createPrivateMeeting(privateMeeting);
+        Navigator.pop(Get.context!); // Close the current meeting
+      // Navigate to the private meeting room
+      Navigator.pushNamed(
+        Get.context!,
+        AppRouter.meetingRoomRoute,
+        arguments: {
+          'channelName': meetId,
+          'isHost': hostId == AppLocalStorage.getUserDetails().userId,
+          'meetingId': meetId,
+        },
+      );
       return true;
     } catch (e) {
       AppLogger.print('Error creating private meeting: $e');
       AppToastUtil.showErrorToast('Error creating private meeting: $e');
       return false;
+    }
+  }
+
+  void createPrivateRoomForUser(ParticipantModel user) async{
+   await endMeeting();
+    final isCreated = await createPrivateMeeting(
+      parentMeetingId: meetingId,
+      hostId: currentUser.userId,
+      hostName: currentUser.name,
+      participantId: user.userId,
+      participantName: user.name,
+      maxParticipants: 2, // Assuming private room for 2 participants
+    );
+    if (isCreated) {
+      AppToastUtil.showSuccessToast('Private room created successfully');
+    
+    } else {
+      AppToastUtil.showErrorToast('Failed to create private room');
     }
   }
 }

@@ -16,7 +16,7 @@ class AppHttpService {
 
   /// Replace this with your actual Firebase Function URL
   final String firebaseFunctionUrl =
-      'https://<your-region>-<your-project-id>.cloudfunctions.net/api';
+      'https://us-central1-secure-calling-2025.cloudfunctions.net/api';
 
   /// Get token for a user
   Future<String?> fetchAgoraToken({
@@ -45,17 +45,18 @@ class AppHttpService {
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
+        print('token generated successfully from Agora');
         final data = jsonDecode(response.body);
         if (data['token'] != null) {
           // Store the token in Firebase
-          await storeTokenInFirebase(
-            channelName: channelName,
-            uid: uid,
-            token: data['token'],
-            expiryTime:
-                data['expiry_time'] ??
-                DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
-          );
+          // await storeTokenInFirebase(
+          //   channelName: channelName,
+          //   uid: uid,
+          //   token: data['token'],
+          //   expiryTime:
+          //       data['expiry_time'] ??
+          //       DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
+          // );
           return data['token'];
         } else {
           throw Exception("Token not found in response");
@@ -70,6 +71,7 @@ class AppHttpService {
       AppToastUtil.showErrorToast('No Internet connection');
       return null;
     } catch (e) {
+      print('Error fetching token: $e');
       AppToastUtil.showErrorToast('Error fetching token: $e');
       return null;
     }

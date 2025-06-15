@@ -270,12 +270,19 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                                       .differenceInMinutes <
                                   0) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
+                                  SnackBar(
                                     behavior: SnackBarBehavior.floating,
                                     content: Text('Meeting will start soon...'),
                                   ),
                                 );
                                 return;
+                              }else{
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    content: Text('Meeting has ended. on or before ${widget.model.scheduledEndTime.formatDate}'),
+                                  ),
+                                );
                               }
                               setState(() {});
                             },
