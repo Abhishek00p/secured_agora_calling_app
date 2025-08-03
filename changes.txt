@@ -1,0 +1,48 @@
+## Changes for "Request to Speak" Feature
+
+This file documents the changes made to implement the "Request to Speak" feature.
+
+### `lib/core/services/app_firebase_service.dart`
+
+-   **Added new fields to the `meetings` collection:**
+    -   `speakRequests`: An array to store the user IDs of participants who have requested to speak.
+    -   `approvedSpeakers`: An array to store the user IDs of participants who are approved to speak.
+-   **Added new methods to manage speak requests and approvals:**
+    -   `requestToSpeak(String meetingId, int userId)`: Adds a user to the `speakRequests` list.
+    -   `cancelRequestToSpeak(String meetingId, int userId)`: Removes a user from the `speakRequests` list.
+    -   `approveSpeakRequest(String meetingId, int userId)`: Moves a user from `speakRequests` to `approvedSpeakers`.
+    -   `rejectSpeakRequest(String meetingId, int userId)`: Removes a user from the `speakRequests` list.
+    -   `revokeSpeakingPermission(String meetingId, int userId)`: Removes a user from the `approvedSpeakers` list.
+    -   `getMeetingStream(String meetingId)`: A stream to listen for real-time updates to the meeting document.
+
+### `lib/features/meeting/bindings/live_meeting_controller.dart`
+
+-   **Added new state variables:**
+    -   `speakRequests`: An `RxList<int>` to store the IDs of users who have requested to speak.
+    -   `approvedSpeakers`: An `RxList<int>` to store the IDs of approved speakers.
+    -   `hasRequestedToSpeak`: An `RxBool` to track if the current user has requested to speak.
+    -   `speakRequestUsers`: An `RxList<ParticipantModel>` to store the participant models of users who have requested to speak.
+-   **Subscribed to Firestore streams:**
+    -   Used `getMeetingStream` from `AppFirebaseService` to listen for changes in the meeting document.
+    -   The listener updates the `speakRequests`, `approvedSpeakers`, and `hasRequestedToSpeak` state variables in real-time.
+-   **Updated audio muting logic:**
+    -   The `onUserJoined` method in `RtcEngineEventHandler` now mutes all remote users by default unless they are the host or are in the `approvedSpeakers` list.
+    -   The stream listener for the meeting document also mutes/unmutes participants based on changes to the `approvedSpeakers` list.
+-   **Added new methods for UI interaction:**
+    -   `requestToSpeak()`
+    -   `cancelRequestToSpeak()`
+    -   `approveSpeakRequest(int userId)`
+    -   `rejectSpeakRequest(int userId)`
+    -   `revokeSpeakingPermission(int userId)`
+
+### `lib/features/meeting/views/agora_meeting_room.dart`
+
+-   **Added "Request to Speak" button:**
+    -   A new button in the control bar allows participants to request to speak or cancel their request.
+    -   The button's appearance and behavior are controlled by the `hasRequestedToSpeak` state variable in the `MeetingController`.
+-   **Added a dialog for the host to manage speak requests:**
+    -   A new icon button in the app bar (visible only to the host) shows the number of pending speak requests.
+    -   Tapping the button opens a dialog that lists the users who have requested to speak.
+    -   The host can approve or reject each request from this dialog.
+-   **Added "Revoke Speak Permission" option:**
+    -   In the participant grid, the host's popup menu for each participant now includes an option to revoke speaking permission if the participant is an approved speaker.

@@ -163,6 +163,27 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
             //   color: _isVideoEnabled ? Colors.white : Colors.red,
             //   onPressed: _toggleVideo,
             // ),
+            if (!meetingController.isHost)
+              Obx(
+                () => _buildControlButton(
+                  icon: meetingController.hasRequestedToSpeak.value
+                      ? Icons.cancel
+                      : Icons.record_voice_over,
+                  label: meetingController.hasRequestedToSpeak.value
+                      ? 'Cancel Request'
+                      : 'Request to Speak',
+                  color: meetingController.hasRequestedToSpeak.value
+                      ? Colors.orange
+                      : Colors.white,
+                  onPressed: () {
+                    if (meetingController.hasRequestedToSpeak.value) {
+                      meetingController.cancelRequestToSpeak();
+                    } else {
+                      meetingController.requestToSpeak();
+                    }
+                  },
+                ),
+              ),
           ],
         ),
       ),
@@ -194,6 +215,56 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
   }
 
   @override
+  void _showSpeakRequestsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Speak Requests'),
+        content: Obx(
+          () => Container(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: meetingController.speakRequestUsers.length,
+              itemBuilder: (context, index) {
+                final user = meetingController.speakRequestUsers[index];
+                return ListTile(
+                  title: Text(user.name),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.check, color: Colors.green),
+                        onPressed: () {
+                          meetingController.approveSpeakRequest(user.userId);
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.red),
+                        onPressed: () {
+                          meetingController.rejectSpeakRequest(user.userId);
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GetBuilder<MeetingController>(
       builder: (meetingController) {
@@ -210,6 +281,40 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
               backgroundColor: Colors.black,
               iconTheme: const IconThemeData(color: Colors.white),
               actions: [
+                if (meetingController.isHost)
+                  IconButton(
+                    onPressed: () => _showSpeakRequestsDialog(context),
+                    icon: Obx(
+                      () => Stack(
+                        children: [
+                          Icon(Icons.speaker_phone),
+                          if (meetingController.speakRequests.isNotEmpty)
+                            Positioned(
+                              right: 0,
+                              child: Container(
+                                padding: EdgeInsets.all(1),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                constraints: BoxConstraints(
+                                  minWidth: 12,
+                                  minHeight: 12,
+                                ),
+                                child: Text(
+                                  '${meetingController.speakRequests.length}',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                 IconButton(
                   onPressed: () async {
                     // await fetchPendingRequests();
@@ -348,6 +453,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                                       .createPrivateRoomForUser(
                                                         user,
                                                       );
+                                                } else if (value == 'revoke_speak') {
+                                                  meetingController
+                                                      .revokeSpeakingPermission(
+                                                          user.userId);
                                                 }
                                               },
                                               itemBuilder:
@@ -364,6 +473,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                                         child: Text('Unmute'),
                                                       ),
                                                     ],
+                                                    if (meetingController.approvedSpeakers.contains(user.userId))
+                                                      PopupMenuItem(
+                                                        value: 'revoke_speak',
+                                                        child: Text('Revoke Speak Permission'),
+                                                      ),
                                                     PopupMenuItem(
                                                       value: 'private_room',
                                                       child: Text('Create Private Room'),

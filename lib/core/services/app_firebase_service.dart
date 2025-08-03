@@ -277,6 +277,8 @@ class AppFirebaseService {
           MeetingStatus.scheduled.name, // scheduled, live, ended, cancelled
       'participants': [],
       'pendingApprovals': [],
+      'speakRequests': [],
+      'approvedSpeakers': [],
       'memberCode': AppLocalStorage.getUserDetails().memberCode.toUpperCase(),
     });
     return meetingsCollection.doc(meetingDocId);
@@ -577,5 +579,41 @@ class AppFirebaseService {
       AppLogger.print('Error cancelling request: $e');
       AppToastUtil.showErrorToast('Failed to cancel request');
     }
+  }
+
+  // Methods for "Request to Speak" feature
+  Future<void> requestToSpeak(String meetingId, int userId) async {
+    await meetingsCollection.doc(meetingId).update({
+      'speakRequests': FieldValue.arrayUnion([userId]),
+    });
+  }
+
+  Future<void> cancelRequestToSpeak(String meetingId, int userId) async {
+    await meetingsCollection.doc(meetingId).update({
+      'speakRequests': FieldValue.arrayRemove([userId]),
+    });
+  }
+
+  Future<void> approveSpeakRequest(String meetingId, int userId) async {
+    await meetingsCollection.doc(meetingId).update({
+      'speakRequests': FieldValue.arrayRemove([userId]),
+      'approvedSpeakers': FieldValue.arrayUnion([userId]),
+    });
+  }
+
+  Future<void> rejectSpeakRequest(String meetingId, int userId) async {
+    await meetingsCollection.doc(meetingId).update({
+      'speakRequests': FieldValue.arrayRemove([userId]),
+    });
+  }
+
+  Future<void> revokeSpeakingPermission(String meetingId, int userId) async {
+    await meetingsCollection.doc(meetingId).update({
+      'approvedSpeakers': FieldValue.arrayRemove([userId]),
+    });
+  }
+
+  Stream<DocumentSnapshot> getMeetingStream(String meetingId) {
+    return meetingsCollection.doc(meetingId).snapshots();
   }
 }

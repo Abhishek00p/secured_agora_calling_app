@@ -30,6 +30,10 @@ class MeetingController extends GetxController {
   final isScreenSharing = false.obs;
   bool isMeetEneded = false;
   List<ParticipantModel> participants = <ParticipantModel>[].obs;
+  final speakRequests = <int>[].obs;
+  final approvedSpeakers = <int>[].obs;
+  final hasRequestedToSpeak = false.obs;
+  final speakRequestUsers = <ParticipantModel>[].obs;
 
   String meetingId = '';
   bool isHost = false;
@@ -42,6 +46,7 @@ class MeetingController extends GetxController {
   Timer? _meetingTimer;
   StreamSubscription? _leaveSubscription;
   StreamSubscription? _muteSubscription;
+  StreamSubscription? _meetingSubscription;
 
   void startTimer() async {
     try {
@@ -230,11 +235,70 @@ class MeetingController extends GetxController {
       if (isUserHost) {
         _firebaseService.startMeeting(meetingId);
       }
+
+      _meetingSubscription?.cancel();
+      _meetingSubscription =
+          _firebaseService.getMeetingStream(meetingId).listen((doc) {
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          speakRequests.value = List<int>.from(data['speakRequests'] ?? []);
+          approvedSpeakers.value = List<int>.from(data['approvedSpeakers'] ?? []);
+          hasRequestedToSpeak.value =
+              speakRequests.contains(currentUser.userId);
+
+          updateSpeakRequestUsers();
+
+          // Mute/unmute participants based on approval status
+          for (final participant in participants) {
+            if (participant.userId != meetingModel.hostUserId && participant.userId != currentUser.userId) {
+              if (approvedSpeakers.contains(participant.userId)) {
+                _agoraService.engine
+                    ?.muteRemoteAudioStream(uid: participant.userId, mute: false);
+              } else {
+                _agoraService.engine
+                    ?.muteRemoteAudioStream(uid: participant.userId, mute: true);
+              }
+            }
+          }
+        }
+      });
     } catch (e) {
       AppLogger.print('Error initializing meeting: $e');
     }
 
     update();
+  }
+
+  void updateSpeakRequestUsers() async {
+    final users = <ParticipantModel>[];
+    for (final userId in speakRequests) {
+      final user = participants.firstWhereOrNull((p) => p.userId == userId);
+      if (user != null) {
+        users.add(user);
+      }
+    }
+    speakRequestUsers.value = users;
+  }
+
+  // Methods for "Request to Speak" feature
+  Future<void> requestToSpeak() async {
+    await _firebaseService.requestToSpeak(meetingId, currentUser.userId);
+  }
+
+  Future<void> cancelRequestToSpeak() async {
+    await _firebaseService.cancelRequestToSpeak(meetingId, currentUser.userId);
+  }
+
+  Future<void> approveSpeakRequest(int userId) async {
+    await _firebaseService.approveSpeakRequest(meetingId, userId);
+  }
+
+  Future<void> rejectSpeakRequest(int userId) async {
+    await _firebaseService.rejectSpeakRequest(meetingId, userId);
+  }
+
+  Future<void> revokeSpeakingPermission(int userId) async {
+    await _firebaseService.revokeSpeakingPermission(meetingId, userId);
   }
 
   Future<void> joinChannel({required String channelName}) async {
@@ -474,12 +538,12 @@ class MeetingController extends GetxController {
     return RtcEngineEventHandler(
       onUserJoined: (connection, remoteUid, elapsed) {
         addUser(remoteUid);
-        if(meetingModel.hostUserId != remoteUid) {
+        if (remoteUid != meetingModel.hostUserId && !approvedSpeakers.contains(remoteUid)) {
           _agoraService.engine?.muteRemoteAudioStream(uid: remoteUid, mute: true);
-        }else{
-          _agoraService.engine?.muteRemoteAudioStream(uid: remoteUid, mute: false);
+        } else {
+          _agoraService.engine
+              ?.muteRemoteAudioStream(uid: remoteUid, mute: false);
         }
-         
       },
       onUserOffline: (connection, remoteUid, reason) => removeUser(remoteUid),
       onJoinChannelSuccess: (connection, elapsed) {
@@ -506,6 +570,7 @@ class MeetingController extends GetxController {
     _meetingTimer?.cancel();
     _leaveSubscription?.cancel();
     _muteSubscription?.cancel();
+    _meetingSubscription?.cancel();
     super.onClose();
   }
 
