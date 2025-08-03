@@ -30,7 +30,7 @@ class JoinMeetingController extends GetxController {
 
     firebaseService.cancelJoinRequest(
       AppLocalStorage.getUserDetails().userId,
-      meetingId.value!,
+      meetingId.value??"",
     );
    clearState();
     Get.back();
