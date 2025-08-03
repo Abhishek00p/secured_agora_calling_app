@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -133,16 +134,45 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Obx(
-              () => _buildControlButton(
-                icon:
-                    meetingController.isMuted.value ? Icons.mic_off : Icons.mic,
-                label: meetingController.isMuted.value ? 'Unmute' : 'Mute',
-                color:
-                    meetingController.isMuted.value ? Colors.red : Colors.white,
-                onPressed: meetingController.toggleMute,
+            if (meetingController.isHost)
+              Obx(
+                () => _buildControlButton(
+                  icon:
+                      meetingController.isMuted.value
+                          ? Icons.mic_off
+                          : Icons.mic,
+                  label: meetingController.isMuted.value ? 'Unmute' : 'Mute',
+                  color:
+                      meetingController.isMuted.value
+                          ? Colors.red
+                          : Colors.white,
+                  onPressed: meetingController.toggleMute,
+                ),
               ),
-            ),
+            if (!meetingController.isHost)
+              Obx(
+                () => _buildControlButton(
+                  icon:
+                      meetingController.hasRequestedToSpeak.value
+                          ? Icons.cancel
+                          : Icons.record_voice_over,
+                  label:
+                      meetingController.hasRequestedToSpeak.value
+                          ? 'Cancel Request'
+                          : 'Request to Speak',
+                  color:
+                      meetingController.hasRequestedToSpeak.value
+                          ? Colors.orange
+                          : Colors.white,
+                  onPressed: () {
+                    if (meetingController.hasRequestedToSpeak.value) {
+                      meetingController.cancelRequestToSpeak();
+                    } else {
+                      meetingController.requestToSpeak();
+                    }
+                  },
+                ),
+              ),
             Obx(
               () => _buildControlButton(
                 icon:
@@ -157,33 +187,13 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                 onPressed: meetingController.toggleSpeaker,
               ),
             ),
+
             // _buildControlButton(
             //   icon: _isVideoEnabled ? Icons.videocam : Icons.videocam_off,
             //   label: _isVideoEnabled ? 'Stop Video' : 'Start Video',
             //   color: _isVideoEnabled ? Colors.white : Colors.red,
             //   onPressed: _toggleVideo,
             // ),
-            if (!meetingController.isHost)
-              Obx(
-                () => _buildControlButton(
-                  icon: meetingController.hasRequestedToSpeak.value
-                      ? Icons.cancel
-                      : Icons.record_voice_over,
-                  label: meetingController.hasRequestedToSpeak.value
-                      ? 'Cancel Request'
-                      : 'Request to Speak',
-                  color: meetingController.hasRequestedToSpeak.value
-                      ? Colors.orange
-                      : Colors.white,
-                  onPressed: () {
-                    if (meetingController.hasRequestedToSpeak.value) {
-                      meetingController.cancelRequestToSpeak();
-                    } else {
-                      meetingController.requestToSpeak();
-                    }
-                  },
-                ),
-              ),
           ],
         ),
       ),
@@ -214,53 +224,55 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
     super.initState();
   }
 
-  @override
   void _showSpeakRequestsDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Speak Requests'),
-        content: Obx(
-          () => Container(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: meetingController.speakRequestUsers.length,
-              itemBuilder: (context, index) {
-                final user = meetingController.speakRequestUsers[index];
-                return ListTile(
-                  title: Text(user.name),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.check, color: Colors.green),
-                        onPressed: () {
-                          meetingController.approveSpeakRequest(user.userId);
-                          Navigator.of(context).pop();
-                        },
+      builder:
+          (_) => AlertDialog(
+            title: Text('Speak Requests'),
+            content: Obx(
+              () => Container(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: meetingController.speakRequestUsers.length,
+                  itemBuilder: (context, index) {
+                    final user = meetingController.speakRequestUsers[index];
+                    return ListTile(
+                      title: Text(user.name),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.check, color: Colors.green),
+                            onPressed: () {
+                              meetingController.approveSpeakRequest(
+                                user.userId,
+                              );
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close, color: Colors.red),
+                            onPressed: () {
+                              meetingController.rejectSpeakRequest(user.userId);
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: Colors.red),
-                        onPressed: () {
-                          meetingController.rejectSpeakRequest(user.userId);
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
+                    );
+                  },
+                ),
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Close'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Close'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -448,15 +460,12 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                                       .unMuteThisParticipantsForAllUser(
                                                         user,
                                                       );
-                                                } else if (value == 'private_room') {
-                                                  meetingController
-                                                      .createPrivateRoomForUser(
-                                                        user,
-                                                      );
-                                                } else if (value == 'revoke_speak') {
+                                                } else if (value ==
+                                                    'revoke_speak') {
                                                   meetingController
                                                       .revokeSpeakingPermission(
-                                                          user.userId);
+                                                        user.userId,
+                                                      );
                                                 }
                                               },
                                               itemBuilder:
@@ -473,14 +482,20 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                                         child: Text('Unmute'),
                                                       ),
                                                     ],
-                                                    if (meetingController.approvedSpeakers.contains(user.userId))
+                                                    if (meetingController
+                                                        .approvedSpeakers
+                                                        .contains(user.userId))
                                                       PopupMenuItem(
                                                         value: 'revoke_speak',
-                                                        child: Text('Revoke Speak Permission'),
+                                                        child: Text(
+                                                          'Revoke Speak Permission',
+                                                        ),
                                                       ),
                                                     PopupMenuItem(
                                                       value: 'private_room',
-                                                      child: Text('Create Private Room'),
+                                                      child: Text(
+                                                        'Create Private Room',
+                                                      ),
                                                     ),
                                                   ],
                                               icon: Icon(
@@ -499,8 +514,8 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                         if (meetingController.isHost) ...[JoinRequestWidget()],
                         Padding(
                           padding: const EdgeInsets.only(bottom: 30.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          child: Wrap(
+                            runSpacing: 16,
                             children: [
                               _buildControlBar(meetingController),
                               _buildEndCallButton(

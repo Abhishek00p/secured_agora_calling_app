@@ -49,14 +49,14 @@ class AppHttpService {
         final data = jsonDecode(response.body);
         if (data['token'] != null) {
           // Store the token in Firebase
-          // await storeTokenInFirebase(
-          //   channelName: channelName,
-          //   uid: uid,
-          //   token: data['token'],
-          //   expiryTime:
-          //       data['expiry_time'] ??
-          //       DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
-          // );
+          await storeTokenInFirebase(
+            channelName: channelName,
+            uid: uid,
+            token: data['token'],
+            expiryTime:
+                data['expiry_time'] ??
+                DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
+          );
           return data['token'];
         } else {
           throw Exception("Token not found in response");
