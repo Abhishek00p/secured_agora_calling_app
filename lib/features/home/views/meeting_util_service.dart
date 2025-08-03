@@ -47,6 +47,7 @@ class MeetingUtil {
 
       final docRef = await firebaseService.createMeeting(
         hostId: firebaseService.currentUser!.uid,
+        hostUserId: AppLocalStorage.getUserDetails().userId,
         hostName: AppLocalStorage.getUserDetails().name,
         meetingName: meetingName,
         scheduledStartTime: result['scheduledStart']??now,

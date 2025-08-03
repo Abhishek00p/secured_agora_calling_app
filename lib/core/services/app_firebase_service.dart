@@ -252,11 +252,12 @@ class AppFirebaseService {
     String? password,
     bool requiresApproval = false,
     required int maxParticipants,
-    required String hostName,
+    required String hostName, required int hostUserId,
   }) async {
     final meetingDocId = await AppMeetingIdGenrator.generateMeetingId();
     await meetingsCollection.doc(meetingDocId).set({
       'hostId': hostId,
+      'hostUserId': hostUserId,
       'hostName': hostName,
       'meet_id': meetingDocId,
       'meetingName': meetingName,

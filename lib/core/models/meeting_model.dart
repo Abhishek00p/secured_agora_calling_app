@@ -6,6 +6,7 @@ class MeetingModel {
   final String meetingName;
   final String channelName;
   final String hostId;
+  final int hostUserId;
   final String hostName;
   final String? password;
   final String? memberCode;
@@ -47,6 +48,7 @@ class MeetingModel {
     required this.createdAt,
     required this.actualStartTime,
     this.actualEndTime,
+    required this.hostUserId,
   });
 
   bool get isEmpty => this == MeetingModel.toEmpty();
@@ -56,6 +58,7 @@ class MeetingModel {
         meetingName: '',
         channelName: '',
         hostId: '',
+        hostUserId: 0,
         hostName: '',
         password: null,
         memberCode: null,
@@ -71,11 +74,13 @@ class MeetingModel {
         scheduledEndTime: DateTime.fromMillisecondsSinceEpoch(0),
         createdAt: DateTime.fromMillisecondsSinceEpoch(0),
         actualStartTime: DateTime.fromMillisecondsSinceEpoch(0),
+
         actualEndTime: null,
       );
 
   factory MeetingModel.fromJson(Map<String, dynamic> json) {
     return MeetingModel(
+      hostUserId: json['hostUserId'] ?? 0,
       meetId: json['meet_id'] ?? '',
       meetingName: json['meetingName'] ?? '',
       channelName: json['channelName'] ?? '',
@@ -105,6 +110,7 @@ class MeetingModel {
         'channelName': channelName,
         'hostId': hostId,
         'hostName': hostName,
+        'hostUserId': hostUserId,
         'password': password,
         'memberCode': memberCode,
         'requiresApproval': requiresApproval,

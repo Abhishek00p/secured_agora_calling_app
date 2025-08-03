@@ -472,34 +472,24 @@ class MeetingController extends GetxController {
 
   RtcEngineEventHandler _rtcEngineEventHandler(BuildContext context) {
     return RtcEngineEventHandler(
-      onUserJoined: (connection, remoteUid, elapsed) => addUser(remoteUid),
+      onUserJoined: (connection, remoteUid, elapsed) {
+        addUser(remoteUid);
+        if(meetingModel.hostUserId != remoteUid) {
+          _agoraService.engine?.muteRemoteAudioStream(uid: remoteUid, mute: true);
+        }else{
+          _agoraService.engine?.muteRemoteAudioStream(uid: remoteUid, mute: false);
+        }
+         
+      },
       onUserOffline: (connection, remoteUid, reason) => removeUser(remoteUid),
-      onJoinChannelSuccess: (connection, elapsed) => onJoinSuccess(),
+      onJoinChannelSuccess: (connection, elapsed) {
+        onJoinSuccess();
+      },
       onLeaveChannel: (connection, stats) {
         isMeetEneded = true;
         update();
       },
-      // onAudioVolumeIndication: (
-      //   connection,
-      //   speakers,
-      //   speakerNumber,
-      //   totalVolume,
-      // ) {
-
-      // final loudestSpeaker = speakers.reduce((a, b) => a.volume > b.volume ? a : b);
-
-      //     participants =
-      //         participants
-      //             .map(
-      //               (e) =>
-      //                   e.userId == loudestSpeaker.uid
-      //                       ? e.copyWith(isUserSpeaking: true)
-      //                       : e.copyWith(isUserSpeaking: false),
-      //             )
-      //             .toList();
-      //     update();
-      //
-      // },
+    
       onUserMuteAudio:
           (connection, remoteUid, muted) => updateMuteStatus(remoteUid, muted),
       onActiveSpeaker: onActiveSpeaker,
