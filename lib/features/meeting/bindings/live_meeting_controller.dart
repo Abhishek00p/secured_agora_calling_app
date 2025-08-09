@@ -251,7 +251,7 @@ class MeetingController extends GetxController {
           // Mute/unmute participants based on approval status
           for (final participant in participants) {
             if (participant.userId != meetingModel.hostUserId && participant.userId != currentUser.userId) {
-              if (approvedSpeakers.contains(participant.userId)) {
+              if (approvedSpeakers.contains(participant.userId) && currentUser.userId == meetingModel.hostUserId) {
                 _agoraService.engine
                     ?.muteRemoteAudioStream(uid: participant.userId, mute: false);
               } else {
