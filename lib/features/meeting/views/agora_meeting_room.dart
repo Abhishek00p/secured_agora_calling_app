@@ -55,18 +55,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                     },
                     child: const Text('Leave Meeting'),
                   ),
-                  if (isHost)
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        onEndCallForAll();
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text(
-                        'End Call for All',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ),
+                  // if (isHost)
+                  //   TextButton(
+                  //     onPressed: () {
+                  //       Navigator.of(context).pop();
+                  //       onEndCallForAll();
+                  //       Navigator.of(context).pop();
+                  //     },
+                  //     child: const Text(
+                  //       'End Call for All',
+                  //       style: TextStyle(color: Colors.red),
+                  //     ),
+                  //   ),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Cancel'),
