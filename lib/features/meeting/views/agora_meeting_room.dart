@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:secured_calling/core/extensions/app_color_extension.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_logger.dart';
@@ -404,13 +405,14 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                     ),
                                     child: Stack(
                                       children: [
-                                        if (user.isUserSpeaking) ...[
-                                          Positioned.fill(
+                                        Obx(()=>
+                                        user.userId == meetingController.activeSpeakerUid.value?
+                                         Positioned.fill(
                                             child: WaterRipple(
                                               color: user.color,
                                             ),
-                                          ),
-                                        ],
+                                          ):SizedBox.shrink()),
+          
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: Center(
@@ -536,6 +538,24 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
             ),
           ),
         );
+      },
+    );
+  }
+
+  Widget speakerRippleEffect({required int userId, required int activeSpeakerUid, required Color color}) {
+    return Obx(
+      () {
+        if (userId == activeSpeakerUid) {
+          return Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withAppOpacity(0.5),
+            ),
+            child: const CircularProgressIndicator(),
+          );
+        } else {
+          return Container();
+        }
       },
     );
   }

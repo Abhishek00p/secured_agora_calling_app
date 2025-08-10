@@ -48,6 +48,8 @@ class MeetingController extends GetxController {
   StreamSubscription? _muteSubscription;
   StreamSubscription? _meetingSubscription;
 
+  RxInt activeSpeakerUid = 0.obs;
+
   void startTimer() async {
     try {
       _meetingTimer?.cancel(); // Cancel any existing timer
@@ -536,6 +538,11 @@ class MeetingController extends GetxController {
   }
 
   RtcEngineEventHandler _rtcEngineEventHandler(BuildContext context) {
+    _agoraService.engine?.enableAudioVolumeIndication(
+  interval: 200, // ms between reports
+  smooth: 3,     // smoothness (1–3)
+  reportVad: true, // voice activity detection
+    );
     return RtcEngineEventHandler(
       onUserJoined: (connection, remoteUid, elapsed) {
         addUser(remoteUid);
@@ -554,6 +561,16 @@ class MeetingController extends GetxController {
         isMeetEneded = true;
         update();
       },
+      onAudioVolumeIndication: (rtc,speakers, speakerNumber,totalVolume) {
+          if (speakers.isNotEmpty) {
+            final loudest = speakers.reduce((a, b) =>( a.volume??0) > (b.volume??0) ? a : b);
+            if ((loudest.volume??0) > 5) { // threshold
+              activeSpeakerUid.value = loudest.uid ?? 0;
+            } else {
+              activeSpeakerUid.value = 0;
+            }
+          }
+        },
     
       onUserMuteAudio:
           (connection, remoteUid, muted) => updateMuteStatus(remoteUid, muted),

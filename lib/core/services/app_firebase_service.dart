@@ -393,10 +393,15 @@ class AppFirebaseService {
   }
 
   Stream<QuerySnapshot> getParticipatedMeetingsStream(int userId) {
-    return meetingsCollection
-        .where('allParticipants', arrayContains: userId)
-        .orderBy('scheduledStartTime', descending: true)
-        .snapshots();
+    try {
+      return meetingsCollection
+          .where('allParticipants', arrayContains: userId)
+          .orderBy('scheduledStartTime', descending: true)
+          .snapshots();
+    } catch (e) {
+      AppLogger.print('Error getting participated meetings: $e');
+      return Stream.empty();
+    }
   }
 
   Stream<QuerySnapshot> getUpcomingMeetingsStream(String memberCode) {
