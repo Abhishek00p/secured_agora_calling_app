@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,6 +10,7 @@ import 'package:secured_calling/features/meeting/views/join_request_widget.dart'
 import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/show_meeting_info.dart';
 import 'package:secured_calling/widgets/speaker_ripple_effect.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 
 class AgoraMeetingRoom extends StatefulWidget {
   final String meetingId;
@@ -135,45 +134,51 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (meetingController.isHost)
-              Obx(
-                () => _buildControlButton(
-                  icon:
-                      meetingController.isMuted.value
-                          ? Icons.mic_off
-                          : Icons.mic,
-                  label: meetingController.isMuted.value ? 'Unmute' : 'Mute',
-                  color:
-                      meetingController.isMuted.value
-                          ? Colors.red
-                          : Colors.white,
-                  onPressed: meetingController.toggleMute,
-                ),
-              ),
-            if (!meetingController.isHost)
-              Obx(
-                () => _buildControlButton(
-                  icon:
-                      meetingController.hasRequestedToSpeak.value
-                          ? Icons.cancel
-                          : Icons.record_voice_over,
-                  label:
-                      meetingController.hasRequestedToSpeak.value
-                          ? 'Cancel Request'
-                          : 'Request to Speak',
-                  color:
-                      meetingController.hasRequestedToSpeak.value
-                          ? Colors.orange
-                          : Colors.white,
-                  onPressed: () {
-                    if (meetingController.hasRequestedToSpeak.value) {
-                      meetingController.cancelRequestToSpeak();
-                    } else {
-                      meetingController.requestToSpeak();
-                    }
-                  },
-                ),
-              ),
+            // Unified Mic Button for all users
+            Obx(
+              () {
+                final isMuted = meetingController.isMuted.value;
+                final isHost = meetingController.isHost;
+                final canUnmute = meetingController.canParticipantUnmute();
+                
+                // Determine button state
+                IconData icon;
+                String label;
+                Color color;
+                VoidCallback onPressed;
+                
+                if (isMuted) {
+                  // Currently muted
+                  icon = Icons.mic_off;
+                  label = 'Unmute';
+                  color = Colors.red;
+                  
+                  if (isHost) {
+                    // Host can always unmute
+                    onPressed = meetingController.toggleMute;
+                  } else if (canUnmute) {
+                    // Participant has permission to unmute
+                    onPressed = meetingController.toggleMute;
+                  } else {
+                    // Participant needs to request permission
+                    onPressed = () => _showMicPermissionRequestDialog(context, meetingController);
+                  }
+                } else {
+                  // Currently unmuted - can always mute
+                  icon = Icons.mic;
+                  label = 'Mute';
+                  color = Colors.white;
+                  onPressed = meetingController.toggleMute;
+                }
+                
+                return _buildControlButton(
+                  icon: icon,
+                  label: label,
+                  color: color,
+                  onPressed: onPressed,
+                );
+              },
+            ),
             Obx(
               () => _buildControlButton(
                 icon:
@@ -198,6 +203,34 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showMicPermissionRequestDialog(BuildContext context, MeetingController meetingController) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Request Mic Permission'),
+          content: const Text('You need permission from the host to unmute your microphone. Your request will be sent to the host.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                meetingController.requestToSpeak(); // Request to speak
+                AppToastUtil.showInfoToast('Request sent to host');
+              },
+              child: const Text('Send Request'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -435,11 +468,30 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                         Positioned(
                                           bottom: 8,
                                           left: 8,
-                                          child: Icon(
-                                            user.isUserMuted
-                                                ? Icons.mic_off
-                                                : Icons.mic,
-                                            color: Colors.white,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                user.isUserMuted
+                                                    ? Icons.mic_off
+                                                    : Icons.mic,
+                                                color: user.isUserMuted 
+                                                    ? Colors.red 
+                                                    : Colors.white,
+                                                size: 20,
+                                              ),
+                                              if (user.isUserSpeaking && !user.isUserMuted) ...[
+                                                const SizedBox(width: 4),
+                                                Container(
+                                                  width: 8,
+                                                  height: 8,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.green,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
                                           ),
                                         ),
                                         if (meetingController.isHost &&

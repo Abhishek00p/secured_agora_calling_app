@@ -233,7 +233,7 @@ class MeetingController extends GetxController {
       await joinChannel(channelName: meetingId);
       await _agoraService.engine?.enableAudio();
       await _agoraService.engine?.muteLocalAudioStream(true);
-      isMuted.value = true;
+      isMuted.value = true; // All users start muted by default
       if (isUserHost) {
         _firebaseService.startMeeting(meetingId);
       }
@@ -249,6 +249,8 @@ class MeetingController extends GetxController {
               speakRequests.contains(currentUser.userId);
 
           updateSpeakRequestUsers();
+          synchronizeMuteStates(); // Synchronize mute states on meeting subscription update
+          validateMuteStates(); // Validate and fix any inconsistencies
 
           // Mute/unmute participants based on approval status
           for (final participant in participants) {
@@ -282,6 +284,55 @@ class MeetingController extends GetxController {
     speakRequestUsers.value = users;
   }
 
+  void synchronizeMuteStates() {
+    // Update mute states based on approved speakers and host status
+    participants = participants.map((participant) {
+      bool shouldBeMuted = true; // Default to muted
+      
+      // Host can be unmuted
+      if (participant.userId == meetingModel.hostUserId) {
+        shouldBeMuted = false;
+      }
+      // Current user's mute state is controlled by their own toggle
+      else if (participant.userId == currentUser.userId) {
+        shouldBeMuted = isMuted.value;
+      }
+      // Other users are muted unless they are approved speakers
+      else {
+        shouldBeMuted = !approvedSpeakers.contains(participant.userId);
+      }
+      
+      return participant.copyWith(isUserMuted: shouldBeMuted);
+    }).toList();
+    
+    update();
+  }
+
+  void validateMuteStates() {
+    // Safety check to ensure mute states are consistent
+    bool hasInconsistency = false;
+    for (final participant in participants) {
+      bool expectedMuted = true; // Default to muted
+      
+      if (participant.userId == meetingModel.hostUserId) {
+        expectedMuted = false; // Host can be unmuted
+      } else if (participant.userId == currentUser.userId) {
+        expectedMuted = isMuted.value;
+      } else {
+        expectedMuted = !approvedSpeakers.contains(participant.userId);
+      }
+      
+      if (participant.isUserMuted != expectedMuted) {
+        hasInconsistency = true;
+        AppLogger.print('Mute state inconsistency detected for user ${participant.userId}');
+      }
+    }
+    
+    if (hasInconsistency) {
+      synchronizeMuteStates();
+    }
+  }
+
   // Methods for "Request to Speak" feature
   Future<void> requestToSpeak() async {
     await _firebaseService.requestToSpeak(meetingId, currentUser.userId);
@@ -293,6 +344,12 @@ class MeetingController extends GetxController {
 
   Future<void> approveSpeakRequest(int userId) async {
     await _firebaseService.approveSpeakRequest(meetingId, userId);
+    // Update local mute state immediately
+    final index = participants.indexWhere((p) => p.userId == userId);
+    if (index != -1) {
+      participants[index] = participants[index].copyWith(isUserMuted: false);
+      update();
+    }
   }
 
   Future<void> rejectSpeakRequest(int userId) async {
@@ -301,6 +358,19 @@ class MeetingController extends GetxController {
 
   Future<void> revokeSpeakingPermission(int userId) async {
     await _firebaseService.revokeSpeakingPermission(meetingId, userId);
+    // Update local mute state immediately
+    final index = participants.indexWhere((p) => p.userId == userId);
+    if (index != -1) {
+      participants[index] = participants[index].copyWith(isUserMuted: true);
+      update();
+    }
+    
+    // If the current user's permission was revoked and they are unmuted, mute them
+    if (userId == currentUser.userId && !isMuted.value) {
+      isMuted.value = true;
+      await _agoraService.muteLocalAudio(true);
+      AppToastUtil.showInfoToast('Your speaking permission has been revoked');
+    }
   }
 
   Future<void> joinChannel({required String channelName}) async {
@@ -343,6 +413,32 @@ class MeetingController extends GetxController {
   }
 
   Future<void> toggleMute() async {
+    // For host, always allow toggle
+    if (isHost) {
+      isMuted.toggle();
+      await _agoraService.muteLocalAudio(isMuted.value);
+      participants =
+          participants.map((e) {
+            if (e.userId == currentUser.userId) {
+              e = e.copyWith(isUserMuted: isMuted.value);
+            }
+            return e;
+          }).toList();
+      update();
+      return;
+    }
+
+    // For participants, check if they can unmute
+    if (isMuted.value) {
+      // Trying to unmute - check if they have permission
+      if (!approvedSpeakers.contains(currentUser.userId)) {
+        // No permission, don't allow unmute
+        AppToastUtil.showInfoToast('You need permission from the host to unmute');
+        return;
+      }
+    }
+
+    // Allow the toggle
     isMuted.toggle();
     await _agoraService.muteLocalAudio(isMuted.value);
     participants =
@@ -353,6 +449,11 @@ class MeetingController extends GetxController {
           return e;
         }).toList();
     update();
+  }
+
+  bool canParticipantUnmute() {
+    if (isHost) return true;
+    return approvedSpeakers.contains(currentUser.userId);
   }
 
   Future<void> toggleSpeaker() async {
@@ -448,17 +549,27 @@ class MeetingController extends GetxController {
             ? 'You have joined'
             : '${userData['name']} has Joined',
       );
+      
+      // Determine initial mute state
+      bool initialMuteState = true; // All users start muted by default
       if (currentUser.userId == remoteUid) {
-        isMuted.value = false;
+        // For current user, use the actual mute state (should be true by default)
+        initialMuteState = isMuted.value;
         isOnSpeaker.value = true;
+      } else {
+        // For other users, they start muted unless they are the host
+        if (remoteUid == meetingModel.hostUserId) {
+          initialMuteState = false; // Host can be unmuted
+        }
       }
+      
       _firebaseService.addParticipants(meetingId, remoteUid);
       participants.add(
         ParticipantModel(
           userId: remoteUid,
           firebaseUid: userData['firebaseUserId'],
           name: userData['name'],
-          isUserMuted: false,
+          isUserMuted: initialMuteState,
           isUserSpeaking: false,
           color: WarmColorGenerator.getRandomWarmColor(),
         ),
@@ -480,8 +591,11 @@ class MeetingController extends GetxController {
     if (index != -1) {
       participants[index] = participants[index].copyWith(
         isUserMuted: muted,
-        isUserSpeaking: muted ? false : null,
+        // Only reset speaking status if user is muted
+        isUserSpeaking: muted ? false : participants[index].isUserSpeaking,
       );
+    } else {
+      AppLogger.print('Warning: User $remoteUid not found in participants list');
     }
 
     update();
@@ -494,8 +608,8 @@ class MeetingController extends GetxController {
             .map(
               (e) =>
                   e.userId == userId
-                      ? e.copyWith(isUserSpeaking: true, isUserMuted: false)
-                      : e.copyWith(isUserSpeaking: false, isUserMuted: true),
+                      ? e.copyWith(isUserSpeaking: true)
+                      : e.copyWith(isUserSpeaking: false),
             )
             .toList();
     update();
@@ -546,6 +660,7 @@ class MeetingController extends GetxController {
     return RtcEngineEventHandler(
       onUserJoined: (connection, remoteUid, elapsed) {
         addUser(remoteUid);
+        // Ensure proper mute state for new users based on permissions
         if (remoteUid != meetingModel.hostUserId && !approvedSpeakers.contains(remoteUid)) {
           _agoraService.engine?.muteRemoteAudioStream(uid: remoteUid, mute: true);
         } else {

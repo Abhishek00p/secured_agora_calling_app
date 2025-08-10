@@ -276,11 +276,16 @@ class AppFirebaseService {
       'status':
           MeetingStatus.scheduled.name, // scheduled, live, ended, cancelled
       'participants': [],
+      'allParticipants': [],
       'pendingApprovals': [],
       'speakRequests': [],
       'approvedSpeakers': [],
       'invitedUsers': [],
       'memberCode': AppLocalStorage.getUserDetails().memberCode.toUpperCase(),
+      // New tracking fields
+      'totalParticipantsCount': 0,
+      'actualDuration': 0, // in seconds
+      'participantHistory': [],
     });
     return meetingsCollection.doc(meetingDocId);
   }
@@ -289,7 +294,7 @@ class AppFirebaseService {
     AppLogger.print('meeting id : $meetingId');
     await meetingsCollection.doc(meetingId).update({
       'status': 'live',
-      'actualStartTime': FieldValue.serverTimestamp(),
+      'actualStartTime': DateTime.now().toIso8601String(),
     });
   }
 
@@ -307,13 +312,35 @@ class AppFirebaseService {
               as Map<String, dynamic>?;
       final participants =
           (meetingData?['participants'] as List<dynamic>? ?? []);
-      participants.add(userId);
-      await meetingsCollection.doc(meetId).update({
-        'participants': participants,
-        'allParticipants': FieldValue.arrayUnion([userId]),
-      });
+      
+      // Only add if not already in participants list
+      if (!participants.contains(userId)) {
+        participants.add(userId);
+        
+        // Get user details for participant history
+        final userData = await getUserDataWhereUserId(userId);
+        final userDataMap = userData?.data() as Map<String, dynamic>?;
+        final userName = userDataMap?['name'] ?? 'Unknown User';
+        
+        // Create participant log entry
+        final participantLog = {
+          'userId': userId,
+          'userName': userName,
+          'joinTime': DateTime.now().toIso8601String(),
+          'leaveTime': null,
+          'duration': null,
+        };
+        
+        await meetingsCollection.doc(meetId).update({
+          'participants': participants,
+          'allParticipants': FieldValue.arrayUnion([userId]),
+          'totalParticipantsCount': FieldValue.increment(1),
+          'participantHistory': FieldValue.arrayUnion([participantLog]),
+        });
+      }
       return true;
     } catch (e) {
+      AppLogger.print('Error adding participant: $e');
       return false;
     }
   }
@@ -326,18 +353,53 @@ class AppFirebaseService {
       final participants =
           (meetingData?['participants'] as List<dynamic>? ?? []);
       participants.removeWhere((item) => item == userId);
+      
+      // Update participant history with leave time and duration
+      final participantHistory = (meetingData?['participantHistory'] as List<dynamic>? ?? []);
+      final leaveTime = DateTime.now();
+      
+      for (int i = 0; i < participantHistory.length; i++) {
+        final participant = participantHistory[i] as Map<String, dynamic>;
+        if (participant['userId'] == userId && participant['leaveTime'] == null) {
+          final joinTime = DateTime.tryParse(participant['joinTime'] ?? '');
+          if (joinTime != null) {
+            final duration = leaveTime.difference(joinTime);
+            participantHistory[i] = {
+              ...participant,
+              'leaveTime': leaveTime.toIso8601String(),
+              'duration': duration.inSeconds,
+            };
+          }
+          break;
+        }
+      }
+      
       await meetingsCollection.doc(meetId).update({
         'participants': participants,
+        'participantHistory': participantHistory,
       });
 
       if (participants.isEmpty) {
+        // Calculate actual meeting duration
+        final actualStartTime = meetingData?['actualStartTime'];
+        Duration actualDuration = Duration.zero;
+        
+        if (actualStartTime != null) {
+          final startTime = DateTime.tryParse(actualStartTime);
+          if (startTime != null) {
+            actualDuration = leaveTime.difference(startTime);
+          }
+        }
+        
         await meetingsCollection.doc(meetId).update({
           'status': 'ended',
-          'actualEndTime': FieldValue.serverTimestamp(),
+          'actualEndTime': leaveTime.toIso8601String(),
+          'actualDuration': actualDuration.inSeconds,
         });
       }
       return true;
     } catch (e) {
+      AppLogger.print('Error removing participant: $e');
       return false;
     }
   }
@@ -597,8 +659,86 @@ class AppFirebaseService {
     }
   }
 
-  removeAllParticipants(String meetingId) {
-    meetingsCollection.doc(meetingId).update({'isInstructedToLeave': true});
+  Future<void> removeAllParticipants(String meetingId) async {
+    await meetingsCollection.doc(meetingId).update({
+      'participants': [],
+      'status': 'ended',
+      'actualEndTime': DateTime.now().toIso8601String(),
+    });
+  }
+
+  // Get meeting statistics
+  Future<Map<String, dynamic>?> getMeetingStatistics(String meetingId) async {
+    try {
+      final meetingData = await getMeetingData(meetingId);
+      if (meetingData == null) return null;
+
+      final participantHistory = meetingData['participantHistory'] as List<dynamic>? ?? [];
+      final totalParticipants = participantHistory.length;
+      
+      // Calculate average session duration
+      int totalDuration = 0;
+      int completedSessions = 0;
+      
+      for (final participant in participantHistory) {
+        final duration = participant['duration'] as int?;
+        if (duration != null && duration > 0) {
+          totalDuration += duration;
+          completedSessions++;
+        }
+      }
+      
+      final averageDuration = completedSessions > 0 ? totalDuration / completedSessions : 0;
+      
+      return {
+        'totalParticipants': totalParticipants,
+        'completedSessions': completedSessions,
+        'averageSessionDuration': averageDuration,
+        'actualMeetingDuration': meetingData['actualDuration'] ?? 0,
+        'scheduledDuration': meetingData['duration'] ?? 0,
+      };
+    } catch (e) {
+      AppLogger.print('Error getting meeting statistics: $e');
+      return null;
+    }
+  }
+
+  // Get participant history for a meeting
+  Future<List<Map<String, dynamic>>> getParticipantHistory(String meetingId) async {
+    try {
+      final meetingData = await getMeetingData(meetingId);
+      if (meetingData == null) return [];
+
+      final participantHistory = meetingData['participantHistory'] as List<dynamic>? ?? [];
+      return participantHistory.map((participant) => participant as Map<String, dynamic>).toList();
+    } catch (e) {
+      AppLogger.print('Error getting participant history: $e');
+      return [];
+    }
+  }
+
+  // Get meetings with participant count
+  Future<List<Map<String, dynamic>>> getMeetingsWithParticipantCount() async {
+    try {
+      final querySnapshot = await meetingsCollection.get();
+      final meetings = <Map<String, dynamic>>[];
+      
+      for (final doc in querySnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final participantHistory = data['participantHistory'] as List<dynamic>? ?? [];
+        
+        meetings.add({
+          ...data,
+          'participantCount': participantHistory.length,
+          'docId': doc.id,
+        });
+      }
+      
+      return meetings;
+    } catch (e) {
+      AppLogger.print('Error getting meetings with participant count: $e');
+      return [];
+    }
   }
 
   Stream<bool> isInstructedToLeave(String meetingId) async* {

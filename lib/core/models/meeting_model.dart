@@ -22,11 +22,19 @@ class MeetingModel {
   final List<int> pendingApprovals;
   final List<int> invitedUsers;
 
+  // Time tracking fields
   final DateTime scheduledStartTime;
   final DateTime scheduledEndTime;
   final DateTime createdAt;
-  final DateTime actualStartTime;
+  final DateTime? actualStartTime;
   final DateTime? actualEndTime;
+  
+  // Meeting statistics
+  final int totalParticipantsCount;
+  final Duration actualDuration;
+  
+  // Detailed participant tracking
+  final List<ParticipantLog> participantHistory;
 
   const MeetingModel({
     required this.meetId,
@@ -48,9 +56,12 @@ class MeetingModel {
     required this.scheduledStartTime,
     required this.scheduledEndTime,
     required this.createdAt,
-    required this.actualStartTime,
+    this.actualStartTime,
     this.actualEndTime,
     required this.hostUserId,
+    required this.totalParticipantsCount,
+    required this.actualDuration,
+    required this.participantHistory,
   });
 
   bool get isEmpty => this == MeetingModel.toEmpty();
@@ -76,9 +87,11 @@ class MeetingModel {
         scheduledStartTime: DateTime.fromMillisecondsSinceEpoch(0),
         scheduledEndTime: DateTime.fromMillisecondsSinceEpoch(0),
         createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-        actualStartTime: DateTime.fromMillisecondsSinceEpoch(0),
-
+        actualStartTime: null,
         actualEndTime: null,
+        totalParticipantsCount: 0,
+        actualDuration: Duration.zero,
+        participantHistory: [],
       );
 
   factory MeetingModel.fromJson(Map<String, dynamic> json) {
@@ -103,8 +116,11 @@ class MeetingModel {
       scheduledStartTime: _toDateTime(json['scheduledStartTime']),
       scheduledEndTime: _toDateTime(json['scheduledEndTime']),
       createdAt: _toDateTime(json['createdAt']),
-      actualStartTime: _toDateTime(json['actualStartTime']),
+      actualStartTime: _nullableDateTime(json['actualStartTime']),
       actualEndTime: _nullableDateTime(json['actualEndTime']),
+      totalParticipantsCount: json['totalParticipantsCount'] ?? 0,
+      actualDuration: _toDuration(json['actualDuration']),
+      participantHistory: _toParticipantLogList(json['participantHistory']),
     );
   }
 
@@ -129,8 +145,11 @@ class MeetingModel {
         'scheduledStartTime': scheduledStartTime.toIso8601String(),
         'scheduledEndTime': scheduledEndTime.toIso8601String(),
         'createdAt': createdAt.toIso8601String(),
-        'actualStartTime': actualStartTime.toIso8601String(),
+        'actualStartTime': actualStartTime?.toIso8601String(),
         'actualEndTime': actualEndTime?.toIso8601String(),
+        'totalParticipantsCount': totalParticipantsCount,
+        'actualDuration': actualDuration.inSeconds,
+        'participantHistory': participantHistory.map((log) => log.toJson()).toList(),
       };
 
   static DateTime _toDateTime(dynamic value) {
@@ -145,5 +164,73 @@ class MeetingModel {
     if (value is Timestamp) return value.toDate();
     if (value is String) return DateTime.tryParse(value);
     return null;
+  }
+
+  static Duration _toDuration(dynamic value) {
+    if (value == null) return Duration.zero;
+    if (value is int) return Duration(seconds: value);
+    if (value is String) {
+      final seconds = int.tryParse(value);
+      return seconds != null ? Duration(seconds: seconds) : Duration.zero;
+    }
+    return Duration.zero;
+  }
+
+  static List<ParticipantLog> _toParticipantLogList(dynamic value) {
+    if (value == null) return [];
+    if (value is List) {
+      return value.map((item) => ParticipantLog.fromJson(item)).toList();
+    }
+    return [];
+  }
+}
+
+class ParticipantLog {
+  final int userId;
+  final String userName;
+  final DateTime joinTime;
+  final DateTime? leaveTime;
+  final Duration? duration;
+
+  const ParticipantLog({
+    required this.userId,
+    required this.userName,
+    required this.joinTime,
+    this.leaveTime,
+    this.duration,
+  });
+
+  factory ParticipantLog.fromJson(Map<String, dynamic> json) {
+    return ParticipantLog(
+      userId: json['userId'] ?? 0,
+      userName: json['userName'] ?? '',
+      joinTime: MeetingModel._toDateTime(json['joinTime']),
+      leaveTime: MeetingModel._nullableDateTime(json['leaveTime']),
+      duration: MeetingModel._toDuration(json['duration']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'userId': userId,
+        'userName': userName,
+        'joinTime': joinTime.toIso8601String(),
+        'leaveTime': leaveTime?.toIso8601String(),
+        'duration': duration?.inSeconds,
+      };
+
+  ParticipantLog copyWith({
+    int? userId,
+    String? userName,
+    DateTime? joinTime,
+    DateTime? leaveTime,
+    Duration? duration,
+  }) {
+    return ParticipantLog(
+      userId: userId ?? this.userId,
+      userName: userName ?? this.userName,
+      joinTime: joinTime ?? this.joinTime,
+      leaveTime: leaveTime ?? this.leaveTime,
+      duration: duration ?? this.duration,
+    );
   }
 }
