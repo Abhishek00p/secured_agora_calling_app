@@ -49,10 +49,10 @@ class UserTab extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Placeholder for call history
-              FutureBuilder(
-                future: AppFirebaseService.instance
-                    .getAllMeetingsFromCodeStream(
-                      AppLocalStorage.getUserDetails().memberCode,
+              StreamBuilder<QuerySnapshot>(
+                stream: AppFirebaseService.instance
+                    .getParticipatedMeetingsStream(
+                      AppLocalStorage.getUserDetails().userId,
                     ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -74,19 +74,20 @@ class UserTab extends StatelessWidget {
                           return MeetingTileWidget(model: meeting);
                         }),
 
-                        TextButton(
-                          onPressed: () {
-                            // Navigate to the Meeting view all page and pass the full list of meetings
-                            Navigator.pushNamed(
-                              context,
-                              AppRouter
-                                  .meetingViewAllRoute, // Ensure this route is defined
-                              arguments:
-                                  meetings, // Pass the full list of meetings
-                            );
-                          },
-                          child: Text('View All'),
-                        ),
+                        if (meetings.length > 10)
+                          TextButton(
+                            onPressed: () {
+                              // Navigate to the Meeting view all page and pass the full list of meetings
+                              Navigator.pushNamed(
+                                context,
+                                AppRouter
+                                    .meetingViewAllRoute, // Ensure this route is defined
+                                arguments:
+                                    meetings, // Pass the full list of meetings
+                              );
+                            },
+                            child: Text('View All'),
+                          ),
                       ],
                     );
                   }

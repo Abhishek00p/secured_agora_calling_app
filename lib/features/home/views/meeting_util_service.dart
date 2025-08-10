@@ -7,6 +7,7 @@ import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
+import 'package:secured_calling/core/models/app_user_model.dart';
 
 class MeetingDialogController extends GetxController {
   final titleController = TextEditingController();
@@ -22,6 +23,53 @@ class MeetingDialogController extends GetxController {
   final isApprovalRequired = true.obs;
   final selectedDate = Rxn<DateTime>();
   final selectedTime = Rxn<TimeOfDay>();
+  
+  // New variables for user selection
+  final selectedUsers = <AppUser>[].obs;
+  final showUserSelection = false.obs;
+  final inviteType = 'all'.obs; // 'all' or 'selected'
+  final availableUsers = <AppUser>[].obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadAvailableUsers();
+  }
+
+  void loadAvailableUsers() {
+    final currentUser = AppLocalStorage.getUserDetails();
+    if (currentUser.isMember && currentUser.memberCode.isNotEmpty) {
+      AppFirebaseService.instance.getUsersByMemberCodeStream(currentUser.memberCode).listen((snapshot) {
+        final users = snapshot.docs.map((doc) {
+          return AppUser.fromJson(doc.data() as Map<String, dynamic>);
+        }).toList();
+        availableUsers.value = users;
+      });
+    }
+  }
+
+  void toggleUserSelection() {
+    showUserSelection.value = !showUserSelection.value;
+    if (!showUserSelection.value) {
+      selectedUsers.clear();
+    }
+  }
+
+  void selectUser(AppUser user) {
+    if (selectedUsers.contains(user)) {
+      selectedUsers.remove(user);
+    } else {
+      selectedUsers.add(user);
+    }
+  }
+
+  void setInviteType(String type) {
+    inviteType.value = type;
+    if (type == 'all') {
+      selectedUsers.clear();
+    }
+  }
+
   @override
   void onClose() {
     titleController.dispose();
@@ -62,6 +110,14 @@ class MeetingUtil {
       final meetingData = doc.data() as Map<String, dynamic>;
       final instant = result['isInstant'] ?? false;
       AppLogger.print( 'Meeting created: ${doc.id}, Instant: $instant, \n Data: $meetingData');
+      
+      // Handle user invites if specified
+      final inviteType = result['inviteType'] as String?;
+      final selectedUserIds = result['selectedUsers'] as List<int>?;
+      if (inviteType != null && selectedUserIds != null) {
+        await _handleUserInvites(doc.id, inviteType, selectedUserIds);
+      }
+      
       if (instant) {
         Navigator.pushNamed(
           context,
@@ -238,6 +294,77 @@ class MeetingUtil {
                       ),
                     ],
                   ),
+                  
+                  // User Selection Section (for members only)
+                  if (member.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Text(
+                          'Meeting Invites',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: Icon(
+                            controller.showUserSelection.value 
+                              ? Icons.expand_less 
+                              : Icons.expand_more,
+                          ),
+                          onPressed: controller.toggleUserSelection,
+                        ),
+                      ],
+                    ),
+                    if (controller.showUserSelection.value) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text('All Users', style: TextStyle(fontSize: 12)),
+                              value: 'all',
+                              groupValue: controller.inviteType.value,
+                              onChanged: (value) => controller.setInviteType(value!),
+                            ),
+                          ),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text('Selected Users', style: TextStyle(fontSize: 12)),
+                              value: 'selected',
+                              groupValue: controller.inviteType.value,
+                              onChanged: (value) => controller.setInviteType(value!),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (controller.inviteType.value == 'selected') ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 120,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ListView.builder(
+                            itemCount: controller.availableUsers.length,
+                            itemBuilder: (context, index) {
+                              final user = controller.availableUsers[index];
+                              final isSelected = controller.selectedUsers.contains(user);
+                              return CheckboxListTile(
+                                title: Text(user.name, style: const TextStyle(fontSize: 12)),
+                                subtitle: Text(user.email, style: const TextStyle(fontSize: 10)),
+                                value: isSelected,
+                                onChanged: (value) => controller.selectUser(user),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
+                  ],
+                  
                   if (controller.isScheduled.value) ...[
                     const SizedBox(height: 10),
                     Container(
@@ -365,6 +492,8 @@ class MeetingUtil {
                                   controller.isApprovalRequired.value,
                               'maxParticipants':
                                   controller.maxParticipants.value,
+                              'inviteType': controller.inviteType.value,
+                              'selectedUsers': controller.selectedUsers.map((user) => user.userId).toList(),
                             });
                           },
                           child: const Text('Create'),
@@ -383,5 +512,26 @@ class MeetingUtil {
 
     Get.delete<MeetingDialogController>();
     return result;
+  }
+
+  static Future<void> _handleUserInvites(String meetingId, String inviteType, List<int> selectedUserIds) async {
+    try {
+      final currentUser = AppLocalStorage.getUserDetails();
+      if (currentUser.isMember && currentUser.memberCode.isNotEmpty) {
+        if (inviteType == 'all') {
+          // Get all users for this member
+          final allUsers = await firebaseService.getAllUserOfMember(currentUser.memberCode);
+          final allUserIds = allUsers.map((user) => user.userId).toList();
+          
+          // Add all users to the meeting's invited users list
+          await firebaseService.addInvitedUsers(meetingId, allUserIds);
+        } else if (inviteType == 'selected' && selectedUserIds.isNotEmpty) {
+          // Add only selected users to the meeting's invited users list
+          await firebaseService.addInvitedUsers(meetingId, selectedUserIds);
+        }
+      }
+    } catch (e) {
+      AppLogger.print('Error handling user invites: $e');
+    }
   }
 }

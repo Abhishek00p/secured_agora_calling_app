@@ -3,7 +3,7 @@ import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
-import 'package:secured_calling/core/services/app_firebase_service.dart';
+
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/notification_service.dart';
 import 'package:secured_calling/core/services/permission_service.dart';
@@ -27,7 +27,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final AppFirebaseService _firebaseService = AppFirebaseService.instance;
   final List<Widget> _pages = [MembarTabViewWidget(), UserTab()];
   int _selectedIndex = 0;
 

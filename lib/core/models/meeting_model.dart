@@ -20,6 +20,7 @@ class MeetingModel {
   final List<int> participants;
   final List<int> allParticipants;
   final List<int> pendingApprovals;
+  final List<int> invitedUsers;
 
   final DateTime scheduledStartTime;
   final DateTime scheduledEndTime;
@@ -43,6 +44,7 @@ class MeetingModel {
     required this.participants,
     required this.allParticipants,
     required this.pendingApprovals,
+    required this.invitedUsers,
     required this.scheduledStartTime,
     required this.scheduledEndTime,
     required this.createdAt,
@@ -70,6 +72,7 @@ class MeetingModel {
         participants: [],
         allParticipants: [],
         pendingApprovals: [],
+        invitedUsers: [],
         scheduledStartTime: DateTime.fromMillisecondsSinceEpoch(0),
         scheduledEndTime: DateTime.fromMillisecondsSinceEpoch(0),
         createdAt: DateTime.fromMillisecondsSinceEpoch(0),
@@ -96,6 +99,7 @@ class MeetingModel {
       participants: List<int>.from(json['participants'] ?? []),
       allParticipants: List<int>.from(json['allParticipants'] ?? []),
       pendingApprovals: List<int>.from(json['pendingApprovals'] ?? []),
+      invitedUsers: List<int>.from(json['invitedUsers'] ?? []),
       scheduledStartTime: _toDateTime(json['scheduledStartTime']),
       scheduledEndTime: _toDateTime(json['scheduledEndTime']),
       createdAt: _toDateTime(json['createdAt']),
@@ -121,6 +125,7 @@ class MeetingModel {
         'participants': participants,
         'allParticipants': allParticipants,
         'pendingApprovals': pendingApprovals,
+        'invitedUsers': invitedUsers,
         'scheduledStartTime': scheduledStartTime.toIso8601String(),
         'scheduledEndTime': scheduledEndTime.toIso8601String(),
         'createdAt': createdAt.toIso8601String(),

@@ -279,6 +279,7 @@ class AppFirebaseService {
       'pendingApprovals': [],
       'speakRequests': [],
       'approvedSpeakers': [],
+      'invitedUsers': [],
       'memberCode': AppLocalStorage.getUserDetails().memberCode.toUpperCase(),
     });
     return meetingsCollection.doc(meetingDocId);
@@ -341,6 +342,16 @@ class AppFirebaseService {
     }
   }
 
+  Future<void> addInvitedUsers(String meetingId, List<int> userIds) async {
+    try {
+      await meetingsCollection.doc(meetingId).update({
+        'invitedUsers': FieldValue.arrayUnion(userIds),
+      });
+    } catch (e) {
+      AppLogger.print('Error adding invited users: $e');
+    }
+  }
+
   Future<void> extendMeeting(String meetingId, int additionalMinutes) async {
     final meetingDoc = await meetingsCollection.doc(meetingId).get();
     final meetingData = meetingDoc.data() as Map<String, dynamic>;
@@ -378,6 +389,34 @@ class AppFirebaseService {
     return meetingsCollection
         .where('hostId', isEqualTo: hostId)
         .orderBy('scheduledStartTime', descending: true)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getParticipatedMeetingsStream(int userId) {
+    return meetingsCollection
+        .where('allParticipants', arrayContains: userId)
+        .orderBy('scheduledStartTime', descending: true)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getUpcomingMeetingsStream(String memberCode) {
+    final now = DateTime.now();
+    return meetingsCollection
+        .where('memberCode', isEqualTo: memberCode.toUpperCase())
+        .where('scheduledStartTime', isGreaterThan: now)
+        .where('status', isEqualTo: 'scheduled')
+        .orderBy('scheduledStartTime', descending: false)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getUpcomingMeetingsForUserStream(String memberCode, int userId) {
+    final now = DateTime.now();
+    return meetingsCollection
+        .where('memberCode', isEqualTo: memberCode.toUpperCase())
+        .where('scheduledStartTime', isGreaterThan: now)
+        .where('status', isEqualTo: 'scheduled')
+        .where('invitedUsers', arrayContains: userId)
+        .orderBy('scheduledStartTime', descending: false)
         .snapshots();
   }
 
@@ -512,6 +551,12 @@ class AppFirebaseService {
     return querySnapshot.docs
         .map((doc) => AppUser.fromJson(doc.data() as Map<String, dynamic>))
         .toList();
+  }
+
+  Stream<QuerySnapshot> getUsersByMemberCodeStream(String memberCode) {
+    return usersCollection
+        .where('memberCode', isEqualTo: memberCode)
+        .snapshots();
   }
 
   Future<List<AppUser>> getAllUsers() async {
