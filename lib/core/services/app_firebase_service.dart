@@ -409,7 +409,7 @@ class AppFirebaseService {
     await meetingsCollection.doc(meetingId).update({
       'pendingApprovals': FieldValue.arrayRemove([userId]),
     });
-    await addParticipants(meetId, userId);
+    await addParticipants(meetingId, userId);
   }
 
   Future<void> rejectMeetingJoinRequest(String meetingId, int userId) async {
@@ -747,4 +747,6 @@ class AppFirebaseService {
   Stream<DocumentSnapshot> getMeetingStream(String meetingId) {
     return meetingsCollection.doc(meetingId).snapshots();
   }
+
+  Future<void> removeAllParticipants(String meetingId) async {}
 }

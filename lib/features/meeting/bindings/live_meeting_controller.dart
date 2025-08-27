@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/models/private_meeting_model.dart';
@@ -359,19 +360,9 @@ class MeetingController extends GetxController {
     update();
   }
 
-  Future<void> toggleVideo() async {
-    isVideoEnabled.toggle();
-    await _agoraService.muteLocalVideo(!isVideoEnabled.value);
-  }
+ 
 
-  Future<void> toggleScreenSharing() async {
-    if (isScreenSharing.value) {
-      await _agoraService.stopScreenSharing();
-    } else {
-      await _agoraService.startScreenSharing();
-    }
-    isScreenSharing.toggle();
-  }
+
 
   Future<void> endMeeting() async {
     await _agoraService.leaveChannel();

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_color_extension.dart';
+import 'package:secured_calling/core/models/participant_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_logger.dart';
@@ -260,7 +261,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
             // bottomNavigationBar:
             body: GetBuilder<MeetingController>(
               builder: (meetingController) {
-                if (!meetingController.meetingModel.isEmpty) {
+                if (!meetingController.meetingModel.value.isEmpty) {
                   AppFirebaseService.instance
                       .getMeetingData(widget.meetingId)
                       .then((v) {
