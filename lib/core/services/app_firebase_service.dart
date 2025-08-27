@@ -275,17 +275,16 @@ class AppFirebaseService {
       'requiresApproval': requiresApproval,
       'status':
           MeetingStatus.scheduled.name, // scheduled, live, ended, cancelled
-      'participants': [],
-      'allParticipants': [],
       'pendingApprovals': [],
       'speakRequests': [],
       'approvedSpeakers': [],
+      'pttUsers': [],
+      'allParticipants': [],
       'invitedUsers': [],
       'memberCode': AppLocalStorage.getUserDetails().memberCode.toUpperCase(),
       // New tracking fields
       'totalParticipantsCount': 0,
       'actualDuration': 0, // in seconds
-      'participantHistory': [],
     });
     return meetingsCollection.doc(meetingDocId);
   }
@@ -307,35 +306,26 @@ class AppFirebaseService {
 
   Future<bool> addParticipants(String meetId, int userId) async {
     try {
-      final meetingData =
-          (await meetingsCollection.doc(meetId).get()).data()
-              as Map<String, dynamic>?;
-      final participants =
-          (meetingData?['participants'] as List<dynamic>? ?? []);
-      
-      // Only add if not already in participants list
-      if (!participants.contains(userId)) {
-        participants.add(userId);
-        
-        // Get user details for participant history
+      final participantDoc =
+          meetingsCollection.doc(meetId).collection('participants').doc('$userId');
+
+      final participantSnapshot = await participantDoc.get();
+
+      if (!participantSnapshot.exists) {
         final userData = await getUserDataWhereUserId(userId);
-        final userDataMap = userData?.data() as Map<String, dynamic>?;
-        final userName = userDataMap?['name'] ?? 'Unknown User';
-        
-        // Create participant log entry
-        final participantLog = {
+        final userName =
+            (userData?.data() as Map<String, dynamic>?)?['name'] ?? 'Unknown User';
+
+        await participantDoc.set({
           'userId': userId,
-          'userName': userName,
-          'joinTime': DateTime.now().toIso8601String(),
+          'username': userName,
+          'joinTime': FieldValue.serverTimestamp(),
           'leaveTime': null,
-          'duration': null,
-        };
-        
+        });
+
         await meetingsCollection.doc(meetId).update({
-          'participants': participants,
+          'totalUniqueParticipants': FieldValue.increment(1),
           'allParticipants': FieldValue.arrayUnion([userId]),
-          'totalParticipantsCount': FieldValue.increment(1),
-          'participantHistory': FieldValue.arrayUnion([participantLog]),
         });
       }
       return true;
@@ -347,53 +337,35 @@ class AppFirebaseService {
 
   Future<bool> removeParticipants(String meetId, int userId) async {
     try {
-      final meetingData =
-          (await meetingsCollection.doc(meetId).get()).data()
-              as Map<String, dynamic>?;
-      final participants =
-          (meetingData?['participants'] as List<dynamic>? ?? []);
-      participants.removeWhere((item) => item == userId);
-      
-      // Update participant history with leave time and duration
-      final participantHistory = (meetingData?['participantHistory'] as List<dynamic>? ?? []);
-      final leaveTime = DateTime.now();
-      
-      for (int i = 0; i < participantHistory.length; i++) {
-        final participant = participantHistory[i] as Map<String, dynamic>;
-        if (participant['userId'] == userId && participant['leaveTime'] == null) {
-          final joinTime = DateTime.tryParse(participant['joinTime'] ?? '');
-          if (joinTime != null) {
-            final duration = leaveTime.difference(joinTime);
-            participantHistory[i] = {
-              ...participant,
-              'leaveTime': leaveTime.toIso8601String(),
-              'duration': duration.inSeconds,
-            };
-          }
-          break;
-        }
-      }
-      
-      await meetingsCollection.doc(meetId).update({
-        'participants': participants,
-        'participantHistory': participantHistory,
+      final participantDoc =
+          meetingsCollection.doc(meetId).collection('participants').doc('$userId');
+
+      await participantDoc.update({
+        'leaveTime': FieldValue.serverTimestamp(),
       });
 
-      if (participants.isEmpty) {
-        // Calculate actual meeting duration
+      // Check if this was the last participant
+      final participantsSnapshot =
+          await meetingsCollection.doc(meetId).collection('participants').get();
+
+      final activeParticipants = participantsSnapshot.docs.where((doc) => doc.data()['leaveTime'] == null);
+
+      if (activeParticipants.isEmpty) {
+        final meetingDoc = await meetingsCollection.doc(meetId).get();
+        final meetingData = meetingDoc.data() as Map<String, dynamic>?;
         final actualStartTime = meetingData?['actualStartTime'];
         Duration actualDuration = Duration.zero;
         
         if (actualStartTime != null) {
           final startTime = DateTime.tryParse(actualStartTime);
           if (startTime != null) {
-            actualDuration = leaveTime.difference(startTime);
+            actualDuration = DateTime.now().difference(startTime);
           }
         }
         
         await meetingsCollection.doc(meetId).update({
           'status': 'ended',
-          'actualEndTime': leaveTime.toIso8601String(),
+          'actualEndTime': FieldValue.serverTimestamp(),
           'actualDuration': actualDuration.inSeconds,
         });
       }
@@ -436,9 +408,8 @@ class AppFirebaseService {
   Future<void> approveMeetingJoinRequest(String meetingId, int userId) async {
     await meetingsCollection.doc(meetingId).update({
       'pendingApprovals': FieldValue.arrayRemove([userId]),
-      'participants': FieldValue.arrayUnion([userId]),
-      'allParticipants': FieldValue.arrayUnion([userId]),
     });
+    await addParticipants(meetId, userId);
   }
 
   Future<void> rejectMeetingJoinRequest(String meetingId, int userId) async {
@@ -453,6 +424,14 @@ class AppFirebaseService {
         .orderBy('scheduledStartTime', descending: true)
         .snapshots();
   }
+
+  Stream<QuerySnapshot> getParticipantsStream(String meetingId) {
+    return meetingsCollection
+        .doc(meetingId)
+        .collection('participants')
+        .snapshots();
+  }
+
 
   Stream<QuerySnapshot> getParticipatedMeetingsStream(int userId) {
     try {
@@ -659,13 +638,6 @@ class AppFirebaseService {
     }
   }
 
-  Future<void> removeAllParticipants(String meetingId) async {
-    await meetingsCollection.doc(meetingId).update({
-      'participants': [],
-      'status': 'ended',
-      'actualEndTime': DateTime.now().toIso8601String(),
-    });
-  }
 
   // Get meeting statistics
   Future<Map<String, dynamic>?> getMeetingStatistics(String meetingId) async {
@@ -771,37 +743,6 @@ class AppFirebaseService {
     }
   }
 
-  // Methods for "Request to Speak" feature
-  Future<void> requestToSpeak(String meetingId, int userId) async {
-    await meetingsCollection.doc(meetingId).update({
-      'speakRequests': FieldValue.arrayUnion([userId]),
-    });
-  }
-
-  Future<void> cancelRequestToSpeak(String meetingId, int userId) async {
-    await meetingsCollection.doc(meetingId).update({
-      'speakRequests': FieldValue.arrayRemove([userId]),
-    });
-  }
-
-  Future<void> approveSpeakRequest(String meetingId, int userId) async {
-    await meetingsCollection.doc(meetingId).update({
-      'speakRequests': FieldValue.arrayRemove([userId]),
-      'approvedSpeakers': FieldValue.arrayUnion([userId]),
-    });
-  }
-
-  Future<void> rejectSpeakRequest(String meetingId, int userId) async {
-    await meetingsCollection.doc(meetingId).update({
-      'speakRequests': FieldValue.arrayRemove([userId]),
-    });
-  }
-
-  Future<void> revokeSpeakingPermission(String meetingId, int userId) async {
-    await meetingsCollection.doc(meetingId).update({
-      'approvedSpeakers': FieldValue.arrayRemove([userId]),
-    });
-  }
 
   Stream<DocumentSnapshot> getMeetingStream(String meetingId) {
     return meetingsCollection.doc(meetingId).snapshots();

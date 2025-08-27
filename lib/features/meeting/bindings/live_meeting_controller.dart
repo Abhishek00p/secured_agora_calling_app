@@ -30,10 +30,7 @@ class MeetingController extends GetxController {
   final isScreenSharing = false.obs;
   bool isMeetEneded = false;
   List<ParticipantModel> participants = <ParticipantModel>[].obs;
-  final speakRequests = <int>[].obs;
-  final approvedSpeakers = <int>[].obs;
-  final hasRequestedToSpeak = false.obs;
-  final speakRequestUsers = <ParticipantModel>[].obs;
+  final pttUsers = <int>[].obs;
 
   String meetingId = '';
   bool isHost = false;
@@ -42,7 +39,7 @@ class MeetingController extends GetxController {
   String currentSpeaker = '';
 
   bool get agoraInitialized => _agoraService.isInitialized;
-  MeetingModel meetingModel = MeetingModel.toEmpty();
+  final meetingModel = MeetingModel.toEmpty().obs;
   Timer? _meetingTimer;
   StreamSubscription? _leaveSubscription;
   StreamSubscription? _muteSubscription;
@@ -58,11 +55,11 @@ class MeetingController extends GetxController {
         AppToastUtil.showErrorToast('Meeting data not found');
         return;
       }
-      meetingModel = MeetingModel.fromJson(result);
+      meetingModel.value = MeetingModel.fromJson(result);
       remainingSeconds =
-          meetingModel.scheduledEndTime.difference(DateTime.now()).inSeconds;
+          meetingModel.value.scheduledEndTime.difference(DateTime.now()).inSeconds;
 
-      isHost = meetingModel.hostId == currentUser.firebaseUserId;
+      isHost = meetingModel.value.hostId == currentUser.firebaseUserId;
 
       _meetingTimer = Timer.periodic(Duration(seconds: 1), (timer) {
         if (remainingSeconds <= 300 && isHost) {
@@ -238,32 +235,29 @@ class MeetingController extends GetxController {
         _firebaseService.startMeeting(meetingId);
       }
 
+      _firebaseService.getParticipantsStream(meetingId).listen((snapshot) {
+        final newParticipants = snapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return ParticipantModel(
+            userId: data['userId'],
+            name: data['username'],
+            isUserMuted: !pttUsers.contains(data['userId']), // Muted if not in PTT
+            isUserSpeaking: false, // This will be updated by Agora
+            color: WarmColorGenerator.getRandomWarmColor(),
+            firebaseUid: '', // This might need to be fetched if required
+          );
+        }).toList();
+        participants = newParticipants;
+        update();
+      });
+
       _meetingSubscription?.cancel();
       _meetingSubscription =
           _firebaseService.getMeetingStream(meetingId).listen((doc) {
         if (doc.exists) {
           final data = doc.data() as Map<String, dynamic>;
-          speakRequests.value = List<int>.from(data['speakRequests'] ?? []);
-          approvedSpeakers.value = List<int>.from(data['approvedSpeakers'] ?? []);
-          hasRequestedToSpeak.value =
-              speakRequests.contains(currentUser.userId);
-
-          updateSpeakRequestUsers();
-          synchronizeMuteStates(); // Synchronize mute states on meeting subscription update
-          validateMuteStates(); // Validate and fix any inconsistencies
-
-          // Mute/unmute participants based on approval status
-          for (final participant in participants) {
-            if (participant.userId != meetingModel.hostUserId && participant.userId != currentUser.userId) {
-              if (approvedSpeakers.contains(participant.userId) && currentUser.userId == meetingModel.hostUserId) {
-                _agoraService.engine
-                    ?.muteRemoteAudioStream(uid: participant.userId, mute: false);
-              } else {
-                _agoraService.engine
-                    ?.muteRemoteAudioStream(uid: participant.userId, mute: true);
-              }
-            }
-          }
+          pttUsers.value = List<int>.from(data['pttUsers'] ?? []);
+          updateMuteStatesForPTT();
         }
       });
     } catch (e) {
@@ -273,118 +267,65 @@ class MeetingController extends GetxController {
     update();
   }
 
-  void updateSpeakRequestUsers() async {
-    final users = <ParticipantModel>[];
-    for (final userId in speakRequests) {
-      final user = participants.firstWhereOrNull((p) => p.userId == userId);
-      if (user != null) {
-        users.add(user);
-      }
-    }
-    speakRequestUsers.value = users;
+  Future<void> startPtt() async {
+    await _firebaseService.meetingsCollection.doc(meetingId).update({
+      'pttUsers': FieldValue.arrayUnion([currentUser.userId]),
+    });
+    await _agoraService.muteLocalAudio(false);
+    isMuted.value = false;
   }
 
-  void synchronizeMuteStates() {
-    // Update mute states based on approved speakers and host status
-    participants = participants.map((participant) {
-      bool shouldBeMuted = true; // Default to muted
-      
-      // Host can be unmuted
-      if (participant.userId == meetingModel.hostUserId) {
-        shouldBeMuted = false;
+  Future<void> stopPtt() async {
+    await _firebaseService.meetingsCollection.doc(meetingId).update({
+      'pttUsers': FieldValue.arrayRemove([currentUser.userId]),
+    });
+    await _agoraService.muteLocalAudio(true);
+    isMuted.value = true;
+  }
+
+  void updateMuteStatesForPTT() {
+    if (isHost) {
+      // Host can hear everyone. Unmute all remote streams.
+      for (final participant in participants) {
+        if (participant.userId != currentUser.userId) {
+          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: false);
+        }
       }
-      // Current user's mute state is controlled by their own toggle
-      else if (participant.userId == currentUser.userId) {
-        shouldBeMuted = isMuted.value;
+    } else {
+      // Participants have specific audio rules.
+      for (final participant in participants) {
+        if (participant.userId == currentUser.userId) continue;
+
+        // Participant can always hear the host.
+      if (participant.userId == meetingModel.value.hostUserId) {
+          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: false);
+          continue;
+        }
+
+        // Mute/unmute other participants based on PTT status.
+        // A participant should hear another participant only if BOTH are in the PTT group.
+        final amIPtt = pttUsers.contains(currentUser.userId);
+        final isOtherPtt = pttUsers.contains(participant.userId);
+
+        if (amIPtt && isOtherPtt) {
+          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: false);
+        } else {
+          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: true);
+        }
       }
-      // Other users are muted unless they are approved speakers
-      else {
-        shouldBeMuted = !approvedSpeakers.contains(participant.userId);
-      }
-      
-      return participant.copyWith(isUserMuted: shouldBeMuted);
-    }).toList();
-    
+    }
     update();
-  }
-
-  void validateMuteStates() {
-    // Safety check to ensure mute states are consistent
-    bool hasInconsistency = false;
-    for (final participant in participants) {
-      bool expectedMuted = true; // Default to muted
-      
-      if (participant.userId == meetingModel.hostUserId) {
-        expectedMuted = false; // Host can be unmuted
-      } else if (participant.userId == currentUser.userId) {
-        expectedMuted = isMuted.value;
-      } else {
-        expectedMuted = !approvedSpeakers.contains(participant.userId);
-      }
-      
-      if (participant.isUserMuted != expectedMuted) {
-        hasInconsistency = true;
-        AppLogger.print('Mute state inconsistency detected for user ${participant.userId}');
-      }
-    }
-    
-    if (hasInconsistency) {
-      synchronizeMuteStates();
-    }
-  }
-
-  // Methods for "Request to Speak" feature
-  Future<void> requestToSpeak() async {
-    await _firebaseService.requestToSpeak(meetingId, currentUser.userId);
-  }
-
-  Future<void> cancelRequestToSpeak() async {
-    await _firebaseService.cancelRequestToSpeak(meetingId, currentUser.userId);
-  }
-
-  Future<void> approveSpeakRequest(int userId) async {
-    await _firebaseService.approveSpeakRequest(meetingId, userId);
-    // Update local mute state immediately
-    final index = participants.indexWhere((p) => p.userId == userId);
-    if (index != -1) {
-      participants[index] = participants[index].copyWith(isUserMuted: false);
-      update();
-    }
-  }
-
-  Future<void> rejectSpeakRequest(int userId) async {
-    await _firebaseService.rejectSpeakRequest(meetingId, userId);
-  }
-
-  Future<void> revokeSpeakingPermission(int userId) async {
-    await _firebaseService.revokeSpeakingPermission(meetingId, userId);
-    // Update local mute state immediately
-    final index = participants.indexWhere((p) => p.userId == userId);
-    if (index != -1) {
-      participants[index] = participants[index].copyWith(isUserMuted: true);
-      update();
-    }
-    
-    // If the current user's permission was revoked and they are unmuted, mute them
-    if (userId == currentUser.userId && !isMuted.value) {
-      isMuted.value = true;
-      await _agoraService.muteLocalAudio(true);
-      AppToastUtil.showInfoToast('Your speaking permission has been revoked');
-    }
   }
 
   Future<void> joinChannel({required String channelName}) async {
     try {
       final value = await _firebaseService.getMeetingData(meetingId);
-      meetingModel = MeetingModel.fromJson(value ?? {});
+      meetingModel.value = MeetingModel.fromJson(value ?? {});
       final currentUserId = currentUser.userId;
 
-      if (participants.length >= meetingModel.maxParticipants) {
-        AppToastUtil.showErrorToast(
-          'Meet Participants Limit Exceeds, you cannot join Meeting as of now',
-        );
-        return;
-      }
+      // The max participants check should be done on the server-side with security rules
+      // or a cloud function for reliability. Client-side check is not secure.
+
       final token = await _firebaseService.getAgoraToken(
         channelName: channelName,
         uid: currentUser.userId,
@@ -410,50 +351,6 @@ class MeetingController extends GetxController {
   Future<void> leaveChannel() async {
     await _agoraService.leaveChannel();
     isJoined.value = false;
-  }
-
-  Future<void> toggleMute() async {
-    // For host, always allow toggle
-    if (isHost) {
-      isMuted.toggle();
-      await _agoraService.muteLocalAudio(isMuted.value);
-      participants =
-          participants.map((e) {
-            if (e.userId == currentUser.userId) {
-              e = e.copyWith(isUserMuted: isMuted.value);
-            }
-            return e;
-          }).toList();
-      update();
-      return;
-    }
-
-    // For participants, check if they can unmute
-    if (isMuted.value) {
-      // Trying to unmute - check if they have permission
-      if (!approvedSpeakers.contains(currentUser.userId)) {
-        // No permission, don't allow unmute
-        AppToastUtil.showInfoToast('You need permission from the host to unmute');
-        return;
-      }
-    }
-
-    // Allow the toggle
-    isMuted.toggle();
-    await _agoraService.muteLocalAudio(isMuted.value);
-    participants =
-        participants.map((e) {
-          if (e.userId == currentUser.userId) {
-            e = e.copyWith(isUserMuted: isMuted.value);
-          }
-          return e;
-        }).toList();
-    update();
-  }
-
-  bool canParticipantUnmute() {
-    if (isHost) return true;
-    return approvedSpeakers.contains(currentUser.userId);
   }
 
   Future<void> toggleSpeaker() async {
@@ -537,52 +434,9 @@ class MeetingController extends GetxController {
     }
   }
 
-  Future<void> addUser(int remoteUid) async {
-    if (participants.any((e) => e.userId == remoteUid)) return;
-
-    final result = await _firebaseService.getUserDataWhereUserId(remoteUid);
-
-    if (result != null) {
-      final userData = result.data() as Map<dynamic, dynamic>;
-      AppToastUtil.showInfoToast(
-        currentUser.userId == remoteUid
-            ? 'You have joined'
-            : '${userData['name']} has Joined',
-      );
-      
-      // Determine initial mute state
-      bool initialMuteState = true; // All users start muted by default
-      if (currentUser.userId == remoteUid) {
-        // For current user, use the actual mute state (should be true by default)
-        initialMuteState = isMuted.value;
-        isOnSpeaker.value = true;
-      } else {
-        // For other users, they start muted unless they are the host
-        if (remoteUid == meetingModel.hostUserId) {
-          initialMuteState = false; // Host can be unmuted
-        }
-      }
-      
-      _firebaseService.addParticipants(meetingId, remoteUid);
-      participants.add(
-        ParticipantModel(
-          userId: remoteUid,
-          firebaseUid: userData['firebaseUserId'],
-          name: userData['name'],
-          isUserMuted: initialMuteState,
-          isUserSpeaking: false,
-          color: WarmColorGenerator.getRandomWarmColor(),
-        ),
-      );
-    }
-    update();
-  }
-
   void removeUser(int remoteUid) {
-    AppToastUtil.showInfoToast('user Left');
-
-    participants.removeWhere((e) => e.userId == remoteUid);
-    update();
+    // This is now handled by the participant stream
+    AppLogger.print('User left: $remoteUid');
   }
 
   void updateMuteStatus(int remoteUid, bool muted) {
@@ -619,31 +473,7 @@ class MeetingController extends GetxController {
     try {
       isJoined.value = true;
       final currentUserId = AppLocalStorage.getUserDetails().userId;
-      _firebaseService.addParticipants(meetingId, currentUserId).then((v) {
-        if (v) {
-          addUser(currentUserId);
-        }
-      });
-      _muteSubscription?.cancel();
-      _muteSubscription = _firebaseService
-          .isCurrentUserMutedByHost(meetingId)
-          .listen((event) {
-            _agoraService.engine?.muteLocalAudioStream(event);
-            isMuted.value = event;
-
-            participants =
-                participants
-                    .map(
-                      (e) =>
-                          e.userId == currentUserId
-                              ? e.copyWith(isUserMuted: event)
-                              : e,
-                    )
-                    .toList();
-
-            update();
-          });
-
+      _firebaseService.addParticipants(meetingId, currentUserId);
       startTimer();
       update();
     } catch (e) {
@@ -659,14 +489,9 @@ class MeetingController extends GetxController {
     );
     return RtcEngineEventHandler(
       onUserJoined: (connection, remoteUid, elapsed) {
-        addUser(remoteUid);
-        // Ensure proper mute state for new users based on permissions
-        if (remoteUid != meetingModel.hostUserId && !approvedSpeakers.contains(remoteUid)) {
-          _agoraService.engine?.muteRemoteAudioStream(uid: remoteUid, mute: true);
-        } else {
-          _agoraService.engine
-              ?.muteRemoteAudioStream(uid: remoteUid, mute: false);
-        }
+        // The participant stream will handle adding the user to the list.
+        // The PTT logic will handle muting/unmuting.
+        AppLogger.print('User joined: $remoteUid');
       },
       onUserOffline: (connection, remoteUid, reason) => removeUser(remoteUid),
       onJoinChannelSuccess: (connection, elapsed) {
@@ -722,10 +547,10 @@ class MeetingController extends GetxController {
   void extendMeetingTime() {
     _firebaseService.meetingsCollection.doc(meetingId).update({
       'scheduledEndTime':
-          meetingModel.scheduledEndTime
+          meetingModel.value.scheduledEndTime
               .add(Duration(minutes: 30))
               .toIso8601String(),
-      'duration': meetingModel.duration + 30,
+      'duration': meetingModel.value.duration + 30,
     });
     update();
     startTimer();

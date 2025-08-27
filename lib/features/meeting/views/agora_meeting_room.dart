@@ -134,50 +134,26 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Unified Mic Button for all users
-            Obx(
-              () {
-                final isMuted = meetingController.isMuted.value;
-                final isHost = meetingController.isHost;
-                final canUnmute = meetingController.canParticipantUnmute();
-                
-                // Determine button state
-                IconData icon;
-                String label;
-                Color color;
-                VoidCallback onPressed;
-                
-                if (isMuted) {
-                  // Currently muted
-                  icon = Icons.mic_off;
-                  label = 'Unmute';
-                  color = Colors.red;
-                  
-                  if (isHost) {
-                    // Host can always unmute
-                    onPressed = meetingController.toggleMute;
-                  } else if (canUnmute) {
-                    // Participant has permission to unmute
-                    onPressed = meetingController.toggleMute;
-                  } else {
-                    // Participant needs to request permission
-                    onPressed = () => _showMicPermissionRequestDialog(context, meetingController);
-                  }
-                } else {
-                  // Currently unmuted - can always mute
-                  icon = Icons.mic;
-                  label = 'Mute';
-                  color = Colors.white;
-                  onPressed = meetingController.toggleMute;
-                }
-                
-                return _buildControlButton(
-                  icon: icon,
-                  label: label,
-                  color: color,
-                  onPressed: onPressed,
-                );
+            // PTT Mic Button
+            GestureDetector(
+              onLongPressStart: (_) {
+                meetingController.startPtt();
               },
+              onLongPressEnd: (_) {
+                meetingController.stopPtt();
+              },
+              child: Obx(() {
+                final isPttActive = meetingController.pttUsers.contains(meetingController.currentUser.userId);
+                return _buildControlButton(
+                  icon: isPttActive ? Icons.mic : Icons.mic_off,
+                  label: 'PTT',
+                  color: isPttActive ? Colors.green : Colors.white,
+                  onPressed: () {
+                    // Short press can show a helper message
+                    AppToastUtil.showInfoToast('Long press to talk');
+                  },
+                );
+              }),
             ),
             Obx(
               () => _buildControlButton(
@@ -206,34 +182,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
     );
   }
 
-  void _showMicPermissionRequestDialog(BuildContext context, MeetingController meetingController) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Request Mic Permission'),
-          content: const Text('You need permission from the host to unmute your microphone. Your request will be sent to the host.'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                meetingController.requestToSpeak(); // Request to speak
-                AppToastUtil.showInfoToast('Request sent to host');
-              },
-              child: const Text('Send Request'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-              },
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   final meetingController = Get.find<MeetingController>();
   final currentUser = AppLocalStorage.getUserDetails();
 
@@ -258,58 +206,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
     super.initState();
   }
 
-  void _showSpeakRequestsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            title: Text('Speak Requests'),
-            content: Obx(
-              () => Container(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: meetingController.speakRequestUsers.length,
-                  itemBuilder: (context, index) {
-                    final user = meetingController.speakRequestUsers[index];
-                    return ListTile(
-                      title: Text(user.name),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.check, color: Colors.green),
-                            onPressed: () {
-                              meetingController.approveSpeakRequest(
-                                user.userId,
-                              );
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.close, color: Colors.red),
-                            onPressed: () {
-                              meetingController.rejectSpeakRequest(user.userId);
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Close'),
-              ),
-            ],
-          ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return GetBuilder<MeetingController>(
@@ -327,40 +223,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
               backgroundColor: Colors.black,
               iconTheme: const IconThemeData(color: Colors.white),
               actions: [
-                if (meetingController.isHost)
-                  IconButton(
-                    onPressed: () => _showSpeakRequestsDialog(context),
-                    icon: Obx(
-                      () => Stack(
-                        children: [
-                          Icon(Icons.speaker_phone),
-                          if (meetingController.speakRequests.isNotEmpty)
-                            Positioned(
-                              right: 0,
-                              child: Container(
-                                padding: EdgeInsets.all(1),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                constraints: BoxConstraints(
-                                  minWidth: 12,
-                                  minHeight: 12,
-                                ),
-                                child: Text(
-                                  '${meetingController.speakRequests.length}',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 8,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
                 IconButton(
                   onPressed: () async {
                     // await fetchPendingRequests();
@@ -371,25 +233,27 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                   icon: Icon(Icons.settings),
                 ),
               ],
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Meeting Room',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-
-                  if (meetingController.remainingSeconds >= 0) ...[
+              title: Obx(
+                () => Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
                     Text(
-                      'Time remaining: ${meetingController.remainingSeconds.formatDuration}',
-                      style: const TextStyle(fontSize: 12, color: Colors.red),
+                      meetingController.meetingModel.value.meetingName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    if (meetingController.remainingSeconds >= 0) ...[
+                      Text(
+                        'Time remaining: ${meetingController.remainingSeconds.formatDuration}',
+                        style: const TextStyle(fontSize: 12, color: Colors.red),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
               //
             ),
@@ -419,152 +283,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                               child: Text('Agora not intialized yet...!'),
                             )
                             : Expanded(
-                              child: GridView.builder(
-                                itemCount:
-                                    meetingController.participants.length,
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                    ),
-                                itemBuilder: (context, index) {
-                                  final user =
-                                      meetingController.participants[index];
-                                  return Container(
-                                    margin: EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: user.color),
-                                      // border: Border.all(color:user.isUserMuted? Colors.white:Colors.deepPurple),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Obx(()=>
-                                        user.userId == meetingController.activeSpeakerUid.value?
-                                         Positioned.fill(
-                                            child: WaterRipple(
-                                              color: user.color,
-                                            ),
-                                          ):SizedBox.shrink()),
-          
-                                        Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Center(
-                                            child: Text(
-                                              user.userId ==
-                                                      meetingController
-                                                          .currentUser
-                                                          .userId
-                                                  ? 'You'
-                                                  : user.name,
-                                              textAlign: TextAlign.center,
-                                              maxLines: 2,
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                color: user.color,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          bottom: 8,
-                                          left: 8,
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                user.isUserMuted
-                                                    ? Icons.mic_off
-                                                    : Icons.mic,
-                                                color: user.isUserMuted 
-                                                    ? Colors.red 
-                                                    : Colors.white,
-                                                size: 20,
-                                              ),
-                                              if (user.isUserSpeaking && !user.isUserMuted) ...[
-                                                const SizedBox(width: 4),
-                                                Container(
-                                                  width: 8,
-                                                  height: 8,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.green,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                        ),
-                                        if (meetingController.isHost &&
-                                            meetingController
-                                                    .currentUser
-                                                    .userId !=
-                                                user.userId) ...[
-                                          Positioned(
-                                            right: 2,
-                                            top: 0,
-                                            child: PopupMenuButton<String>(
-                                              onSelected: (value) {
-                                                if (value == 'mute') {
-                                                  meetingController
-                                                      .muteThisParticipantsForAllUser(
-                                                        user,
-                                                      );
-                                                } else if (value == 'unmute') {
-                                                  meetingController
-                                                      .unMuteThisParticipantsForAllUser(
-                                                        user,
-                                                      );
-                                                } else if (value ==
-                                                    'revoke_speak') {
-                                                  meetingController
-                                                      .revokeSpeakingPermission(
-                                                        user.userId,
-                                                      );
-                                                }
-                                              },
-                                              itemBuilder:
-                                                  (context) => [
-                                                    if (!user.isUserMuted) ...[
-                                                      PopupMenuItem(
-                                                        value: 'mute',
-                                                        child: Text('Mute'),
-                                                      ),
-                                                    ],
-                                                    if (user.isUserMuted) ...[
-                                                      PopupMenuItem(
-                                                        value: 'unmute',
-                                                        child: Text('Unmute'),
-                                                      ),
-                                                    ],
-                                                    if (meetingController
-                                                        .approvedSpeakers
-                                                        .contains(user.userId))
-                                                      PopupMenuItem(
-                                                        value: 'revoke_speak',
-                                                        child: Text(
-                                                          'Revoke Speak Permission',
-                                                        ),
-                                                      ),
-                                                    PopupMenuItem(
-                                                      value: 'private_room',
-                                                      child: Text(
-                                                        'Create Private Room',
-                                                      ),
-                                                    ),
-                                                  ],
-                                              icon: Icon(
-                                                Icons.more_vert,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  );
-                                },
+                                child: meetingController.isHost
+                                    ? _buildHostView(meetingController)
+                                    : _buildParticipantView(meetingController),
                               ),
-                            ),
                         if (meetingController.isHost) ...[JoinRequestWidget()],
                         Padding(
                           padding: const EdgeInsets.only(bottom: 30.0),
@@ -589,6 +311,121 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
               },
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildParticipantTile(ParticipantModel user, MeetingController meetingController) {
+    return Container(
+      margin: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: user.color),
+      ),
+      child: Stack(
+        children: [
+          Obx(() => user.userId == meetingController.activeSpeakerUid.value
+              ? Positioned.fill(
+                  child: WaterRipple(
+                    color: user.color,
+                  ),
+                )
+              : SizedBox.shrink()),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Center(
+              child: Text(
+                user.userId == meetingController.currentUser.userId ? 'You' : user.name,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                style: TextStyle(
+                  fontSize: 20,
+                  color: user.color,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 8,
+            left: 8,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  user.isUserMuted ? Icons.mic_off : Icons.mic,
+                  color: user.isUserMuted ? Colors.red : Colors.white,
+                  size: 20,
+                ),
+                if (user.isUserSpeaking && !user.isUserMuted) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Obx(() {
+            if (meetingController.pttUsers.contains(user.userId)) {
+              return Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.mic, color: Colors.white, size: 14),
+                ),
+              );
+            }
+            return SizedBox.shrink();
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHostView(MeetingController meetingController) {
+    return GridView.builder(
+      itemCount: meetingController.participants.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.0,
+      ),
+      itemBuilder: (context, index) {
+        final user = meetingController.participants[index];
+        return _buildParticipantTile(user, meetingController);
+      },
+    );
+  }
+
+  Widget _buildParticipantView(MeetingController meetingController) {
+    final host = meetingController.participants.firstWhereOrNull(
+      (p) => p.userId == meetingController.meetingModel.value.hostUserId,
+    );
+    final self = meetingController.participants.firstWhereOrNull(
+      (p) => p.userId == meetingController.currentUser.userId,
+    );
+
+    final List<ParticipantModel> viewParticipants = [];
+    if (host != null) viewParticipants.add(host);
+    if (self != null && self.userId != host?.userId) viewParticipants.add(self);
+
+    return ListView.builder(
+      itemCount: viewParticipants.length,
+      itemBuilder: (context, index) {
+        final user = viewParticipants[index];
+        return SizedBox(
+          height: 200, // Give a fixed height to the list items
+          child: _buildParticipantTile(user, meetingController),
         );
       },
     );

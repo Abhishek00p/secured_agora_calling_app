@@ -67,10 +67,10 @@ class MembarTabViewWidget extends StatelessWidget {
         children: [
           // New meeting action card
           ActionCard(
-            title: 'New Meeting',
+            title: 'Create Meeting',
             icon: Icons.videocam,
-            description: 'Start an instant meeting Only Audio',
-            buttonText: 'Start Now',
+            description: 'Set up a new instant or scheduled meeting',
+            buttonText: 'Create Meeting',
             onPressed: () async {
               final permissionStatus =
                   await PermissionService.requestPermission(
