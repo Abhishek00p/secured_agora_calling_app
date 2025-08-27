@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/features/home/views/view_all_meeting_list.dart';
+import 'package:secured_calling/screens/meeting_detail_page.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/features/auth/views/login_register_screen.dart';
 import 'package:secured_calling/features/home/views/home_screen.dart';
@@ -17,6 +18,7 @@ class AppRouter {
   static const String homeRoute = '/home';
   static const String meetingRoomRoute = '/meeting';
   static const String meetingViewAllRoute = '/meeting/view_all';
+  static const String meetingDetailRoute = '/meeting-detail';
 
   static List<GetPage> routes = [
     GetPage(name: welcomeRoute, page: () => const WelcomeScreen()),
@@ -50,6 +52,13 @@ class AppRouter {
         return ViewAllMeetingList(meetings: args);
       },
       binding: MeetingBinding(), // Inject Meeting Controller
+    ),
+    GetPage(
+      name: meetingDetailRoute,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>;
+        return MeetingDetailPage(meetingId: args['meetingId']);
+      },
     ),
   ];
 }

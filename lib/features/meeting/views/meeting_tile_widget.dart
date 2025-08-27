@@ -118,9 +118,17 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
+    return InkWell(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRouter.meetingDetailRoute,
+          arguments: {'meetingId': widget.model.meetId},
+        );
+      },
+      child: Card(
+        elevation: 2,
+        margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color:
           widget.model.scheduledStartTime.isToday
@@ -314,6 +322,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
           ],
         ),
       ),
+    ),
     );
   }
 }
