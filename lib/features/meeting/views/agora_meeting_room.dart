@@ -205,13 +205,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
             body: GetBuilder<MeetingController>(
               builder: (meetingController) {
                 if (!meetingController.meetingModel.value.isEmpty) {
-                  AppFirebaseService.instance
-                      .getMeetingData(widget.meetingId)
-                      .then((v) {
-                        AppLogger.print(
-                          '\n <----------\nMeeting Model from ui : $v\n---------->\n',
-                        );
-                      });
+                  AppFirebaseService.instance.getMeetingData(widget.meetingId);
                 } else {
                   AppLogger.print('Meeting Model is empty');
                 }
@@ -255,9 +249,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                       );
                                   return CircleAvatar(
                                     radius: 53,
-                                    backgroundColor: isPttActive
-                                        ? Colors.green
-                                        : Colors.white.withAppOpacity(0.2),
+                                    backgroundColor:
+                                        isPttActive
+                                            ? Colors.green
+                                            : Colors.white.withAppOpacity(0.2),
                                     child: Icon(
                                       isPttActive ? Icons.mic : Icons.mic_off,
                                       color: Colors.white,
@@ -290,14 +285,17 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                     () => OutlinedButton(
                                       style: OutlinedButton.styleFrom(
                                         side: BorderSide(
-                                          color: meetingController
-                                              .isOnSpeaker.value
-                                              ? Colors.green
-                                              : Colors.white,
+                                          color:
+                                              meetingController
+                                                      .isOnSpeaker
+                                                      .value
+                                                  ? Colors.green
+                                                  : Colors.white,
                                         ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 16,
@@ -339,7 +337,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                             ],
                           ),
                         ),
-                    40.h,
+                        40.h,
                       ],
                     ),
                   ),
@@ -390,11 +388,15 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  user.isUserMuted ? Icons.mic_off : Icons.mic,
-                  color: user.isUserMuted ? Colors.red : Colors.white,
+                  // user.isUserMuted
+                  !(meetingController.pttUsers.contains(user.userId))
+                      ? Icons.mic_off
+                      : Icons.mic,
+                  color:   !(meetingController.pttUsers.contains(user.userId)) ? Colors.red : Colors.white,
                   size: 20,
                 ),
-                if (user.isUserSpeaking && !user.isUserMuted) ...[
+                // if (user.isUserSpeaking && !user.isUserMuted)
+                if (meetingController.pttUsers.contains(user.userId)) ...[
                   const SizedBox(width: 4),
                   Container(
                     width: 8,

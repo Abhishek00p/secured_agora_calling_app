@@ -30,7 +30,6 @@ class AppLocalStorage {
   static AppUser getUserDetails() {
     try {
       final details = _preferences.getString(userDetails);
-      AppLogger.print("fetching user details from local storage : $details");
       return AppUser.fromJson(
         jsonDecode(details ?? '{}'),
       );

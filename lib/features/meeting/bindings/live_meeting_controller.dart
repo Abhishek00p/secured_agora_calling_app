@@ -258,6 +258,8 @@ class MeetingController extends GetxController {
         if (doc.exists) {
           final data = doc.data() as Map<String, dynamic>;
           pttUsers.value = List<int>.from(data['pttUsers'] ?? []);
+
+       
           updateMuteStatesForPTT();
         }
       });
