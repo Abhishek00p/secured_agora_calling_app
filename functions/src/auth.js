@@ -49,17 +49,19 @@ exports.login = functions.https.onCall(async (data, context) => {
 
     // Validate input
     if (!email || !password) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Email and password are required'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Email and password are required'
+      };
     }
 
     if (!isValidEmail(email)) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Invalid email format'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid email format'
+      };
     }
 
     // Find user in Firestore
@@ -67,10 +69,11 @@ exports.login = functions.https.onCall(async (data, context) => {
     const userQuery = await usersRef.where('email', '==', email).get();
 
     if (userQuery.empty) {
-      throw new functions.https.HttpsError(
-        'not-found',
-        'User not found'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'User not found'
+      };
     }
 
     const userDoc = userQuery.docs[0];
@@ -78,27 +81,30 @@ exports.login = functions.https.onCall(async (data, context) => {
 
     // Check if hashedPassword exists
     if (!userData.hashedPassword) {
-      throw new functions.https.HttpsError(
-        'internal',
-        'User password not properly configured'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'User password not properly configured'
+      };
     }
 
     // Verify password
     const isPasswordValid = await verifyPassword(password, userData.hashedPassword);
     if (!isPasswordValid) {
-      throw new functions.https.HttpsError(
-        'unauthenticated',
-        'Invalid password'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid password'
+      };
     }
 
     // Check if user is active
     if (userData.isActive === false) {
-      throw new functions.https.HttpsError(
-        'permission-denied',
-        'User account is deactivated'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'User account is deactivated'
+      };
     }
 
     // Generate JWT token
@@ -111,23 +117,33 @@ exports.login = functions.https.onCall(async (data, context) => {
 
     return {
       success: true,
-      token,
-      user: {
-        userId: userDoc.id,
-        name: userData.name,
-        email: userData.email,
-        isMember: userData.isMember,
-        memberCode: userData.memberCode,
-        subscription: userData.subscription
-      }
+      data: {
+        token: token,
+        user: {
+          userId: userData.userId,
+          name: userData.name,
+          email: userData.email,
+          isMember: userData.isMember,
+          memberCode: userData.memberCode,
+          subscription: userData.subscription,
+          firebaseUserId: userData.firebaseUserId,
+          createdAt: userData.createdAt,
+          planExpiryDate: userData.planExpiryDate,
+          temporaryPassword: userData.temporaryPassword,
+          isActive: userData.isActive,
+          isAdmin: userData.isAdmin,
+        }
+      },
+      error_message: null
     };
 
   } catch (error) {
     console.error('Login error:', error);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Login failed: ' + error.message
-    );
+    return {
+      success: false,
+      data: null,
+      error_message: 'Login failed: ' + error.message
+    };
   }
 });
 
@@ -136,10 +152,11 @@ exports.createUser = functions.https.onCall(async (data, context) => {
   try {
     // Verify authentication
     if (!context.auth) {
-      throw new functions.https.HttpsError(
-        'unauthenticated',
-        'Authentication required'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Authentication required'
+      };
     }
 
     const { name, email, password, memberCode } = data;
@@ -147,24 +164,27 @@ exports.createUser = functions.https.onCall(async (data, context) => {
 
     // Validate input
     if (!name || !email || !password || !memberCode) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'All fields are required'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'All fields are required'
+      };
     }
 
     if (!isValidEmail(email)) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Invalid email format'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid email format'
+      };
     }
 
     if (password.length < 6) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Password must be at least 6 characters'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Password must be at least 6 characters'
+      };
     }
 
     // Check if current user is a member
@@ -172,26 +192,29 @@ exports.createUser = functions.https.onCall(async (data, context) => {
     const currentUserDoc = await currentUserRef.get();
 
     if (!currentUserDoc.exists) {
-      throw new functions.https.HttpsError(
-        'not-found',
-        'Current user not found'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Current user not found'
+      };
     }
 
     const currentUserData = currentUserDoc.data();
     if (!currentUserData.isMember) {
-      throw new functions.https.HttpsError(
-        'permission-denied',
-        'Only members can create users'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Only members can create users'
+      };
     }
 
     // Verify member code matches
     if (currentUserData.memberCode !== memberCode) {
-      throw new functions.https.HttpsError(
-        'permission-denied',
-        'Invalid member code'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid member code'
+      };
     }
 
     // Check if email already exists
@@ -200,10 +223,11 @@ exports.createUser = functions.https.onCall(async (data, context) => {
       .get();
 
     if (!existingUserQuery.empty) {
-      throw new functions.https.HttpsError(
-        'already-exists',
-        'User with this email already exists'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'User with this email already exists'
+      };
     }
 
     // Hash password
@@ -237,16 +261,20 @@ exports.createUser = functions.https.onCall(async (data, context) => {
 
     return {
       success: true,
-      message: 'User created successfully',
-      userId: userId
+      data: {
+        message: 'User created successfully',
+        userId: userId
+      },
+      error_message: null
     };
 
   } catch (error) {
     console.error('Create user error:', error);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to create user: ' + error.message
-    );
+    return {
+      success: false,
+      data: null,
+      error_message: 'Failed to create user: ' + error.message
+    };
   }
 });
 
@@ -255,10 +283,11 @@ exports.createMember = functions.https.onCall(async (data, context) => {
   try {
     // Verify authentication
     if (!context.auth) {
-      throw new functions.https.HttpsError(
-        'unauthenticated',
-        'Authentication required'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Authentication required'
+      };
     }
 
     const { name, email, password, memberCode, purchaseDate, planDays, maxParticipantsAllowed } = data;
@@ -266,24 +295,27 @@ exports.createMember = functions.https.onCall(async (data, context) => {
 
     // Validate input
     if (!name || !email || !password || !memberCode || !purchaseDate || !planDays) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'All required fields must be provided'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'All required fields must be provided'
+      };
     }
 
     if (!isValidEmail(email)) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Invalid email format'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid email format'
+      };
     }
 
     if (password.length < 6) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Password must be at least 6 characters'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Password must be at least 6 characters'
+      };
     }
 
     // Check if current user is admin
@@ -291,18 +323,20 @@ exports.createMember = functions.https.onCall(async (data, context) => {
     const currentUserDoc = await currentUserRef.get();
 
     if (!currentUserDoc.exists) {
-      throw new functions.https.HttpsError(
-        'not-found',
-        'Current user not found'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Current user not found'
+      };
     }
 
     const currentUserData = currentUserDoc.data();
     if (!currentUserData.isAdmin) {
-      throw new functions.https.HttpsError(
-        'permission-denied',
-        'Only admins can create members'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Only admins can create members'
+      };
     }
 
     // Check if email already exists
@@ -311,10 +345,11 @@ exports.createMember = functions.https.onCall(async (data, context) => {
       .get();
 
     if (!existingUserQuery.empty) {
-      throw new functions.https.HttpsError(
-        'already-exists',
-        'User with this email already exists'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'User with this email already exists'
+      };
     }
 
     // Check if member code already exists
@@ -323,10 +358,11 @@ exports.createMember = functions.https.onCall(async (data, context) => {
       .get();
 
     if (!existingMemberQuery.empty) {
-      throw new functions.https.HttpsError(
-        'already-exists',
-        'Member code already exists'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Member code already exists'
+      };
     }
 
     // Hash password
@@ -374,17 +410,21 @@ exports.createMember = functions.https.onCall(async (data, context) => {
 
     return {
       success: true,
-      message: 'Member created successfully',
-      userId: userId,
-      memberCode: memberCode
+      data: {
+        message: 'Member created successfully',
+        userId: userId,
+        memberCode: memberCode
+      },
+      error_message: null
     };
 
   } catch (error) {
     console.error('Create member error:', error);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to create member: ' + error.message
-    );
+    return {
+      success: false,
+      data: null,
+      error_message: 'Failed to create member: ' + error.message
+    };
   }
 });
 
@@ -393,10 +433,11 @@ exports.resetPassword = functions.https.onCall(async (data, context) => {
   try {
     // Verify authentication
     if (!context.auth) {
-      throw new functions.https.HttpsError(
-        'unauthenticated',
-        'Authentication required'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Authentication required'
+      };
     }
 
     const { targetEmail, newPassword } = data;
@@ -404,24 +445,27 @@ exports.resetPassword = functions.https.onCall(async (data, context) => {
 
     // Validate input
     if (!targetEmail || !newPassword) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Target email and new password are required'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Target email and new password are required'
+      };
     }
 
     if (!isValidEmail(targetEmail)) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Invalid email format'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid email format'
+      };
     }
 
     if (newPassword.length < 6) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Password must be at least 6 characters'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Password must be at least 6 characters'
+      };
     }
 
     // Get current user details
@@ -429,10 +473,11 @@ exports.resetPassword = functions.https.onCall(async (data, context) => {
     const currentUserDoc = await currentUserRef.get();
 
     if (!currentUserDoc.exists) {
-      throw new functions.https.HttpsError(
-        'not-found',
-        'Current user not found'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Current user not found'
+      };
     }
 
     const currentUserData = currentUserDoc.data();
@@ -443,10 +488,11 @@ exports.resetPassword = functions.https.onCall(async (data, context) => {
       .get();
 
     if (targetUserQuery.empty) {
-      throw new functions.https.HttpsError(
-        'not-found',
-        'Target user not found'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Target user not found'
+      };
     }
 
     const targetUserDoc = targetUserQuery.docs[0];
@@ -465,10 +511,11 @@ exports.resetPassword = functions.https.onCall(async (data, context) => {
     }
 
     if (!canReset) {
-      throw new functions.https.HttpsError(
-        'permission-denied',
-        'You do not have permission to reset this user\'s password'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'You do not have permission to reset this user\'s password'
+      };
     }
 
     // Hash new password
@@ -484,15 +531,19 @@ exports.resetPassword = functions.https.onCall(async (data, context) => {
 
     return {
       success: true,
-      message: 'Password reset successfully'
+      data: {
+        message: 'Password reset successfully'
+      },
+      error_message: null
     };
 
   } catch (error) {
     console.error('Reset password error:', error);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to reset password: ' + error.message
-    );
+    return {
+      success: false,
+      data: null,
+      error_message: 'Failed to reset password: ' + error.message
+    };
   }
 });
 
@@ -501,10 +552,11 @@ exports.getUserCredentials = functions.https.onCall(async (data, context) => {
   try {
     // Verify authentication
     if (!context.auth) {
-      throw new functions.https.HttpsError(
-        'unauthenticated',
-        'Authentication required'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Authentication required'
+      };
     }
 
     const { targetEmail } = data;
@@ -512,10 +564,11 @@ exports.getUserCredentials = functions.https.onCall(async (data, context) => {
 
     // Validate input
     if (!targetEmail) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Target email is required'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Target email is required'
+      };
     }
 
     // Get current user details
@@ -523,10 +576,11 @@ exports.getUserCredentials = functions.https.onCall(async (data, context) => {
     const currentUserDoc = await currentUserRef.get();
 
     if (!currentUserDoc.exists) {
-      throw new functions.https.HttpsError(
-        'not-found',
-        'Current user not found'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Current user not found'
+      };
     }
 
     const currentUserData = currentUserDoc.data();
@@ -537,10 +591,11 @@ exports.getUserCredentials = functions.https.onCall(async (data, context) => {
       .get();
 
     if (targetUserQuery.empty) {
-      throw new functions.https.HttpsError(
-        'not-found',
-        'Target user not found'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Target user not found'
+      };
     }
 
     const targetUserDoc = targetUserQuery.docs[0];
@@ -559,28 +614,33 @@ exports.getUserCredentials = functions.https.onCall(async (data, context) => {
     }
 
     if (!canView) {
-      throw new functions.https.HttpsError(
-        'permission-denied',
-        'You do not have permission to view this user\'s credentials'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'You do not have permission to view this user\'s credentials'
+      };
     }
 
     return {
       success: true,
-      credentials: {
-        email: targetUserData.email,
-        password: targetUserData.temporaryPassword || 'No temporary password set',
-        name: targetUserData.name,
-        memberCode: targetUserData.memberCode
-      }
+      data: {
+        credentials: {
+          email: targetUserData.email,
+          password: targetUserData.temporaryPassword || 'No temporary password set',
+          name: targetUserData.name,
+          memberCode: targetUserData.memberCode
+        }
+      },
+      error_message: null
     };
 
   } catch (error) {
     console.error('Get credentials error:', error);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to get credentials: ' + error.message
-    );
+    return {
+      success: false,
+      data: null,
+      error_message: 'Failed to get credentials: ' + error.message
+    };
   }
 });
 
@@ -589,10 +649,11 @@ exports.getUsersForPasswordReset = functions.https.onCall(async (data, context) 
   try {
     // Verify authentication
     if (!context.auth) {
-      throw new functions.https.HttpsError(
-        'unauthenticated',
-        'Authentication required'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Authentication required'
+      };
     }
 
     const currentUserId = context.auth.uid;
@@ -602,10 +663,11 @@ exports.getUsersForPasswordReset = functions.https.onCall(async (data, context) 
     const currentUserDoc = await currentUserRef.get();
 
     if (!currentUserDoc.exists) {
-      throw new functions.https.HttpsError(
-        'not-found',
-        'Current user not found'
-      );
+      return {
+        success: false,
+        data: null,
+        error_message: 'Current user not found'
+      };
     }
 
     const currentUserData = currentUserDoc.data();
@@ -649,15 +711,19 @@ exports.getUsersForPasswordReset = functions.https.onCall(async (data, context) 
 
     return {
       success: true,
-      users: users
+      data: {
+        users: users
+      },
+      error_message: null
     };
 
   } catch (error) {
     console.error('Get users error:', error);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to get users: ' + error.message
-    );
+    return {
+      success: false,
+      data: null,
+      error_message: 'Failed to get users: ' + error.message
+    };
   }
 });
 

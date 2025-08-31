@@ -111,7 +111,7 @@ class MembarTabViewWidget extends StatelessWidget {
           // Meetings list
           StreamBuilder<QuerySnapshot>(
             stream: AppFirebaseService.instance.getHostMeetingsStream(
-              AppFirebaseService.instance.currentUser!.uid,
+              AppLocalStorage.getUserDetails().userId,
             ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {

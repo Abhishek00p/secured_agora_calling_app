@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
@@ -35,26 +37,45 @@ class AppAuthService {
         'password': password,
       });
 
-      final data = result.data as Map<String, dynamic>;
-
-      if (data['success'] == true) {
-        // Store token and user data
-        _currentToken = data['token'];
-        _currentUser = AppUser.fromJson(data['user']);
-
-        // Store in local storage
-        AppLocalStorage.storeUserDetails(_currentUser!);
-        AppLocalStorage.setLoggedIn(true);
-        AppLocalStorage.storeToken(_currentToken!);
-
-        AppLogger.print('Login successful for user: ${_currentUser!.name}');
-        return {
-          'success': true,
-          'user': _currentUser,
-          'token': _currentToken,
-        };
+      // Handle type conversion safely
+      Map<String, dynamic> response;
+      if (result.data is Map) {
+        response = Map<String, dynamic>.from(result.data as Map);
       } else {
-        throw Exception(data['message'] ?? 'Login failed');
+        throw Exception('Invalid response format from server');
+      }
+
+      // Check if response has standardized format
+      if (response.containsKey('success')) {
+        AppLogger.print("the data recieved from api is : $response");
+        if (response['success'] == true) {  
+          // Extract data from standardized response
+          final encodedJson = json.encode(response['data']);
+          final data =response['data']!=null?  Map<String, dynamic>.from(json.decode(encodedJson)):{};
+          
+          // Store token and user data
+          _currentToken = data['token'];
+          _currentUser = AppUser.fromJson(data['user']);
+
+          // Store in local storage
+          AppLocalStorage.storeUserDetails(_currentUser!);
+          AppLocalStorage.setLoggedIn(true);
+          AppLocalStorage.storeToken(_currentToken!);
+
+          AppLogger.print('Login successful for user: ${_currentUser!.name}');
+          return {
+            'success': true,
+            'user': _currentUser,
+            'token': _currentToken,
+          };
+        } else {
+          // Handle error from standardized response
+          final errorMessage = response['error_message'] ?? 'Login failed';
+          throw Exception(errorMessage);
+        }
+      } else {
+        // Fallback for non-standardized responses
+        throw Exception('Invalid response format from server');
       }
     } on FirebaseFunctionsException catch (e) {
       AppLogger.print('Firebase Functions error: ${e.code} - ${e.message}');
@@ -79,8 +100,8 @@ class AppAuthService {
       
       throw Exception(errorMessage);
     } catch (e) {
-      AppLogger.print('Login error: $e');
-      throw Exception('Login failed: $e');
+      AppLogger.print(' Login error in login func of appauthservice.dart: $e');
+      throw Exception('Login failed in login funcs: $e');
     }
   }
 
@@ -107,13 +128,25 @@ class AppAuthService {
         'memberCode': memberCode,
       });
 
-      final data = result.data as Map<String, dynamic>;
-
-      if (data['success'] == true) {
-        AppToastUtil.showSuccessToast('User created successfully');
-        return true;
+      // Handle type conversion safely
+      Map<String, dynamic> response;
+      if (result.data is Map) {
+        response = Map<String, dynamic>.from(result.data as Map);
       } else {
-        throw Exception(data['message'] ?? 'Failed to create user');
+        throw Exception('Invalid response format from server');
+      }
+
+      // Check if response has standardized format
+      if (response.containsKey('success')) {
+        if (response['success'] == true) {
+          AppToastUtil.showSuccessToast('User created successfully');
+          return true;
+        } else {
+          final errorMessage = response['error_message'] ?? 'Failed to create user';
+          throw Exception(errorMessage);
+        }
+      } else {
+        throw Exception('Invalid response format from server');
       }
     } on FirebaseFunctionsException catch (e) {
       AppLogger.print('Create user error: ${e.code} - ${e.message}');
@@ -171,13 +204,25 @@ class AppAuthService {
         'maxParticipantsAllowed': maxParticipantsAllowed,
       });
 
-      final data = result.data as Map<String, dynamic>;
-
-      if (data['success'] == true) {
-        AppToastUtil.showSuccessToast('Member created successfully');
-        return true;
+      // Handle type conversion safely
+      Map<String, dynamic> response;
+      if (result.data is Map) {
+        response = Map<String, dynamic>.from(result.data as Map);
       } else {
-        throw Exception(data['message'] ?? 'Failed to create member');
+        throw Exception('Invalid response format from server');
+      }
+
+      // Check if response has standardized format
+      if (response.containsKey('success')) {
+        if (response['success'] == true) {
+          AppToastUtil.showSuccessToast('Member created successfully');
+          return true;
+        } else {
+          final errorMessage = response['error_message'] ?? 'Failed to create member';
+          throw Exception(errorMessage);
+        }
+      } else {
+        throw Exception('Invalid response format from server');
       }
     } on FirebaseFunctionsException catch (e) {
       AppLogger.print('Create member error: ${e.code} - ${e.message}');
@@ -225,13 +270,25 @@ class AppAuthService {
         'newPassword': newPassword,
       });
 
-      final data = result.data as Map<String, dynamic>;
-
-      if (data['success'] == true) {
-        AppToastUtil.showSuccessToast('Password reset successfully');
-        return true;
+      // Handle type conversion safely
+      Map<String, dynamic> response;
+      if (result.data is Map) {
+        response = Map<String, dynamic>.from(result.data as Map);
       } else {
-        throw Exception(data['message'] ?? 'Failed to reset password');
+        throw Exception('Invalid response format from server');
+      }
+
+      // Check if response has standardized format
+      if (response.containsKey('success')) {
+        if (response['success'] == true) {
+          AppToastUtil.showSuccessToast('Password reset successfully');
+          return true;
+        } else {
+          final errorMessage = response['error_message'] ?? 'Failed to reset password';
+          throw Exception(errorMessage);
+        }
+      } else {
+        throw Exception('Invalid response format from server');
       }
     } on FirebaseFunctionsException catch (e) {
       AppLogger.print('Reset password error: ${e.code} - ${e.message}');
@@ -275,12 +332,25 @@ class AppAuthService {
         'targetEmail': targetEmail.trim().toLowerCase(),
       });
 
-      final data = result.data as Map<String, dynamic>;
-
-      if (data['success'] == true) {
-        return data['credentials'] as Map<String, dynamic>;
+      // Handle type conversion safely
+      Map<String, dynamic> response;
+      if (result.data is Map) {
+        response = Map<String, dynamic>.from(result.data as Map);
       } else {
-        throw Exception(data['message'] ?? 'Failed to get credentials');
+        throw Exception('Invalid response format from server');
+      }
+
+      // Check if response has standardized format
+      if (response.containsKey('success')) {
+        if (response['success'] == true) {
+          final data = response['data'] as Map<String, dynamic>;
+          return data['credentials'] as Map<String, dynamic>;
+        } else {
+          final errorMessage = response['error_message'] ?? 'Failed to get credentials';
+          throw Exception(errorMessage);
+        }
+      } else {
+        throw Exception('Invalid response format from server');
       }
     } on FirebaseFunctionsException catch (e) {
       AppLogger.print('Get credentials error: ${e.code} - ${e.message}');
@@ -319,12 +389,25 @@ class AppAuthService {
       final callable = _functions.httpsCallable('getUsersForPasswordReset');
       final result = await callable.call({});
 
-      final data = result.data as Map<String, dynamic>;
-
-      if (data['success'] == true) {
-        return List<Map<String, dynamic>>.from(data['users'] ?? []);
+      // Handle type conversion safely
+      Map<String, dynamic> response;
+      if (result.data is Map) {
+        response = Map<String, dynamic>.from(result.data as Map);
       } else {
-        throw Exception(data['message'] ?? 'Failed to get users');
+        throw Exception('Invalid response format from server');
+      }
+
+      // Check if response has standardized format
+      if (response.containsKey('success')) {
+        if (response['success'] == true) {
+          final data = response['data'] as Map<String, dynamic>;
+          return List<Map<String, dynamic>>.from(data['users'] ?? []);
+        } else {
+          final errorMessage = response['error_message'] ?? 'Failed to get users';
+          throw Exception(errorMessage);
+        }
+      } else {
+        throw Exception('Invalid response format from server');
       }
     } on FirebaseFunctionsException catch (e) {
       AppLogger.print('Get users error: ${e.code} - ${e.message}');

@@ -321,9 +321,9 @@ class AppFirebaseService {
     });
   }
 
-  Stream<QuerySnapshot> getHostMeetingsStream(String hostId) {
+  Stream<QuerySnapshot> getHostMeetingsStream(int hostId) {
     return meetingsCollection
-        .where('hostId', isEqualTo: hostId)
+        .where('hostUserId', isEqualTo: hostId)
         .orderBy('scheduledStartTime', descending: true)
         .snapshots();
   }
