@@ -21,13 +21,8 @@ class MeetingDetailController extends GetxController {
   final realTimeError = RxnString();
   final lastUpdated = Rxn<DateTime>();
   
-  // Extension history
-  final isExtensionHistoryLoading = false.obs;
-  final extensionHistory = <Map<String, dynamic>>[].obs;
-  
   // Stream subscriptions
   StreamSubscription<DocumentSnapshot>? _meetingStreamSubscription;
-  StreamSubscription<QuerySnapshot>? _extensionsStreamSubscription;
 
   MeetingDetailController({required this.meetingId});
 
@@ -36,13 +31,11 @@ class MeetingDetailController extends GetxController {
     super.onInit();
     loadMeetingDetails();
     _initializeRealTimeUpdates();
-    _initializeExtensionHistory();
   }
 
   @override
   void onClose() {
     _meetingStreamSubscription?.cancel();
-    _extensionsStreamSubscription?.cancel();
     super.onClose();
   }
 
@@ -116,36 +109,7 @@ class MeetingDetailController extends GetxController {
     }
   }
 
-  /// Initialize extension history
-  void _initializeExtensionHistory() {
-    try {
-      isExtensionHistoryLoading.value = true;
 
-      _extensionsStreamSubscription = _meetingService.getMeetingExtensionsStream(meetingId).listen(
-        (snapshot) {
-          final extensions = snapshot.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return {
-              'additionalMinutes': data['additionalMinutes'] as int? ?? 0,
-              'reason': data['reason'] as String?,
-              'extendedAt': data['extendedAt']?.toDate(),
-              'extendedBy': data['extendedBy'] as String?,
-            };
-          }).toList();
-          
-          extensionHistory.value = extensions;
-          isExtensionHistoryLoading.value = false;
-        },
-        onError: (error) {
-          isExtensionHistoryLoading.value = false;
-          AppLogger.print('Extension history error: $error');
-        },
-      );
-    } catch (e) {
-      isExtensionHistoryLoading.value = false;
-      AppLogger.print('Error initializing extension history: $e');
-    }
-  }
 
   /// Refresh real-time updates
   Future<void> refreshRealTimeUpdates() async {
@@ -153,31 +117,9 @@ class MeetingDetailController extends GetxController {
     _initializeRealTimeUpdates();
   }
 
-  /// Refresh extension history
-  Future<void> refreshExtensionHistory() async {
-    _extensionsStreamSubscription?.cancel();
-    _initializeExtensionHistory();
-  }
 
-  /// Handle meeting extension
-  void onMeetingExtended() {
-    // Refresh all data when meeting is extended
-    refreshMeetingDetails();
-    refreshExtensionHistory();
-    
-    // Show success message
-    AppToastUtil.showSuccessToast('Meeting extended successfully!');
-  }
 
-  /// Check if user can extend meeting
-  Future<bool> canExtendMeeting() async {
-    try {
-      return await _meetingService.canExtendMeeting(meetingId);
-    } catch (e) {
-      AppLogger.print('Error checking extend permission: $e');
-      return false;
-    }
-  }
+
 
   /// Get meeting status for UI updates
   String get meetingStatus {

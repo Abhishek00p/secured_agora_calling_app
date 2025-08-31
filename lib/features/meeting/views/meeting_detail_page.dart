@@ -89,7 +89,6 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
               SliverToBoxAdapter(
                 child: MeetingInfoCard(
                   meeting: meetingDetail,
-                  onMeetingExtended: controller.onMeetingExtended,
                 ),
               ),
               SliverToBoxAdapter(
@@ -121,10 +120,7 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                 child: _buildRealTimeUpdatesSection(),
               ),
               
-              // Extension history section
-              SliverToBoxAdapter(
-                child: _buildExtensionHistorySection(),
-              ),
+
             ],
           ),
         );
@@ -217,108 +213,7 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
     );
   }
 
-  Widget _buildExtensionHistorySection() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.history, color: Colors.blue[700]),
-              const SizedBox(width: 8),
-              Text(
-                'Extension History',
-                style: Theme.of(Get.context!).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue[700],
-                ),
-              ),
-              const Spacer(),
-              // Refresh button for extension history
-              IconButton(
-                icon: const Icon(Icons.refresh, size: 20),
-                tooltip: 'Refresh History',
-                onPressed: controller.refreshExtensionHistory,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Obx(() {
-            if (controller.isExtensionHistoryLoading.value) {
-              return const Center(child: Padding(
-                padding: EdgeInsets.all(8.0),
-                child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-              ));
-            }
-            
-            if (controller.extensionHistory.value.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.only(left: 36),
-                child: Text(
-                  'No extensions yet',
-                  style: Theme.of(Get.context!).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              );
-            }
 
-            final extensions = controller.extensionHistory.value;
-            return Column(
-              children: extensions.take(5).map((extension) {
-                return Padding(
-                  padding: const EdgeInsets.only(left: 36, top: 4),
-                  child: Row(
-                    children: [
-                      Icon(Icons.add, size: 16, color: Colors.green[600]),
-                      const SizedBox(width: 8),
-                      Text(
-                        '+${extension['additionalMinutes']}m',
-                        style: Theme.of(Get.context!).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.green[700],
-                        ),
-                      ),
-                      if (extension['reason'] != null && extension['reason'].isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '(${extension['reason']})',
-                            style: Theme.of(Get.context!).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                      if (extension['extendedAt'] != null) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatLastUpdated(extension['extendedAt']),
-                          style: Theme.of(Get.context!).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[500],
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                );
-              }).toList(),
-            );
-          }),
-        ],
-      ),
-    );
-  }
 
   Widget _buildParticipantsList(MeetingDetail meetingDetail) {
     if (meetingDetail.participants.isEmpty) {
