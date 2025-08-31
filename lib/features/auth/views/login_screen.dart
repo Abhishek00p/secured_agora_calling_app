@@ -6,8 +6,6 @@ import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
-import 'package:secured_calling/core/services/app_firebase_service.dart';
-import 'dart:io' show Platform;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -130,154 +128,6 @@ class LoginForm extends StatelessWidget {
 
   const LoginForm({super.key, required this.formKey, required this.onSubmit});
 
-  void _showResetPasswordBottomSheet(BuildContext context) {
-    final emailController = TextEditingController();
-    bool isLoading = false;
-    final isIOS = Platform.isIOS;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isIOS ? Colors.white : Theme.of(context).bottomSheetTheme.backgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(isIOS ? 12 : 20),
-        ),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: isIOS ? 16 : 24,
-            right: isIOS ? 16 : 24,
-            top: isIOS ? 8 : 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (isIOS) ...[
-                Center(
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 8, bottom: 16),
-                    width: 36,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2.5),
-                    ),
-                  ),
-                ),
-              ],
-              Text(
-                'Reset Password',
-                style: TextStyle(
-                  fontSize: isIOS ? 17 : 20,
-                  fontWeight: isIOS ? FontWeight.w600 : FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Enter your email address and we\'ll send you a link to reset your password.',
-                style: TextStyle(
-                  color: isIOS ? Colors.grey[600] : Colors.grey,
-                  fontSize: isIOS ? 15 : 14,
-                ),
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(
-                    Icons.email_outlined,
-                    color: isIOS ? Colors.grey[600] : null,
-                  ),
-                  border: const OutlineInputBorder() ,
-                  filled: true,
-                  fillColor:  Colors.grey[100] ,
-                ),
-                keyboardType: TextInputType.emailAddress,
-                style: TextStyle(
-                  fontSize: isIOS ? 17 : 16,
-                ),
-                enabled: true,
-                
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : () async {
-                    if (emailController.text.trim().isEmpty) {
-                      AppToastUtil.showErrorToast('Please enter your email');
-                      return;
-                    }
-                    
-                    setState(() => isLoading = true);
-                    try {
-                      await AppFirebaseService.instance.auth.sendPasswordResetEmail(
-                        email: emailController.text.trim(),
-                      );
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        AppToastUtil.showSuccessToast(
-                          'Password reset link sent to your email');
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        AppToastUtil.showErrorToast(
-                          'Failed to send reset link');
-                      }
-                    } finally {
-                      if (context.mounted) {
-                        setState(() => isLoading = false);
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isIOS ? 12 : 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(isIOS ? 8 : 12),
-                    ),
-                  ),
-                  child: isLoading
-                      ? SizedBox(
-                          height: isIOS ? 18 : 20,
-                          width: isIOS ? 18 : 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: isIOS ? 2.5 : 2,
-                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          'Send Reset Link',
-                          style: TextStyle(
-                            fontSize: isIOS ? 17 : 16,
-                            fontWeight: isIOS ? FontWeight.w600 : FontWeight.bold,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return GetBuilder<LoginRegisterController>(
@@ -296,16 +146,6 @@ class LoginForm extends StatelessWidget {
                 controller: loginRegisterController.loginPasswordController,
                 labelText: 'Password',
                 type: AppTextFormFieldType.password,
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => _showResetPasswordBottomSheet(context),
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(color: Colors.blue),
-                  ),
-                ),
               ),
               const SizedBox(height: 32),
               SizedBox(

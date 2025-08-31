@@ -70,6 +70,9 @@ class _UserCreationFormState extends State<UserCreationForm> {
         'createdAt': DateTime.now().toIso8601String(),
         'isMember': false, // Regular user, not a member
         'subscription': null,
+        'temporaryPassword': _passwordController.text, // Store temporary password
+        'passwordCreatedBy': _currentUser.email,
+        'passwordCreatedAt': DateTime.now().toIso8601String(),
       };
 
       // Save user data

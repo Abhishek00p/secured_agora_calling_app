@@ -3,6 +3,7 @@ import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/home/views/user_creation_form.dart';
+import 'package:secured_calling/widgets/user_credentials_dialog.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -179,23 +180,47 @@ class _UsersScreenState extends State<UsersScreen> {
                                         ),
                                     ],
                                   ),
-                                  trailing: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green[100],
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      'User',
-                                      style: TextStyle(
-                                        color: Colors.green[700],
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green[100],
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          'User',
+                                          style: TextStyle(
+                                            color: Colors.green[700],
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.visibility,
+                                          color: Colors.blue[600],
+                                          size: 20,
+                                        ),
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) => UserCredentialsDialog(
+                                              targetEmail: user.email,
+                                              targetName: user.name,
+                                              isMember: false,
+                                            ),
+                                          );
+                                        },
+                                        tooltip: 'View Credentials',
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );

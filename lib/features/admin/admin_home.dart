@@ -1,217 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:intl/intl.dart';
-// import 'package:secured_calling/core/extensions/app_int_extension.dart';
-// import 'package:secured_calling/core/models/member_model.dart';
-// import 'package:secured_calling/features/admin/all_user_member_list.dart';
-// import 'package:secured_calling/features/admin/member_form.dart';
-// import 'package:secured_calling/utils/reminder_dialog.dart';
-
-// class AdminScreen extends StatefulWidget {
-//   const AdminScreen({super.key});
-
-//   @override
-//   State<AdminScreen> createState() => _AdminScreenState();
-// }
-
-// class _AdminScreenState extends State<AdminScreen> {
-//   String _searchQuery = "";
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
-//     final color = theme.colorScheme;
-
-//     return Scaffold(
-//         backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-
-//       appBar: AppBar(title: const Text("All Members")),
-//       body: Column(
-//         children: [
-//           Padding(
-//             padding: const EdgeInsets.all(16),
-//             child: TextField(
-//               onChanged:
-//                   (value) =>
-//                       setState(() => _searchQuery = value.trim().toLowerCase()),
-//               decoration: InputDecoration(
-//                 prefixIcon: const Icon(Icons.search),
-//                 hintText: "Search by name or email",
-//                 filled: true,
-//                 fillColor: color.surfaceVariant.withOpacity(0.3),
-//                 border: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(16),
-//                   borderSide: BorderSide.none,
-//                 ),
-//               ),
-//             ),
-//           ),
-//           Expanded(
-//             child: StreamBuilder<QuerySnapshot>(
-//               stream:
-//                   FirebaseFirestore.instance.collection('members').snapshots(),
-//               builder: (context, snapshot) {
-//                 if (!snapshot.hasData) {
-//                   return const Center(child: CircularProgressIndicator());
-//                 }
-
-//                 final allMembers =
-//                     snapshot.data!.docs
-//                         .map(
-//                           (doc) => Member.fromMap(
-//                             doc.id,
-//                             doc.data() as Map<String, dynamic>,
-//                           ),
-//                         )
-//                         .toList();
-
-//                 final members =
-//                     allMembers.where((m) {
-//                       return m.name.toLowerCase().contains(_searchQuery) ||
-//                           m.email.toLowerCase().contains(_searchQuery);
-//                     }).toList();
-
-//                 if (members.isEmpty) {
-//                   return const Center(child: Text("No members found."));
-//                 }
-
-//                 return ListView.builder(
-//                   padding: const EdgeInsets.only(bottom: 80),
-//                   itemCount: members.length,
-//                   itemBuilder: (context, index) {
-//                     final member = members[index];
-
-//                     return Padding(
-//                       padding: const EdgeInsets.symmetric(
-//                         horizontal: 16,
-//                         vertical: 8,
-//                       ),
-//                       child: Card(
-//                         shape: RoundedRectangleBorder(
-//                           borderRadius: BorderRadius.circular(16),
-//                         ),
-//                         elevation: 2,
-//                         child: ExpansionTile(
-//                           tilePadding: const EdgeInsets.symmetric(
-//                             horizontal: 16,
-//                           ),
-//                           title: Text(
-//                             member.name,
-//                             style: theme.textTheme.titleMedium,
-//                           ),
-//                           subtitle: Text(
-//                             member.email,
-//                             style: theme.textTheme.bodySmall,
-//                           ),
-//                           trailing: Switch(
-//                             value: member.isActive,
-//                             onChanged: (val) {
-//                               FirebaseFirestore.instance
-//                                   .collection('members')
-//                                   .doc(member.id)
-//                                   .update({'isActive': val});
-//                             },
-//                             activeColor: color.primary,
-//                           ),
-//                           childrenPadding: const EdgeInsets.symmetric(
-//                             horizontal: 16,
-//                             vertical: 8,
-//                           ),
-//                           children: [
-//                             _iconRow(
-//                               Icons.calendar_today,
-//                               "Purchase: ${DateFormat.yMMMd().format(member.purchaseDate)}",
-//                               theme,
-//                             ),
-//                             _iconRow(
-//                               Icons.lock_clock,
-//                               "Expires: ${DateFormat.yMMMd().format(member.expiryDate)}",
-//                               theme,
-//                             ),
-//                             _iconRow(
-//                               Icons.people,
-//                               "Users: ${member.totalUsers}",
-//                               theme,
-//                             ),
-//                             12.h,
-//                             Row(
-//                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                               children: [
-//                                 OutlinedButton.icon(
-//                                   onPressed:
-//                                       () => showReminderDialog(context, member),
-//                                   icon: const Icon(Icons.notifications),
-//                                   label: const Text("Reminder"),
-//                                 ),
-//                                 ElevatedButton.icon(
-//                                   onPressed: () {
-//                                     Navigator.push(
-//                                       context,
-//                                       MaterialPageRoute(
-//                                         builder:
-//                                             (_) => MemberForm(member: member),
-//                                       ),
-//                                     );
-//                                   },
-//                                   icon: const Icon(Icons.edit),
-//                                   label: const Text("Edit"),
-//                                   style: ElevatedButton.styleFrom(
-//                                     backgroundColor: color.primary,
-//                                   ),
-//                                 ),
-//                               ],
-//                             ),
-//                             TextButton.icon(
-//                               onPressed: () {
-//                                 Navigator.push(
-//                                   context,
-//                                   MaterialPageRoute(
-//                                     builder:
-//                                         (_) =>
-//                                             AllUserMemberList(member: member),
-//                                   ),
-//                                 );
-//                               },
-//                               icon: const Icon(Icons.group),
-//                               label: const Text("View Users"),
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     );
-//                   },
-//                 );
-//               },
-//             ),
-//           ),
-//         ],
-//       ),
-//       floatingActionButton: FloatingActionButton(
-//         onPressed: () {
-//           Navigator.push(
-//             context,
-//             MaterialPageRoute(builder: (_) => const MemberForm()),
-//           );
-//         },
-//         child: const Icon(Icons.add),
-//       ),
-//     );
-//   }
-
-//   Widget _iconRow(IconData icon, String text, ThemeData theme) {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(vertical: 4),
-//       child: Row(
-//         children: [
-//           Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-//           const SizedBox(width: 8),
-//           Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -221,6 +7,7 @@ import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/features/admin/member_form.dart';
 import 'package:secured_calling/utils/reminder_dialog.dart';
+import 'package:secured_calling/widgets/user_credentials_dialog.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -513,6 +300,24 @@ class _AdminScreenState extends State<AdminScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: theme.colorScheme.primary,
                                 ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.visibility,
+                                  color: Colors.blue[600],
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => UserCredentialsDialog(
+                                      targetEmail: member.email,
+                                      targetName: member.name,
+                                      isMember: true,
+                                    ),
+                                  );
+                                },
+                                tooltip: 'View Credentials',
                               ),
                             ],
                           ),

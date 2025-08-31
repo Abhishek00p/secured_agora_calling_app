@@ -125,6 +125,9 @@ class _MemberFormState extends State<MemberForm> {
             'expiryDate': expiryDate.toIso8601String(),
           },
           'planExpiryDate': expiryDate.toIso8601String(),
+          'temporaryPassword': password.text, // Store temporary password
+          'passwordCreatedBy': 'Admin',
+          'passwordCreatedAt': DateTime.now().toIso8601String(),
         };
 
         // Save user data

@@ -79,18 +79,32 @@ This document outlines the changes made to implement the new registration system
 3. **See Info Message** → "New users must be registered by organization"
 4. **Contact Organization** → Get credentials from member/admin
 
+### For Admin/SuperAdmin (After Login)
+1. **Home Screen** → Click top-left people icon
+2. **Admin Screen** → See all members
+3. **Create Member** → Floating action button to create new members
+4. **Member Form** → Fill in member details with subscription plan
+5. **View Credentials** → Click eye icon on member card to see email + password
+6. **Reset Password** → Use credentials dialog to reset member passwords
+
 ### For Members (After Login)
 1. **Home Screen** → Click top-left people icon
 2. **Users Screen** → See associated users
 3. **Create Button** → Floating action button to create new users
 4. **User Creation Form** → Fill in user details
 5. **Success** → User created, email verification sent
+6. **View Credentials** → Click eye icon on user card to see email + password
+7. **Reset Password** → Use credentials dialog to reset user passwords
 
-### For Admin/SuperAdmin (After Login)
-1. **Home Screen** → Click top-left people icon
-2. **Admin Screen** → See all members
-3. **Create Member** → Floating action button to create new members
-4. **Member Form** → Fill in member details with subscription plan
+### Password Management Flows
+1. **Admin Resets Member Password**:
+   - Admin → Admin Screen → Click eye icon on member → View credentials → Reset Password
+   
+2. **Member Resets User Password**:
+   - Member → Users Screen → Click eye icon on user → View credentials → Reset Password
+   
+3. **View User Credentials**:
+   - Admin/Member → Navigate to respective screen → Click eye icon → See email + password
 
 ## Database Structure
 
@@ -104,7 +118,12 @@ This document outlines the changes made to implement the new registration system
   "firebaseUserId": "firebase_auth_uid",
   "createdAt": "2024-01-01T00:00:00.000Z",
   "isMember": false,
-  "subscription": null
+  "subscription": null,
+  "temporaryPassword": "temp_password_123",
+  "passwordCreatedBy": "member@example.com",
+  "passwordCreatedAt": "2024-01-01T00:00:00.000Z",
+  "passwordResetBy": null,
+  "passwordResetAt": null
 }
 ```
 
@@ -122,6 +141,48 @@ This document outlines the changes made to implement the new registration system
   "maxParticipantsAllowed": 45
 }
 ```
+
+## Additional Password Management Features
+
+### 1. **Password Reset System**
+- **No Public Password Reset**: Users cannot reset their own passwords from the login screen
+- **Admin Password Reset**: Admins can reset passwords for any member
+- **Member Password Reset**: Members can reset passwords for users under their member code
+- **Secure Process**: Password reset emails are sent to users, temporary passwords stored in database
+
+### 2. **Credentials Viewing System**
+- **Admin Access**: Can view member credentials (email + temporary password)
+- **Member Access**: Can view user credentials under their member code
+- **Secure Display**: Passwords are masked by default, can be revealed with toggle
+- **Copy Functionality**: Email and password can be copied to clipboard
+
+### 3. **Password Storage**
+- **Temporary Passwords**: Stored in Firestore for admin/member access
+- **Audit Trail**: Tracks who created/reset passwords and when
+- **Secure Access**: Only authorized personnel can view credentials
+
+### 4. **New Components Created**
+- **Password Reset Service** (`lib/core/services/app_password_reset_service.dart`)
+  - Handles password reset permissions and logic
+  - Manages role-based access control
+  - Integrates with Firebase Auth and Firestore
+
+- **Password Reset Dialog** (`lib/widgets/password_reset_dialog.dart`)
+  - Form for entering new temporary passwords
+  - Permission checking and validation
+  - Success/error handling
+
+- **User Credentials Dialog** (`lib/widgets/user_credentials_dialog.dart`)
+  - Displays user email and password
+  - Password visibility toggle
+  - Copy to clipboard functionality
+  - Direct access to password reset
+
+### 5. **Updated Screens**
+- **Users Screen**: Added credentials button for each user
+- **Admin Screen**: Added credentials button for each member
+- **User Creation Form**: Stores temporary passwords
+- **Member Form**: Stores temporary passwords
 
 ## Security Features
 
