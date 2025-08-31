@@ -1,0 +1,422 @@
+# SecuredCalling App - Development Rules and Guidelines
+
+## Project Overview
+SecuredCalling is a Flutter-based video calling application with role-based user management, built using Firebase Functions as a backend API instead of Firebase Authentication.
+
+## Architecture Pattern
+- **State Management**: GetX (GetBuilder, Obx, Get.find)
+- **Backend**: Firebase Functions with custom JWT authentication
+- **Database**: Firestore for data storage
+- **Video Calling**: Agora RTC Engine
+- **Authentication**: Custom JWT-based system (no Firebase Auth)
+
+## Project Structure
+```
+lib/
+├── app/                          # Main app configuration
+├── core/                         # Core functionality
+│   ├── constants/               # App constants
+│   ├── extensions/              # Dart extensions
+│   ├── models/                  # Data models
+│   ├── routes/                  # App routing
+│   ├── services/                # Core services
+│   └── theme/                   # App theming
+├── features/                     # Feature-based modules
+│   ├── admin/                   # Admin functionality
+│   ├── auth/                    # Authentication
+│   ├── home/                    # Home screen and user management
+│   ├── meeting/                 # Video calling features
+│   └── welcome/                 # Welcome screen
+├── widgets/                      # Reusable UI components
+└── utils/                        # Utility functions
+```
+
+## Coding Standards
+
+### 1. File Naming
+- Use `snake_case` for file names: `user_creation_form.dart`
+- Use `PascalCase` for class names: `UserCreationForm`
+- Use `snake_case` for variables and methods: `create_user()`
+
+### 2. Import Organization
+```dart
+// Flutter imports first
+import 'package:flutter/material.dart';
+
+// Third-party packages
+import 'package:get/get.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+// Local imports (relative paths)
+import 'package:secured_calling/core/services/app_auth_service.dart';
+import 'package:secured_calling/widgets/app_text_form_widget.dart';
+```
+
+### 3. Class Structure
+```dart
+class ExampleScreen extends StatefulWidget {
+  const ExampleScreen({super.key});
+
+  @override
+  State<ExampleScreen> createState() => _ExampleScreenState();
+}
+
+class _ExampleScreenState extends State<ExampleScreen> {
+  // Controllers
+  final TextEditingController _controller = TextEditingController();
+  
+  // State variables
+  bool _isLoading = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Initialization logic
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  
+  // Methods
+  Future<void> _handleAction() async {
+    // Implementation
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // UI implementation
+    );
+  }
+}
+```
+
+### 4. State Management with GetX
+```dart
+// Controller
+class ExampleController extends GetxController {
+  var isLoading = false.obs;
+  var data = <String>[].obs;
+  
+  void setLoading(bool value) {
+    isLoading.value = value;
+  }
+  
+  Future<void> fetchData() async {
+    setLoading(true);
+    try {
+      // API call
+      data.value = result;
+    } finally {
+      setLoading(false);
+    }
+  }
+}
+
+// Usage in UI
+GetBuilder<ExampleController>(
+  builder: (controller) {
+    return Column(
+      children: [
+        if (controller.isLoading.value)
+          const CircularProgressIndicator(),
+        // UI content
+      ],
+    );
+  },
+)
+```
+
+## Authentication System
+
+### 1. No Public Registration
+- Users cannot register themselves
+- All user creation is done by members/admins
+- Login screen only shows login form
+
+### 2. Role-Based Access Control
+- **User**: Basic access, can join meetings
+- **Member**: Can create users under their member code
+- **Admin**: Can create members and manage all users
+
+### 3. JWT Authentication
+- Custom JWT tokens with 7-day expiration
+- Tokens stored in local storage
+- All API calls go through Firebase Functions
+
+### 4. Password Management
+- Passwords hashed with bcryptjs on backend
+- Temporary passwords stored in plain text for admin viewing
+- Only admins/members can reset passwords
+
+## Firebase Functions Integration
+
+### 1. API Calls
+```dart
+// Always use AppAuthService for authentication operations
+final result = await AppAuthService.instance.login(
+  email: email,
+  password: password,
+);
+
+// Handle errors properly
+if (result['success'] == true) {
+  // Success handling
+} else {
+  // Error handling
+}
+```
+
+### 2. Error Handling
+```dart
+try {
+  final result = await AppAuthService.instance.createUser(
+    name: name,
+    email: email,
+    password: password,
+    memberCode: memberCode,
+  );
+} on FirebaseFunctionsException catch (e) {
+  String errorMessage = 'Failed to create user';
+  switch (e.code) {
+    case 'permission-denied':
+      errorMessage = 'You do not have permission';
+      break;
+    case 'already-exists':
+      errorMessage = 'User already exists';
+      break;
+    default:
+      errorMessage = e.message ?? 'Unknown error';
+  }
+  AppToastUtil.showErrorToast(errorMessage);
+}
+```
+
+## UI/UX Guidelines
+
+### 1. Consistent Styling
+- Use `AppTheme.primaryColor` for primary actions
+- Use `AppTheme.primaryGradient` for gradients
+- Use `AppTheme.errorColor` for error states
+- Consistent padding: `EdgeInsets.all(16.0)`
+- Consistent border radius: `BorderRadius.circular(12)`
+
+### 2. Form Validation
+```dart
+AppTextFormField(
+  controller: _controller,
+  labelText: 'Field Label',
+  type: AppTextFormFieldType.text,
+  validator: (value) {
+    if (value == null || value.isEmpty) {
+      return 'This field is required';
+    }
+    return null;
+  },
+)
+```
+
+### 3. Loading States
+```dart
+ElevatedButton(
+  onPressed: _isLoading ? null : _handleAction,
+  child: _isLoading
+      ? const SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        )
+      : const Text('Action'),
+)
+```
+
+### 4. Toast Notifications
+```dart
+// Success
+AppToastUtil.showSuccessToast('Operation completed successfully');
+
+// Error
+AppToastUtil.showErrorToast('Operation failed: $errorMessage');
+
+// Info
+AppToastUtil.showInfoToast('Please check your input');
+```
+
+## Database Schema
+
+### 1. Users Collection
+```json
+{
+  "userId": "unique_id",
+  "name": "User Name",
+  "email": "user@example.com",
+  "memberCode": "MEM-123456",
+  "hashedPassword": "bcrypt_hash",
+  "temporaryPassword": "plain_text_password",
+  "isMember": false,
+  "isAdmin": false,
+  "isActive": true,
+  "createdAt": "timestamp",
+  "lastLoginAt": "timestamp"
+}
+```
+
+### 2. Members Collection
+```json
+{
+  "id": "member_id",
+  "name": "Member Name",
+  "email": "member@example.com",
+  "memberCode": "MEM-123456",
+  "purchaseDate": "timestamp",
+  "planDays": 365,
+  "isActive": true,
+  "totalUsers": 5,
+  "maxParticipantsAllowed": 45
+}
+```
+
+## Common Patterns
+
+### 1. Navigation
+```dart
+// Navigate to new screen
+Navigator.pushNamed(context, AppRouter.routeName);
+
+// Replace current screen
+Navigator.pushReplacementNamed(context, AppRouter.routeName);
+
+// Navigate with arguments
+Navigator.pushNamed(
+  context, 
+  AppRouter.routeName,
+  arguments: {'key': 'value'},
+);
+```
+
+### 2. Form Handling
+```dart
+final _formKey = GlobalKey<FormState>();
+
+// Validate form
+if (!_formKey.currentState!.validate()) {
+  return;
+}
+
+// Reset form
+_formKey.currentState!.reset();
+```
+
+### 3. Async Operations
+```dart
+Future<void> _handleAsyncOperation() async {
+  if (!mounted) return;
+  
+  setState(() {
+    _isLoading = true;
+  });
+  
+  try {
+    // Async operation
+    final result = await someAsyncCall();
+    
+    if (mounted) {
+      // Handle success
+    }
+  } catch (e) {
+    if (mounted) {
+      // Handle error
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+}
+```
+
+## Testing Guidelines
+
+### 1. Always Check Mounted State
+```dart
+if (!mounted) return;
+// Update UI state
+```
+
+### 2. Proper Error Handling
+- Catch specific exceptions (FirebaseFunctionsException)
+- Provide user-friendly error messages
+- Log errors for debugging
+
+### 3. Loading State Management
+- Show loading indicators during async operations
+- Disable buttons during loading
+- Provide visual feedback for all operations
+
+## Security Considerations
+
+### 1. Input Validation
+- Validate all user inputs on both client and server
+- Sanitize data before storing in database
+- Use proper validation patterns for emails, passwords
+
+### 2. Permission Checks
+- Always verify user permissions before operations
+- Check role-based access on both client and server
+- Validate member code associations
+
+### 3. Password Security
+- Never store plain text passwords in database
+- Use strong password requirements
+- Implement proper password reset flows
+
+## Performance Guidelines
+
+### 1. Efficient State Management
+- Use Obx for reactive updates
+- Minimize unnecessary rebuilds
+- Dispose controllers properly
+
+### 2. API Optimization
+- Batch operations when possible
+- Implement proper caching strategies
+- Handle offline scenarios gracefully
+
+## Deployment Notes
+
+### 1. Firebase Functions
+- Deploy functions before testing app changes
+- Use proper environment variables for secrets
+- Test functions locally before deployment
+
+### 2. App Configuration
+- Update Firebase configuration files
+- Test on both iOS and Android
+- Verify all routes work correctly
+
+## Common Issues and Solutions
+
+### 1. Import Errors
+- Check file paths are correct
+- Ensure dependencies are in pubspec.yaml
+- Verify class names match file names
+
+### 2. State Management Issues
+- Ensure controllers are properly initialized
+- Check for proper disposal of resources
+- Verify GetX bindings are set up correctly
+
+### 3. Navigation Issues
+- Check route names match exactly
+- Verify arguments are passed correctly
+- Ensure proper context usage
+
+This file should be updated whenever new patterns or standards are established in the project.
