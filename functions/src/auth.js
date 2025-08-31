@@ -9,6 +9,19 @@ admin.initializeApp();
 const db = admin.firestore();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
+function verifyJWTToken(authHeader) {
+  try {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Error('No token provided');
+    }
+    
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded;
+  } catch (error) {
+    throw new Error('Invalid token');
+  }
+}
 // Helper function to generate JWT token
 function generateToken(userId, role) {
   return jwt.sign(
@@ -150,17 +163,27 @@ exports.login = functions.https.onCall(async (data, context) => {
 // 2. Create User (by Member)
 exports.createUser = functions.https.onCall(async (data, context) => {
   try {
-    // Verify authentication
-    if (!context.auth) {
+
+    const authHeader = context.rawRequest.headers.authorization;
+    if (!authHeader) {
       return {
         success: false,
         data: null,
-        error_message: 'Authentication required'
+        error_message: 'Authorization header required'
       };
     }
-
+    let decodedToken;
+    try {
+      decodedToken = verifyJWTToken(authHeader);
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid or expired token'
+      };
+    }
     const { name, email, password, memberCode } = data;
-    const currentUserId = context.auth.uid;
+    const currentUserId = decodedToken.userId;
 
     // Validate input
     if (!name || !email || !password || !memberCode) {
@@ -282,16 +305,27 @@ exports.createUser = functions.https.onCall(async (data, context) => {
 exports.createMember = functions.https.onCall(async (data, context) => {
   try {
     // Verify authentication
-    if (!context.auth) {
+    const authHeader = context.rawRequest.headers.authorization;
+    if (!authHeader) {
       return {
         success: false,
         data: null,
         error_message: 'Authentication required'
       };
     }
+    let decodedToken;
+    try {
+      decodedToken = verifyJWTToken(authHeader);
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid or expired token'
+      };
+    }
 
     const { name, email, password, memberCode, purchaseDate, planDays, maxParticipantsAllowed } = data;
-    const currentUserId = context.auth.uid;
+    const currentUserId = decodedToken.userId;
 
     // Validate input
     if (!name || !email || !password || !memberCode || !purchaseDate || !planDays) {
@@ -432,16 +466,27 @@ exports.createMember = functions.https.onCall(async (data, context) => {
 exports.resetPassword = functions.https.onCall(async (data, context) => {
   try {
     // Verify authentication
-    if (!context.auth) {
+    const authHeader = context.rawRequest.headers.authorization;
+    if (!authHeader) {
       return {
         success: false,
         data: null,
         error_message: 'Authentication required'
       };
     }
+    let decodedToken;
+    try {
+      decodedToken = verifyJWTToken(authHeader);
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid or expired token'
+      };
+    }
 
     const { targetEmail, newPassword } = data;
-    const currentUserId = context.auth.uid;
+    const currentUserId = decodedToken.userId;
 
     // Validate input
     if (!targetEmail || !newPassword) {
@@ -551,16 +596,26 @@ exports.resetPassword = functions.https.onCall(async (data, context) => {
 exports.getUserCredentials = functions.https.onCall(async (data, context) => {
   try {
     // Verify authentication
-    if (!context.auth) {
+    const authHeader = context.rawRequest.headers.authorization;
+    if (!authHeader) {
       return {
         success: false,
         data: null,
         error_message: 'Authentication required'
       };
     }
-
+    let decodedToken;
+    try {
+      decodedToken = verifyJWTToken(authHeader);
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid or expired token'
+      };
+    }
     const { targetEmail } = data;
-    const currentUserId = context.auth.uid;
+    const currentUserId = decodedToken.userId;
 
     // Validate input
     if (!targetEmail) {
@@ -648,15 +703,26 @@ exports.getUserCredentials = functions.https.onCall(async (data, context) => {
 exports.getUsersForPasswordReset = functions.https.onCall(async (data, context) => {
   try {
     // Verify authentication
-    if (!context.auth) {
+    const authHeader = context.rawRequest.headers.authorization;
+    if (!authHeader) {
       return {
         success: false,
         data: null,
         error_message: 'Authentication required'
       };
     }
+    let decodedToken;
+    try {
+      decodedToken = verifyJWTToken(authHeader);
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        error_message: 'Invalid or expired token'
+      };
+    }
 
-    const currentUserId = context.auth.uid;
+    const currentUserId = decodedToken.userId;
 
     // Get current user details
     const currentUserRef = db.collection('users').doc(currentUserId);

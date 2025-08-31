@@ -230,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    if (AppUserRoleService.isMember() && user.memberCode.isNotEmpty) ...[
+                    if ( user.memberCode.isNotEmpty) ...[
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -285,10 +285,11 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
 
-                    if (AppUserRoleService.isMember() && !user.subscription.isEmpty) ...[
+                    if ( !user.subscription.isEmpty) ...[
                       const SizedBox(height: 8),
                       Row(
-                        mainAxisSize: MainAxisSize.min,
+                        // mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             'Plan: ${user.subscription.plan}',
