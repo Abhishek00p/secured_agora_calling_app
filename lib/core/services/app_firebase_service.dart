@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:secured_calling/core/constants.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/models/private_meeting_model.dart';
@@ -18,14 +17,7 @@ class AppFirebaseService {
   static final AppFirebaseService _instance = AppFirebaseService._();
   static AppFirebaseService get instance => _instance;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  // Auth getters
-  FirebaseAuth get auth => _auth;
-  User? get currentUser => _auth.currentUser;
-  bool get isUserLoggedIn => currentUser != null;
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   // Firestore references
   CollectionReference get usersCollection => _firestore.collection('users');
@@ -33,134 +25,6 @@ class AppFirebaseService {
       _firestore.collection('meetings');
   CollectionReference get callLogsCollection =>
       _firestore.collection('call_logs');
-
-  // User methods
-  Future<bool> signUpWithEmailAndPassword({
-    required String email,
-    required String password,
-    required String name,
-    required String memberCode,
-  }) async {
-    try {
-      // Create user with email and password
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      if (userCredential.user != null) {
-        await FirebaseAuth.instance.currentUser?.sendEmailVerification();
-
-        final unqiueUserId = await generateUniqueUserId();
-        // Create user profile in Firestore
-        final userData = {
-          'name': name,
-          'email': email,
-          'userId': unqiueUserId,
-          'memberCode': memberCode,
-          'firebaseUserId': userCredential.user!.uid,
-          'createdAt': DateTime.now().toIso8601String(),
-          'isMember': false, // By default, new users are not members
-          'subscription': null,
-        };
-        await usersCollection.doc('$unqiueUserId').set(userData);
-        final inputCode = memberCode.toLowerCase();
-        final memberSnapshot =
-            await FirebaseFirestore.instance.collection('members').get();
-
-        QueryDocumentSnapshot? matchingDoc;
-        try {
-          matchingDoc = memberSnapshot.docs.firstWhere(
-            (doc) => (doc['memberCode'] as String).toLowerCase() == inputCode,
-          );
-        } catch (_) {
-          matchingDoc = null;
-        }
-
-        if (matchingDoc != null) {
-          await FirebaseFirestore.instance
-              .collection('members')
-              .doc(matchingDoc.id)
-              .update({
-                'userId': unqiueUserId,
-                'totalUsers': FieldValue.increment(1),
-              });
-        }
-
-        AppLocalStorage.storeUserDetails(AppUser.fromJson(userData));
-        // Update display name
-        await userCredential.user!.updateDisplayName(name);
-      }
-
-      return userCredential.user != null;
-    } catch (e) {
-      AppLogger.print('error caught in fireb service :$e');
-      rethrow;
-    }
-  }
-
-  Future<UserCredential> signInWithEmailAndPassword({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      return await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<bool?> sendResetPasswordEmail(String email) async {
-    try {
-      await _auth.sendPasswordResetEmail(email: email);
-      AppToastUtil.showSuccessToast('Password reset email sent successfully');
-      return true;
-    } on FirebaseAuthException catch (e) {
-      AppToastUtil.showErrorToast(
-        e.message ?? 'Error occurred while sending reset email',
-      );
-    }
-    return null;
-  }
-
-  Future<void> updateLoginPassword({
-    required String email,
-    required String oldPassword,
-    required String newPassword,
-  }) async {
-    try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        // Re-authenticate the user
-        final credential = EmailAuthProvider.credential(
-          email: email,
-          password: oldPassword,
-        );
-        await user.reauthenticateWithCredential(credential);
-
-        // Update the password
-        await user.updatePassword(newPassword);
-        AppToastUtil.showSuccessToast('Password updated successfully');
-      }
-    } on FirebaseAuthException catch (e) {
-      AppToastUtil.showErrorToast(
-        e.message ?? 'Error occurred while updating password',
-      );
-    }
-  }
-
-  Future<bool> signOut() async {
-    try {
-      await _auth.signOut();
-      return true;
-    } catch (e) {
-      AppLogger.print("cant signout user from firebase : $e");
-      return false;
-    }
-  }
 
   // Firestore methods
   Future<DocumentSnapshot> getUserData(String uid) async {
@@ -179,40 +43,12 @@ class AppFirebaseService {
     }
   }
 
-  Future<int> generateUniqueUserId() async {
-    final Random random = Random();
-
-    int maxAttempts = 10; // Prevents infinite loop
-    int attempt = 0;
-
-    while (attempt < maxAttempts) {
-      int randomId = random.nextInt(10000000); // 0 to 9,999,999
-
-      // Check if any user has this userId
-      final query =
-          await AppFirebaseService.instance.usersCollection
-              .where('userId', isEqualTo: randomId)
-              .limit(1)
-              .get();
-
-      if (query.docs.isEmpty) {
-        return randomId; // Unique ID found
-      }
-
-      attempt++;
-    }
-
-    throw Exception(
-      'Failed to generate a unique userId after $maxAttempts attempts',
-    );
-  }
-
   Future<AppUser> getLoggedInUserDataAsModel() async {
-    final uid = _auth.currentUser?.uid ?? '';
-    if (uid.trim().isNotEmpty) {
-      AppLogger.print('curretn user ID : $uid');
+    final currentUser = AppLocalStorage.getUserDetails();
+    if (currentUser.userId > 0) {
+      AppLogger.print('current user ID : ${currentUser.userId}');
       final res =
-          (await usersCollection.where('firebaseUserId', isEqualTo: uid).get())
+          (await usersCollection.where('userId', isEqualTo: currentUser.userId).get())
               .docs
               .firstOrNull;
       if (res != null) {
@@ -224,23 +60,8 @@ class AppFirebaseService {
     return AppUser.toEmpty();
   }
 
-  Stream<DocumentSnapshot> getUserDataStream(String uid) {
-    return usersCollection.doc(uid).snapshots();
-  }
-
   Future<void> updateUserData(String uid, Map<String, dynamic> data) async {
     await usersCollection.doc(uid).update(data);
-  }
-
-/// return meeting id if created successfully, otherwise null
-  Future<String?> createPrivateMeeting(PrivateMeetingModel model) async {
-    try {
-      final meetingDoc = await meetingsCollection.add(model.toJson());
-      return meetingDoc.id;
-    } catch (e) {
-      AppLogger.print('Error creating private meeting: $e');
-      return null;
-    }
   }
 
   // Meeting methods
@@ -455,7 +276,7 @@ class AppFirebaseService {
         'additionalMinutes': additionalMinutes,
         'reason': reason,
         'extendedAt': FieldValue.serverTimestamp(),
-        'extendedBy': currentUser?.uid,
+        'extendedBy': AppLocalStorage.getUserDetails().userId,
         'notifyParticipants': notifyParticipants,
       });
 
@@ -511,7 +332,6 @@ class AppFirebaseService {
         .collection('participants')
         .snapshots();
   }
-
 
   Stream<QuerySnapshot> getParticipatedMeetingsStream(int userId) {
     try {
@@ -718,81 +538,6 @@ class AppFirebaseService {
     }
   }
 
-
-  // Get meeting statistics
-  Future<Map<String, dynamic>?> getMeetingStatistics(String meetingId) async {
-    try {
-      final meetingData = await getMeetingData(meetingId);
-      if (meetingData == null) return null;
-
-      final participantHistory = meetingData['participantHistory'] as List<dynamic>? ?? [];
-      final totalParticipants = participantHistory.length;
-      
-      // Calculate average session duration
-      int totalDuration = 0;
-      int completedSessions = 0;
-      
-      for (final participant in participantHistory) {
-        final duration = participant['duration'] as int?;
-        if (duration != null && duration > 0) {
-          totalDuration += duration;
-          completedSessions++;
-        }
-      }
-      
-      final averageDuration = completedSessions > 0 ? totalDuration / completedSessions : 0;
-      
-      return {
-        'totalParticipants': totalParticipants,
-        'completedSessions': completedSessions,
-        'averageSessionDuration': averageDuration,
-        'actualMeetingDuration': meetingData['actualDuration'] ?? 0,
-        'scheduledDuration': meetingData['duration'] ?? 0,
-      };
-    } catch (e) {
-      AppLogger.print('Error getting meeting statistics: $e');
-      return null;
-    }
-  }
-
-  // Get participant history for a meeting
-  Future<List<Map<String, dynamic>>> getParticipantHistory(String meetingId) async {
-    try {
-      final meetingData = await getMeetingData(meetingId);
-      if (meetingData == null) return [];
-
-      final participantHistory = meetingData['participantHistory'] as List<dynamic>? ?? [];
-      return participantHistory.map((participant) => participant as Map<String, dynamic>).toList();
-    } catch (e) {
-      AppLogger.print('Error getting participant history: $e');
-      return [];
-    }
-  }
-
-  // Get meetings with participant count
-  Future<List<Map<String, dynamic>>> getMeetingsWithParticipantCount() async {
-    try {
-      final querySnapshot = await meetingsCollection.get();
-      final meetings = <Map<String, dynamic>>[];
-      
-      for (final doc in querySnapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        final participantHistory = data['participantHistory'] as List<dynamic>? ?? [];
-        
-        meetings.add({
-          ...data,
-          'participantCount': participantHistory.length,
-          'docId': doc.id,
-        });
-      }
-      
-      return meetings;
-    } catch (e) {
-      AppLogger.print('Error getting meetings with participant count: $e');
-      return [];
-    }
-  }
-
   Stream<bool> isInstructedToLeave(String meetingId) async* {
     yield* meetingsCollection.doc(meetingId).snapshots().map((snapshot) {
       final data = snapshot.data() as Map<String, dynamic>?;
@@ -822,7 +567,6 @@ class AppFirebaseService {
       AppToastUtil.showErrorToast('Failed to cancel request');
     }
   }
-
 
   Stream<DocumentSnapshot> getMeetingStream(String meetingId) {
     return meetingsCollection.doc(meetingId).snapshots();
