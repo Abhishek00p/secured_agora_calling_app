@@ -828,5 +828,38 @@ class AppFirebaseService {
     return meetingsCollection.doc(meetingId).snapshots();
   }
 
-  Future<void> removeAllParticipants(String meetingId) async {}
+  Future<void> removeAllParticipants(String meetingId) async {
+    try {
+      // Get all participants for this meeting
+      final participantsSnapshot = await meetingsCollection
+          .doc(meetingId)
+          .collection('participants')
+          .get();
+
+      // Mark all participants as left with current timestamp
+      final batch = _firestore.batch();
+      final now = FieldValue.serverTimestamp();
+      
+      for (final doc in participantsSnapshot.docs) {
+        batch.update(doc.reference, {
+          'leaveTime': now,
+        });
+      }
+
+      // Update meeting status to ended
+      batch.update(meetingsCollection.doc(meetingId), {
+        'status': 'ended',
+        'actualEndTime': now,
+        'isInstructedToLeave': true, // Signal all participants to leave
+      });
+
+      // Commit all changes
+      await batch.commit();
+      
+      AppLogger.print('All participants removed from meeting $meetingId');
+    } catch (e) {
+      AppLogger.print('Error removing all participants: $e');
+      rethrow;
+    }
+  }
 }

@@ -15,6 +15,8 @@ import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/meeting/services/agora_service.dart';
 import 'package:secured_calling/core/models/participant_model.dart';
 import 'package:secured_calling/utils/warm_color_generator.dart';
+import 'package:secured_calling/features/meeting/widgets/timer_warning_dialog.dart';
+import 'package:secured_calling/features/meeting/widgets/extend_meeting_dialog.dart';
 
 class MeetingController extends GetxController {
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
@@ -63,77 +65,188 @@ class MeetingController extends GetxController {
       isHost = meetingModel.value.hostId == currentUser.firebaseUserId;
 
       _meetingTimer = Timer.periodic(Duration(seconds: 1), (timer) {
-        if (remainingSeconds <= 300 && isHost) {
-          timer.cancel(); // stop this timer first
-          if (!isHost && remainingSeconds <= 0) {
-            endMeeting().then((_) {
-              AppToastUtil.showInfoToast(
-                'Your Free Trial Time is over, please contact support',
-              );
-            });
-            Navigator.pop(Get.context!);
-          } else {
-            int remainingTime = 10;
-            Timer? countdownTimer;
-
-            countdownTimer = Timer.periodic(Duration(seconds: 1), (countdown) {
-              if (remainingTime > 0) {
-                remainingTime--;
-              } else {
-                countdown.cancel();
-                endMeeting();
-                Navigator.pop(Get.context!);
-              }
-            });
-
-            showDialog(
-              context: Get.context!,
-              barrierDismissible: false,
-              builder: (context) {
-                return StatefulBuilder(
-                  builder: (context, setState) {
-                    return AlertDialog(
-                      title: Text('Meeting Time Ended'),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'This meeting will close in $remainingSeconds seconds.',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () {
-                              countdownTimer?.cancel();
-                              Navigator.pop(context);
-                              extendMeetingTime();
-                            },
-                            child: Text('Extend Meeting Time'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            );
-          }
-        } else {
-          remainingSeconds--;
+        // Check if meeting time has ended
+        if (remainingSeconds <= 0) {
+          timer.cancel();
+          _forceEndMeeting();
+          return;
         }
+
+        // Show persistent timer warning dialog at 5 minutes remaining
+        if (remainingSeconds <= 300 && remainingSeconds > 0 && isHost && !_hasExtended && !_timerWarningShown) {
+          _showTimerWarningDialog();
+        }
+
+        // Update existing dialog content if it's already shown
+        if (_timerWarningShown && _timerWarningDialogKey.currentState != null) {
+          _updateTimerWarningContent();
+        }
+
+        // Show final countdown toast in last 60 seconds if host hasn't extended
+        if (remainingSeconds <= 60 && remainingSeconds > 0 && !_hasExtended) {
+          _showEndTimeToast(remainingSeconds);
+        }
+
+        remainingSeconds--;
         update();
       });
+
       _leaveSubscription?.cancel();
       _leaveSubscription = _firebaseService
           .isInstructedToLeave(meetingId)
           .listen((isInstructed) {
-            if (isInstructed) {
-              endMeeting();
-            }
-          });
+        if (isInstructed) {
+          endMeeting();
+        }
+      });
     } catch (e) {
       AppLogger.print('Error starting timer: $e');
     }
+  }
+
+  // Track if meeting has been extended
+  bool _hasExtended = false;
+  
+  // Track if timer warning dialog is already shown
+  bool _timerWarningShown = false;
+  
+  // Track if timer warning dialog was dismissed (to prevent re-showing)
+  bool _timerWarningDismissed = false;
+  
+  // Global key for the timer warning dialog
+  final GlobalKey<TimerWarningDialogState> _timerWarningDialogKey = GlobalKey<TimerWarningDialogState>();
+
+  // Show persistent timer warning dialog
+  void _showTimerWarningDialog() {
+    if (_timerWarningShown || _timerWarningDismissed) return; // Don't show if already shown or dismissed
+    
+    _timerWarningShown = true;
+    
+    showDialog(
+      context: Get.context!,
+      barrierDismissible: false, // Cannot be dismissed by clicking outside
+      builder: (context) => TimerWarningDialog(
+        key: _timerWarningDialogKey,
+        onExtend: () async {
+          _timerWarningShown = false;
+          Navigator.pop(context);
+          await _showExtendMeetingDialog(context);
+        },
+        onDismiss: () {
+          _timerWarningShown = false;
+          _timerWarningDismissed = true; // Mark as dismissed to prevent re-showing
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  // Update timer warning dialog content
+  void _updateTimerWarningContent() {
+    if (_timerWarningDialogKey.currentState != null) {
+      _timerWarningDialogKey.currentState!.updateRemainingTime(remainingSeconds);
+    }
+  }
+
+  // Show extend meeting dialog
+  Future<void> _showExtendMeetingDialog(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (context) => ExtendMeetingDialog(
+        meetingId: meetingId,
+        meetingTitle: meetingModel.value.meetingName,
+        onExtend: (additionalMinutes, reason) async {
+          try {
+            await extendMeetingWithOptions(
+              additionalMinutes: additionalMinutes,
+              reason: reason,
+            );
+            return true;
+          } catch (e) {
+            AppToastUtil.showErrorToast('Failed to extend meeting: $e');
+            return false;
+          }
+        },
+      ),
+    );
+  }
+
+  // Show time warning at minute marks (deprecated - now using persistent dialog)
+  void _showTimeWarning(int minutesLeft) {
+    // This method is no longer used - replaced by persistent dialog
+  }
+
+  // Show end time toast in last 60 seconds
+  void _showEndTimeToast(int secondsLeft) {
+    if (secondsLeft % 10 == 0) { // Show every 10 seconds to avoid spam
+      AppToastUtil.showInfoToast(
+        'Meeting will end in ${secondsLeft ~/ 60}:${(secondsLeft % 60).toString().padLeft(2, '0')}',
+      );
+    }
+  }
+
+  // Force end meeting when time runs out
+  Future<void> _forceEndMeeting() async {
+    try {
+      AppLogger.print('Meeting time expired. Force ending meeting...');
+      
+      // Show final warning
+      AppToastUtil.showErrorToast('Meeting time has expired. Ending meeting...');
+      
+      // Force remove all participants including host
+      await _firebaseService.removeAllParticipants(meetingId);
+      
+      // Leave Agora channel
+      await _agoraService.leaveChannel();
+      
+      // Clear all memories and state
+      _clearMeetingState();
+      
+      // Navigate back to home page
+      if (Get.context != null && Get.context!.mounted) {
+        Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+      }
+      
+    } catch (e) {
+      AppLogger.print('Error force ending meeting: $e');
+      // Even if there's an error, try to navigate back
+      if (Get.context != null && Get.context!.mounted) {
+        Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+      }
+    }
+  }
+
+  // Clear all meeting state and memories
+  void _clearMeetingState() {
+    // Cancel all timers
+    _meetingTimer?.cancel();
+    _leaveSubscription?.cancel();
+    _muteSubscription?.cancel();
+    _meetingSubscription?.cancel();
+    
+    // Reset all state variables
+    isMeetEneded = true;
+    participants.clear();
+    pttUsers.clear();
+    remainingSeconds = 0;
+    isHost = false;
+    isMuted.value = false;
+    isOnSpeaker.value = false;
+    isJoined.value = false;
+    isVideoEnabled.value = true;
+    isScreenSharing.value = false;
+    activeSpeakerUid.value = 0;
+    currentSpeaker = '';
+    _hasExtended = false;
+    
+    // Clear error state
+    error.value = null;
+    
+    // Reset timer warning flags
+    _timerWarningShown = false;
+    _timerWarningDismissed = false; // Reset dismissal flag
+    
+    update();
   }
 
   // void startTimer() async {
@@ -583,6 +696,11 @@ class MeetingController extends GetxController {
         meetingModel.value = updatedMeeting;
       }
       
+      // Set extension flag to prevent end time warnings
+      _hasExtended = true;
+      _timerWarningShown = false; // Hide timer warning dialog
+      _timerWarningDismissed = false; // Reset dismissal flag for future warnings
+      
       // Restart timer with new duration
       startTimer();
       
@@ -647,6 +765,11 @@ class MeetingController extends GetxController {
         meetingModel.value = updatedMeeting;
       }
       
+      // Set extension flag to prevent end time warnings
+      _hasExtended = true;
+      _timerWarningShown = false; // Hide timer warning dialog
+      _timerWarningDismissed = false; // Reset dismissal flag for future warnings
+      
       // Restart timer with new duration
       startTimer();
       
@@ -662,91 +785,4 @@ class MeetingController extends GetxController {
     }
   }
 
-  // Future<bool> createPrivateMeeting({
-  //   required String parentMeetingId,
-  //   required int hostId,
-  //   required String hostName,
-  //   required int participantId,
-  //   required String participantName,
-  //   required int maxParticipants,
-  // }) async {
-  //   try {
-  //     final meetId = await AppMeetingIdGenrator.generateMeetingId();
-  //     final hostToken = await _firebaseService.getAgoraToken(
-  //       channelName: meetId,
-  //       uid: hostId,
-  //       isHost: true,
-  //     );
-  //     if (hostToken.isEmpty) {
-  //       AppToastUtil.showErrorToast('Failed to generate host token');
-  //       return false;
-  //     }
-  //     final participantToken = await _firebaseService.getAgoraToken(
-  //       channelName: meetId,
-  //       uid: participantId,
-  //       isHost: false,
-  //     );
-    
-  //     if (participantToken.isEmpty) {
-  //       AppToastUtil.showErrorToast('Failed to generate participant token');
-  //       return false;
-  //     }
-  //     print("the token is $hostToken, $participantToken");
-  //     final privateMeeting = PrivateMeetingModel(
-  //       meetId: meetId,
-  //       parentMeetingId: parentMeetingId,
-  //       channelName: meetId,
-  //       hostId: hostId,
-  //       participantId: participantId,
-  //       hostName: hostName,
-  //       participantName: participantName,
-  //       maxParticipants: maxParticipants,
-  //       createdAt: DateTime.now(),
-  //       scheduledStartTime: DateTime.now(),
-  //       scheduledEndTime: DateTime.now().add(Duration(hours: 1)),
-  //       status: 'live',
-  //       duration: 60, // Default duration in minutes
-  //       tokens: {
-  //         'hostToken': hostToken,
-  //         'participantToken': participantToken,
-  //       },
-  //     );
-
-  //     await _firebaseService.createPrivateMeeting(privateMeeting);
-  //       Navigator.pop(Get.context!); // Close the current meeting
-  //     // Navigate to the private meeting room
-  //     Navigator.pushNamed(
-  //       Get.context!,
-  //       AppRouter.meetingRoomRoute,
-  //       arguments: {
-  //         'channelName': meetId,
-  //         'isHost': hostId == AppLocalStorage.getUserDetails().userId,
-  //         'meetingId': meetId,
-  //       },
-  //     );
-  //     return true;
-  //   } catch (e) {
-  //     AppLogger.print('Error creating private meeting: $e');
-  //     AppToastUtil.showErrorToast('Error creating private meeting: $e');
-  //     return false;
-  //   }
-  // }
-
-  // void createPrivateRoomForUser(ParticipantModel user) async{
-  //  await endMeeting();
-  //   final isCreated = await createPrivateMeeting(
-  //     parentMeetingId: meetingId,
-  //     hostId: currentUser.userId,
-  //     hostName: currentUser.name,
-  //     participantId: user.userId,
-  //     participantName: user.name,
-  //     maxParticipants: 2, // Assuming private room for 2 participants
-  //   );
-  //   if (isCreated) {
-  //     AppToastUtil.showSuccessToast('Private room created successfully');
-    
-  //   } else {
-  //     AppToastUtil.showErrorToast('Failed to create private room');
-  //   }
-  // }
 }
