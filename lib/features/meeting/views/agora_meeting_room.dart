@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_color_extension.dart';
@@ -127,62 +126,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
     );
   }
 
-  Widget _buildControlBar(MeetingController meetingController) {
-    return SizedBox(
-      // height: 70,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // PTT Mic Button
-            GestureDetector(
-              onLongPressStart: (_) {
-                meetingController.startPtt();
-              },
-              onLongPressEnd: (_) {
-                meetingController.stopPtt();
-              },
-              child: Obx(() {
-                final isPttActive = meetingController.pttUsers.contains(meetingController.currentUser.userId);
-                return _buildControlButton(
-                  icon: isPttActive ? Icons.mic : Icons.mic_off,
-                  label: 'PTT',
-                  color: isPttActive ? Colors.green : Colors.white,
-                  onPressed: () {
-                    // Short press can show a helper message
-                    AppToastUtil.showInfoToast('Long press to talk');
-                  },
-                );
-              }),
-            ),
-            Obx(
-              () => _buildControlButton(
-                icon:
-                    meetingController.isOnSpeaker.value
-                        ? Icons.volume_up
-                        : Icons.volume_off,
-                label: 'Speaker',
-                color:
-                    !meetingController.isOnSpeaker.value
-                        ? Colors.red
-                        : Colors.white,
-                onPressed: meetingController.toggleSpeaker,
-              ),
-            ),
-
-            // _buildControlButton(
-            //   icon: _isVideoEnabled ? Icons.videocam : Icons.videocam_off,
-            //   label: _isVideoEnabled ? 'Stop Video' : 'Start Video',
-            //   color: _isVideoEnabled ? Colors.white : Colors.red,
-            //   onPressed: _toggleVideo,
-            // ),
-          ],
-        ),
-      ),
-    );
-  }
-
   final meetingController = Get.find<MeetingController>();
   final currentUser = AppLocalStorage.getUserDetails();
 
@@ -284,27 +227,119 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                               child: Text('Agora not intialized yet...!'),
                             )
                             : Expanded(
-                                child: meetingController.isHost
-                                    ? _buildHostView(meetingController)
-                                    : _buildParticipantView(meetingController),
-                              ),
+                              child:
+                                  meetingController.isHost
+                                      ? _buildHostView(meetingController)
+                                      : _buildParticipantView(
+                                        meetingController,
+                                      ),
+                            ),
                         if (meetingController.isHost) ...[JoinRequestWidget()],
                         Padding(
                           padding: const EdgeInsets.only(bottom: 30.0),
                           child: Wrap(
-                            runSpacing: 16,
+                            runSpacing: 24,
+                            alignment: WrapAlignment.spaceEvenly,
                             children: [
-                              _buildControlBar(meetingController),
-                              _buildEndCallButton(
-                                context: context,
-                                isHost: meetingController.isHost,
-                                onEndCallForAll:
-                                    meetingController.endMeetForAll,
-                                onLeaveMeeting: meetingController.endMeeting,
+                              GestureDetector(
+                                onLongPressStart: (_) {
+                                  meetingController.startPtt();
+                                },
+                                onLongPressEnd: (_) {
+                                  meetingController.stopPtt();
+                                },
+                                child: Obx(() {
+                                  final isPttActive = meetingController.pttUsers
+                                      .contains(
+                                        meetingController.currentUser.userId,
+                                      );
+                                  return CircleAvatar(
+                                    radius: 53,
+                                    backgroundColor: isPttActive
+                                        ? Colors.green
+                                        : Colors.white.withAppOpacity(0.2),
+                                    child: Icon(
+                                      isPttActive ? Icons.mic : Icons.mic_off,
+                                      color: Colors.white,
+                                      size: 42,
+                                    ),
+                                  );
+                                  // _buildControlButton(
+                                  //   icon:
+                                  //       isPttActive ? Icons.mic : Icons.mic_off,
+                                  //   label: 'PTT',
+                                  //   color:
+                                  //       isPttActive
+                                  //           ? Colors.green
+                                  //           : Colors.white,
+                                  //   onPressed: () {
+                                  //     // Short press can show a helper message
+                                  //     AppToastUtil.showInfoToast(
+                                  //       'Long press to talk',
+                                  //     );
+                                  //   },
+                                  // );
+                                }),
+                              ),
+
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Obx(
+                                    () => OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(
+                                          color: meetingController
+                                              .isOnSpeaker.value
+                                              ? Colors.green
+                                              : Colors.white,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                      ),
+                                      onPressed:
+                                          meetingController.toggleSpeaker,
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            meetingController.isOnSpeaker.value
+                                                ? Icons.volume_up
+                                                : Icons.volume_off,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            meetingController.isOnSpeaker.value
+                                                ? 'Speaker On'
+                                                : 'Speaker Off',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  _buildEndCallButton(
+                                    context: context,
+                                    isHost: meetingController.isHost,
+                                    onEndCallForAll:
+                                        meetingController.endMeetForAll,
+                                    onLeaveMeeting:
+                                        meetingController.endMeeting,
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
+                    40.h,
                       ],
                     ),
                   ),
@@ -317,7 +352,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
     );
   }
 
-  Widget _buildParticipantTile(ParticipantModel user, MeetingController meetingController) {
+  Widget _buildParticipantTile(
+    ParticipantModel user,
+    MeetingController meetingController,
+  ) {
     return Container(
       margin: EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -326,24 +364,22 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
       ),
       child: Stack(
         children: [
-          Obx(() => user.userId == meetingController.activeSpeakerUid.value
-              ? Positioned.fill(
-                  child: WaterRipple(
-                    color: user.color,
-                  ),
-                )
-              : SizedBox.shrink()),
+          Obx(
+            () =>
+                user.userId == meetingController.activeSpeakerUid.value
+                    ? Positioned.fill(child: WaterRipple(color: user.color))
+                    : SizedBox.shrink(),
+          ),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Center(
               child: Text(
-                user.userId == meetingController.currentUser.userId ? 'You' : user.name,
+                user.userId == meetingController.currentUser.userId
+                    ? 'You'
+                    : user.name,
                 textAlign: TextAlign.center,
                 maxLines: 2,
-                style: TextStyle(
-                  fontSize: 20,
-                  color: user.color,
-                ),
+                style: TextStyle(fontSize: 20, color: user.color),
               ),
             ),
           ),
@@ -432,21 +468,23 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
     );
   }
 
-  Widget speakerRippleEffect({required int userId, required int activeSpeakerUid, required Color color}) {
-    return Obx(
-      () {
-        if (userId == activeSpeakerUid) {
-          return Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color.withAppOpacity(0.5),
-            ),
-            child: const CircularProgressIndicator(),
-          );
-        } else {
-          return Container();
-        }
-      },
-    );
+  Widget speakerRippleEffect({
+    required int userId,
+    required int activeSpeakerUid,
+    required Color color,
+  }) {
+    return Obx(() {
+      if (userId == activeSpeakerUid) {
+        return Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withAppOpacity(0.5),
+          ),
+          child: const CircularProgressIndicator(),
+        );
+      } else {
+        return Container();
+      }
+    });
   }
 }
