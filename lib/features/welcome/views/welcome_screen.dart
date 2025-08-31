@@ -128,7 +128,7 @@ class WelcomeScreen extends StatelessWidget {
                     } else {
                       Navigator.pushReplacementNamed(
                         context,
-                        AppRouter.loginRegisterRoute,
+                        AppRouter.loginRoute, // Changed from loginRegisterRoute
                       );
                     }
                   },
@@ -145,7 +145,7 @@ class WelcomeScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Get Started',
+                        'Login', // Changed from 'Get Started'
                         style: Theme.of(
                           context,
                         ).textTheme.titleMedium?.copyWith(

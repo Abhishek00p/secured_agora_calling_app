@@ -1,10 +1,11 @@
 import 'package:flutter/services.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
-import 'package:secured_calling/core/extensions/date_time_extension.dart';
+import 'package:secured_calling/core/extensions/app_color_extension.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/services/app_user_role_service.dart';
 import 'package:secured_calling/core/services/notification_service.dart';
 import 'package:secured_calling/core/services/permission_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
@@ -168,14 +169,12 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
           leading:
-              !AppLocalStorage.getUserDetails().email.contains('flutter') &&
-                      !AppLocalStorage.getUserDetails().isMember
+              !AppUserRoleService.isAdmin() && !AppUserRoleService.isMember()
                   ? null
                   : IconButton(
                     icon: const Icon(Icons.people_alt_outlined),
                     onPressed: () {
-                      final user = AppLocalStorage.getUserDetails();
-                      if (user.email.contains('flutter')) {
+                      if (AppUserRoleService.isAdmin()) {
                         // Admin navigation
                         Navigator.push(
                           context,
@@ -183,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen>
                             builder: (_) => const AdminScreen(),
                           ),
                         );
-                      } else if (user.isMember) {
+                      } else if (AppUserRoleService.isMember()) {
                         // Member navigation
                         Navigator.push(
                           context,
@@ -193,10 +192,9 @@ class _HomeScreenState extends State<HomeScreen>
                         );
                       }
                     },
-                    tooltip:
-                        user.email.contains('flutter')
-                            ? 'Admin Section'
-                            : 'View Associated Users',
+                    tooltip: AppUserRoleService.isAdmin()
+                        ? 'Admin Section'
+                        : 'View Associated Users',
                   ),
         ),
 
@@ -232,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    if (user.isMember && user.memberCode.isNotEmpty) ...[
+                    if (AppUserRoleService.isMember() && user.memberCode.isNotEmpty) ...[
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -258,12 +256,8 @@ class _HomeScreenState extends State<HomeScreen>
                               Clipboard.setData(
                                 ClipboardData(text: user.memberCode),
                               );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  duration: Duration(seconds: 2),
-                                  behavior: SnackBarBehavior.floating,
-                                  content: Text('Member code copied!'),
-                                ),
+                              AppToastUtil.showSuccessToast(
+                                'Member code copied to clipboard',
                               );
                             },
                           ),
@@ -278,11 +272,11 @@ class _HomeScreenState extends State<HomeScreen>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withAppOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'Role : ${user.isMember ? 'Member' : 'User'}',
+                        'Role : ${AppUserRoleService.getCurrentUserRoleDisplayName()}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w500,
@@ -291,54 +285,25 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
 
-                    if (user.isMember && !user.subscription.isEmpty) ...[
+                    if (AppUserRoleService.isMember() && !user.subscription.isEmpty) ...[
                       const SizedBox(height: 8),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Expires On : ${user.subscription.expiryDate.formatDate}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontSize: 8,
-                              ),
+                          Text(
+                            'Plan: ${user.subscription.plan}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                           ),
-
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
+                          8.w,
+                          Text(
+                            'Expires: ${user.planExpiryDate ?? 'N/A'}',
+                            style: const TextStyle(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              user.subscription.expiryDate.differenceInDays < 0
-                                  ? 'Days Left : ${-user.subscription.expiryDate.differenceInDays}'
-                                  : user
-                                          .subscription
-                                          .expiryDate
-                                          .differenceInDays ==
-                                      0
-                                  ? 'Expiring Today'
-                                  : 'Expired',
-                              style: const TextStyle(
-                                color: AppTheme.primaryColor,
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              fontSize: 12,
                             ),
                           ),
                         ],

@@ -1,10 +1,128 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_state_manager/get_state_manager.dart';
-import 'package:secured_calling/widgets/app_text_form_widget.dart';
-import 'package:secured_calling/features/auth/views/login_register_controller.dart';
-import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:get/get.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
+import 'package:secured_calling/core/routes/app_router.dart';
+import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/features/auth/views/login_register_controller.dart';
+import 'package:secured_calling/widgets/app_text_form_widget.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'dart:io' show Platform;
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Login'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: AppTheme.primaryColor,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
+              // App Logo
+              Center(
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Icon(Icons.call, size: 40, color: Colors.white),
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // Welcome Text
+              Text(
+                'Welcome Back',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sign in to continue to SecuredCalling',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 40),
+              
+              // Login Form
+              LoginForm(
+                formKey: _loginFormKey,
+                onSubmit: _login,
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Info Text
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'New users must be registered by a member or admin. Please contact your organization for access.',
+                        style: TextStyle(
+                          color: Colors.blue[700],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _login() async {
+    final loginRegisterController = Get.find<LoginRegisterController>();
+    AppLogger.print("login button pressed in ui");
+    if (!_loginFormKey.currentState!.validate()) {
+      AppToastUtil.showErrorToast('Form Invalid');
+      return;
+    }
+    loginRegisterController.update();
+    final result = await loginRegisterController.login(context: context);
+
+    if (result == null) {
+      Navigator.pushReplacementNamed(context, AppRouter.homeRoute);
+    } else {
+      AppToastUtil.showErrorToast(result);
+    }
+  }
+}
 
 class LoginForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -97,65 +215,35 @@ class LoginForm extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isIOS ? Colors.orange[50] : Colors.orange[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isIOS ? Icons.info_outline : Icons.info,
-                      color: Colors.orange[800],
-                      size: isIOS ? 20 : 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'It may take a few minutes to receive the reset password link. Please check your email inbox and spam folder.',
-                        style: TextStyle(
-                          color: Colors.orange[800],
-                          fontSize: isIOS ? 13 : 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          if (emailController.text.isEmpty) {
-                            AppToastUtil.showErrorToast(
-                                 'Please enter your email');
-                            return;
-                          }
-                          setState(() => isLoading = true);
-                          try {
-                            final result = await AppFirebaseService.instance
-                                .sendResetPasswordEmail(emailController.text.trim());
-                            if (result != null && result) {
-                              if (context.mounted) {
-                                Navigator.pop(context);
-                                AppToastUtil.showSuccessToast(
-                                     'Reset link sent to your email');
-                              }
-                            } else {
-                              if (context.mounted) {
-                                AppToastUtil.showErrorToast(
-                                     'Failed to send reset link');
-                              }
-                            }
-                          } finally {
-                            if (context.mounted) {
-                              setState(() => isLoading = false);
-                            }
-                          }
-                        },
+                  onPressed: isLoading ? null : () async {
+                    if (emailController.text.trim().isEmpty) {
+                      AppToastUtil.showErrorToast('Please enter your email');
+                      return;
+                    }
+                    
+                    setState(() => isLoading = true);
+                    try {
+                      await AppFirebaseService.instance.auth.sendPasswordResetEmail(
+                        email: emailController.text.trim(),
+                      );
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        AppToastUtil.showSuccessToast(
+                          'Password reset link sent to your email');
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        AppToastUtil.showErrorToast(
+                          'Failed to send reset link');
+                      }
+                    } finally {
+                      if (context.mounted) {
+                        setState(() => isLoading = false);
+                      }
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(
                       vertical: isIOS ? 12 : 16,
@@ -196,50 +284,61 @@ class LoginForm extends StatelessWidget {
       builder: (loginRegisterController) {
         return Form(
           key: formKey,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                AppTextFormField(
-                  controller: loginRegisterController.loginEmailController,
-                  labelText: 'Email',
-                  type: AppTextFormFieldType.email,
+          child: Column(
+            children: [
+              AppTextFormField(
+                controller: loginRegisterController.loginEmailController,
+                labelText: 'Email',
+                type: AppTextFormFieldType.email,
+              ),
+              const SizedBox(height: 16),
+              AppTextFormField(
+                controller: loginRegisterController.loginPasswordController,
+                labelText: 'Password',
+                type: AppTextFormFieldType.password,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => _showResetPasswordBottomSheet(context),
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(color: Colors.blue),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                AppTextFormField(
-                  controller: loginRegisterController.loginPasswordController,
-                  labelText: 'Password',
-                  type: AppTextFormFieldType.password,
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => _showResetPasswordBottomSheet(context),
-                    child: const Text(
-                      'Forgot Password?',
-                      style: TextStyle(color: Colors.blue),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: loginRegisterController.isLoading.value ? null : onSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  child: loginRegisterController.isLoading.value
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Log In',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: loginRegisterController.isLoading.value ? null : onSubmit,
-                    child: loginRegisterController.isLoading.value
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text('Log In'),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
