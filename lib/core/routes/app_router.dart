@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/features/home/views/view_all_meeting_list.dart';
-import 'package:secured_calling/screens/meeting_detail_page.dart';
+import 'package:secured_calling/features/meeting/views/meeting_detail_page.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/features/auth/views/login_register_screen.dart';
 import 'package:secured_calling/features/home/views/home_screen.dart';
@@ -11,6 +11,7 @@ import 'package:secured_calling/features/welcome/views/welcome_screen.dart';
 // (Optional) Import your Bindings here if you create them
 import 'package:secured_calling/features/auth/bindings/auth_binding.dart';
 import 'package:secured_calling/features/meeting/bindings/meeting_binding.dart';
+import 'package:secured_calling/features/meeting/bindings/meeting_detail_binding.dart';
 
 class AppRouter {
   static const String welcomeRoute = '/welcome';
@@ -59,6 +60,7 @@ class AppRouter {
         final args = Get.arguments as Map<String, dynamic>;
         return MeetingDetailPage(meetingId: args['meetingId']);
       },
+      binding: MeetingDetailBinding(),
     ),
   ];
 }

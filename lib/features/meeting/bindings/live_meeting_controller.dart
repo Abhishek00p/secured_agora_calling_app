@@ -537,16 +537,64 @@ class MeetingController extends GetxController {
     update();
   }
 
-  void extendMeetingTime() {
-    _firebaseService.meetingsCollection.doc(meetingId).update({
-      'scheduledEndTime':
-          meetingModel.value.scheduledEndTime
-              .add(Duration(minutes: 30))
-              .toIso8601String(),
-      'duration': meetingModel.value.duration + 30,
-    });
-    update();
-    startTimer();
+  void extendMeetingTime() async {
+    try {
+      // Show loading state
+      update();
+      
+      // Use the enhanced Firebase service
+      await _firebaseService.extendMeetingWithOptions(
+        meetingId: meetingId,
+        additionalMinutes: 30,
+        reason: 'Meeting extended by host during live session',
+        notifyParticipants: true,
+      );
+      
+      // Update local meeting model
+      if (meetingModel.value != MeetingModel.toEmpty()) {
+        final updatedMeeting = MeetingModel(
+          meetId: meetingModel.value.meetId,
+          meetingName: meetingModel.value.meetingName,
+          channelName: meetingModel.value.channelName,
+          hostId: meetingModel.value.hostId,
+          hostUserId: meetingModel.value.hostUserId,
+          hostName: meetingModel.value.hostName,
+          password: meetingModel.value.password,
+          memberCode: meetingModel.value.memberCode,
+          requiresApproval: meetingModel.value.requiresApproval,
+          status: meetingModel.value.status,
+          isParticipantsMuted: meetingModel.value.isParticipantsMuted,
+          maxParticipants: meetingModel.value.maxParticipants,
+          duration: meetingModel.value.duration + 30,
+          participants: meetingModel.value.participants,
+          allParticipants: meetingModel.value.allParticipants,
+          pendingApprovals: meetingModel.value.pendingApprovals,
+          invitedUsers: meetingModel.value.invitedUsers,
+          scheduledStartTime: meetingModel.value.scheduledStartTime,
+          scheduledEndTime: meetingModel.value.scheduledEndTime.add(Duration(minutes: 30)),
+          createdAt: meetingModel.value.createdAt,
+          actualStartTime: meetingModel.value.actualStartTime,
+          actualEndTime: meetingModel.value.actualEndTime,
+          totalParticipantsCount: meetingModel.value.totalParticipantsCount,
+          actualDuration: meetingModel.value.actualDuration,
+          participantHistory: meetingModel.value.participantHistory,
+        );
+        
+        meetingModel.value = updatedMeeting;
+      }
+      
+      // Restart timer with new duration
+      startTimer();
+      
+      // Show success message
+      AppToastUtil.showSuccessToast('Meeting extended by 30 minutes');
+      
+    } catch (e) {
+      AppLogger.print('Error extending meeting: $e');
+      AppToastUtil.showErrorToast('Failed to extend meeting: $e');
+    } finally {
+      update();
+    }
   }
 
   // Future<bool> createPrivateMeeting({

@@ -1,0 +1,177 @@
+import 'package:flutter/material.dart';
+import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
+
+class ExtendMeetingDialog extends StatefulWidget {
+  final String meetingId;
+  final String meetingTitle;
+  final Function(int minutes, String? reason) onExtend;
+
+  const ExtendMeetingDialog({
+    super.key,
+    required this.meetingId,
+    required this.meetingTitle,
+    required this.onExtend,
+  });
+
+  @override
+  State<ExtendMeetingDialog> createState() => _ExtendMeetingDialogState();
+}
+
+class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _reasonController = TextEditingController();
+  int _selectedMinutes = 30;
+  bool _isLoading = false;
+
+  final List<int> _extensionOptions = [15, 30, 45, 60, 90, 120];
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleExtend() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await widget.onExtend(_selectedMinutes, _reasonController.text.trim().isEmpty ? null : _reasonController.text.trim());
+      
+      if (mounted) {
+        Navigator.of(context).pop(true);
+        AppToastUtil.showSuccessToast('Meeting extended successfully by $_selectedMinutes minutes');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToastUtil.showErrorToast('Failed to extend meeting: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          Icon(Icons.schedule, color: AppTheme.primaryColor),
+          const SizedBox(width: 8),
+          const Text('Extend Meeting'),
+        ],
+      ),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Extend "${widget.meetingTitle}"',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Duration selection
+            Text(
+              'Additional Duration:',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _extensionOptions.map((minutes) {
+                final isSelected = _selectedMinutes == minutes;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedMinutes = minutes;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppTheme.primaryColor : Colors.grey[200],
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected ? AppTheme.primaryColor : Colors.grey[400]!,
+                      ),
+                    ),
+                    child: Text(
+                      '${minutes}m',
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.grey[700],
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Reason input (optional)
+            TextFormField(
+              controller: _reasonController,
+              decoration: const InputDecoration(
+                labelText: 'Reason (Optional)',
+                hintText: 'Why are you extending this meeting?',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.note),
+              ),
+              maxLines: 2,
+              maxLength: 200,
+            ),
+            
+            const SizedBox(height: 8),
+            Text(
+              'The meeting will be extended by $_selectedMinutes minutes',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _handleExtend,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Text('Extend Meeting'),
+        ),
+      ],
+    );
+  }
+}

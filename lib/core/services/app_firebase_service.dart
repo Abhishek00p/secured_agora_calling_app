@@ -387,16 +387,96 @@ class AppFirebaseService {
   }
 
   Future<void> extendMeeting(String meetingId, int additionalMinutes) async {
-    final meetingDoc = await meetingsCollection.doc(meetingId).get();
-    final meetingData = meetingDoc.data() as Map<String, dynamic>;
+    try {
+      // Validate input
+      if (additionalMinutes <= 0) {
+        throw ArgumentError('Additional minutes must be greater than 0');
+      }
 
-    final currentEndTime =
-        (meetingData['scheduledEndTime'] as Timestamp).toDate();
-    final newEndTime = currentEndTime.add(Duration(minutes: additionalMinutes));
+      final meetingDoc = await meetingsCollection.doc(meetingId).get();
+      if (!meetingDoc.exists) {
+        throw Exception('Meeting not found');
+      }
 
-    await meetingsCollection.doc(meetingId).update({
-      'scheduledEndTime': newEndTime,
-    });
+      final meetingData = meetingDoc.data() as Map<String, dynamic>;
+      
+      // Check if meeting is still active
+      final status = meetingData['status'] as String?;
+      if (status == 'ended' || status == 'cancelled') {
+        throw Exception('Cannot extend a meeting that has ended or been cancelled');
+      }
+
+      // Parse current end time
+      final currentEndTime = meetingData['scheduledEndTime'];
+      DateTime endTime;
+      
+      if (currentEndTime is Timestamp) {
+        endTime = currentEndTime.toDate();
+      } else if (currentEndTime is String) {
+        endTime = DateTime.tryParse(currentEndTime) ?? DateTime.now();
+      } else {
+        endTime = DateTime.now();
+      }
+
+      // Calculate new end time
+      final newEndTime = endTime.add(Duration(minutes: additionalMinutes));
+      
+      // Get current duration
+      final currentDuration = meetingData['duration'] as int? ?? 0;
+      final newDuration = currentDuration + additionalMinutes;
+
+      // Update meeting with new end time and duration
+      await meetingsCollection.doc(meetingId).update({
+        'scheduledEndTime': newEndTime.toIso8601String(),
+        'duration': newDuration,
+        'lastExtendedAt': FieldValue.serverTimestamp(),
+        'totalExtensions': FieldValue.increment(1),
+      });
+
+      AppLogger.print('Meeting $meetingId extended by $additionalMinutes minutes. New end time: $newEndTime');
+    } catch (e) {
+      AppLogger.print('Error extending meeting: $e');
+      rethrow;
+    }
+  }
+
+  /// Extended version with additional options
+  Future<void> extendMeetingWithOptions({
+    required String meetingId,
+    required int additionalMinutes,
+    String? reason,
+    bool notifyParticipants = true,
+  }) async {
+    try {
+      await extendMeeting(meetingId, additionalMinutes);
+      
+      // Add extension log
+      await meetingsCollection.doc(meetingId).collection('extensions').add({
+        'additionalMinutes': additionalMinutes,
+        'reason': reason,
+        'extendedAt': FieldValue.serverTimestamp(),
+        'extendedBy': currentUser?.uid,
+        'notifyParticipants': notifyParticipants,
+      });
+
+      // TODO: Implement participant notification if needed
+      if (notifyParticipants) {
+        // This could send push notifications or update participant streams
+        AppLogger.print('Participant notification for meeting extension not yet implemented');
+      }
+    } catch (e) {
+      AppLogger.print('Error extending meeting with options: $e');
+      rethrow;
+    }
+  }
+
+  /// Get meeting extension history
+  Stream<QuerySnapshot> getMeetingExtensionsStream(String meetingId) {
+    return meetingsCollection
+        .doc(meetingId)
+        .collection('extensions')
+        .orderBy('extendedAt', descending: true)
+        .snapshots();
   }
 
   Future<void> requestToJoinMeeting(String meetingId, int userId) async {

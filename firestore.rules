@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - users can only read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Meetings collection
+    match /meetings/{meetingId} {
+      // Allow read access to users with the same member code
+      allow read: if request.auth != null && 
+        resource.data.memberCode == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.memberCode;
+      
+      // Allow create to authenticated users
+      allow create: if request.auth != null;
+      
+      // Allow update only to meeting host or participants
+      allow update: if request.auth != null && (
+        resource.data.hostId == request.auth.uid ||
+        resource.data.allParticipants[request.auth.uid] != null
+      );
+      
+      // Allow delete only to meeting host
+      allow delete: if request.auth != null && resource.data.hostId == request.auth.uid;
+      
+      // Meeting extensions subcollection
+      match /extensions/{extensionId} {
+        allow read: if request.auth != null && 
+          get(/databases/$(database)/documents/meetings/$(meetingId)).data.memberCode == 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.memberCode;
+        
+        allow create: if request.auth != null && 
+          get(/databases/$(database)/documents/meetings/$(meetingId)).data.hostUserId == 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userId;
+      }
+      
+      // Meeting participants subcollection
+      match /participants/{participantId} {
+        allow read: if request.auth != null && 
+          get(/databases/$(database)/documents/meetings/$(meetingId)).data.memberCode == 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.memberCode;
+        
+        allow write: if request.auth != null && (
+          get(/databases/$(database)/documents/meetings/$(meetingId)).data.hostId == request.auth.uid ||
+          participantId == request.auth.uid
+        );
+      }
+    }
+    
+    // Private meetings collection
+    match /privateMeetings/{meetingId} {
+      allow read, write: if request.auth != null && (
+        resource.data.hostId == request.auth.uid ||
+        resource.data.participantId == request.auth.uid
+      );
+    }
+    
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
