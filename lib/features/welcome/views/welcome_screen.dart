@@ -110,27 +110,7 @@ class WelcomeScreen extends StatelessWidget {
                 // Get Started Button
                 ElevatedButton(
                   onPressed: () {
-                    if (AppLocalStorage.getLoggedInStatus()) {
-                      if (AppLocalStorage.getUserDetails().isEmpty) {
-                        AppFirebaseService.instance
-                            .getLoggedInUserDataAsModel()
-                            .then((v) {
-                              if (v.isEmpty) {
-                                return;
-                              }
-                              AppLocalStorage.storeUserDetails(v);
-                            });
-                      }
-                      Navigator.pushReplacementNamed(
-                        context,
-                        AppRouter.homeRoute,
-                      );
-                    } else {
-                      Navigator.pushReplacementNamed(
-                        context,
-                        AppRouter.loginRoute, // Changed from loginRegisterRoute
-                      );
-                    }
+                    Navigator.pushNamed(context, AppRouter.loginRoute);
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(

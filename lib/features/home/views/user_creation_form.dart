@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/services/app_auth_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
-import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
@@ -21,12 +18,12 @@ class _UserCreationFormState extends State<UserCreationForm> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
-  late AppUser _currentUser;
+  late String _currentUserMemberCode;
 
   @override
   void initState() {
     super.initState();
-    _currentUser = AppLocalStorage.getUserDetails();
+    _currentUserMemberCode = AppLocalStorage.getUserDetails().memberCode;
   }
 
   @override
@@ -47,79 +44,28 @@ class _UserCreationFormState extends State<UserCreationForm> {
     });
 
     try {
-      // Create user in Firebase Auth
-      final userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
-
-      if (!mounted) return;
-
-      // Send email verification
-      await userCredential.user?.sendEmailVerification();
-
-      // Create user profile in Firestore
-      final userId = await AppFirebaseService.instance.generateUniqueUserId();
-      final userData = {
-        'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'userId': userId,
-        'memberCode': _currentUser.memberCode,
-        'firebaseUserId': userCredential.user!.uid,
-        'createdAt': DateTime.now().toIso8601String(),
-        'isMember': false, // Regular user, not a member
-        'subscription': null,
-        'temporaryPassword': _passwordController.text, // Store temporary password
-        'passwordCreatedBy': _currentUser.email,
-        'passwordCreatedAt': DateTime.now().toIso8601String(),
-      };
-
-      // Save user data
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc('$userId')
-          .set(userData);
-
-      // Update member's total users count
-      final memberQuery = await FirebaseFirestore.instance
-          .collection('members')
-          .where('memberCode', isEqualTo: _currentUser.memberCode)
-          .get();
-
-      if (memberQuery.docs.isNotEmpty) {
-        await memberQuery.docs.first.reference.update({
-          'totalUsers': FieldValue.increment(1),
-        });
-      }
-
-      if (!mounted) return;
-
-      AppToastUtil.showSuccessToast(
-        'User created successfully. Please check email for verification.',
+      final success = await AppAuthService.instance.createUser(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        memberCode: _currentUserMemberCode,
       );
-      
-      // Clear form
-      _formKey.currentState!.reset();
-      _nameController.clear();
-      _emailController.clear();
-      _passwordController.clear();
-      
-      // Return true to indicate successful creation
-      Navigator.pop(context, true);
-      
-    } on FirebaseAuthException catch (e) {
-      String message = 'An error occurred';
-      if (e.code == 'weak-password') {
-        message = 'The password provided is too weak.';
-      } else if (e.code == 'email-already-in-use') {
-        message = 'An account already exists for that email.';
-      } else if (e.code == 'invalid-email') {
-        message = 'Invalid email format.';
+
+      if (success && mounted) {
+        // Clear form
+        _formKey.currentState!.reset();
+        _nameController.clear();
+        _emailController.clear();
+        _passwordController.clear();
+        
+        // Return true to indicate successful creation
+        Navigator.pop(context, true);
       }
-      AppToastUtil.showErrorToast(message);
+      
     } catch (e) {
-      AppToastUtil.showErrorToast('An error occurred: $e');
+      if (mounted) {
+        AppToastUtil.showErrorToast('Failed to create user: $e');
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -158,7 +104,7 @@ class _UserCreationFormState extends State<UserCreationForm> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                        Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
                         const SizedBox(width: 8),
                         Text(
                           'Creating User Under Member Code',
@@ -171,7 +117,7 @@ class _UserCreationFormState extends State<UserCreationForm> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Member Code: ${_currentUser.memberCode}',
+                      'Member Code: $_currentUserMemberCode',
                       style: TextStyle(
                         color: Colors.blue[700],
                         fontWeight: FontWeight.w500,
@@ -229,7 +175,7 @@ class _UserCreationFormState extends State<UserCreationForm> {
                 controller: _passwordController,
                 labelText: 'Temporary Password',
                 type: AppTextFormFieldType.password,
-                helperText: 'User will be prompted to change this password on first login',
+                helperText: 'User will use this password to log in',
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a temporary password';
@@ -291,7 +237,7 @@ class _UserCreationFormState extends State<UserCreationForm> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'A verification email will be sent to the user. They must verify their email before they can log in.',
+                        'User will be created immediately and can log in with the provided credentials.',
                         style: TextStyle(
                           color: Colors.orange[700],
                           fontSize: 14,

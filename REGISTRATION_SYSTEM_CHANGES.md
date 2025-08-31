@@ -223,6 +223,69 @@ This document outlines the changes made to implement the new registration system
 - Clear role-based navigation
 - Better user experience
 
+## File Structure and Naming Updates
+
+### 1. **File Renaming and Cleanup**
+- **Removed**: `login_register_screen.dart` (combined login/register screen)
+- **Updated**: `login_screen.dart` (dedicated login-only screen)
+- **Cleanup**: Removed all registration-related code from public screens
+
+### 2. **Route Updates**
+- **Removed**: `loginRegisterRoute` from app router
+- **Updated**: All navigation now uses `loginRoute`
+- **Simplified**: Welcome screen directly navigates to login
+
+### 3. **Class Naming Updates**
+- **Updated**: `SecuredCallingApp` → `App` for consistency
+- **Simplified**: App structure and routing
+
+### 4. **Registration Flow Changes**
+- **Public Access**: Only login functionality available
+- **User Creation**: Moved to home feature (member/admin only)
+- **Member Creation**: Moved to admin feature (admin only)
+- **No Public Registration**: Users must be created by authorized personnel
+
+## Firebase Functions Backend Implementation
+
+### 1. **Backend Architecture Change**
+- **Removed**: Firebase Authentication dependency
+- **Added**: Firebase Functions as backend API
+- **Authentication**: Custom JWT-based authentication system
+- **Password Storage**: Hashed passwords stored in Firestore
+- **No Email Verification**: Users can log in immediately after creation
+
+### 2. **New Firebase Functions Created**
+- **`login`**: Authenticates users and returns JWT token
+- **`createUser`**: Creates new users under member management
+- **`createMember`**: Creates new members (admin only)
+- **`resetPassword`**: Resets user passwords with permission checks
+- **`getUserCredentials`**: Retrieves user credentials for viewing
+- **`getUsersForPasswordReset`**: Gets list of users for password management
+
+### 3. **Security Features**
+- **Password Hashing**: bcryptjs with salt rounds
+- **JWT Tokens**: 7-day expiration with role-based claims
+- **Permission System**: Role-based access control (Admin/Member/User)
+- **Input Validation**: Server-side validation for all inputs
+- **Audit Trail**: Tracks password changes and user creation
+
+### 4. **Database Schema Updates**
+- **New Fields**: `hashedPassword`, `temporaryPassword`, `passwordCreatedBy`, `passwordResetBy`
+- **Password Storage**: Both hashed (for auth) and plain text (for admin viewing)
+- **User Status**: `isActive` field for account deactivation
+- **Last Login**: Tracks user login activity
+
+### 5. **Flutter App Updates**
+- **New Service**: `AppAuthService` replaces Firebase Auth calls
+- **Token Management**: JWT token storage and validation
+- **API Calls**: All authentication operations go through Firebase Functions
+- **Error Handling**: Comprehensive error handling for API responses
+
+### 6. **Dependencies Added**
+- **Backend**: `bcryptjs`, `jsonwebtoken`
+- **Frontend**: `cloud_functions`
+- **Node.js**: Updated to Node 18 for compatibility
+
 ## Migration Notes
 
 ### Existing Users

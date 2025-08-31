@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
+              
               // App Logo
               Center(
                 child: Container(
@@ -46,6 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Icon(Icons.call, size: 40, color: Colors.white),
                 ),
               ),
+              
               const SizedBox(height: 32),
               
               // Welcome Text
@@ -56,13 +58,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: AppTheme.primaryColor,
                 ),
               ),
+              
               const SizedBox(height: 8),
+              
               Text(
                 'Sign in to continue to SecuredCalling',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Colors.grey[600],
                 ),
               ),
+              
               const SizedBox(height: 40),
               
               // Login Form
@@ -73,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
               
               const SizedBox(height: 24),
               
-              // Info Text
+              // Info Message
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -83,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                    Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -107,10 +112,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     final loginRegisterController = Get.find<LoginRegisterController>();
     AppLogger.print("login button pressed in ui");
+    
     if (!_loginFormKey.currentState!.validate()) {
       AppToastUtil.showErrorToast('Form Invalid');
       return;
     }
+    
     loginRegisterController.update();
     final result = await loginRegisterController.login(context: context);
 
@@ -122,66 +129,77 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class LoginForm extends StatelessWidget {
+class LoginForm extends StatefulWidget {
   final GlobalKey<FormState> formKey;
   final VoidCallback onSubmit;
 
-  const LoginForm({super.key, required this.formKey, required this.onSubmit});
+  const LoginForm({
+    super.key,
+    required this.formKey,
+    required this.onSubmit,
+  });
+
+  @override
+  State<LoginForm> createState() => _LoginFormState();
+}
+
+class _LoginFormState extends State<LoginForm> {
+  final LoginRegisterController loginRegisterController = Get.find<LoginRegisterController>();
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<LoginRegisterController>(
-      builder: (loginRegisterController) {
-        return Form(
-          key: formKey,
-          child: Column(
-            children: [
-              AppTextFormField(
-                controller: loginRegisterController.loginEmailController,
-                labelText: 'Email',
-                type: AppTextFormFieldType.email,
-              ),
-              const SizedBox(height: 16),
-              AppTextFormField(
-                controller: loginRegisterController.loginPasswordController,
-                labelText: 'Password',
-                type: AppTextFormFieldType.password,
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: loginRegisterController.isLoading.value ? null : onSubmit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: loginRegisterController.isLoading.value
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text(
-                          'Log In',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+    return Form(
+      key: widget.formKey,
+      child: Column(
+        children: [
+          AppTextFormField(
+            controller: loginRegisterController.loginEmailController,
+            labelText: 'Email',
+            type: AppTextFormFieldType.email,
+          ),
+          
+          const SizedBox(height: 16),
+          
+          AppTextFormField(
+            controller: loginRegisterController.loginPasswordController,
+            labelText: 'Password',
+            type: AppTextFormFieldType.password,
+          ),
+          
+          const SizedBox(height: 32),
+          
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: loginRegisterController.isLoading.value ? null : widget.onSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-            ],
+              child: loginRegisterController.isLoading.value
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Login',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }

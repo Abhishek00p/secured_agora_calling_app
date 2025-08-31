@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
-import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppLocalStorage {
@@ -17,6 +16,8 @@ class AppLocalStorage {
   // variables constants
   static const String userDetails = 'user-details';
   static const String isUserLoggedIn = 'is-user-logged-in';
+  static const String authToken = 'auth-token';
+  
   // functions
   static Future<void> init() async {
     _preferences = await SharedPreferences.getInstance();
@@ -47,11 +48,29 @@ class AppLocalStorage {
     return _preferences.getBool(isUserLoggedIn) ?? false;
   }
 
+  // Token management methods
+  static void storeToken(String token) {
+    _preferences.setString(authToken, token);
+  }
+
+  static String? getToken() {
+    return _preferences.getString(authToken);
+  }
+
+  static void clearToken() {
+    _preferences.remove(authToken);
+  }
+
+  static void clearUserDetails() {
+    _preferences.remove(userDetails);
+  }
+
   static Future<bool> signOut(BuildContext context) async {
     try {
       setLoggedIn(false);
-      _preferences.clear();
-      return await AppFirebaseService.instance.signOut();
+      clearToken();
+      clearUserDetails();
+      return true;
     } catch (e) {
       AppToastUtil.showErrorToast('Error signing out: $e');
       return false;

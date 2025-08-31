@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const admin = require("firebase-admin");
 const {RtcTokenBuilder, RtcRole} = require("agora-access-token");
+const auth = require('./src/auth');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -58,5 +59,13 @@ app.post("/sendNotification", async (req, res) => {
     return res.status(500).json({success: false, error: error.message});
   }
 });
+
+// Export all authentication functions
+exports.login = auth.login;
+exports.createUser = auth.createUser;
+exports.createMember = auth.createMember;
+exports.resetPassword = auth.resetPassword;
+exports.getUserCredentials = auth.getUserCredentials;
+exports.getUsersForPasswordReset = auth.getUsersForPasswordReset;
 
 exports.api = functions.https.onRequest(app);
