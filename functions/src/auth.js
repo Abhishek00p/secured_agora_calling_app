@@ -76,6 +76,14 @@ exports.login = functions.https.onCall(async (data, context) => {
     const userDoc = userQuery.docs[0];
     const userData = userDoc.data();
 
+    // Check if hashedPassword exists
+    if (!userData.hashedPassword) {
+      throw new functions.https.HttpsError(
+        'internal',
+        'User password not properly configured'
+      );
+    }
+
     // Verify password
     const isPasswordValid = await verifyPassword(password, userData.hashedPassword);
     if (!isPasswordValid) {
@@ -652,3 +660,9 @@ exports.getUsersForPasswordReset = functions.https.onCall(async (data, context) 
     );
   }
 });
+
+
+
+
+
+

@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:secured_calling/core/constants.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/models/private_meeting_model.dart';
@@ -18,6 +19,7 @@ class AppFirebaseService {
   static AppFirebaseService get instance => _instance;
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  User? get currentUser=> FirebaseAuth.instance.currentUser;
 
   // Firestore references
   CollectionReference get usersCollection => _firestore.collection('users');
