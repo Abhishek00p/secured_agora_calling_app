@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
+import 'package:secured_calling/utils/firebase_debug_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
@@ -102,6 +103,76 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
+              
+              const SizedBox(height: 16),
+              
+              // Debug Section (only in debug mode)
+              if (const bool.fromEnvironment('dart.vm.product') == false) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.bug_report, color: Colors.orange[700], size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Debug Tools',
+                            style: TextStyle(
+                              color: Colors.orange[700],
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildDebugButton(
+                            'Show Summary',
+                            Icons.analytics,
+                            () => FirebaseDebugUtil.printSummary(),
+                          ),
+                          _buildDebugButton(
+                            'Recent Logs',
+                            Icons.history,
+                            () => FirebaseDebugUtil.printRecentLogs(5),
+                          ),
+                          _buildDebugButton(
+                            'Failed Requests',
+                            Icons.error,
+                            () => FirebaseDebugUtil.printFailedRequests(),
+                          ),
+                          _buildDebugButton(
+                            'All Logs',
+                            Icons.list,
+                            () => FirebaseDebugUtil.printAllLogs(),
+                          ),
+                          _buildDebugButton(
+                            'Clear Logs',
+                            Icons.clear,
+                            () => FirebaseDebugUtil.clearLogs(),
+                          ),
+                          _buildDebugButton(
+                            'Test Loading',
+                            Icons.play_arrow,
+                            () => Get.find<LoginRegisterController>().testLoginScenarios(),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -126,6 +197,22 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       AppToastUtil.showErrorToast(result);
     }
+  }
+
+  Widget _buildDebugButton(String label, IconData icon, VoidCallback onPressed) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.orange[100],
+        foregroundColor: Colors.orange[800],
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
   }
 }
 
@@ -168,7 +255,8 @@ class _LoginFormState extends State<LoginForm> {
           
           const SizedBox(height: 32),
           
-          SizedBox(
+          // Use Obx for reactive state management
+          Obx(() => SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: loginRegisterController.isLoading.value ? null : widget.onSubmit,
@@ -197,7 +285,7 @@ class _LoginFormState extends State<LoginForm> {
                       ),
                     ),
             ),
-          ),
+          )),
         ],
       ),
     );

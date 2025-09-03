@@ -113,8 +113,10 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: widget.controller,
+    // Wrap in try-catch to handle disposed controllers gracefully
+    try {
+      return TextFormField(
+        controller: widget.controller,
       decoration: InputDecoration(
         isDense: true,
         labelText: widget.labelText,
@@ -157,9 +159,28 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       
-      obscureText: widget.type == AppTextFormFieldType.password ? _obscureText : false,
-      keyboardType: _keyboardType,
-      validator: widget.validator ?? _defaultValidator,
-    );
+        obscureText: widget.type == AppTextFormFieldType.password ? _obscureText : false,
+        keyboardType: _keyboardType,
+        validator: widget.validator ?? _defaultValidator,
+      );
+    } catch (e) {
+      // If controller is disposed, return a placeholder widget
+      return Container(
+        height: 56,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade400),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            widget.labelText,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 16,
+            ),
+          ),
+        ),
+      );
+    }
   }
 }

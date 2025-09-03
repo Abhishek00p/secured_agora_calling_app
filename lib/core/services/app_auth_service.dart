@@ -3,15 +3,16 @@ import 'package:http/http.dart' as http;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/services/firebase_function_logger.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 
 class AppAuthService {
   static final AppAuthService _instance = AppAuthService._();
   static AppAuthService get instance => _instance;
-  String baseUrl = "https://us-central1-secure-calling-2025.cloudfunctions.net";
-  // String baseUrl = 'http://10.0.2.2:5001/secure-calling-2025/us-central1'; // For local testing
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  // String baseUrl = "https://us-central1-secure-calling-2025.cloudfunctions.net";
+  String baseUrl = 'http://10.0.2.2:5001/secure-calling-2025/us-central1'; // For local testing
+  // final FirebaseFunctions _functions = FirebaseFunctions.instance; // Not used in HTTP implementation
   String? _currentToken;
   AppUser? _currentUser;
 
@@ -115,20 +116,28 @@ class AppAuthService {
       AppLogger.print('Attempting login for: $email');
 
       // Firebase Function HTTP endpoint
-      final url = Uri.parse(
-        "$baseUrl/login",
-      );
+      final url = Uri.parse("$baseUrl/login");
+      final requestBody = jsonEncode({
+        'email': email.trim().toLowerCase(),
+        'password': password,
+      });
 
-      // Send POST request
-      final response = await http.post(
-        url,
+      // Send POST request with logging
+      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
+        functionName: 'login',
+        method: 'POST',
+        url: url.toString(),
         headers: {
           "Content-Type": "application/json",
         },
-        body: jsonEncode({
-          'email': email.trim().toLowerCase(),
-          'password': password,
-        }),
+        body: requestBody,
+        httpCall: () => http.post(
+          url,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: requestBody,
+        ),
       );
 
       // Validate status code
@@ -261,22 +270,31 @@ class AppAuthService {
 
       AppLogger.print('Creating user: $email under member code: $memberCode');
 
-      final url = Uri.parse(
-        "$baseUrl/createUser",
-      );
+      final url = Uri.parse("$baseUrl/createUser");
+      final requestBody = jsonEncode({
+        'name': name.trim(),
+        'email': email.trim().toLowerCase(),
+        'password': password,
+        'memberCode': memberCode,
+      });
 
-      final response = await http.post(
-        url,
+      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
+        functionName: 'createUser',
+        method: 'POST',
+        url: url.toString(),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $_currentToken", // Pass JWT
+          "Authorization": "Bearer $_currentToken",
         },
-        body: jsonEncode({
-          'name': name.trim(),
-          'email': email.trim().toLowerCase(),
-          'password': password,
-          'memberCode': memberCode,
-        }),
+        body: requestBody,
+        httpCall: () => http.post(
+          url,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $_currentToken",
+          },
+          body: requestBody,
+        ),
       );
 
       if (response.statusCode != 200) {

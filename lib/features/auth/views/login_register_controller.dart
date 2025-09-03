@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/services/app_auth_service.dart';
-import 'package:secured_calling/core/services/app_local_storage.dart';
 
 class LoginRegisterController extends GetxController {
   // State Variables
@@ -49,24 +48,80 @@ class LoginRegisterController extends GetxController {
     setLoading(true);
     clearError();
     update();
+    
     try {
       final result = await AppAuthService.instance.login(
         email: loginEmailController.text.trim(),
         password: loginPasswordController.text,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Login request timed out. Please check your internet connection and try again.');
+        },
       );
 
       AppLogger.print("login successful: ${result['user']}");
       AppToastUtil.showSuccessToast('Login successful');
 
       return null;
+    } on Exception catch (e) {
+      AppLogger.print("error while logging in: $e");
+      String errorMessage = e.toString();
+      
+      // Handle specific error types
+      if (errorMessage.contains('timeout')) {
+        errorMessage = 'Request timed out. Please check your internet connection.';
+      } else if (errorMessage.contains('SocketException') || errorMessage.contains('NetworkException')) {
+        errorMessage = 'No internet connection. Please check your network and try again.';
+      } else if (errorMessage.contains('Failed with status')) {
+        errorMessage = 'Server error. Please try again later.';
+      }
+      
+      setError(errorMessage);
+      return errorMessage;
     } catch (e) {
-      AppLogger.print("error while logging in :$e");
-      setError(e.toString());
-      return e.toString();
+      AppLogger.print("unexpected error while logging in: $e");
+      setError('An unexpected error occurred. Please try again.');
+      return 'An unexpected error occurred. Please try again.';
     } finally {
       setLoading(false);
       update();
     }
+  }
+
+  /// Test method for simulating different login scenarios (for debugging)
+  Future<void> testLoginScenarios() async {
+    AppLogger.print('🧪 Testing login scenarios...');
+    
+    // Test 1: Simulate loading state
+    AppLogger.print('Test 1: Simulating loading state');
+    setLoading(true);
+    await Future.delayed(const Duration(seconds: 2));
+    setLoading(false);
+    
+    // Test 2: Simulate timeout
+    AppLogger.print('Test 2: Simulating timeout');
+    setLoading(true);
+    await Future.delayed(const Duration(seconds: 1));
+    setError('Request timed out. Please check your internet connection.');
+    setLoading(false);
+    
+    // Test 3: Simulate network error
+    AppLogger.print('Test 3: Simulating network error');
+    await Future.delayed(const Duration(seconds: 1));
+    setError('No internet connection. Please check your network and try again.');
+    
+    // Test 4: Simulate server error
+    AppLogger.print('Test 4: Simulating server error');
+    await Future.delayed(const Duration(seconds: 1));
+    setError('Server error. Please try again later.');
+    
+    // Test 5: Clear errors
+    AppLogger.print('Test 5: Clearing errors');
+    await Future.delayed(const Duration(seconds: 1));
+    clearError();
+    
+    AppLogger.print('✅ Login scenario testing completed');
   }
 
   @override
