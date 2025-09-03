@@ -3,8 +3,10 @@ const admin = require('firebase-admin');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Initialize Firebase Admin
-admin.initializeApp();
+// Initialize Firebase Admin (if not already initialized)
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 const db = admin.firestore();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';

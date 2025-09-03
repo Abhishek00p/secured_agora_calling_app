@@ -9,8 +9,8 @@ import 'package:secured_calling/utils/app_tost_util.dart';
 class AppAuthService {
   static final AppAuthService _instance = AppAuthService._();
   static AppAuthService get instance => _instance;
-  // String baseUrl = "https://us-central1-secure-calling-2025.cloudfunctions.net/api";
-  String baseUrl = 'http://10.0.2.2:5001/secure-calling-2025/us-central1';
+  String baseUrl = "https://us-central1-secure-calling-2025.cloudfunctions.net";
+  // String baseUrl = 'http://10.0.2.2:5001/secure-calling-2025/us-central1'; // For local testing
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
   String? _currentToken;
   AppUser? _currentUser;
