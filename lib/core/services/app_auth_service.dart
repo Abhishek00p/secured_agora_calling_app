@@ -1,9 +1,6 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
-import 'package:secured_calling/core/services/firebase_function_logger.dart';
+import 'package:secured_calling/core/services/http_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 
@@ -15,6 +12,7 @@ class AppAuthService {
   // final FirebaseFunctions _functions = FirebaseFunctions.instance; // Not used in HTTP implementation
   String? _currentToken;
   AppUser? _currentUser;
+  final AppHttpService _httpService = AppHttpService();
 
   // Private constructor
   AppAuthService._();
@@ -22,7 +20,7 @@ class AppAuthService {
   // Getters
   String? get currentToken => _currentToken;
   AppUser? get currentUser => _currentUser;
-  bool get isUserLoggedIn => _currentToken != null && _currentUser != null;
+  bool get isUserLoggedIn => AppLocalStorage.getLoggedInStatus();
 
   // /// Login user using Firebase Functions
   // Future<Map<String, dynamic>> login({
@@ -115,48 +113,25 @@ class AppAuthService {
     try {
       AppLogger.print('Attempting login for: $email');
 
-      // Firebase Function HTTP endpoint
-      final url = Uri.parse("$baseUrl/login");
-      final requestBody = jsonEncode({
-        'email': email.trim().toLowerCase(),
-        'password': password,
-      });
-
-      // Send POST request with logging
-      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
-        functionName: 'login',
-        method: 'POST',
-        url: url.toString(),
-        headers: {
-          "Content-Type": "application/json",
+      // Use the new CRUD function with includeAuth: false for login
+      final response = await _httpService.post(
+        'login',
+        body: {
+          'email': email.trim().toLowerCase(),
+          'password': password,
         },
-        body: requestBody,
-        httpCall: () => http.post(
-          url,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: requestBody,
-        ),
+        includeAuth: false, // Don't include auth token for login
       );
 
-      // Validate status code
-      if (response.statusCode != 200) {
-        throw Exception("Login failed with status ${response.statusCode}");
-      }
+      if (response.containsKey('success')) {
+        AppLogger.print("the data received from api is : $response");
 
-      // Parse response
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-      if (responseBody.containsKey('success')) {
-        AppLogger.print("the data received from api is : $responseBody");
-
-        if (responseBody['success'] == true) {
+        if (response['success'] == true) {
           // Extract token + user
-          final data = responseBody['data'] != null
-              ? Map<String, dynamic>.from(responseBody['data'])
+          final data = response['data'] != null
+              ? Map<String, dynamic>.from(response['data'])
               : {};
-
+          print("the token received from api is : ${data['token']}");
           _currentToken = data['token'];
           _currentUser = AppUser.fromJson(data['user']);
 
@@ -172,8 +147,7 @@ class AppAuthService {
             'token': _currentToken,
           };
         } else {
-          final errorMessage =
-              responseBody['error_message'] ?? 'Login failed';
+          final errorMessage = response['error_message'] ?? 'Login failed';
           throw Exception(errorMessage);
         }
       } else {
@@ -270,44 +244,22 @@ class AppAuthService {
 
       AppLogger.print('Creating user: $email under member code: $memberCode');
 
-      final url = Uri.parse("$baseUrl/createUser");
-      final requestBody = jsonEncode({
-        'name': name.trim(),
-        'email': email.trim().toLowerCase(),
-        'password': password,
-        'memberCode': memberCode,
-      });
-
-      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
-        functionName: 'createUser',
-        method: 'POST',
-        url: url.toString(),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $_currentToken",
+      // Use the new CRUD function (auth token will be added automatically)
+      final response = await _httpService.post(
+        'createUser',
+        body: {
+          'name': name.trim(),
+          'email': email.trim().toLowerCase(),
+          'password': password,
+          'memberCode': memberCode,
         },
-        body: requestBody,
-        httpCall: () => http.post(
-          url,
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer $_currentToken",
-          },
-          body: requestBody,
-        ),
       );
 
-      if (response.statusCode != 200) {
-        throw Exception("Failed with status ${response.statusCode}");
-      }
-
-      final Map<String, dynamic> result = jsonDecode(response.body);
-
-      if (result['success'] == true) {
+      if (response['success'] == true) {
         AppToastUtil.showSuccessToast('User created successfully');
         return true;
       } else {
-        final errorMessage = result['error_message'] ?? 'Failed to create user';
+        final errorMessage = response['error_message'] ?? 'Failed to create user';
         throw Exception(errorMessage);
       }
     } catch (e) {
@@ -409,17 +361,10 @@ class AppAuthService {
 
       AppLogger.print('Creating member: $email with member code: $memberCode');
 
-      final url = Uri.parse(
-        "$baseUrl/createMember",
-      );
-
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $_currentToken", // Pass JWT
-        },
-        body: jsonEncode({
+      // Use the new CRUD function (auth token will be added automatically)
+      final response = await _httpService.post(
+        'createMember',
+        body: {
           'name': name.trim(),
           'email': email.trim().toLowerCase(),
           'password': password,
@@ -427,20 +372,14 @@ class AppAuthService {
           'purchaseDate': purchaseDate.toIso8601String(),
           'planDays': planDays,
           'maxParticipantsAllowed': maxParticipantsAllowed,
-        }),
+        },
       );
 
-      if (response.statusCode != 200) {
-        throw Exception("Failed with status ${response.statusCode}");
-      }
-
-      final Map<String, dynamic> result = jsonDecode(response.body);
-
-      if (result['success'] == true) {
+      if (response['success'] == true) {
         AppToastUtil.showSuccessToast('Member created successfully');
         return true;
       } else {
-        final errorMessage = result['error_message'] ?? 'Failed to create member';
+        final errorMessage = response['error_message'] ?? 'Failed to create member';
         throw Exception(errorMessage);
       }
     } catch (e) {
@@ -526,34 +465,20 @@ class AppAuthService {
 
       AppLogger.print('Resetting password for: $targetEmail');
 
-      final url = Uri.parse(
-        "$baseUrl/resetPassword",
-      );
-
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $_currentToken",
-        },
-        body: jsonEncode({
+      // Use the new CRUD function (auth token will be added automatically)
+      final response = await _httpService.post(
+        'resetPassword',
+        body: {
           'targetEmail': targetEmail.trim().toLowerCase(),
           'newPassword': newPassword,
-        }),
+        },
       );
 
-      if (response.statusCode != 200) {
-        throw Exception("Failed with status ${response.statusCode}");
-      }
-
-      final Map<String, dynamic> result = jsonDecode(response.body);
-
-      if (result['success'] == true) {
+      if (response['success'] == true) {
         AppToastUtil.showSuccessToast('Password reset successfully');
         return true;
       } else {
-        final errorMessage =
-            result['error_message'] ?? 'Failed to reset password';
+        final errorMessage = response['error_message'] ?? 'Failed to reset password';
         throw Exception(errorMessage);
       }
     } catch (e) {
@@ -628,33 +553,19 @@ class AppAuthService {
 
       AppLogger.print('Getting credentials for: $targetEmail');
 
-      final url = Uri.parse(
-          "$baseUrl/getUserCredentials",
-      );
-
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $_currentToken",
-        },
-        body: jsonEncode({
+      // Use the new CRUD function (auth token will be added automatically)
+      final response = await _httpService.post(
+        'getUserCredentials',
+        body: {
           'targetEmail': targetEmail.trim().toLowerCase(),
-        }),
+        },
       );
 
-      if (response.statusCode != 200) {
-        throw Exception("Failed with status ${response.statusCode}");
-      }
-
-      final Map<String, dynamic> result = jsonDecode(response.body);
-
-      if (result['success'] == true) {
-        final data = Map<String, dynamic>.from(result['data']);
+      if (response['success'] == true) {
+        final data = Map<String, dynamic>.from(response['data']);
         return data['credentials'] as Map<String, dynamic>?;
       } else {
-        final errorMessage =
-            result['error_message'] ?? 'Failed to get credentials';
+        final errorMessage = response['error_message'] ?? 'Failed to get credentials';
         throw Exception(errorMessage);
       }
     } catch (e) {
@@ -714,30 +625,17 @@ class AppAuthService {
 
       AppLogger.print('Getting users for password reset');
 
-      final url = Uri.parse(
-        "$baseUrl/getUsersForPasswordReset",
+      // Use the new CRUD function (auth token will be added automatically)
+      final response = await _httpService.post(
+        'getUsersForPasswordReset',
+        body: {}, // No params needed
       );
 
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $_currentToken",
-        },
-        body: jsonEncode({}), // No params needed
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception("Failed with status ${response.statusCode}");
-      }
-
-      final Map<String, dynamic> result = jsonDecode(response.body);
-
-      if (result['success'] == true) {
-        final data = Map<String, dynamic>.from(result['data']);
+      if (response['success'] == true) {
+        final data = Map<String, dynamic>.from(response['data']);
         return List<Map<String, dynamic>>.from(data['users'] ?? []);
       } else {
-        final errorMessage = result['error_message'] ?? 'Failed to get users';
+        final errorMessage = response['error_message'] ?? 'Failed to get users';
         throw Exception(errorMessage);
       }
     } catch (e) {

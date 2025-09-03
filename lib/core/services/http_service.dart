@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:http/http.dart' as http;
 import 'package:secured_calling/core/services/app_firebase_service.dart';
-import 'package:secured_calling/core/services/app_auth_service.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/firebase_function_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 
@@ -22,6 +21,182 @@ class AppHttpService {
 
       'https://us-central1-secure-calling-2025.cloudfunctions.net';
 
+  /// Request interceptor that adds Bearer token to headers
+  Map<String, String> _getHeaders({bool includeAuth = true}) {
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (includeAuth) {
+      final token = AppLocalStorage.getToken();
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }else{
+        print("No auth token found in local storage, while calling api");
+      }
+    }
+    
+    return headers;
+  }
+
+  /// Generic GET request
+  Future<Map<String, dynamic>> get(
+    String endpoint, {
+    Map<String, String>? queryParams,
+    bool includeAuth = true,
+  }) async {
+    try {
+      final uri = Uri.parse('$firebaseFunctionUrl/$endpoint');
+      final finalUri = queryParams != null 
+          ? uri.replace(queryParameters: queryParams)
+          : uri;
+
+      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
+        functionName: endpoint,
+        method: 'GET',
+        url: finalUri.toString(),
+        headers: _getHeaders(includeAuth: includeAuth),
+        body: '',
+        httpCall: () => http.get(
+          finalUri,
+          headers: _getHeaders(includeAuth: includeAuth),
+        ),
+      );
+
+      return _handleResponse(response);
+    } on SocketException {
+      AppToastUtil.showErrorToast('No Internet connection');
+      rethrow;
+    } catch (e) {
+      print('GET request error for $endpoint: $e');
+      AppToastUtil.showErrorToast('Request failed: $e');
+      rethrow;
+    }
+  }
+
+  /// Generic POST request
+  Future<Map<String, dynamic>> post(
+    String endpoint, {
+    Map<String, dynamic>? body,
+    bool includeAuth = true,
+  }) async {
+    try {
+      final uri = Uri.parse('$firebaseFunctionUrl/$endpoint');
+      final requestBody = body != null ? jsonEncode(body) : '';
+
+      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
+        functionName: endpoint,
+        method: 'POST',
+        url: uri.toString(),
+        headers: _getHeaders(includeAuth: includeAuth),
+        body: requestBody,
+        httpCall: () => http.post(
+          uri,
+          headers: _getHeaders(includeAuth: includeAuth),
+          body: requestBody,
+        ),
+      );
+
+      return _handleResponse(response);
+    } on SocketException {
+      AppToastUtil.showErrorToast('No Internet connection');
+      rethrow;
+    } catch (e) {
+      print('POST request error for $endpoint: $e');
+      AppToastUtil.showErrorToast('Request failed: $e');
+      rethrow;
+    }
+  }
+
+  /// Generic PUT request
+  Future<Map<String, dynamic>> put(
+    String endpoint, {
+    Map<String, dynamic>? body,
+    bool includeAuth = true,
+  }) async {
+    try {
+      final uri = Uri.parse('$firebaseFunctionUrl/$endpoint');
+      final requestBody = body != null ? jsonEncode(body) : '';
+
+      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
+        functionName: endpoint,
+        method: 'PUT',
+        url: uri.toString(),
+        headers: _getHeaders(includeAuth: includeAuth),
+        body: requestBody,
+        httpCall: () => http.put(
+          uri,
+          headers: _getHeaders(includeAuth: includeAuth),
+          body: requestBody,
+        ),
+      );
+
+      return _handleResponse(response);
+    } on SocketException {
+      AppToastUtil.showErrorToast('No Internet connection');
+      rethrow;
+    } catch (e) {
+      print('PUT request error for $endpoint: $e');
+      AppToastUtil.showErrorToast('Request failed: $e');
+      rethrow;
+    }
+  }
+
+  /// Generic DELETE request
+  Future<Map<String, dynamic>> delete(
+    String endpoint, {
+    Map<String, dynamic>? body,
+    bool includeAuth = true,
+  }) async {
+    try {
+      final uri = Uri.parse('$firebaseFunctionUrl/$endpoint');
+      final requestBody = body != null ? jsonEncode(body) : '';
+
+      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
+        functionName: endpoint,
+        method: 'DELETE',
+        url: uri.toString(),
+        headers: _getHeaders(includeAuth: includeAuth),
+        body: requestBody,
+        httpCall: () => http.delete(
+          uri,
+          headers: _getHeaders(includeAuth: includeAuth),
+          body: requestBody,
+        ),
+      );
+
+      return _handleResponse(response);
+    } on SocketException {
+      AppToastUtil.showErrorToast('No Internet connection');
+      rethrow;
+    } catch (e) {
+      print('DELETE request error for $endpoint: $e');
+      AppToastUtil.showErrorToast('Request failed: $e');
+      rethrow;
+    }
+  }
+
+  /// Handle HTTP response and return standardized format
+  Map<String, dynamic> _handleResponse(http.Response response) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      try {
+        return jsonDecode(response.body);
+      } catch (e) {
+        throw Exception('Invalid JSON response: $e');
+      }
+    } else {
+      try {
+        final errorData = jsonDecode(response.body);
+        final errorMessage = errorData['error_message'] ?? 
+            errorData['message'] ?? 
+            'Request failed with status ${response.statusCode}';
+        throw Exception(errorMessage);
+      } catch (e) {
+        throw Exception('Request failed with status ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    }
+  }
+
   /// Get token for a user
   Future<String?> fetchAgoraToken({
     required String channelName,
@@ -39,60 +214,29 @@ class AppHttpService {
         return doesTokenExist['token'];
       }
 
-      // Get authentication token
-      final authToken = await _getAuthToken();
-      if (authToken == null) {
-        throw Exception('User not authenticated');
-      }
-
-      final uri = Uri.parse('$firebaseFunctionUrl/generateToken');
-      final requestBody = jsonEncode({
-        'channelName': channelName,
-        'uid': uid,
-        'userRole': userRole,
-      });
-
-      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
-        functionName: 'generateToken',
-        method: 'POST',
-        url: uri.toString(),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $authToken',
+      // Use the new CRUD function
+      final response = await post(
+        'generateToken',
+        body: {
+          'channelName': channelName,
+          'uid': uid,
+          'userRole': userRole,
         },
-        body: requestBody,
-        httpCall: () => http.post(
-          uri,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $authToken',
-          },
-          body: requestBody,
-        ),
       );
 
-      if (response.statusCode == 200) {
+      if (response['success'] == true && response['token'] != null) {
         print('token generated successfully from Agora');
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['token'] != null) {
-          // Store the token in Firebase
-          await storeTokenInFirebase(
-            channelName: channelName,
-            uid: uid,
-            token: data['token'],
-            expiryTime: data['expireTime'] ?? 
-                DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
-          );
-          return data['token'];
-        } else {
-          throw Exception(data['error_message'] ?? "Token not found in response");
-        }
-      } else {
-        print('Not 200 response: ${response.body}');
-        final errorData = jsonDecode(response.body);
-        throw Exception(
-          "Failed: ${errorData['error_message'] ?? response.reasonPhrase}",
+        // Store the token in Firebase
+        await storeTokenInFirebase(
+          channelName: channelName,
+          uid: uid,
+          token: response['token'],
+          expiryTime: response['expireTime'] ?? 
+              DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
         );
+        return response['token'];
+      } else {
+        throw Exception(response['error_message'] ?? "Token not found in response");
       }
     } on SocketException {
       AppToastUtil.showErrorToast('No Internet connection');
@@ -104,15 +248,7 @@ class AppHttpService {
     }
   }
 
-  /// Get authentication token from AppAuthService
-  Future<String?> _getAuthToken() async {
-    try {
-      return AppAuthService.instance.currentToken;
-    } catch (e) {
-      print('Error getting auth token: $e');
-      return null;
-    }
-  }
+
 
   //store token in firebase
   Future<void> storeTokenInFirebase({
@@ -179,7 +315,6 @@ class AppHttpService {
   }
 
   /// send Notification to user
-
   Future<void> sendPushNotification({
     required String fcmToken,
     required String title,
@@ -187,18 +322,17 @@ class AppHttpService {
     Map<String, dynamic>? payload,
   }) async {
     try {
-      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable(
+      final response = await post(
         'sendNotification',
+        body: {
+          'fcmToken': fcmToken,
+          'title': title,
+          'body': body,
+          'payload': payload ?? {},
+        },
       );
 
-      final response = await callable.call({
-        'fcmToken': fcmToken,
-        'title': title,
-        'body': body,
-        'payload': payload ?? {},
-      });
-
-      print('Notification sent: ${response.data}');
+      print('Notification sent: $response');
     } catch (e) {
       print('Error sending notification: $e');
     }

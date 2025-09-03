@@ -447,7 +447,7 @@ class MeetingController extends GetxController {
         uid: currentUser.userId,
         isHost: isHost,
       );
-      print("\n\nthe token is $token\n");
+      print("\n\nthe agora token is $token\n");
       if (token.trim().isEmpty) {
         AppToastUtil.showErrorToast('Token not found');
         return;

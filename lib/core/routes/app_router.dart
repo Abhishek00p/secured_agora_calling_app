@@ -14,6 +14,9 @@ import 'package:secured_calling/features/meeting/bindings/meeting_binding.dart';
 import 'package:secured_calling/features/meeting/bindings/meeting_detail_binding.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 
+// Import middleware
+import 'package:secured_calling/core/middleware/auth_middleware.dart';
+
 // (Optional) Import your Bindings here if you create them
 import 'package:secured_calling/features/auth/bindings/auth_binding.dart';
 
@@ -37,31 +40,38 @@ class AppRouter {
     GetPage(
       name: welcomeRoute,
       page: () => const WelcomeScreen(),
+      middlewares: [WelcomeMiddleware()],
     ),
     GetPage(
       name: loginRoute,
       page: () => const LoginScreen(),
       binding: AuthBinding(),
+      middlewares: [LoginMiddleware()],
     ),
     GetPage(
       name: homeRoute,
       page: () => const HomeScreen(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: adminRoute,
       page: () => const AdminScreen(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: usersRoute,
       page: () => const UsersScreen(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: userCreationRoute,
       page: () => const UserCreationForm(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: memberFormRoute,
       page: () => const MemberForm(),
+      middlewares: [AuthMiddleware()],
     ),
     
     // Meeting routes
@@ -77,6 +87,7 @@ class AppRouter {
         );
       },
       binding: MeetingBinding(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: meetingViewAllRoute,
@@ -85,6 +96,7 @@ class AppRouter {
         return ViewAllMeetingList(meetings: args);
       },
       binding: MeetingBinding(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: meetingDetailRoute,
@@ -93,6 +105,7 @@ class AppRouter {
         return MeetingDetailPage(meetingId: args['meetingId']);
       },
       binding: MeetingDetailBinding(),
+      middlewares: [AuthMiddleware()],
     ),
   ];
 }

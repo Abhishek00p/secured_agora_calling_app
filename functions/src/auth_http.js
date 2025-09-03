@@ -3,6 +3,7 @@ const admin = require('firebase-admin');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors')({ origin: true });
+const crypto = require("crypto");
 
 // Initialize Firebase Admin (if not already initialized)
 if (!admin.apps.length) {
@@ -10,7 +11,7 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString("hex");
 
 function verifyJWTToken(authHeader) {
   try {
@@ -29,7 +30,7 @@ function verifyJWTToken(authHeader) {
 // Helper function to generate JWT token
 function generateToken(userId, role) {
   return jwt.sign(
-    { userId, role, iat: Date.now() },
+    { userId, role},
     JWT_SECRET,
     { expiresIn: '7d' }
   );
