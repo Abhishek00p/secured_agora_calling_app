@@ -57,7 +57,7 @@ class AgoraService {
   Future<void> _requestPermissions() async {
     if (kIsWeb) return;
     if (Platform.isAndroid || Platform.isIOS) {
-      await [Permission.microphone, Permission.camera].request();
+      await [Permission.microphone].request();
     }
   }
 

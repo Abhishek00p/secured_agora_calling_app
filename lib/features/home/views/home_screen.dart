@@ -67,8 +67,8 @@ class _HomeScreenState extends State<HomeScreen>
                   label: Text("Enable Notifications"),
                   onPressed: () async {
                     Navigator.pop(context);
-                    await NotificationService()
-                        .requestPermissionAndInitialize();
+                    // await NotificationService()
+                    //     .requestPermissionAndInitialize();
                   },
                 ),
                 TextButton(
@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen>
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showNotificationPermissionSheet(context);
+      // _showNotificationPermissionSheet(context);
     });
   }
 

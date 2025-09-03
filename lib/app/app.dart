@@ -11,7 +11,7 @@ class App extends StatelessWidget {
     return GetMaterialApp(
       title: 'SecuredCalling',
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      // darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       initialRoute: AppRouter.welcomeRoute,
       getPages: AppRouter.routes,

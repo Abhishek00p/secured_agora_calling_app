@@ -36,16 +36,16 @@ dependencies:
   firebase_auth: ^4.15.3
   cloud_firestore: ^4.13.6
   cloud_functions: ^4.5.8
-  firebase_messaging: ^14.7.10
+  # firebase_messaging: ^14.7.10
   firebase_storage: ^11.5.6
   agora_rtc_engine: ^6.2.6
   permission_handler: ^11.1.0
   shared_preferences: ^2.2.2
   intl: ^0.19.0
-  flutter_local_notifications: ^16.3.0
-  audioplayers: ^5.2.1
+  # flutter_local_notifications: ^16.3.0
+  # audioplayers: ^5.2.1
   lottie: ^2.7.0
-  flutter_sound: ^9.2.13
+  # flutter_sound: ^9.2.13
   path_provider: ^2.1.1
   http: ^1.1.2
   google_fonts: ^6.1.0

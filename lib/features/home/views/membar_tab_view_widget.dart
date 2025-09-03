@@ -77,10 +77,10 @@ class MembarTabViewWidget extends StatelessWidget {
                     context: context,
                     type: AppPermissionType.microphone,
                   );
-              await PermissionService.requestPermission(
-                context: context,
-                type: AppPermissionType.camera,
-              );
+              // await PermissionService.requestPermission(
+              //   context: context,
+              //   type: AppPermissionType.camera,
+              // );
               if (permissionStatus) {
                 MeetingUtil.createNewMeeting(context: context);
               }

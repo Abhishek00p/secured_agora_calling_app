@@ -59,7 +59,7 @@ async function generateUniqueUserId() {
 exports.login = functions.https.onCall(async (data, context) => {
   try {
     const { email, password } = data;
-
+    console.log('Attempting login for:', email, password);
     // Validate input
     if (!email || !password) {
       return {

@@ -15,8 +15,9 @@ class AppHttpService {
   AppHttpService._internal();
 
   /// Replace this with your actual Firebase Function URL
-  final String firebaseFunctionUrl =
-      'https://us-central1-secure-calling-2025.cloudfunctions.net/api';
+  final String firebaseFunctionUrl = 'http://10.0.2.2:5001/secure-calling-2025/us-central1';
+
+      // 'https://us-central1-secure-calling-2025.cloudfunctions.net/api';
 
   /// Get token for a user
   Future<String?> fetchAgoraToken({
