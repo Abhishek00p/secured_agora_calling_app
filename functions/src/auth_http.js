@@ -11,14 +11,16 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const JWT_SECRET = crypto.randomBytes(64).toString("hex");
+const JWT_SECRET = functions.config().jwt?.secret ||
+  process.env.JWT_SECRET ||
+  crypto.randomBytes(64).toString("hex");;
 
 function verifyJWTToken(authHeader) {
   try {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new Error('No token provided');
     }
-    
+
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded;
@@ -30,7 +32,7 @@ function verifyJWTToken(authHeader) {
 // Helper function to generate JWT token
 function generateToken(userId, role) {
   return jwt.sign(
-    { userId, role},
+    { userId, role },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -57,7 +59,9 @@ function isValidEmail(email) {
 async function generateUniqueUserId() {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 1000);
-  return `${timestamp}${random}`;
+  const value = `${timestamp}${random}`; // concatenate
+  const intValue = parseInt(value.substring(0, 7), 10); // take first 7 digits, convert to int
+  return intValue;
 }
 
 // 1. User Login - HTTP Function
@@ -599,8 +603,8 @@ exports.resetPassword = functions.https.onRequest(async (req, res) => {
         canReset = targetUserData.isMember;
       } else if (currentUserData.isMember) {
         // Member can reset user passwords under their member code
-        canReset = !targetUserData.isMember && 
-                   targetUserData.memberCode === currentUserData.memberCode;
+        canReset = !targetUserData.isMember &&
+          targetUserData.memberCode === currentUserData.memberCode;
       }
 
       if (!canReset) {
@@ -724,8 +728,8 @@ exports.getUserCredentials = functions.https.onRequest(async (req, res) => {
         canView = targetUserData.isMember;
       } else if (currentUserData.isMember) {
         // Member can view user credentials under their member code
-        canView = !targetUserData.isMember && 
-                  targetUserData.memberCode === currentUserData.memberCode;
+        canView = !targetUserData.isMember &&
+          targetUserData.memberCode === currentUserData.memberCode;
       }
 
       if (!canView) {
