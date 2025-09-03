@@ -125,7 +125,7 @@ class WelcomeScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Login', // Changed from 'Get Started'
+                        'Get Started',
                         style: Theme.of(
                           context,
                         ).textTheme.titleMedium?.copyWith(
