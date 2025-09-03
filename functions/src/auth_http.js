@@ -11,7 +11,7 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString("hex");
+const JWT_SECRET = crypto.randomBytes(64).toString("hex");
 
 function verifyJWTToken(authHeader) {
   try {

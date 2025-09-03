@@ -30,6 +30,7 @@ class AppHttpService {
     if (includeAuth) {
       final token = AppLocalStorage.getToken();
       if (token != null && token.isNotEmpty) {
+        print('Bearer token before api call : $token');
         headers['Authorization'] = 'Bearer $token';
       }else{
         print("No auth token found in local storage, while calling api");
