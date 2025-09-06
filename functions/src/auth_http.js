@@ -305,7 +305,7 @@ exports.createUser = functions.https.onRequest(async (req, res) => {
         subscription: null
       };
 
-      await db.collection('users').doc(userId).set(userData);
+      await db.collection('users').doc(String(userId)).set(userData);
 
       // Update member's total users count
       await currentUserRef.update({
@@ -466,7 +466,7 @@ exports.createMember = functions.https.onRequest(async (req, res) => {
         }
       };
 
-      await db.collection('users').doc(userId).set(userData);
+      await db.collection('users').doc(String(userId)).set(userData);
 
       // Create member document
       const memberData = {
