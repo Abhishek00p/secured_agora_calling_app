@@ -11,9 +11,7 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const JWT_SECRET = functions.config().jwt?.secret ||
-  process.env.JWT_SECRET ||
-  crypto.randomBytes(64).toString("hex");;
+const JWT_SECRET = '8a5c8b2bf8eba4b002147ac398905830a682ba665873c37e88134c3881f663e4bd782884061551c04ce1e07a8b3bf01f814446bd472a0b91ae3d68daf0cadb51'
 
 function verifyJWTToken(authHeader) {
   try {
@@ -21,11 +19,20 @@ function verifyJWTToken(authHeader) {
       throw new Error('No token provided');
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const token = authHeader.substring(7).trim(); // Remove 'Bearer ' prefix
+    console.log('Verifying token:', token);
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded;
   } catch (error) {
-    throw new Error('Invalid token');
+    console.log('Signing secret:', JWT_SECRET);
+
+    if (error.name === 'TokenExpiredError') {
+      throw new Error('Token has expired');
+    } else if (error.name === 'JsonWebTokenError') {
+      throw new Error('Token is invalid');
+    } else {
+      throw new Error('Token verification failed');
+    }
   }
 }
 
@@ -145,6 +152,7 @@ exports.login = functions.https.onRequest(async (req, res) => {
       // Update last login
       await userDoc.ref.update({
         lastLoginAt: admin.firestore.FieldValue.serverTimestamp()
+       
       });
 
       return res.status(200).json({
@@ -208,7 +216,7 @@ exports.createUser = functions.https.onRequest(async (req, res) => {
         return res.status(401).json({
           success: false,
           data: null,
-          error_message: 'Invalid or expired token'
+          error_message: error.message
         });
       }
 
@@ -361,7 +369,7 @@ exports.createMember = functions.https.onRequest(async (req, res) => {
         return res.status(401).json({
           success: false,
           data: null,
-          error_message: 'Invalid or expired token'
+          error_message: error.message
         });
       }
 
@@ -481,7 +489,7 @@ exports.createMember = functions.https.onRequest(async (req, res) => {
         maxParticipantsAllowed: maxParticipantsAllowed || 45
       };
 
-      await db.collection('members').doc(userId).set(memberData);
+      await db.collection('members').doc(String(userId)).set(memberData);
 
       return res.status(201).json({
         success: true,
@@ -533,7 +541,7 @@ exports.resetPassword = functions.https.onRequest(async (req, res) => {
         return res.status(401).json({
           success: false,
           data: null,
-          error_message: 'Invalid or expired token'
+          error_message: error.message
         });
       }
 
@@ -674,7 +682,7 @@ exports.getUserCredentials = functions.https.onRequest(async (req, res) => {
         return res.status(401).json({
           success: false,
           data: null,
-          error_message: 'Invalid or expired token'
+          error_message: error.message
         });
       }
 
@@ -793,7 +801,7 @@ exports.getUsersForPasswordReset = functions.https.onRequest(async (req, res) =>
         return res.status(401).json({
           success: false,
           data: null,
-          error_message: 'Invalid or expired token'
+          error_message: error.message
         });
       }
 

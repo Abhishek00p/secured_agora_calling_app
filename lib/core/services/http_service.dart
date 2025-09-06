@@ -5,6 +5,7 @@ import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/firebase_function_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
+import 'package:flutter/foundation.dart';
 
 class AppHttpService {
   static final AppHttpService _instance = AppHttpService._internal();
@@ -15,11 +16,22 @@ class AppHttpService {
 
   AppHttpService._internal();
 
-  /// Replace this with your actual Firebase Function URL
-  final String firebaseFunctionUrl = 
-  'http://10.0.2.2:5001/secure-calling-2025/us-central1/';
-
-      // 'https://us-central1-secure-calling-2025.cloudfunctions.net';
+  /// Get the appropriate Firebase Function URL based on platform and environment
+  String get firebaseFunctionUrl {
+    if (kDebugMode) {
+      // Use local emulator in debug mode
+      if (Platform.isAndroid) {
+        return 'http://192.168.31.58:5001/secure-calling-2025/us-central1/';
+      } else if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
+        return 'http://127.0.0.1:5001/secure-calling-2025/us-central1/';
+      } else {
+        return 'http://localhost:4000/secure-calling-2025/us-central1/';
+      }
+    } else {
+      // Use production URL in release mode
+      return 'https://us-central1-secure-calling-2025.cloudfunctions.net/';
+    }
+  }
 
   /// Request interceptor that adds Bearer token to headers
   Map<String, String> _getHeaders({bool includeAuth = true}) {
@@ -47,7 +59,7 @@ class AppHttpService {
     bool includeAuth = true,
   }) async {
     try {
-      final uri = Uri.parse('$firebaseFunctionUrl/$endpoint');
+      final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final finalUri = queryParams != null 
           ? uri.replace(queryParameters: queryParams)
           : uri;
@@ -82,7 +94,7 @@ class AppHttpService {
     bool includeAuth = true,
   }) async {
     try {
-      final uri = Uri.parse('$firebaseFunctionUrl/$endpoint');
+      final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
 
       final response = await FirebaseFunctionLogger.instance.logFunctionCall(
@@ -116,7 +128,7 @@ class AppHttpService {
     bool includeAuth = true,
   }) async {
     try {
-      final uri = Uri.parse('$firebaseFunctionUrl/$endpoint');
+      final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
 
       final response = await FirebaseFunctionLogger.instance.logFunctionCall(
@@ -150,7 +162,7 @@ class AppHttpService {
     bool includeAuth = true,
   }) async {
     try {
-      final uri = Uri.parse('$firebaseFunctionUrl/$endpoint');
+      final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
 
       final response = await FirebaseFunctionLogger.instance.logFunctionCall(

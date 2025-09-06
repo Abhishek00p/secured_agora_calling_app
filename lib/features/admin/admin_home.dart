@@ -108,6 +108,7 @@ class _AdminScreenState extends State<AdminScreen> {
                         .toList();
 
                 final now = DateTime.now();
+                print("Number of members found before filtering: ${members.length}");
 
                 members =
                     members.where((m) {
@@ -130,6 +131,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     height: Get.height - 300,
                     child:  Center(child: Text("No members found.")));
                 }
+                print("Number of members found: ${members.length}");
                 return ListView.builder(
                   padding: const EdgeInsets.only(bottom: 80),
                   physics: const NeverScrollableScrollPhysics(),

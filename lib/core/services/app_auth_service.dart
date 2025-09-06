@@ -3,12 +3,28 @@ import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/http_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
 
 class AppAuthService {
   static final AppAuthService _instance = AppAuthService._();
   static AppAuthService get instance => _instance;
-  // String baseUrl = "https://us-central1-secure-calling-2025.cloudfunctions.net";
-  String baseUrl = 'http://10.0.2.2:5001/secure-calling-2025/us-central1'; // For local testing
+  /// Get the appropriate base URL based on platform and environment
+  String get baseUrl {
+    if (kDebugMode) {
+      // Use local emulator in debug mode
+      if (Platform.isAndroid) {
+        return 'http://10.0.2.2:5001/secure-calling-2025/us-central1';
+      } else if (Platform.isIOS || Platform.isMacOS) {
+        return 'http://127.0.0.1:5001/secure-calling-2025/us-central1';
+      } else {
+        return 'http://localhost:5001/secure-calling-2025/us-central1';
+      }
+    } else {
+      // Use production URL in release mode
+      return 'https://us-central1-secure-calling-2025.cloudfunctions.net';
+    }
+  }
   // final FirebaseFunctions _functions = FirebaseFunctions.instance; // Not used in HTTP implementation
   String? _currentToken;
   AppUser? _currentUser;

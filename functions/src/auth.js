@@ -181,7 +181,7 @@ exports.createUser = functions.https.onCall(async (data, context) => {
       return {
         success: false,
         data: null,
-        error_message: 'Invalid or expired token'
+        error_message: error.message
       };
     }
     const { name, email, password, memberCode } = data;
@@ -322,7 +322,7 @@ exports.createMember = functions.https.onCall(async (data, context) => {
       return {
         success: false,
         data: null,
-        error_message: 'Invalid or expired token'
+        error_message: error.message
       };
     }
 
@@ -483,7 +483,7 @@ exports.resetPassword = functions.https.onCall(async (data, context) => {
       return {
         success: false,
         data: null,
-        error_message: 'Invalid or expired token'
+        error_message: error.message
       };
     }
 
@@ -613,7 +613,7 @@ exports.getUserCredentials = functions.https.onCall(async (data, context) => {
       return {
         success: false,
         data: null,
-        error_message: 'Invalid or expired token'
+        error_message: error.message
       };
     }
     const { targetEmail } = data;
@@ -720,7 +720,7 @@ exports.getUsersForPasswordReset = functions.https.onCall(async (data, context) 
       return {
         success: false,
         data: null,
-        error_message: 'Invalid or expired token'
+        error_message: error.message
       };
     }
 
