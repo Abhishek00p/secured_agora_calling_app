@@ -33,20 +33,8 @@ class MeetingDialogController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadAvailableUsers();
   }
 
-  void loadAvailableUsers() {
-    final currentUser = AppLocalStorage.getUserDetails();
-    if (currentUser.isMember && currentUser.memberCode.isNotEmpty) {
-      AppFirebaseService.instance.getUsersByMemberCodeStream(currentUser.memberCode).listen((snapshot) {
-        final users = snapshot.docs.map((doc) {
-          return AppUser.fromJson(doc.data() as Map<String, dynamic>);
-        }).toList();
-        availableUsers.value = users;
-      });
-    }
-  }
 
   void toggleUserSelection() {
     showUserSelection.value = !showUserSelection.value;

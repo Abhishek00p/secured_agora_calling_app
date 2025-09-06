@@ -553,7 +553,7 @@ class AppFirebaseService {
       final snapshot = await _firestore.collection('users').get();
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        data['id'] = doc.id;
+    
         return AppUser.fromJson(data);
       }).toList();
     } catch (e) {
