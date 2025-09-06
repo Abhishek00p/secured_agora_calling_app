@@ -18,19 +18,19 @@ class AppHttpService {
 
   /// Get the appropriate Firebase Function URL based on platform and environment
   String get firebaseFunctionUrl {
-    if (kDebugMode) {
-      // Use local emulator in debug mode
-      if (Platform.isAndroid) {
-        return 'http://192.168.31.58:5001/secure-calling-2025/us-central1/';
-      } else if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
-        return 'http://127.0.0.1:5001/secure-calling-2025/us-central1/';
-      } else {
-        return 'http://localhost:4000/secure-calling-2025/us-central1/';
-      }
-    } else {
+    // if (kDebugMode) {
+    //   // Use local emulator in debug mode
+    //   if (Platform.isAndroid) {
+    //     return 'http://192.168.31.58:5001/secure-calling-2025/us-central1/';
+    //   } else if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
+    //     return 'http://127.0.0.1:5001/secure-calling-2025/us-central1/';
+    //   } else {
+    //     return 'http://localhost:4000/secure-calling-2025/us-central1/';
+    //   }
+    // } else {
       // Use production URL in release mode
       return 'https://us-central1-secure-calling-2025.cloudfunctions.net/';
-    }
+    // }
   }
 
   /// Request interceptor that adds Bearer token to headers

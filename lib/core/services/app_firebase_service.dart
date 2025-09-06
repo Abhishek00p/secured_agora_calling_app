@@ -537,6 +537,17 @@ class AppFirebaseService {
         .snapshots();
   }
 
+  Future<List<AppUser>> getUsersByMemberCodeData(String memberCode) async {
+    final QuerySnapshot querySnapshot = await usersCollection
+        .where('memberCode', isEqualTo:  memberCode.toUpperCase())
+        .get();
+    print('Fetched ${querySnapshot.docs.length} users for member code $memberCode');
+    return querySnapshot.docs
+        .map((doc) => AppUser.fromJson(doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+
   Future<List<AppUser>> getAllUsers() async {
     try {
       final snapshot = await _firestore.collection('users').get();

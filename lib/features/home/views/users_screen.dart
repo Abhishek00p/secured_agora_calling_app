@@ -33,8 +33,8 @@ class _UsersScreenState extends State<UsersScreen> {
 
     try {
       final currentUser = AppLocalStorage.getUserDetails();
-      final users = await AppFirebaseService.instance.getAllUsers();
-      
+      final users = await AppFirebaseService.instance.getUsersByMemberCodeData(currentUser.memberCode);
+      print('Total users fetched: ${users.length}');
       // Filter users based on member code
       final filteredUsers =
       users.where((user) => 
