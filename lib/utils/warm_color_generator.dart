@@ -22,7 +22,7 @@ class WarmColorGenerator {
 
   static final List<Color> _shuffledColors = List.from(_warmColors)..shuffle();
   static int _index = 0;
-
+  static List<Color> get warmColors => _warmColors;
   static Color getRandomWarmColor() {
     if (_index >= _shuffledColors.length) {
       _shuffledColors.shuffle();
@@ -30,4 +30,13 @@ class WarmColorGenerator {
     }
     return _shuffledColors[_index++];
   }
+
+  static Color getRandomWarmColorByIndex(int index) {
+    if (index < 0 || index >= _shuffledColors.length) {
+      return _shuffledColors[0];
+    }
+    return _shuffledColors[index];
+  }
+
+  
 }

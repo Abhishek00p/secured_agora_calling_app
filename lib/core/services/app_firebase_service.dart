@@ -11,6 +11,7 @@ import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
+import 'package:secured_calling/utils/warm_color_generator.dart';
 
 class AppFirebaseService {
   // Singleton pattern
@@ -19,7 +20,7 @@ class AppFirebaseService {
   static AppFirebaseService get instance => _instance;
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  User? get currentUser=> FirebaseAuth.instance.currentUser;
+  User? get currentUser => FirebaseAuth.instance.currentUser;
 
   // Firestore references
   CollectionReference get usersCollection => _firestore.collection('users');
@@ -50,7 +51,9 @@ class AppFirebaseService {
     if (currentUser.userId > 0) {
       AppLogger.print('current user ID : ${currentUser.userId}');
       final res =
-          (await usersCollection.where('userId', isEqualTo: currentUser.userId).get())
+          (await usersCollection
+                  .where('userId', isEqualTo: currentUser.userId)
+                  .get())
               .docs
               .firstOrNull;
       if (res != null) {
@@ -75,7 +78,8 @@ class AppFirebaseService {
     String? password,
     bool requiresApproval = false,
     required int maxParticipants,
-    required String hostName, required int hostUserId,
+    required String hostName,
+    required int hostUserId,
   }) async {
     final meetingDocId = await AppMeetingIdGenrator.generateMeetingId();
     await meetingsCollection.doc(meetingDocId).set({
@@ -129,26 +133,37 @@ class AppFirebaseService {
 
   Future<bool> addParticipants(String meetId, int userId) async {
     try {
-      final participantDoc =
-          meetingsCollection.doc(meetId).collection('participants').doc('$userId');
+      final participantDoc = meetingsCollection
+          .doc(meetId)
+          .collection('participants')
+          .doc('$userId');
 
       final participantSnapshot = await participantDoc.get();
 
       if (!participantSnapshot.exists) {
         final userData = await getUserDataWhereUserId(userId);
         final userName =
-            (userData?.data() as Map<String, dynamic>?)?['name'] ?? 'Unknown User';
+            (userData?.data() as Map<String, dynamic>?)?['name'] ??
+            'Unknown User';
 
         await participantDoc.set({
           'userId': userId,
           'username': userName,
           'joinTime': FieldValue.serverTimestamp(),
           'leaveTime': null,
+          'colorIndex': Random().nextInt(WarmColorGenerator.warmColors.length),
+          'isActive': true,
         });
 
         await meetingsCollection.doc(meetId).update({
           'totalUniqueParticipants': FieldValue.increment(1),
           'allParticipants': FieldValue.arrayUnion([userId]),
+        });
+      }else{
+        await participantDoc.update({
+          'joinTime': FieldValue.serverTimestamp(),
+          'leaveTime': null,
+          'isActive': true,
         });
       }
       return true;
@@ -160,32 +175,37 @@ class AppFirebaseService {
 
   Future<bool> removeParticipants(String meetId, int userId) async {
     try {
-      final participantDoc =
-          meetingsCollection.doc(meetId).collection('participants').doc('$userId');
+      final participantDoc = meetingsCollection
+          .doc(meetId)
+          .collection('participants')
+          .doc('$userId');
 
-      await participantDoc.update({
-        'leaveTime': FieldValue.serverTimestamp(),
+      await participantDoc.update({'leaveTime': FieldValue.serverTimestamp(),
+      'isActive': false,
       });
 
       // Check if this was the last participant
       final participantsSnapshot =
           await meetingsCollection.doc(meetId).collection('participants').get();
 
-      final activeParticipants = participantsSnapshot.docs.where((doc) => doc.data()['leaveTime'] == null);
+      final activeParticipants =
+          participantsSnapshot.docs.where((doc) {
+            return (doc.data()['isActive'] as bool?) == true;
+          }).toList();
 
       if (activeParticipants.isEmpty) {
         final meetingDoc = await meetingsCollection.doc(meetId).get();
         final meetingData = meetingDoc.data() as Map<String, dynamic>?;
         final actualStartTime = meetingData?['actualStartTime'];
         Duration actualDuration = Duration.zero;
-        
+
         if (actualStartTime != null) {
           final startTime = DateTime.tryParse(actualStartTime);
           if (startTime != null) {
             actualDuration = DateTime.now().difference(startTime);
           }
         }
-        
+
         await meetingsCollection.doc(meetId).update({
           'status': 'ended',
           'actualEndTime': FieldValue.serverTimestamp(),
@@ -222,17 +242,19 @@ class AppFirebaseService {
       }
 
       final meetingData = meetingDoc.data() as Map<String, dynamic>;
-      
+
       // Check if meeting is still active
       final status = meetingData['status'] as String?;
       if (status == 'ended' || status == 'cancelled') {
-        throw Exception('Cannot extend a meeting that has ended or been cancelled');
+        throw Exception(
+          'Cannot extend a meeting that has ended or been cancelled',
+        );
       }
 
       // Parse current end time
       final currentEndTime = meetingData['scheduledEndTime'];
       DateTime endTime;
-      
+
       if (currentEndTime is Timestamp) {
         endTime = currentEndTime.toDate();
       } else if (currentEndTime is String) {
@@ -243,7 +265,7 @@ class AppFirebaseService {
 
       // Calculate new end time
       final newEndTime = endTime.add(Duration(minutes: additionalMinutes));
-      
+
       // Get current duration
       final currentDuration = meetingData['duration'] as int? ?? 0;
       final newDuration = currentDuration + additionalMinutes;
@@ -256,7 +278,9 @@ class AppFirebaseService {
         'totalExtensions': FieldValue.increment(1),
       });
 
-      AppLogger.print('Meeting $meetingId extended by $additionalMinutes minutes. New end time: $newEndTime');
+      AppLogger.print(
+        'Meeting $meetingId extended by $additionalMinutes minutes. New end time: $newEndTime',
+      );
     } catch (e) {
       AppLogger.print('Error extending meeting: $e');
       rethrow;
@@ -272,7 +296,7 @@ class AppFirebaseService {
   }) async {
     try {
       await extendMeeting(meetingId, additionalMinutes);
-      
+
       // Add extension log
       await meetingsCollection.doc(meetingId).collection('extensions').add({
         'additionalMinutes': additionalMinutes,
@@ -285,7 +309,9 @@ class AppFirebaseService {
       // TODO: Implement participant notification if needed
       if (notifyParticipants) {
         // This could send push notifications or update participant streams
-        AppLogger.print('Participant notification for meeting extension not yet implemented');
+        AppLogger.print(
+          'Participant notification for meeting extension not yet implemented',
+        );
       }
     } catch (e) {
       AppLogger.print('Error extending meeting with options: $e');
@@ -357,7 +383,10 @@ class AppFirebaseService {
         .snapshots();
   }
 
-  Stream<QuerySnapshot> getUpcomingMeetingsForUserStream(String memberCode, int userId) {
+  Stream<QuerySnapshot> getUpcomingMeetingsForUserStream(
+    String memberCode,
+    int userId,
+  ) {
     final now = DateTime.now();
     return meetingsCollection
         .where('memberCode', isEqualTo: memberCode.toUpperCase())
@@ -443,11 +472,12 @@ class AppFirebaseService {
   Future<String> getAgoraToken({
     required String channelName,
     required int uid,
-    required bool isHost
+    required bool isHost,
   }) async {
     return await AppHttpService().fetchAgoraToken(
           channelName: channelName,
-          uid: uid,userRole: isHost?1:0
+          uid: uid,
+          userRole: isHost ? 1 : 0,
         ) ??
         '';
   }
@@ -577,19 +607,18 @@ class AppFirebaseService {
   Future<void> removeAllParticipants(String meetingId) async {
     try {
       // Get all participants for this meeting
-      final participantsSnapshot = await meetingsCollection
-          .doc(meetingId)
-          .collection('participants')
-          .get();
+      final participantsSnapshot =
+          await meetingsCollection
+              .doc(meetingId)
+              .collection('participants')
+              .get();
 
       // Mark all participants as left with current timestamp
       final batch = _firestore.batch();
       final now = FieldValue.serverTimestamp();
-      
+
       for (final doc in participantsSnapshot.docs) {
-        batch.update(doc.reference, {
-          'leaveTime': now,
-        });
+        batch.update(doc.reference, {'leaveTime': now});
       }
 
       // Update meeting status to ended
@@ -601,7 +630,7 @@ class AppFirebaseService {
 
       // Commit all changes
       await batch.commit();
-      
+
       AppLogger.print('All participants removed from meeting $meetingId');
     } catch (e) {
       AppLogger.print('Error removing all participants: $e');

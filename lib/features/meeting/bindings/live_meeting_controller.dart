@@ -60,7 +60,9 @@ class MeetingController extends GetxController {
       }
       meetingModel.value = MeetingModel.fromJson(result);
       remainingSeconds =
-          meetingModel.value.scheduledEndTime.difference(DateTime.now()).inSeconds;
+          meetingModel.value.scheduledEndTime
+              .difference(DateTime.now())
+              .inSeconds;
 
       isHost = meetingModel.value.hostId == currentUser.firebaseUserId;
 
@@ -73,7 +75,11 @@ class MeetingController extends GetxController {
         }
 
         // Show persistent timer warning dialog at 5 minutes remaining
-        if (remainingSeconds <= 300 && remainingSeconds > 0 && isHost && !_hasExtended && !_timerWarningShown) {
+        if (remainingSeconds <= 300 &&
+            remainingSeconds > 0 &&
+            isHost &&
+            !_hasExtended &&
+            !_timerWarningShown) {
           _showTimerWarningDialog();
         }
 
@@ -95,10 +101,10 @@ class MeetingController extends GetxController {
       _leaveSubscription = _firebaseService
           .isInstructedToLeave(meetingId)
           .listen((isInstructed) {
-        if (isInstructed) {
-          endMeeting();
-        }
-      });
+            if (isInstructed) {
+              endMeeting();
+            }
+          });
     } catch (e) {
       AppLogger.print('Error starting timer: $e');
     }
@@ -106,45 +112,51 @@ class MeetingController extends GetxController {
 
   // Track if meeting has been extended
   bool _hasExtended = false;
-  
+
   // Track if timer warning dialog is already shown
   bool _timerWarningShown = false;
-  
+
   // Track if timer warning dialog was dismissed (to prevent re-showing)
   bool _timerWarningDismissed = false;
-  
+
   // Global key for the timer warning dialog
-  final GlobalKey<TimerWarningDialogState> _timerWarningDialogKey = GlobalKey<TimerWarningDialogState>();
+  final GlobalKey<TimerWarningDialogState> _timerWarningDialogKey =
+      GlobalKey<TimerWarningDialogState>();
 
   // Show persistent timer warning dialog
   void _showTimerWarningDialog() {
-    if (_timerWarningShown || _timerWarningDismissed) return; // Don't show if already shown or dismissed
-    
+    if (_timerWarningShown || _timerWarningDismissed)
+      return; // Don't show if already shown or dismissed
+
     _timerWarningShown = true;
-    
+
     showDialog(
       context: Get.context!,
       barrierDismissible: false, // Cannot be dismissed by clicking outside
-      builder: (context) => TimerWarningDialog(
-        key: _timerWarningDialogKey,
-        onExtend: () async {
-          _timerWarningShown = false;
-          Navigator.pop(context);
-          await _showExtendMeetingDialog(context);
-        },
-        onDismiss: () {
-          _timerWarningShown = false;
-          _timerWarningDismissed = true; // Mark as dismissed to prevent re-showing
-          Navigator.pop(context);
-        },
-      ),
+      builder:
+          (context) => TimerWarningDialog(
+            key: _timerWarningDialogKey,
+            onExtend: () async {
+              _timerWarningShown = false;
+              Navigator.pop(context);
+              await _showExtendMeetingDialog(context);
+            },
+            onDismiss: () {
+              _timerWarningShown = false;
+              _timerWarningDismissed =
+                  true; // Mark as dismissed to prevent re-showing
+              Navigator.pop(context);
+            },
+          ),
     );
   }
 
   // Update timer warning dialog content
   void _updateTimerWarningContent() {
     if (_timerWarningDialogKey.currentState != null) {
-      _timerWarningDialogKey.currentState!.updateRemainingTime(remainingSeconds);
+      _timerWarningDialogKey.currentState!.updateRemainingTime(
+        remainingSeconds,
+      );
     }
   }
 
@@ -152,22 +164,23 @@ class MeetingController extends GetxController {
   Future<void> _showExtendMeetingDialog(BuildContext context) async {
     showDialog(
       context: context,
-      builder: (context) => ExtendMeetingDialog(
-        meetingId: meetingId,
-        meetingTitle: meetingModel.value.meetingName,
-        onExtend: (additionalMinutes, reason) async {
-          try {
-            await extendMeetingWithOptions(
-              additionalMinutes: additionalMinutes,
-              reason: reason,
-            );
-            return true;
-          } catch (e) {
-            AppToastUtil.showErrorToast('Failed to extend meeting: $e');
-            return false;
-          }
-        },
-      ),
+      builder:
+          (context) => ExtendMeetingDialog(
+            meetingId: meetingId,
+            meetingTitle: meetingModel.value.meetingName,
+            onExtend: (additionalMinutes, reason) async {
+              try {
+                await extendMeetingWithOptions(
+                  additionalMinutes: additionalMinutes,
+                  reason: reason,
+                );
+                return true;
+              } catch (e) {
+                AppToastUtil.showErrorToast('Failed to extend meeting: $e');
+                return false;
+              }
+            },
+          ),
     );
   }
 
@@ -178,7 +191,8 @@ class MeetingController extends GetxController {
 
   // Show end time toast in last 60 seconds
   void _showEndTimeToast(int secondsLeft) {
-    if (secondsLeft % 10 == 0) { // Show every 10 seconds to avoid spam
+    if (secondsLeft % 10 == 0) {
+      // Show every 10 seconds to avoid spam
       AppToastUtil.showInfoToast(
         'Meeting will end in ${secondsLeft ~/ 60}:${(secondsLeft % 60).toString().padLeft(2, '0')}',
       );
@@ -189,24 +203,25 @@ class MeetingController extends GetxController {
   Future<void> _forceEndMeeting() async {
     try {
       AppLogger.print('Meeting time expired. Force ending meeting...');
-      
+
       // Show final warning
-      AppToastUtil.showErrorToast('Meeting time has expired. Ending meeting...');
-      
+      AppToastUtil.showErrorToast(
+        'Meeting time has expired. Ending meeting...',
+      );
+
       // Force remove all participants including host
       await _firebaseService.removeAllParticipants(meetingId);
-      
+
       // Leave Agora channel
       await _agoraService.leaveChannel();
-      
+
       // Clear all memories and state
       _clearMeetingState();
-      
+
       // Navigate back to home page
       if (Get.context != null && Get.context!.mounted) {
         Navigator.of(Get.context!).popUntil((route) => route.isFirst);
       }
-      
     } catch (e) {
       AppLogger.print('Error force ending meeting: $e');
       // Even if there's an error, try to navigate back
@@ -223,7 +238,7 @@ class MeetingController extends GetxController {
     _leaveSubscription?.cancel();
     _muteSubscription?.cancel();
     _meetingSubscription?.cancel();
-    
+
     // Reset all state variables
     isMeetEneded = true;
     participants.clear();
@@ -238,14 +253,14 @@ class MeetingController extends GetxController {
     activeSpeakerUid.value = 0;
     currentSpeaker = '';
     _hasExtended = false;
-    
+
     // Clear error state
     error.value = null;
-    
+
     // Reset timer warning flags
     _timerWarningShown = false;
     _timerWarningDismissed = false; // Reset dismissal flag
-    
+
     update();
   }
 
@@ -350,32 +365,42 @@ class MeetingController extends GetxController {
       }
 
       _firebaseService.getParticipantsStream(meetingId).listen((snapshot) {
-        final newParticipants = snapshot.docs.map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return ParticipantModel(
-            userId: data['userId'],
-            name: data['username'],
-            isUserMuted: !pttUsers.contains(data['userId']), // Muted if not in PTT
-            isUserSpeaking: false, // This will be updated by Agora
-            color: WarmColorGenerator.getRandomWarmColor(),
-            firebaseUid: '', // This might need to be fetched if required
-          );
-        }).toList();
+        final newParticipants =
+            snapshot.docs
+                .where((doc) {
+                  return (doc.data() as Map<String, dynamic>)['isActive'] == true;
+                })
+                .map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return ParticipantModel(
+                    userId: data['userId'],
+                    name: data['username'],
+                    isUserMuted:
+                        !pttUsers.contains(
+                          data['userId'],
+                        ), // Muted if not in PTT
+                    isUserSpeaking: false, // This will be updated by Agora
+                    color: WarmColorGenerator.getRandomWarmColorByIndex(data['colorIndex'] ?? 0),
+                    firebaseUid:
+                        '', // This might need to be fetched if required
+                  );
+                })
+                .toList();
         participants = newParticipants;
         update();
       });
 
       _meetingSubscription?.cancel();
-      _meetingSubscription =
-          _firebaseService.getMeetingStream(meetingId).listen((doc) {
-        if (doc.exists) {
-          final data = doc.data() as Map<String, dynamic>;
-          pttUsers.value = List<int>.from(data['pttUsers'] ?? []);
+      _meetingSubscription = _firebaseService
+          .getMeetingStream(meetingId)
+          .listen((doc) {
+            if (doc.exists) {
+              final data = doc.data() as Map<String, dynamic>;
+              pttUsers.value = List<int>.from(data['pttUsers'] ?? []);
 
-       
-          updateMuteStatesForPTT();
-        }
-      });
+              updateMuteStatesForPTT();
+            }
+          });
     } catch (e) {
       AppLogger.print('Error initializing meeting: $e');
     }
@@ -404,7 +429,10 @@ class MeetingController extends GetxController {
       // Host can hear everyone. Unmute all remote streams.
       for (final participant in participants) {
         if (participant.userId != currentUser.userId) {
-          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: false);
+          _agoraService.engine?.muteRemoteAudioStream(
+            uid: participant.userId,
+            mute: false,
+          );
         }
       }
     } else {
@@ -413,8 +441,11 @@ class MeetingController extends GetxController {
         if (participant.userId == currentUser.userId) continue;
 
         // Participant can always hear the host.
-      if (participant.userId == meetingModel.value.hostUserId) {
-          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: false);
+        if (participant.userId == meetingModel.value.hostUserId) {
+          _agoraService.engine?.muteRemoteAudioStream(
+            uid: participant.userId,
+            mute: false,
+          );
           continue;
         }
 
@@ -424,9 +455,15 @@ class MeetingController extends GetxController {
         final isOtherPtt = pttUsers.contains(participant.userId);
 
         if (amIPtt && isOtherPtt) {
-          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: false);
+          _agoraService.engine?.muteRemoteAudioStream(
+            uid: participant.userId,
+            mute: false,
+          );
         } else {
-          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: true);
+          _agoraService.engine?.muteRemoteAudioStream(
+            uid: participant.userId,
+            mute: true,
+          );
         }
       }
     }
@@ -474,10 +511,6 @@ class MeetingController extends GetxController {
     _agoraService.engine?.setEnableSpeakerphone(isOnSpeaker.value);
     update();
   }
-
- 
-
-
 
   Future<void> endMeeting() async {
     await _agoraService.leaveChannel();
@@ -555,7 +588,9 @@ class MeetingController extends GetxController {
         isUserSpeaking: muted ? false : participants[index].isUserSpeaking,
       );
     } else {
-      AppLogger.print('Warning: User $remoteUid not found in participants list');
+      AppLogger.print(
+        'Warning: User $remoteUid not found in participants list',
+      );
     }
 
     update();
@@ -589,9 +624,9 @@ class MeetingController extends GetxController {
 
   RtcEngineEventHandler _rtcEngineEventHandler(BuildContext context) {
     _agoraService.engine?.enableAudioVolumeIndication(
-  interval: 200, // ms between reports
-  smooth: 3,     // smoothness (1–3)
-  reportVad: true, // voice activity detection
+      interval: 200, // ms between reports
+      smooth: 3, // smoothness (1–3)
+      reportVad: true, // voice activity detection
     );
     return RtcEngineEventHandler(
       onUserJoined: (connection, remoteUid, elapsed) {
@@ -607,17 +642,20 @@ class MeetingController extends GetxController {
         isMeetEneded = true;
         update();
       },
-      onAudioVolumeIndication: (rtc,speakers, speakerNumber,totalVolume) {
-          if (speakers.isNotEmpty) {
-            final loudest = speakers.reduce((a, b) =>( a.volume??0) > (b.volume??0) ? a : b);
-            if ((loudest.volume??0) > 5) { // threshold
-              activeSpeakerUid.value = loudest.uid ?? 0;
-            } else {
-              activeSpeakerUid.value = 0;
-            }
+      onAudioVolumeIndication: (rtc, speakers, speakerNumber, totalVolume) {
+        if (speakers.isNotEmpty) {
+          final loudest = speakers.reduce(
+            (a, b) => (a.volume ?? 0) > (b.volume ?? 0) ? a : b,
+          );
+          if ((loudest.volume ?? 0) > 5) {
+            // threshold
+            activeSpeakerUid.value = loudest.uid ?? 0;
+          } else {
+            activeSpeakerUid.value = 0;
           }
-        },
-    
+        }
+      },
+
       onUserMuteAudio:
           (connection, remoteUid, muted) => updateMuteStatus(remoteUid, muted),
       onActiveSpeaker: onActiveSpeaker,
@@ -654,7 +692,7 @@ class MeetingController extends GetxController {
     try {
       // Show loading state
       update();
-      
+
       // Use the enhanced Firebase service
       await _firebaseService.extendMeetingWithOptions(
         meetingId: meetingId,
@@ -662,7 +700,7 @@ class MeetingController extends GetxController {
         reason: 'Meeting extended by host during live session',
         notifyParticipants: true,
       );
-      
+
       // Update local meeting model
       if (meetingModel.value != MeetingModel.toEmpty()) {
         final updatedMeeting = MeetingModel(
@@ -684,7 +722,9 @@ class MeetingController extends GetxController {
           pendingApprovals: meetingModel.value.pendingApprovals,
           invitedUsers: meetingModel.value.invitedUsers,
           scheduledStartTime: meetingModel.value.scheduledStartTime,
-          scheduledEndTime: meetingModel.value.scheduledEndTime.add(Duration(minutes: 30)),
+          scheduledEndTime: meetingModel.value.scheduledEndTime.add(
+            Duration(minutes: 30),
+          ),
           createdAt: meetingModel.value.createdAt,
           actualStartTime: meetingModel.value.actualStartTime,
           actualEndTime: meetingModel.value.actualEndTime,
@@ -692,21 +732,21 @@ class MeetingController extends GetxController {
           actualDuration: meetingModel.value.actualDuration,
           participantHistory: meetingModel.value.participantHistory,
         );
-        
+
         meetingModel.value = updatedMeeting;
       }
-      
+
       // Set extension flag to prevent end time warnings
       _hasExtended = true;
       _timerWarningShown = false; // Hide timer warning dialog
-      _timerWarningDismissed = false; // Reset dismissal flag for future warnings
-      
+      _timerWarningDismissed =
+          false; // Reset dismissal flag for future warnings
+
       // Restart timer with new duration
       startTimer();
-      
+
       // Show success message
       AppToastUtil.showSuccessToast('Meeting extended by 30 minutes');
-      
     } catch (e) {
       AppLogger.print('Error extending meeting: $e');
       AppToastUtil.showErrorToast('Failed to extend meeting: $e');
@@ -723,7 +763,7 @@ class MeetingController extends GetxController {
     try {
       // Show loading state
       update();
-      
+
       // Use the enhanced Firebase service
       await _firebaseService.extendMeetingWithOptions(
         meetingId: meetingId,
@@ -731,7 +771,7 @@ class MeetingController extends GetxController {
         reason: reason ?? 'Meeting extended by host',
         notifyParticipants: true,
       );
-      
+
       // Update local meeting model
       if (meetingModel.value != MeetingModel.toEmpty()) {
         final updatedMeeting = MeetingModel(
@@ -753,7 +793,9 @@ class MeetingController extends GetxController {
           pendingApprovals: meetingModel.value.pendingApprovals,
           invitedUsers: meetingModel.value.invitedUsers,
           scheduledStartTime: meetingModel.value.scheduledStartTime,
-          scheduledEndTime: meetingModel.value.scheduledEndTime.add(Duration(minutes: additionalMinutes)),
+          scheduledEndTime: meetingModel.value.scheduledEndTime.add(
+            Duration(minutes: additionalMinutes),
+          ),
           createdAt: meetingModel.value.createdAt,
           actualStartTime: meetingModel.value.actualStartTime,
           actualEndTime: meetingModel.value.actualEndTime,
@@ -761,21 +803,23 @@ class MeetingController extends GetxController {
           actualDuration: meetingModel.value.actualDuration,
           participantHistory: meetingModel.value.participantHistory,
         );
-        
+
         meetingModel.value = updatedMeeting;
       }
-      
+
       // Set extension flag to prevent end time warnings
       _hasExtended = true;
       _timerWarningShown = false; // Hide timer warning dialog
-      _timerWarningDismissed = false; // Reset dismissal flag for future warnings
-      
+      _timerWarningDismissed =
+          false; // Reset dismissal flag for future warnings
+
       // Restart timer with new duration
       startTimer();
-      
+
       // Show success message
-      AppToastUtil.showSuccessToast('Meeting extended by $additionalMinutes minutes');
-      
+      AppToastUtil.showSuccessToast(
+        'Meeting extended by $additionalMinutes minutes',
+      );
     } catch (e) {
       AppLogger.print('Error extending meeting: $e');
       AppToastUtil.showErrorToast('Failed to extend meeting: $e');
@@ -784,5 +828,4 @@ class MeetingController extends GetxController {
       update();
     }
   }
-
 }
