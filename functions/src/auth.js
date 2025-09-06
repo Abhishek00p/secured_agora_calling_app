@@ -213,7 +213,7 @@ exports.createUser = functions.https.onCall(async (data, context) => {
     }
 
     // Check if current user is a member
-    const currentUserRef = db.collection('users').doc(currentUserId);
+    const currentUserRef = db.collection('users').doc(String(currentUserId));
     const currentUserDoc = await currentUserRef.get();
 
     if (!currentUserDoc.exists) {
@@ -355,7 +355,7 @@ exports.createMember = functions.https.onCall(async (data, context) => {
     }
 
     // Check if current user is admin
-    const currentUserRef = db.collection('users').doc(currentUserId);
+    const currentUserRef = db.collection('users').doc(String(currentUserId));
     const currentUserDoc = await currentUserRef.get();
 
     if (!currentUserDoc.exists) {
@@ -426,9 +426,9 @@ exports.createMember = functions.https.onCall(async (data, context) => {
         expiryDate: new Date(Date.now() + planDays * 24 * 60 * 60 * 1000)
       }
     };
-
-    await db.collection('users').doc(userId).set(userData);
-
+    console.log('Creating user with userId data:', userData);
+    await db.collection('users').doc(String(userId)).set(userData);
+    console.log('User created with ID:', userId);
     // Create member document
     const memberData = {
       id: userId,
@@ -441,8 +441,8 @@ exports.createMember = functions.https.onCall(async (data, context) => {
       totalUsers: 0,
       maxParticipantsAllowed: maxParticipantsAllowed || 45
     };
-
-    await db.collection('members').doc(userId).set(memberData);
+    console.log('Creating member with userId data:', memberData);
+    await db.collection('members').doc(String(userId)).set(memberData);
 
     return {
       success: true,

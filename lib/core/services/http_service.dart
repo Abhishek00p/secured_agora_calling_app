@@ -17,9 +17,9 @@ class AppHttpService {
 
   /// Replace this with your actual Firebase Function URL
   final String firebaseFunctionUrl = 
-  // 'http://10.0.2.2:5001/secure-calling-2025/us-central1';
+  'http://10.0.2.2:5001/secure-calling-2025/us-central1/';
 
-      'https://us-central1-secure-calling-2025.cloudfunctions.net';
+      // 'https://us-central1-secure-calling-2025.cloudfunctions.net';
 
   /// Request interceptor that adds Bearer token to headers
   Map<String, String> _getHeaders({bool includeAuth = true}) {
