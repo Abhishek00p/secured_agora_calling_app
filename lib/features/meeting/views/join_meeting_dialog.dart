@@ -38,8 +38,8 @@ class JoinMeetingController extends GetxController {
   void onInit() {
     super.onInit();
     clearState();
-    loadUpcomingMeetings();
-    loadAvailableUsers();
+    // loadUpcomingMeetings();
+    // loadAvailableUsers();
   }
 
   void loadUpcomingMeetings() {
@@ -252,155 +252,155 @@ class JoinMeetingDialog extends StatelessWidget {
                   const SizedBox(height: 24),
                   
                   // Upcoming Meetings Section (for members only)
-                  Obx(() {
-                    final currentUser = AppLocalStorage.getUserDetails();
-                    if (currentUser.isMember && controller.upcomingMeetings.isNotEmpty) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Upcoming Meetings',
-                            style: Get.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            height: 120,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: controller.upcomingMeetings.length,
-                              itemBuilder: (context, index) {
-                                final meeting = controller.upcomingMeetings[index];
-                                return Container(
-                                  width: 200,
-                                  margin: const EdgeInsets.only(right: 12),
-                                  child: Card(
-                                    child: InkWell(
-                                      onTap: () {
-                                        controller.meetingIdController.text = meeting.meetId;
-                                        controller.searchMeeting();
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(12),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              meeting.meetingName,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 12,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              'Host: ${meeting.hostName}',
-                                              style: const TextStyle(fontSize: 10),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              meeting.scheduledStartTime.formatDateTime,
-                                              style: const TextStyle(fontSize: 10),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }),
+                  // Obx(() {
+                  //   final currentUser = AppLocalStorage.getUserDetails();
+                  //   if (currentUser.isMember && controller.upcomingMeetings.isNotEmpty) {
+                  //     return Column(
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         Text(
+                  //           'Upcoming Meetings',
+                  //           style: Get.textTheme.titleMedium?.copyWith(
+                  //             fontWeight: FontWeight.bold,
+                  //           ),
+                  //         ),
+                  //         const SizedBox(height: 12),
+                  //         Container(
+                  //           height: 120,
+                  //           child: ListView.builder(
+                  //             scrollDirection: Axis.horizontal,
+                  //             itemCount: controller.upcomingMeetings.length,
+                  //             itemBuilder: (context, index) {
+                  //               final meeting = controller.upcomingMeetings[index];
+                  //               return Container(
+                  //                 width: 200,
+                  //                 margin: const EdgeInsets.only(right: 12),
+                  //                 child: Card(
+                  //                   child: InkWell(
+                  //                     onTap: () {
+                  //                       controller.meetingIdController.text = meeting.meetId;
+                  //                       controller.searchMeeting();
+                  //                     },
+                  //                     child: Padding(
+                  //                       padding: const EdgeInsets.all(12),
+                  //                       child: Column(
+                  //                         crossAxisAlignment: CrossAxisAlignment.start,
+                  //                         children: [
+                  //                           Text(
+                  //                             meeting.meetingName,
+                  //                             style: const TextStyle(
+                  //                               fontWeight: FontWeight.bold,
+                  //                               fontSize: 12,
+                  //                             ),
+                  //                             maxLines: 1,
+                  //                             overflow: TextOverflow.ellipsis,
+                  //                           ),
+                  //                           const SizedBox(height: 4),
+                  //                           Text(
+                  //                             'Host: ${meeting.hostName}',
+                  //                             style: const TextStyle(fontSize: 10),
+                  //                             maxLines: 1,
+                  //                             overflow: TextOverflow.ellipsis,
+                  //                           ),
+                  //                           const SizedBox(height: 4),
+                  //                           Text(
+                  //                             meeting.scheduledStartTime.formatDateTime,
+                  //                             style: const TextStyle(fontSize: 10),
+                  //                           ),
+                  //                         ],
+                  //                       ),
+                  //                     ),
+                  //                   ),
+                  //                 ),
+                  //               );
+                  //             },
+                  //           ),
+                  //         ),
+                  //         const SizedBox(height: 16),
+                  //       ],
+                  //     );
+                  //   }
+                  //   return const SizedBox.shrink();
+                  // }),
                   
                   // User Selection Section (for members only)
-                  Obx(() {
-                    final currentUser = AppLocalStorage.getUserDetails();
-                    if (currentUser.isMember) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Meeting Invites',
-                                style: Get.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                icon: Icon(
-                                  controller.showUserSelection.value 
-                                    ? Icons.expand_less 
-                                    : Icons.expand_more,
-                                ),
-                                onPressed: controller.toggleUserSelection,
-                              ),
-                            ],
-                          ),
-                          if (controller.showUserSelection.value) ...[
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: RadioListTile<String>(
-                                    title: const Text('All Users', style: TextStyle(fontSize: 12)),
-                                    value: 'all',
-                                    groupValue: controller.inviteType.value,
-                                    onChanged: (value) => controller.setInviteType(value!),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: RadioListTile<String>(
-                                    title: const Text('Selected Users', style: TextStyle(fontSize: 12)),
-                                    value: 'selected',
-                                    groupValue: controller.inviteType.value,
-                                    onChanged: (value) => controller.setInviteType(value!),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (controller.inviteType.value == 'selected') ...[
-                              const SizedBox(height: 8),
-                              Container(
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey.shade300),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: ListView.builder(
-                                  itemCount: controller.availableUsers.length,
-                                  itemBuilder: (context, index) {
-                                    final user = controller.availableUsers[index];
-                                    final isSelected = controller.selectedUsers.contains(user);
-                                    return CheckboxListTile(
-                                      title: Text(user.name, style: const TextStyle(fontSize: 12)),
-                                      subtitle: Text(user.email, style: const TextStyle(fontSize: 10)),
-                                      value: isSelected,
-                                      onChanged: (value) => controller.selectUser(user),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ],
-                          const SizedBox(height: 16),
-                        ],
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }),
+                  // Obx(() {
+                  //   final currentUser = AppLocalStorage.getUserDetails();
+                  //   if (currentUser.isMember) {
+                  //     return Column(
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         Row(
+                  //           children: [
+                  //             Text(
+                  //               'Meeting Invites',
+                  //               style: Get.textTheme.titleMedium?.copyWith(
+                  //                 fontWeight: FontWeight.bold,
+                  //               ),
+                  //             ),
+                  //             const Spacer(),
+                  //             IconButton(
+                  //               icon: Icon(
+                  //                 controller.showUserSelection.value 
+                  //                   ? Icons.expand_less 
+                  //                   : Icons.expand_more,
+                  //               ),
+                  //               onPressed: controller.toggleUserSelection,
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         if (controller.showUserSelection.value) ...[
+                  //           const SizedBox(height: 12),
+                  //           Row(
+                  //             children: [
+                  //               Expanded(
+                  //                 child: RadioListTile<String>(
+                  //                   title: const Text('All Users', style: TextStyle(fontSize: 12)),
+                  //                   value: 'all',
+                  //                   groupValue: controller.inviteType.value,
+                  //                   onChanged: (value) => controller.setInviteType(value!),
+                  //                 ),
+                  //               ),
+                  //               Expanded(
+                  //                 child: RadioListTile<String>(
+                  //                   title: const Text('Selected Users', style: TextStyle(fontSize: 12)),
+                  //                   value: 'selected',
+                  //                   groupValue: controller.inviteType.value,
+                  //                   onChanged: (value) => controller.setInviteType(value!),
+                  //                 ),
+                  //               ),
+                  //             ],
+                  //           ),
+                  //           if (controller.inviteType.value == 'selected') ...[
+                  //             const SizedBox(height: 8),
+                  //             Container(
+                  //               height: 100,
+                  //               decoration: BoxDecoration(
+                  //                 border: Border.all(color: Colors.grey.shade300),
+                  //                 borderRadius: BorderRadius.circular(8),
+                  //               ),
+                  //               child: ListView.builder(
+                  //                 itemCount: controller.availableUsers.length,
+                  //                 itemBuilder: (context, index) {
+                  //                   final user = controller.availableUsers[index];
+                  //                   final isSelected = controller.selectedUsers.contains(user);
+                  //                   return CheckboxListTile(
+                  //                     title: Text(user.name, style: const TextStyle(fontSize: 12)),
+                  //                     subtitle: Text(user.email, style: const TextStyle(fontSize: 10)),
+                  //                     value: isSelected,
+                  //                     onChanged: (value) => controller.selectUser(user),
+                  //                   );
+                  //                 },
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ],
+                  //         const SizedBox(height: 16),
+                  //       ],
+                  //     );
+                  //   }
+                  //   return const SizedBox.shrink();
+                  // }),
                   
                   AppTextFormField(
                     controller: controller.meetingIdController,

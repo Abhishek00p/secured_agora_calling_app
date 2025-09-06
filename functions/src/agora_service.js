@@ -39,8 +39,8 @@ exports.generateToken = functions.https.onRequest(async (req, res) => {
       }
 
       // Get Agora credentials from environment variables
-      const appId = process.env.AGORA_APP_ID || '225a62f4b5aa4e94ab46f91d0a0257e1';
-      const appCertificate = process.env.AGORA_APP_CERTIFICATE || '64ba1b2a26694545aac2f5f9ed86ac09';
+      const appId = '225a62f4b5aa4e94ab46f91d0a0257e1';
+      const appCertificate =  '64ba1b2a26694545aac2f5f9ed86ac09';
 
       if (!appId || !appCertificate) {
         return res.status(500).json({
