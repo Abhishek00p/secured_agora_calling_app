@@ -32,6 +32,7 @@ class MeetingModel {
   // Meeting statistics
   final int totalParticipantsCount;
   final Duration actualDuration;
+  final int? totalExtensions;
   
   // Detailed participant tracking
   final List<ParticipantLog> participantHistory;
@@ -61,6 +62,7 @@ class MeetingModel {
     required this.hostUserId,
     required this.totalParticipantsCount,
     required this.actualDuration,
+    this.totalExtensions,
     required this.participantHistory,
   });
 
@@ -91,6 +93,7 @@ class MeetingModel {
         actualEndTime: null,
         totalParticipantsCount: 0,
         actualDuration: Duration.zero,
+        totalExtensions: null,
         participantHistory: [],
       );
 
@@ -120,6 +123,7 @@ class MeetingModel {
       actualEndTime: _nullableDateTime(json['actualEndTime']),
       totalParticipantsCount: json['totalParticipantsCount'] ?? 0,
       actualDuration: _toDuration(json['actualDuration']),
+      totalExtensions: json['totalExtensions'],
       participantHistory: _toParticipantLogList(json['participantHistory']),
     );
   }
@@ -149,6 +153,7 @@ class MeetingModel {
         'actualEndTime': actualEndTime?.toIso8601String(),
         'totalParticipantsCount': totalParticipantsCount,
         'actualDuration': actualDuration.inSeconds,
+        'totalExtensions': totalExtensions,
         'participantHistory': participantHistory.map((log) => log.toJson()).toList(),
       };
 
