@@ -14,24 +14,24 @@ void main() async {
   );
   
   // Configure Firebase emulators for local development
-  if (const bool.fromEnvironment('dart.vm.product') == false) {
-    // Only use emulators in debug mode
-    try {
-      // Configure Firestore emulator
-      FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+  // if (const bool.fromEnvironment('dart.vm.product') == false) {
+  //   // Only use emulators in debug mode
+  //   try {
+  //     // Configure Firestore emulator
+  //     FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
       
-      // Configure Auth emulator
-      await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+  //     // Configure Auth emulator
+  //     await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
       
-      // Configure Functions emulator
-      FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
+  //     // Configure Functions emulator
+  //     FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
       
-      print('🔥 Firebase emulators configured for local development');
-    } catch (e) {
-      print('⚠️  Could not connect to Firebase emulators: $e');
-      print('   Make sure Firebase emulators are running with: firebase emulators:start');
-    }
-  }
+  //     print('🔥 Firebase emulators configured for local development');
+  //   } catch (e) {
+  //     print('⚠️  Could not connect to Firebase emulators: $e');
+  //     print('   Make sure Firebase emulators are running with: firebase emulators:start');
+  //   }
+  // }
   
   await AppLocalStorage.init();
   runApp(const App());
