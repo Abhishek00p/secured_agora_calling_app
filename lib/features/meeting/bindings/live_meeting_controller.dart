@@ -4,10 +4,7 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:secured_calling/core/models/private_meeting_model.dart';
-import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/utils/app_logger.dart';
-import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
@@ -65,6 +62,9 @@ class MeetingController extends GetxController {
               .inSeconds;
 
       isHost = meetingModel.value.hostId == currentUser.firebaseUserId;
+      
+      // Initialize last known meeting data for change detection
+      _lastMeetingData = Map<String, dynamic>.from(result);
 
       _meetingTimer = Timer.periodic(Duration(seconds: 1), (timer) {
         // Check if meeting time has ended
@@ -122,6 +122,109 @@ class MeetingController extends GetxController {
   // Global key for the timer warning dialog
   final GlobalKey<TimerWarningDialogState> _timerWarningDialogKey =
       GlobalKey<TimerWarningDialogState>();
+
+  // Track last known meeting data to detect changes
+  Map<String, dynamic>? _lastMeetingData;
+
+  /// Handle meeting data updates from Firestore stream
+  void _handleMeetingDataUpdate(Map<String, dynamic> data) {
+    try {
+      // Check if this is the first time we're receiving data
+      if (_lastMeetingData == null) {
+        _lastMeetingData = Map<String, dynamic>.from(data);
+        return;
+      }
+
+      // Check for meeting time changes (extensions)
+      final currentScheduledEndTime = data['scheduledEndTime'];
+      final lastScheduledEndTime = _lastMeetingData!['scheduledEndTime'];
+      
+      final currentDuration = data['duration'] as int? ?? 0;
+      final lastDuration = _lastMeetingData!['duration'] as int? ?? 0;
+
+      // Check if meeting was extended
+      if (currentScheduledEndTime != lastScheduledEndTime || 
+          currentDuration != lastDuration) {
+        
+        AppLogger.print('Meeting time changed detected - refreshing timer');
+        
+        // Update local meeting model with new data
+        meetingModel.value = MeetingModel.fromJson(data);
+        
+        // Restart timer with updated time
+        _refreshTimerWithNewData();
+        
+        // Show notification to participants (not host)
+        if (!isHost) {
+          final additionalMinutes = currentDuration - lastDuration;
+          if (additionalMinutes > 0) {
+            AppToastUtil.showInfoToast(
+              'Meeting extended by $additionalMinutes minutes'
+            );
+          }
+        }
+      }
+
+      // Update last known data
+      _lastMeetingData = Map<String, dynamic>.from(data);
+    } catch (e) {
+      AppLogger.print('Error handling meeting data update: $e');
+    }
+  }
+
+  /// Refresh timer with updated meeting data
+  void _refreshTimerWithNewData() {
+    try {
+      // Cancel existing timer
+      _meetingTimer?.cancel();
+      
+      // Recalculate remaining seconds with updated data
+      remainingSeconds = meetingModel.value.scheduledEndTime
+          .difference(DateTime.now())
+          .inSeconds;
+      
+      // Reset extension flags for new timer period
+      _hasExtended = false;
+      _timerWarningShown = false;
+      _timerWarningDismissed = false;
+      
+      // Restart timer
+      _meetingTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+        // Check if meeting time has ended
+        if (remainingSeconds <= 0) {
+          timer.cancel();
+          _forceEndMeeting();
+          return;
+        }
+
+        // Show persistent timer warning dialog at 5 minutes remaining
+        if (remainingSeconds <= 300 &&
+            remainingSeconds > 0 &&
+            isHost &&
+            !_hasExtended &&
+            !_timerWarningShown) {
+          _showTimerWarningDialog();
+        }
+
+        // Update existing dialog content if it's already shown
+        if (_timerWarningShown && _timerWarningDialogKey.currentState != null) {
+          _updateTimerWarningContent();
+        }
+
+        // Show final countdown toast in last 60 seconds if host hasn't extended
+        if (remainingSeconds <= 60 && remainingSeconds > 0 && !_hasExtended) {
+          _showEndTimeToast(remainingSeconds);
+        }
+
+        remainingSeconds--;
+        update();
+      });
+      
+      AppLogger.print('Timer refreshed with new meeting data. Remaining: $remainingSeconds seconds');
+    } catch (e) {
+      AppLogger.print('Error refreshing timer: $e');
+    }
+  }
 
   // Show persistent timer warning dialog
   void _showTimerWarningDialog() {
@@ -184,10 +287,6 @@ class MeetingController extends GetxController {
     );
   }
 
-  // Show time warning at minute marks (deprecated - now using persistent dialog)
-  void _showTimeWarning(int minutesLeft) {
-    // This method is no longer used - replaced by persistent dialog
-  }
 
   // Show end time toast in last 60 seconds
   void _showEndTimeToast(int secondsLeft) {
@@ -399,6 +498,9 @@ class MeetingController extends GetxController {
               pttUsers.value = List<int>.from(data['pttUsers'] ?? []);
 
               updateMuteStatesForPTT();
+              
+              // Check for meeting time changes (extensions)
+              _handleMeetingDataUpdate(data);
             }
           });
     } catch (e) {
@@ -730,6 +832,7 @@ class MeetingController extends GetxController {
           actualEndTime: meetingModel.value.actualEndTime,
           totalParticipantsCount: meetingModel.value.totalParticipantsCount,
           actualDuration: meetingModel.value.actualDuration,
+          totalExtensions: meetingModel.value.totalExtensions,
           participantHistory: meetingModel.value.participantHistory,
         );
 
@@ -801,6 +904,7 @@ class MeetingController extends GetxController {
           actualEndTime: meetingModel.value.actualEndTime,
           totalParticipantsCount: meetingModel.value.totalParticipantsCount,
           actualDuration: meetingModel.value.actualDuration,
+          totalExtensions: meetingModel.value.totalExtensions,
           participantHistory: meetingModel.value.participantHistory,
         );
 

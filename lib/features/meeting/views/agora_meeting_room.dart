@@ -11,7 +11,6 @@ import 'package:secured_calling/features/meeting/views/join_request_widget.dart'
 import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/show_meeting_info.dart';
 import 'package:secured_calling/widgets/speaker_ripple_effect.dart';
-import 'package:secured_calling/utils/app_tost_util.dart';
 
 class AgoraMeetingRoom extends StatefulWidget {
   final String meetingId;
@@ -102,30 +101,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     );
   }
 
-  Widget _buildControlButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return InkWell(
-      onTap: onPressed,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 32, color: color),
-
-            Text(
-              label,
-              style: const TextStyle(fontSize: 12, color: Colors.white),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   final meetingController = Get.find<MeetingController>();
   final currentUser = AppLocalStorage.getUserDetails();
@@ -216,6 +191,27 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                         style: const TextStyle(
                             fontSize: 12, color: Colors.red),
                       ),
+                      // Show extension indicator if meeting was extended
+                      // if (meetingController.meetingModel.value.totalExtensions != null && 
+                      //     meetingController.meetingModel.value.totalExtensions! > 0) ...[
+                      //   const SizedBox(height: 4),
+                      //   Container(
+                      //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      //     decoration: BoxDecoration(
+                      //       color: Colors.green.withAppOpacity(0.2),
+                      //       borderRadius: BorderRadius.circular(12),
+                      //       border: Border.all(color: Colors.green, width: 1),
+                      //     ),
+                      //     child: Text(
+                      //       'Extended ${meetingController.meetingModel.value.totalExtensions} time(s)',
+                      //       style: const TextStyle(
+                      //         fontSize: 10, 
+                      //         color: Colors.green,
+                      //         fontWeight: FontWeight.w500,
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ],
                     ],
                   ],
                 ),
