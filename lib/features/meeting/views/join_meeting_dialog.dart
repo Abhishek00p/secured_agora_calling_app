@@ -32,7 +32,7 @@ class JoinMeetingController extends GetxController {
   final inviteType = 'all'.obs; // 'all' or 'selected'
   final availableUsers = <AppUser>[].obs;
 
-  StreamSubscription<DocumentSnapshot>? _listener;
+  StreamSubscription<QuerySnapshot>? _listener;
 
   @override
   void onInit() {
@@ -157,7 +157,7 @@ void clearState() {
     }
   }
 
-  void requestToJoin() async {
+    void requestToJoin() async {
     if (meetingId.value == null || meetingData.value == null) return;
 
     isLoading.value = true;
@@ -178,18 +178,16 @@ void clearState() {
   }
 
   void listenForParticipantAddition(String meetingId, int userId) {
-    _listener = firestore
+   _listener = firestore
         .collection('meetings')
-        .doc(meetingId)
-        .snapshots()
+        .doc(meetingId).collection('participants').snapshots() 
         .listen((snapshot) {
-          if (!snapshot.exists) {
+          if (snapshot.docs.isEmpty) {
             _listener?.cancel(); // Optional but safe
             return;
           }
-          final data = snapshot.data();
-          final participants = data?['participants'] ?? [];
-          if (participants.contains(userId)) {
+
+          if(snapshot.docs.any((doc) => doc.id == userId.toString())) {
             _listener?.cancel();
             joinMeeting();
           }
