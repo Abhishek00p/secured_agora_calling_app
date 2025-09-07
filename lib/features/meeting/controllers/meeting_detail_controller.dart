@@ -111,11 +111,11 @@ class MeetingDetailController extends GetxController {
 
 
 
-  /// Refresh real-time updates
-  Future<void> refreshRealTimeUpdates() async {
-    _meetingStreamSubscription?.cancel();
-    _initializeRealTimeUpdates();
-  }
+  // /// Refresh real-time updates
+  // Future<void> refreshRealTimeUpdates() async {
+  //   _meetingStreamSubscription?.cancel();
+  //   _initializeRealTimeUpdates();
+  // }
 
 
 

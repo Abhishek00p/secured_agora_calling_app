@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
 import 'package:secured_calling/widgets/meeting_info_card.dart';
@@ -77,13 +78,13 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                     tooltip: 'Refresh',
                     onPressed: controller.refreshMeetingDetails,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.share),
-                    tooltip: 'Share Meeting',
-                    onPressed: () {
-                      // Implement sharing logic
-                    },
-                  ),
+                  // IconButton(
+                  //   icon: const Icon(Icons.share),
+                  //   tooltip: 'Share Meeting',
+                  //   onPressed: () {
+                  //     // Implement sharing logic
+                  //   },
+                  // ),
                 ],
               ),
               SliverToBoxAdapter(
@@ -104,21 +105,17 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                         ),
                       ),
                       // Quick refresh button for participants
-                      IconButton(
-                        icon: const Icon(Icons.refresh, size: 20),
-                        tooltip: 'Refresh Participants',
-                        onPressed: controller.refreshParticipants,
-                      ),
+                      // IconButton(
+                      //   icon: const Icon(Icons.refresh, size: 20),
+                      //   tooltip: 'Refresh Participants',
+                      //   onPressed: controller.refreshParticipants,
+                      // ),
                     ],
                   ),
                 ),
               ),
               _buildParticipantsList(meetingDetail),
               
-              // Real-time meeting updates section
-              SliverToBoxAdapter(
-                child: _buildRealTimeUpdatesSection(),
-              ),
               
 
             ],
@@ -128,90 +125,6 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
     );
   }
 
-  Widget _buildRealTimeUpdatesSection() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.update, color: Theme.of(Get.context!).colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(
-                'Real-time Updates',
-                style: Theme.of(Get.context!).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              // Refresh button for real-time updates
-              IconButton(
-                icon: const Icon(Icons.refresh, size: 20),
-                tooltip: 'Refresh Updates',
-                onPressed: controller.refreshRealTimeUpdates,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Obx(() {
-            if (controller.isRealTimeLoading.value) {
-              return const Row(
-                children: [
-                  SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                  SizedBox(width: 12),
-                  Text('Listening for updates...'),
-                ],
-              );
-            }
-            
-            if (controller.realTimeError.value != null) {
-              return Row(
-                children: [
-                  Icon(Icons.error, color: Colors.red, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Error: ${controller.realTimeError.value}',
-                      style: TextStyle(color: Colors.red[700]),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, size: 16),
-                    onPressed: controller.refreshRealTimeUpdates,
-                  ),
-                ],
-              );
-            }
-
-            final lastUpdated = controller.lastUpdated.value;
-            if (lastUpdated != null) {
-              return Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Meeting updated: ${_formatLastUpdated(lastUpdated)}',
-                      style: TextStyle(color: Colors.green[700]),
-                    ),
-                  ),
-                ],
-              );
-            }
-
-            return const Text('Meeting is up to date');
-          }),
-        ],
-      ),
-    );
-  }
 
 
 
@@ -238,18 +151,4 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
     );
   }
 
-  String _formatLastUpdated(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-    
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} minutes ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} hours ago';
-    } else {
-      return '${difference.inDays} days ago';
-    }
-  }
 }

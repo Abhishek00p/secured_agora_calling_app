@@ -19,10 +19,6 @@ class MeetingInfoCard extends StatefulWidget {
 class _MeetingInfoCardState extends State<MeetingInfoCard> {
   bool _isPasswordVisible = false;
 
-
-
-
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -34,35 +30,35 @@ class _MeetingInfoCardState extends State<MeetingInfoCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.meeting.meetingTitle,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                buildStatusChip(widget.meeting.status),
-              ],
-            ),
-            const SizedBox(height: 16.0),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     Expanded(
+            //       child: Text(
+            //         widget.meeting.meetingTitle,
+            //         style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            //         overflow: TextOverflow.ellipsis,
+            //       ),
+            //     ),
+            //     buildStatusChip(widget.meeting.status),
+            //   ],
+            // ),
+            // const SizedBox(height: 16.0),
             
 
             
-            const Divider(),
-            const SizedBox(height: 16.0),
+            // const Divider(),
+            // const SizedBox(height: 16.0),
             _buildInfoRow(context, Icons.perm_identity, 'Meeting ID', widget.meeting.meetingId, copyable: true),
             _buildPasswordRow(context),
-            _buildInfoRow(context, Icons.person_outline, 'Host', '${widget.meeting.hostName} (ID: ${widget.meeting.hostId})'),
-            _buildInfoRow(context, Icons.group_outlined, 'Max Participants', widget.meeting.maxParticipants.toString()),
+            _buildInfoRow(context, Icons.person_outline, 'Host', '${widget.meeting.hostName} '),
+            // _buildInfoRow(context, Icons.group_outlined, 'Max Participants', widget.meeting.maxParticipants.toString()),
             _buildInfoRow(context, Icons.timer_outlined, 'Duration', formatDuration(widget.meeting.duration)),
-            _buildInfoRow(context, Icons.calendar_today_outlined, 'Scheduled Time', '${formatDateTime(widget.meeting.scheduledStartTime)} - ${formatDateTime(widget.meeting.scheduledEndTime)}'),
-            if (widget.meeting.actualStartTime != null)
-              _buildInfoRow(context, Icons.access_time, 'Actual Time', '${formatDateTime(widget.meeting.actualStartTime!)} - ${widget.meeting.actualEndTime != null ? formatDateTime(widget.meeting.actualEndTime!) : "Now"}'),
-            const SizedBox(height: 8.0),
-            _buildInfoRow(context, Icons.people_alt_outlined, 'Total Participants', widget.meeting.totalUniqueParticipants.toString()),
+            // _buildInfoRow(context, Icons.calendar_today_outlined, 'Scheduled Time', '${formatDateTime(widget.meeting.scheduledStartTime)} - ${formatDateTime(widget.meeting.scheduledEndTime)}'),
+            // if (widget.meeting.actualStartTime != null)
+            //   _buildInfoRow(context, Icons.access_time, 'Actual Time', '${formatDateTime(widget.meeting.actualStartTime!)} - ${widget.meeting.actualEndTime != null ? formatDateTime(widget.meeting.actualEndTime!) : "Now"}'),
+            // const SizedBox(height: 8.0),
+            // _buildInfoRow(context, Icons.people_alt_outlined, 'Total Participants', widget.meeting.totalUniqueParticipants.toString()),
             
 
           ],
