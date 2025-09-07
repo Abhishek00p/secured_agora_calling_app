@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_color_extension.dart';
 import 'package:secured_calling/core/models/participant_model.dart';
@@ -27,7 +28,7 @@ class AgoraMeetingRoom extends StatefulWidget {
   State<AgoraMeetingRoom> createState() => _AgoraMeetingRoomState();
 }
 
-class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
+class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBindingObserver {
   Widget _buildEndCallButton({
     required BuildContext context,
     required bool isHost,
@@ -128,26 +129,41 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
 
   final meetingController = Get.find<MeetingController>();
   final currentUser = AppLocalStorage.getUserDetails();
+  static const platform = MethodChannel('com.example.secured_calling/pip');
 
-  void onPopInvoked() async {
-    if (!meetingController.isMeetEneded) {
-      await meetingController.endMeeting();
-    }
-    if (mounted) {
-      AppLogger.print("popping context from meeting room.....");
-      Navigator.pop(context);
+  Future<void> enterPipMode() async {
+    try {
+      await platform.invokeMethod('enterPipMode');
+    } on PlatformException catch (e) {
+      debugPrint("Failed to enter PIP mode: '${e.message}'.");
     }
   }
 
+
   @override
   void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
     AppLogger.print('meeting id before init  :${widget.meetingId}');
     meetingController.initializeMeeting(
       meetingId: widget.meetingId,
       isUserHost: widget.isHost,
       context: context,
     );
-    super.initState();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.paused && meetingController.isJoined.value) {
+      enterPipMode();
+    }
   }
 
   @override
@@ -158,7 +174,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
           canPop: false,
           onPopInvokedWithResult: (didPop, result) async {
             if (!didPop) {
-              onPopInvoked();
+              if (meetingController.isJoined.value) {
+                enterPipMode();
+              } else {
+                Navigator.pop(context);
+              }
             }
           },
           child: Scaffold(
@@ -193,7 +213,8 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                     if (meetingController.remainingSeconds >= 0) ...[
                       Text(
                         'Time remaining: ${meetingController.remainingSeconds.formatDuration}',
-                        style: const TextStyle(fontSize: 12, color: Colors.red),
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.red),
                       ),
                     ],
                   ],
@@ -205,7 +226,8 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
             body: GetBuilder<MeetingController>(
               builder: (meetingController) {
                 if (!meetingController.meetingModel.value.isEmpty) {
-                  AppFirebaseService.instance.getMeetingData(widget.meetingId);
+                  AppFirebaseService.instance
+                      .getMeetingData(widget.meetingId);
                 } else {
                   AppLogger.print('Meeting Model is empty');
                 }
@@ -215,20 +237,23 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                     child: Column(
                       children: [
                         meetingController.isLoading.value
-                            ? const Center(child: CircularProgressIndicator())
+                            ? const Center(
+                                child: CircularProgressIndicator())
                             : !meetingController.agoraInitialized
-                            ? Center(
-                              child: Text('Agora not intialized yet...!'),
-                            )
-                            : Expanded(
-                              child:
-                                  meetingController.isHost
-                                      ? _buildHostView(meetingController)
-                                      : _buildParticipantView(
-                                        meetingController,
-                                      ),
-                            ),
-                        if (meetingController.isHost) ...[JoinRequestWidget()],
+                                ? Center(
+                                    child: Text(
+                                        'Agora not intialized yet...!'),
+                                  )
+                                : Expanded(
+                                    child: meetingController.isHost
+                                        ? _buildHostView(meetingController)
+                                        : _buildParticipantView(
+                                            meetingController,
+                                          ),
+                                  ),
+                        if (meetingController.isHost) ...[
+                          JoinRequestWidget()
+                        ],
                         Padding(
                           padding: const EdgeInsets.only(bottom: 30.0),
                           child: Wrap(
@@ -248,18 +273,20 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                     final isPttActive = meetingController
                                         .pttUsers
                                         .contains(
-                                          meetingController.currentUser.userId,
+                                          meetingController
+                                              .currentUser.userId,
                                         );
                                     return CircleAvatar(
                                       radius: 60,
-                                      backgroundColor:
-                                          isPttActive
-                                              ? Colors.green
-                                              : Colors.white.withAppOpacity(
-                                                0.2,
-                                              ),
+                                      backgroundColor: isPttActive
+                                          ? Colors.green
+                                          : Colors.white.withAppOpacity(
+                                              0.2,
+                                            ),
                                       child: Icon(
-                                        isPttActive ? Icons.mic : Icons.mic_off,
+                                        isPttActive
+                                            ? Icons.mic
+                                            : Icons.mic_off,
                                         color: Colors.white,
                                         size: 50,
                                       ),
@@ -268,38 +295,39 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                   }),
                                 ),
                               ],
-                              if(!meetingController.isHost) ...[
-
-                              GestureDetector(
-                                onLongPressStart: (_) {
-                                  meetingController.startPtt();
-                                },
-                                onLongPressEnd: (_) {
-                                  meetingController.stopPtt();
-                                },
-                                child: Obx(() {
-                                  final isPttActive = meetingController.pttUsers
-                                      .contains(
-                                        meetingController.currentUser.userId,
-                                      );
-                                  return CircleAvatar(
-                                    radius: 60,
-                                    backgroundColor:
+                              if (!meetingController.isHost) ...[
+                                GestureDetector(
+                                  onLongPressStart: (_) {
+                                    meetingController.startPtt();
+                                  },
+                                  onLongPressEnd: (_) {
+                                    meetingController.stopPtt();
+                                  },
+                                  child: Obx(() {
+                                    final isPttActive = meetingController
+                                        .pttUsers
+                                        .contains(
+                                          meetingController
+                                              .currentUser.userId,
+                                        );
+                                    return CircleAvatar(
+                                      radius: 60,
+                                      backgroundColor: isPttActive
+                                          ? Colors.green
+                                          : Colors.white
+                                              .withAppOpacity(0.2),
+                                      child: Icon(
                                         isPttActive
-                                            ? Colors.green
-                                            : Colors.white.withAppOpacity(0.2),
-                                    child: Icon(
-                                      isPttActive ? Icons.mic : Icons.mic_off,
-                                      color: Colors.white,
-                                      size: 50,
-                                    ),
-                                  );
-                                  // );
-                                }),
-                              ),
-                            
+                                            ? Icons.mic
+                                            : Icons.mic_off,
+                                        color: Colors.white,
+                                        size: 50,
+                                      ),
+                                    );
+                                    // );
+                                  }),
+                                ),
                               ],
-    
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceEvenly,
@@ -308,35 +336,37 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                     () => OutlinedButton(
                                       style: OutlinedButton.styleFrom(
                                         side: BorderSide(
-                                          color:
-                                              meetingController
-                                                      .isOnSpeaker
-                                                      .value
-                                                  ? Colors.green
-                                                  : Colors.white,
+                                          color: meetingController
+                                                  .isOnSpeaker.value
+                                              ? Colors.green
+                                              : Colors.white,
                                         ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
+                                          borderRadius:
+                                              BorderRadius.circular(
                                             8,
                                           ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
+                                        padding:
+                                            const EdgeInsets.symmetric(
                                           horizontal: 16,
                                           vertical: 8,
                                         ),
                                       ),
-                                      onPressed:
-                                          meetingController.toggleSpeaker,
+                                      onPressed: meetingController
+                                          .toggleSpeaker,
                                       child: Column(
                                         children: [
                                           Icon(
-                                            meetingController.isOnSpeaker.value
+                                            meetingController
+                                                    .isOnSpeaker.value
                                                 ? Icons.volume_up
                                                 : Icons.volume_off,
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            meetingController.isOnSpeaker.value
+                                            meetingController
+                                                    .isOnSpeaker.value
                                                 ? 'Speaker On'
                                                 : 'Speaker Off',
                                             style: const TextStyle(
