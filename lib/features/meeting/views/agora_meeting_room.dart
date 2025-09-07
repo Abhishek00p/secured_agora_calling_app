@@ -235,6 +235,41 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                             runSpacing: 24,
                             alignment: WrapAlignment.spaceEvenly,
                             children: [
+                              if (meetingController.isHost) ...[
+                                GestureDetector(
+                                  onTap: () {
+                                    if (meetingController.isMuted.value) {
+                                      meetingController.startPtt();
+                                    } else {
+                                      meetingController.stopPtt();
+                                    }
+                                  },
+                                  child: Obx(() {
+                                    final isPttActive = meetingController
+                                        .pttUsers
+                                        .contains(
+                                          meetingController.currentUser.userId,
+                                        );
+                                    return CircleAvatar(
+                                      radius: 60,
+                                      backgroundColor:
+                                          isPttActive
+                                              ? Colors.green
+                                              : Colors.white.withAppOpacity(
+                                                0.2,
+                                              ),
+                                      child: Icon(
+                                        isPttActive ? Icons.mic : Icons.mic_off,
+                                        color: Colors.white,
+                                        size: 50,
+                                      ),
+                                    );
+                                    // );
+                                  }),
+                                ),
+                              ],
+                              if(!meetingController.isHost) ...[
+
                               GestureDetector(
                                 onLongPressStart: (_) {
                                   meetingController.startPtt();
@@ -248,7 +283,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                         meetingController.currentUser.userId,
                                       );
                                   return CircleAvatar(
-                                    radius: 53,
+                                    radius: 60,
                                     backgroundColor:
                                         isPttActive
                                             ? Colors.green
@@ -256,27 +291,15 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                                     child: Icon(
                                       isPttActive ? Icons.mic : Icons.mic_off,
                                       color: Colors.white,
-                                      size: 42,
+                                      size: 50,
                                     ),
                                   );
-                                  // _buildControlButton(
-                                  //   icon:
-                                  //       isPttActive ? Icons.mic : Icons.mic_off,
-                                  //   label: 'PTT',
-                                  //   color:
-                                  //       isPttActive
-                                  //           ? Colors.green
-                                  //           : Colors.white,
-                                  //   onPressed: () {
-                                  //     // Short press can show a helper message
-                                  //     AppToastUtil.showInfoToast(
-                                  //       'Long press to talk',
-                                  //     );
-                                  //   },
                                   // );
                                 }),
                               ),
-
+                            
+                              ],
+    
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceEvenly,
@@ -364,7 +387,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
         children: [
           Obx(
             () =>
-                user.userId == meetingController.activeSpeakerUid.value
+         meetingController.pttUsers.contains(user.userId)
                     ? Positioned.fill(child: WaterRipple(color: user.color))
                     : SizedBox.shrink(),
           ),
@@ -392,7 +415,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> {
                   !(meetingController.pttUsers.contains(user.userId))
                       ? Icons.mic_off
                       : Icons.mic,
-                  color:   !(meetingController.pttUsers.contains(user.userId)) ? Colors.red : Colors.white,
+                  color:
+                      !(meetingController.pttUsers.contains(user.userId))
+                          ? Colors.red
+                          : Colors.white,
                   size: 20,
                 ),
                 // if (user.isUserSpeaking && !user.isUserMuted)

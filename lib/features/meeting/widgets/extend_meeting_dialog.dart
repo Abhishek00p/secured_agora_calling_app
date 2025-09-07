@@ -24,7 +24,7 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
   int _selectedMinutes = 30;
   bool _isLoading = false;
 
-  final List<int> _extensionOptions = [15, 30, 45, 60, 90, 120];
+  final List<int> _extensionOptions = [30, 60, 120, 180, 240, 300]; // in minutes
 
   @override
   void dispose() {
@@ -112,7 +112,7 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
                       ),
                     ),
                     child: Text(
-                      '${minutes}m',
+                      minutes < 60 ? '${minutes}m' : '${minutes ~/ 60}h ',
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.grey[700],
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
