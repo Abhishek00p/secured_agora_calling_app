@@ -67,7 +67,7 @@ async function generateUniqueUserId() {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 1000);
   const value = `${timestamp}${random}`; // concatenate
-  const intValue = parseInt(value.substring(0, 7), 10); // take first 7 digits, convert to int
+  const intValue = parseInt(value, 10); // convert to int
   return intValue;
 }
 
@@ -302,6 +302,7 @@ exports.createUser = functions.https.onRequest(async (req, res) => {
         name: name.trim(),
         email: email.trim().toLowerCase(),
         userId: userId,
+        firebaseUserId: String(userId),
         memberCode: memberCode,
         hashedPassword: hashedPassword,
         temporaryPassword: password, // Store plain text for admin/member viewing
@@ -459,6 +460,7 @@ exports.createMember = functions.https.onRequest(async (req, res) => {
         name: name.trim(),
         email: email.trim().toLowerCase(),
         userId: userId,
+        firebaseUserId: String(userId),
         memberCode: memberCode,
         hashedPassword: hashedPassword,
         temporaryPassword: password, // Store plain text for admin viewing
