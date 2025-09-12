@@ -1,6 +1,3 @@
-import 'dart:async';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
@@ -8,8 +5,8 @@ import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/services/meeting_listener_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
-import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
 
 class JoinMeetingController extends GetxController {
@@ -17,13 +14,14 @@ class JoinMeetingController extends GetxController {
   final passwordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   final firebaseService = AppFirebaseService.instance;
-  final firestore = FirebaseFirestore.instance;
+  final meetingListenerService = MeetingListenerService();
 
   final isLoading = false.obs;
   final errorMessage = RxnString();
   final meetingFound = false.obs;
   final meetingId = RxnString();
   final meetingData = Rxn<MeetingModel>();
+  final isWaitingForApproval = false.obs;
   
   // New variables for upcoming meetings and user selection
   final upcomingMeetings = <MeetingModel>[].obs;
@@ -31,8 +29,6 @@ class JoinMeetingController extends GetxController {
   final showUserSelection = false.obs;
   final inviteType = 'all'.obs; // 'all' or 'selected'
   final availableUsers = <AppUser>[].obs;
-
-  StreamSubscription<QuerySnapshot>? _listener;
 
   @override
   void onInit() {
@@ -67,13 +63,16 @@ class JoinMeetingController extends GetxController {
   }
 
   void cancelJoinRequest() {
-    _listener?.cancel();
+    meetingListenerService.stopListening();
+    isWaitingForApproval.value = false;
 
-    firebaseService.cancelJoinRequest(
-      AppLocalStorage.getUserDetails().userId,
-      meetingId.value??"",
-    );
-   clearState();
+    if (meetingId.value != null) {
+      firebaseService.cancelJoinRequest(
+        AppLocalStorage.getUserDetails().userId,
+        meetingId.value!,
+      );
+    }
+    clearState();
     Get.back();
   }
 
@@ -83,11 +82,13 @@ void clearState() {
   meetingFound.value = false;
   meetingData.value = null;
   meetingId.value = null;
+  isWaitingForApproval.value = false;
   meetingIdController.clear();
   passwordController.clear();
   selectedUsers.clear();
   showUserSelection.value = false;
   inviteType.value = 'all';
+  meetingListenerService.stopListening();
 }
 
 
@@ -142,35 +143,37 @@ void clearState() {
     try {
       final userId = AppLocalStorage.getUserDetails().userId;
       await firebaseService.requestToJoinMeeting(meetingId.value!, userId);
+      
+      isWaitingForApproval.value = true;
+      isLoading.value = false;
+      
       Get.snackbar(
         'Request Sent',
         'Request sent to join ${meetingData.value!.meetingName}',
         backgroundColor: AppTheme.successColor,
         colorText: Colors.white,
       );
-      listenForParticipantAddition(meetingId.value!, userId);
+
+      // Start listening for approval/rejection using the service
+      meetingListenerService.startListening(
+        meetingId: meetingId.value!,
+        userId: userId,
+        context: Get.context!,
+        onApprovalReceived: () {
+          isWaitingForApproval.value = false;
+          joinMeeting();
+        },
+        onRejectionReceived: () {
+          isWaitingForApproval.value = false;
+          errorMessage.value = 'Your request to join the meeting has been rejected by the host.';
+        },
+      );
     } catch (e) {
       errorMessage.value = 'Error requesting to join: $e';
       isLoading.value = false;
     }
   }
 
-  void listenForParticipantAddition(String meetingId, int userId) {
-   _listener = firestore
-        .collection('meetings')
-        .doc(meetingId).collection('participants').snapshots() 
-        .listen((snapshot) {
-          if (snapshot.docs.isEmpty) {
-            _listener?.cancel(); // Optional but safe
-            return;
-          }
-
-          if(snapshot.docs.any((doc) => doc.id == userId.toString())) {
-            _listener?.cancel();
-            joinMeeting();
-          }
-        });
-  }
 
   void joinMeeting() {
     if (meetingData.value == null) return;
@@ -188,7 +191,6 @@ void clearState() {
   @override
   void onClose() {
     clearState();
-    _listener?.cancel();
     super.onClose();
   }
 }
@@ -501,15 +503,16 @@ class JoinMeetingDialog extends StatelessWidget {
     final isLoading = controller.isLoading.value;
     final meetingFound = controller.meetingFound.value;
     final meetingData = controller.meetingData.value;
+    final isWaitingForApproval = controller.isWaitingForApproval.value;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         TextButton(
           onPressed:
-              isLoading
+              isLoading || isWaitingForApproval
                   ? () {
-                    // If loading, cancel the listener to prevent further actions
+                    // If loading or waiting, cancel the listener to prevent further actions
                     controller.cancelJoinRequest();
                   }
                   : () => Get.back(),
@@ -517,7 +520,7 @@ class JoinMeetingDialog extends StatelessWidget {
         ),
         ElevatedButton(
           onPressed:
-              isLoading
+              isLoading || isWaitingForApproval
                   ? null
                   : meetingFound && meetingData != null
                   ? (meetingData.requiresApproval
@@ -525,7 +528,9 @@ class JoinMeetingDialog extends StatelessWidget {
                       : controller.joinMeeting)
                   : controller.searchMeeting,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.successColor,
+            backgroundColor: isWaitingForApproval
+                ? Colors.orange
+                : AppTheme.successColor,
           ),
           child:
               isLoading
@@ -537,17 +542,42 @@ class JoinMeetingDialog extends StatelessWidget {
                       strokeWidth: 2,
                     ),
                   )
-                  : Text(
-                    meetingFound && meetingData != null
-                        ? (meetingData.requiresApproval
-                            ? 'Request to Join'
-                            : 'Join Now')
-                        : 'Search',
-                    style: TextStyle(
-                      fontSize: meetingFound && meetingData != null ? 12 : 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  : isWaitingForApproval
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Waiting for Approval',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          meetingFound && meetingData != null
+                              ? (meetingData.requiresApproval
+                                  ? 'Request to Join'
+                                  : 'Join Now')
+                              : 'Search',
+                          style: TextStyle(
+                            fontSize: meetingFound && meetingData != null ? 12 : 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
         ),
       ],
     );
