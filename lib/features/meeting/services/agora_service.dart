@@ -85,9 +85,25 @@ class AgoraService {
   }
 
   Future<void> destroy() async {
-    await _engine?.release();
-    _engine = null;
-    _isInitialized = false;
+    try {
+      if (_engine != null) {
+        // Leave channel first if still connected
+        try {
+          await _engine!.leaveChannel();
+        } catch (e) {
+          AppLogger.print('Error leaving channel during destroy: $e');
+        }
+        
+        // Release the engine
+        await _engine!.release();
+        AppLogger.print('Agora engine released successfully');
+      }
+    } catch (e) {
+      AppLogger.print('Error destroying Agora engine: $e');
+    } finally {
+      _engine = null;
+      _isInitialized = false;
+    }
   }
 
   // Basic audio/video toggles

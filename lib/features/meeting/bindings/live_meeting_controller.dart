@@ -336,6 +336,8 @@ class MeetingController extends GetxController {
 
   // Clear all meeting state and memories
   void _clearMeetingState() {
+    AppLogger.print('Starting _clearMeetingState cleanup...');
+    
     // Cancel all timers
     _meetingTimer?.cancel();
     _leaveSubscription?.cancel();
@@ -367,7 +369,16 @@ class MeetingController extends GetxController {
     // Clear meeting status from lifecycle manager
     _lifecycleManager.clearMeetingStatus();
 
+    // Destroy Agora engine to prevent error -17
+    try {
+      _agoraService.destroy();
+      AppLogger.print('Agora engine destroyed successfully');
+    } catch (e) {
+      AppLogger.print('Error destroying Agora engine: $e');
+    }
+
     update();
+    AppLogger.print('_clearMeetingState cleanup completed');
   }
 
   // void startTimer() async {
@@ -622,21 +633,68 @@ class MeetingController extends GetxController {
   }
 
   Future<void> endMeeting() async {
-    await _agoraService.leaveChannel();
-    if (meetingId.isNotEmpty) {
-      await _firebaseService.endMeeting(meetingId);
+    try {
+      AppLogger.print('Starting endMeeting process...');
+      
+      // Leave Agora channel first
+      await _agoraService.leaveChannel();
+      AppLogger.print('Left Agora channel successfully');
+      
+      // Remove user from Firebase participants
+      if (meetingId.isNotEmpty) {
+        await _firebaseService.endMeeting(meetingId);
+        AppLogger.print('Removed user from Firebase participants');
+      }
+      
+      // Stop heartbeat
+      _timeoutService.stopHeartbeat();
+      AppLogger.print('Stopped heartbeat');
+      
+      // Clear all meeting state and memories
+      _clearMeetingState();
+      AppLogger.print('Cleared meeting state');
+      
+      // Navigate back to home page
+      if (Get.context != null && Get.context!.mounted) {
+        Get.back();
+        AppLogger.print('Navigated back to home');
+      }
+      
+      AppLogger.print('endMeeting process completed successfully');
+    } catch (e) {
+      AppLogger.print('Error in endMeeting: $e');
+      AppToastUtil.showErrorToast('Error leaving meeting: $e');
+      
+      // Even if there's an error, try to clear state and navigate
+      try {
+        _clearMeetingState();
+        if (Get.context != null && Get.context!.mounted) {
+          Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+        }
+      } catch (cleanupError) {
+        AppLogger.print('Error during cleanup: $cleanupError');
+      }
     }
-    
-    // Stop heartbeat
-    _timeoutService.stopHeartbeat();
-    
-    // Clear meeting status from lifecycle manager
-    _lifecycleManager.clearMeetingStatus();
   }
 
   Future<void> endMeetForAll() async {
-    endMeeting();
-    removeAllParticipants();
+    try {
+      // First remove all participants from Firebase
+      await removeAllParticipants();
+      
+      // Then end the meeting (which will handle Agora cleanup and navigation)
+      await endMeeting();
+    } catch (e) {
+      AppLogger.print('Error in endMeetForAll: $e');
+      AppToastUtil.showErrorToast('Error ending meeting for all: $e');
+      
+      // Even if there's an error, try to end the meeting
+      try {
+        await endMeeting();
+      } catch (endError) {
+        AppLogger.print('Error during fallback endMeeting: $endError');
+      }
+    }
   }
 
   Future<void> removeAllParticipants() async {

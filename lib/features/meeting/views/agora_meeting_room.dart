@@ -32,14 +32,13 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     required BuildContext context,
     required bool isHost,
     required VoidCallback onEndCallForAll,
-    required VoidCallback onLeaveMeeting,
+    required Future<void> Function() onLeaveMeeting,
   }) {
     return InkWell(
       onTap: () {
         showDialog(
           context: context,
-          builder:
-              (_) => AlertDialog(
+          builder: (dialogContext) => AlertDialog(
                 title: const Text('Confirmation', textAlign: TextAlign.center),
                 content: Text(
                   isHost
@@ -48,10 +47,56 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      onLeaveMeeting();
-                      Navigator.of(context).pop();
+                onPressed: () async {
+                  // Close dialog first
+                  Navigator.of(dialogContext).pop();
+                  
+                  // Show loading indicator
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (loadingContext) {
+                      // Store the loading context for later use
+                      final loadingDialogContext = loadingContext;
+                      
+                      // Call the async endMeeting function
+                      onLeaveMeeting().then((_) {
+                        // Close loading dialog
+                        if (loadingDialogContext.mounted) {
+                          Navigator.of(loadingDialogContext).pop();
+                        }
+                        
+                        // Navigation is handled by endMeeting() function
+                        // No need to manually pop here
+                      }).catchError((e) {
+                        // Close loading dialog
+                        if (loadingDialogContext.mounted) {
+                          Navigator.of(loadingDialogContext).pop();
+                        }
+                        
+                        // Show error message
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error leaving meeting: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      });
+                      
+                      return const AlertDialog(
+                        content: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(width: 16),
+                            Text('Leaving meeting...'),
+                          ],
+                        ),
+                      );
+                    },
+                  );
                     },
                     child: const Text('Leave Meeting'),
                   ),
@@ -68,7 +113,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                   //     ),
                   //   ),
                   TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(dialogContext).pop(),
                     child: const Text('Cancel'),
                   ),
                 ],
