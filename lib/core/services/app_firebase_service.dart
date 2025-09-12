@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:secured_calling/core/constants.dart';
 import 'package:secured_calling/core/models/member_model.dart';
-import 'package:secured_calling/core/models/private_meeting_model.dart';
 import 'package:secured_calling/core/services/http_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
@@ -306,12 +305,20 @@ class AppFirebaseService {
         'notifyParticipants': notifyParticipants,
       });
 
-      // TODO: Implement participant notification if needed
+      // Notify participants about meeting extension
       if (notifyParticipants) {
-        // This could send push notifications or update participant streams
-        AppLogger.print(
-          'Participant notification for meeting extension not yet implemented',
-        );
+        try {
+          // Update a notification field that participants can listen to
+          await meetingsCollection.doc(meetingId).update({
+            'lastExtensionNotification': FieldValue.serverTimestamp(),
+            'lastExtensionMinutes': additionalMinutes,
+            'lastExtensionReason': reason,
+          });
+          AppLogger.print('Meeting extension notification sent to participants');
+        } catch (e) {
+          AppLogger.print('Error sending extension notification: $e');
+          // Don't rethrow as this is not critical
+        }
       }
     } catch (e) {
       AppLogger.print('Error extending meeting with options: $e');
@@ -374,7 +381,6 @@ class AppFirebaseService {
   }
 
   Stream<QuerySnapshot> getUpcomingMeetingsStream(String memberCode) {
-    final now = DateTime.now();
     return meetingsCollection
         .where('memberCode', isEqualTo: memberCode.toUpperCase()) 
         .orderBy('scheduledStartTime', descending: true)

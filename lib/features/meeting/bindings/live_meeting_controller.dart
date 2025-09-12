@@ -162,10 +162,28 @@ class MeetingController extends GetxController {
         if (!isHost) {
           final additionalMinutes = currentDuration - lastDuration;
           if (additionalMinutes > 0) {
-            AppToastUtil.showInfoToast(
-              'Meeting extended by $additionalMinutes minutes'
-            );
+            final reason = data['lastExtensionReason'] as String?;
+            final message = reason != null 
+                ? 'Meeting extended by $additionalMinutes minutes: $reason'
+                : 'Meeting extended by $additionalMinutes minutes';
+            AppToastUtil.showInfoToast(message);
           }
+        }
+      }
+
+      // Check for extension notifications (for all participants)
+      final lastNotification = data['lastExtensionNotification'];
+      final lastKnownNotification = _lastMeetingData!['lastExtensionNotification'];
+      
+      if (lastNotification != lastKnownNotification && lastNotification != null) {
+        final extensionMinutes = data['lastExtensionMinutes'] as int? ?? 0;
+        final reason = data['lastExtensionReason'] as String?;
+        
+        if (extensionMinutes > 0) {
+          final message = reason != null 
+              ? 'Meeting extended by $extensionMinutes minutes: $reason'
+              : 'Meeting extended by $extensionMinutes minutes';
+          AppToastUtil.showInfoToast(message);
         }
       }
 
@@ -876,72 +894,12 @@ class MeetingController extends GetxController {
     update();
   }
 
-  void extendMeetingTime() async {
-    try {
-      // Show loading state
-      update();
-
-      // Use the enhanced Firebase service
-      await _firebaseService.extendMeetingWithOptions(
-        meetingId: meetingId,
-        additionalMinutes: 30,
-        reason: 'Meeting extended by host during live session',
-        notifyParticipants: true,
-      );
-
-      // Update local meeting model
-      if (meetingModel.value != MeetingModel.toEmpty()) {
-        final updatedMeeting = MeetingModel(
-          meetId: meetingModel.value.meetId,
-          meetingName: meetingModel.value.meetingName,
-          channelName: meetingModel.value.channelName,
-          hostId: meetingModel.value.hostId,
-          hostUserId: meetingModel.value.hostUserId,
-          hostName: meetingModel.value.hostName,
-          password: meetingModel.value.password,
-          memberCode: meetingModel.value.memberCode,
-          requiresApproval: meetingModel.value.requiresApproval,
-          status: meetingModel.value.status,
-          isParticipantsMuted: meetingModel.value.isParticipantsMuted,
-          maxParticipants: meetingModel.value.maxParticipants,
-          duration: meetingModel.value.duration + 30,
-          participants: meetingModel.value.participants,
-          allParticipants: meetingModel.value.allParticipants,
-          pendingApprovals: meetingModel.value.pendingApprovals,
-          invitedUsers: meetingModel.value.invitedUsers,
-          scheduledStartTime: meetingModel.value.scheduledStartTime,
-          scheduledEndTime: meetingModel.value.scheduledEndTime.add(
-            Duration(minutes: 30),
-          ),
-          createdAt: meetingModel.value.createdAt,
-          actualStartTime: meetingModel.value.actualStartTime,
-          actualEndTime: meetingModel.value.actualEndTime,
-          totalParticipantsCount: meetingModel.value.totalParticipantsCount,
-          actualDuration: meetingModel.value.actualDuration,
-          totalExtensions: meetingModel.value.totalExtensions,
-          participantHistory: meetingModel.value.participantHistory,
-        );
-
-        meetingModel.value = updatedMeeting;
-      }
-
-      // Set extension flag to prevent end time warnings
-      _hasExtended = true;
-      _timerWarningShown = false; // Hide timer warning dialog
-      _timerWarningDismissed =
-          false; // Reset dismissal flag for future warnings
-
-      // Restart timer with new duration
-      startTimer();
-
-      // Show success message
-      AppToastUtil.showSuccessToast('Meeting extended by 30 minutes');
-    } catch (e) {
-      AppLogger.print('Error extending meeting: $e');
-      AppToastUtil.showErrorToast('Failed to extend meeting: $e');
-    } finally {
-      update();
-    }
+  /// Extend meeting by 30 minutes (convenience method)
+  Future<void> extendMeetingTime() async {
+    await extendMeetingWithOptions(
+      additionalMinutes: 30,
+      reason: 'Meeting extended by host during live session',
+    );
   }
 
   /// Extend meeting with custom options (additional minutes and reason)
@@ -961,61 +919,24 @@ class MeetingController extends GetxController {
         notifyParticipants: true,
       );
 
-      // Update local meeting model
-      if (meetingModel.value != MeetingModel.toEmpty()) {
-        final updatedMeeting = MeetingModel(
-          meetId: meetingModel.value.meetId,
-          meetingName: meetingModel.value.meetingName,
-          channelName: meetingModel.value.channelName,
-          hostId: meetingModel.value.hostId,
-          hostUserId: meetingModel.value.hostUserId,
-          hostName: meetingModel.value.hostName,
-          password: meetingModel.value.password,
-          memberCode: meetingModel.value.memberCode,
-          requiresApproval: meetingModel.value.requiresApproval,
-          status: meetingModel.value.status,
-          isParticipantsMuted: meetingModel.value.isParticipantsMuted,
-          maxParticipants: meetingModel.value.maxParticipants,
-          duration: meetingModel.value.duration + additionalMinutes,
-          participants: meetingModel.value.participants,
-          allParticipants: meetingModel.value.allParticipants,
-          pendingApprovals: meetingModel.value.pendingApprovals,
-          invitedUsers: meetingModel.value.invitedUsers,
-          scheduledStartTime: meetingModel.value.scheduledStartTime,
-          scheduledEndTime: meetingModel.value.scheduledEndTime.add(
-            Duration(minutes: additionalMinutes),
-          ),
-          createdAt: meetingModel.value.createdAt,
-          actualStartTime: meetingModel.value.actualStartTime,
-          actualEndTime: meetingModel.value.actualEndTime,
-          totalParticipantsCount: meetingModel.value.totalParticipantsCount,
-          actualDuration: meetingModel.value.actualDuration,
-          totalExtensions: meetingModel.value.totalExtensions,
-          participantHistory: meetingModel.value.participantHistory,
-        );
-
-        meetingModel.value = updatedMeeting;
-      }
-
       // Set extension flag to prevent end time warnings
       _hasExtended = true;
       _timerWarningShown = false; // Hide timer warning dialog
-      _timerWarningDismissed =
-          false; // Reset dismissal flag for future warnings
-
-      // Restart timer with new duration
-      startTimer();
+      _timerWarningDismissed = false; // Reset dismissal flag for future warnings
 
       // Show success message
       AppToastUtil.showSuccessToast(
         'Meeting extended by $additionalMinutes minutes',
       );
+      
+      // Note: Local model update will be handled by the real-time listener
+      // This prevents race conditions and ensures consistency
     } catch (e) {
       AppLogger.print('Error extending meeting: $e');
       AppToastUtil.showErrorToast('Failed to extend meeting: $e');
       rethrow;
     } finally {
-update();   
+      update();
     }
   }
 }
