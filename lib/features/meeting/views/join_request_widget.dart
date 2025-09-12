@@ -28,9 +28,10 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
           'prv list: $_previousRequests \nnew list: $newRequests',
         );
 
-        // if (newRequests.length > _previousRequests.length) {
-        //   AudioService().playJoinRequestSound(AssetPaths.joinSound);
-        // }
+        // Play sound when new join requests arrive
+        if (newRequests.length > _previousRequests.length) {
+          AppSoundService().playJoinRequestSound(AssetPaths.joinSound);
+        }
 
         _previousRequests = List.from(newRequests);
         _requestsNotifier.value = newRequests;
