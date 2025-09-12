@@ -23,7 +23,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
   Color theCardColor = AppTheme.cardBackgroundColors[0];
   bool isButtonEnabled = false;
   bool isCurrentUserHost = false;
-  StreamSubscription<DocumentSnapshot>? _listener;
+  StreamSubscription<QuerySnapshot>? _listener;
 
   String meetingDate = '';
   @override
@@ -89,14 +89,20 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
   ) {
     _listener = FirebaseFirestore.instance
         .collection('meetings')
-        .doc(meeting.meetId)
+        .doc(meeting.meetId).collection('participants')
         .snapshots()
         .listen((snapshot) {
-          if (snapshot.exists) {
-            final data = snapshot.data() as Map<String, dynamic>;
-            final List<dynamic> participants = data['participants'] ?? [];
-
-            if (participants.contains(userId)) {
+          if (snapshot.docs.isNotEmpty) {
+            final participants = snapshot.docs.map((doc) {
+              return doc.id;
+            }).toList();
+            if(!participants.contains(userId.toString())){
+              return;
+            }
+            final userData =
+              snapshot.docs.where((e)=>e.id==userId.toString()).firstOrNull?.data() ??{}
+            ;
+            if ( userData['isActive'] == true) {
               // User has been added to the participants list, stop listening
               _listener?.cancel(); // Stop listening to prevent further triggers
 

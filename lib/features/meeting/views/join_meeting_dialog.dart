@@ -42,28 +42,6 @@ class JoinMeetingController extends GetxController {
     // loadAvailableUsers();
   }
 
-  void loadUpcomingMeetings() {
-    final currentUser = AppLocalStorage.getUserDetails();
-    if (currentUser.memberCode.isNotEmpty) {
-      if (currentUser.isMember) {
-        // Members see all upcoming meetings for their member code
-        firebaseService.getUpcomingMeetingsStream(currentUser.memberCode).listen((snapshot) {
-          final meetings = snapshot.docs.map((doc) {
-            return MeetingModel.fromJson(doc.data() as Map<String, dynamic>);
-          }).toList();
-          upcomingMeetings.value = meetings;
-        });
-      } else {
-        // Users see only meetings they are invited to
-        firebaseService.getUpcomingMeetingsForUserStream(currentUser.memberCode, currentUser.userId).listen((snapshot) {
-          final meetings = snapshot.docs.map((doc) {
-            return MeetingModel.fromJson(doc.data() as Map<String, dynamic>);
-          }).toList();
-          upcomingMeetings.value = meetings;
-        });
-      }
-    }
-  }
 
 
   void toggleUserSelection() {

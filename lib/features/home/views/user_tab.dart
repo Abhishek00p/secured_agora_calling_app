@@ -11,9 +11,41 @@ import 'package:secured_calling/features/home/views/meeting_action_card.dart';
 import 'package:secured_calling/features/meeting/views/join_meeting_dialog.dart';
 import 'package:secured_calling/features/meeting/views/meeting_tile_widget.dart';
 
-class UserTab extends StatelessWidget {
+class UserTab extends StatefulWidget {
   UserTab({super.key});
+
+  @override
+  State<UserTab> createState() => _UserTabState();
+}
+
+class _UserTabState extends State<UserTab> {
   StreamSubscription<DocumentSnapshot>? _listener;
+
+  final firebaseService = AppFirebaseService.instance;
+
+  final ValueNotifier<List<MeetingModel>> upcomingMeetings = ValueNotifier([]);
+
+  void loadUpcomingMeetings() {
+    final currentUser = AppLocalStorage.getUserDetails();
+    if (currentUser.memberCode.isNotEmpty) {
+  
+        // Members see all upcoming meetings for their member code
+        firebaseService.getUpcomingMeetingsStream(currentUser.memberCode).listen((snapshot) {
+          final meetings = snapshot.docs.map((doc) {
+            return MeetingModel.fromJson(doc.data() as Map<String, dynamic>);
+          }).toList();
+          upcomingMeetings.value = meetings;
+        });
+     
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadUpcomingMeetings();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -51,8 +83,8 @@ class UserTab extends StatelessWidget {
               // Placeholder for call history
               StreamBuilder<QuerySnapshot>(
                 stream: AppFirebaseService.instance
-                    .getParticipatedMeetingsStream(
-                      AppLocalStorage.getUserDetails().userId,
+                    .getUpcomingMeetingsStream(
+                      AppLocalStorage.getUserDetails().memberCode,
                     ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -132,9 +164,7 @@ class UserTab extends StatelessWidget {
           );
         }).toList();
 
-    modelList.sort((a, b) {
-      return a.scheduledStartTime.compareTo(b.scheduledStartTime);
-    });
+
     return modelList;
   }
 

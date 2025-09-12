@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:secured_calling/app/app.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/services/app_lifecycle_manager.dart';
 import 'package:secured_calling/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,5 +33,9 @@ void main() async {
   // }
   
   await AppLocalStorage.init();
+  
+  // Initialize AppLifecycleManager
+  Get.put(AppLifecycleManager());
+  
   runApp(const App());
 }

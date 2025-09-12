@@ -376,10 +376,8 @@ class AppFirebaseService {
   Stream<QuerySnapshot> getUpcomingMeetingsStream(String memberCode) {
     final now = DateTime.now();
     return meetingsCollection
-        .where('memberCode', isEqualTo: memberCode.toUpperCase())
-        .where('scheduledStartTime', isGreaterThan: now)
-        .where('status', isEqualTo: 'scheduled')
-        .orderBy('scheduledStartTime', descending: false)
+        .where('memberCode', isEqualTo: memberCode.toUpperCase()) 
+        .orderBy('scheduledStartTime', descending: true)
         .snapshots();
   }
 
@@ -645,6 +643,130 @@ class AppFirebaseService {
       AppLogger.print('All participants removed from meeting $meetingId');
     } catch (e) {
       AppLogger.print('Error removing all participants: $e');
+      rethrow;
+    }
+  }
+
+  /// Remove a specific participant from meeting (for app termination cleanup)
+  Future<void> removeParticipantFromMeeting(String meetingId, int userId) async {
+    try {
+      final participantDoc = meetingsCollection
+          .doc(meetingId)
+          .collection('participants')
+          .doc('$userId');
+
+      // Mark participant as left with current timestamp
+      await participantDoc.update({
+        'leaveTime': FieldValue.serverTimestamp(),
+        'isActive': false,
+      });
+
+      // Check if this was the last participant
+      final participantsSnapshot =
+          await meetingsCollection.doc(meetingId).collection('participants').get();
+
+      final activeParticipants =
+          participantsSnapshot.docs.where((doc) {
+            return (doc.data()['isActive'] as bool?) == true;
+          }).toList();
+
+      if (activeParticipants.isEmpty) {
+        final meetingDoc = await meetingsCollection.doc(meetingId).get();
+        final meetingData = meetingDoc.data() as Map<String, dynamic>?;
+        final actualStartTime = meetingData?['actualStartTime'];
+        Duration actualDuration = Duration.zero;
+
+        if (actualStartTime != null) {
+          final startTime = DateTime.tryParse(actualStartTime);
+          if (startTime != null) {
+            actualDuration = DateTime.now().difference(startTime);
+          }
+        }
+
+        await meetingsCollection.doc(meetingId).update({
+          'status': 'ended',
+          'actualEndTime': FieldValue.serverTimestamp(),
+          'actualDuration': actualDuration.inSeconds,
+        });
+      }
+
+      AppLogger.print('Participant $userId removed from meeting $meetingId');
+    } catch (e) {
+      AppLogger.print('Error removing participant from meeting: $e');
+      rethrow;
+    }
+  }
+
+  /// Send heartbeat to indicate participant is still active
+  Future<void> sendParticipantHeartbeat(String meetingId, int userId) async {
+    try {
+      await meetingsCollection
+          .doc(meetingId)
+          .collection('participants')
+          .doc('$userId')
+          .update({
+        'lastHeartbeat': FieldValue.serverTimestamp(),
+        'isActive': true,
+      });
+    } catch (e) {
+      AppLogger.print('Error sending heartbeat: $e');
+      rethrow;
+    }
+  }
+
+  /// Clean up participants who haven't sent heartbeat in the last 2 minutes
+  Future<void> cleanupInactiveParticipants(String meetingId) async {
+    try {
+      final twoMinutesAgo = DateTime.now().subtract(const Duration(minutes: 2));
+      
+      // Get all participants
+      final participantsSnapshot = await meetingsCollection
+          .doc(meetingId)
+          .collection('participants')
+          .get();
+
+      final batch = _firestore.batch();
+      final now = FieldValue.serverTimestamp();
+      
+      for (final doc in participantsSnapshot.docs) {
+        final data = doc.data();
+        final lastHeartbeat = data['lastHeartbeat'] as Timestamp?;
+        
+        // If no heartbeat in last 2 minutes, mark as inactive
+        if (lastHeartbeat == null || 
+            lastHeartbeat.toDate().isBefore(twoMinutesAgo)) {
+          
+          batch.update(doc.reference, {
+            'isActive': false,
+            'leaveTime': now,
+            'reason': 'timeout',
+          });
+          
+          AppLogger.print('Marked participant ${data['userId']} as inactive due to timeout');
+        }
+      }
+      
+      await batch.commit();
+      
+      // Check if meeting should be ended (no active participants)
+      final activeParticipants = await meetingsCollection
+          .doc(meetingId)
+          .collection('participants')
+          .where('isActive', isEqualTo: true)
+          .get();
+          
+      if (activeParticipants.docs.isEmpty) {
+        await meetingsCollection.doc(meetingId).update({
+          'status': 'ended',
+          'actualEndTime': now,
+          'endReason': 'all_participants_timeout',
+        });
+        
+        AppLogger.print('Meeting $meetingId ended due to all participants timing out');
+      }
+      
+    } catch (e) {
+      AppLogger.print('Error cleaning up inactive participants: $e');
       rethrow;
     }
   }

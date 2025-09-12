@@ -9,6 +9,8 @@ import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/services/app_lifecycle_manager.dart';
+import 'package:secured_calling/core/services/meeting_timeout_service.dart';
 import 'package:secured_calling/features/meeting/services/agora_service.dart';
 import 'package:secured_calling/core/models/participant_model.dart';
 import 'package:secured_calling/utils/warm_color_generator.dart';
@@ -19,6 +21,8 @@ class MeetingController extends GetxController {
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
   final AgoraService _agoraService = AgoraService();
   final currentUser = AppLocalStorage.getUserDetails();
+  final AppLifecycleManager _lifecycleManager = AppLifecycleManager.instance;
+  final MeetingTimeoutService _timeoutService = MeetingTimeoutService.instance;
   // State variables
   final isLoading = false.obs;
   final error = RxnString();
@@ -360,6 +364,9 @@ class MeetingController extends GetxController {
     _timerWarningShown = false;
     _timerWarningDismissed = false; // Reset dismissal flag
 
+    // Clear meeting status from lifecycle manager
+    _lifecycleManager.clearMeetingStatus();
+
     update();
   }
 
@@ -619,6 +626,12 @@ class MeetingController extends GetxController {
     if (meetingId.isNotEmpty) {
       await _firebaseService.endMeeting(meetingId);
     }
+    
+    // Stop heartbeat
+    _timeoutService.stopHeartbeat();
+    
+    // Clear meeting status from lifecycle manager
+    _lifecycleManager.clearMeetingStatus();
   }
 
   Future<void> endMeetForAll() async {
@@ -717,6 +730,17 @@ class MeetingController extends GetxController {
       isJoined.value = true;
       final currentUserId = AppLocalStorage.getUserDetails().userId;
       _firebaseService.addParticipants(meetingId, currentUserId);
+      
+      // Notify lifecycle manager that user is in a meeting
+      _lifecycleManager.setMeetingStatus(
+        isInMeeting: true,
+        meetingId: meetingId,
+        isHost: isHost,
+      );
+      
+      // Start heartbeat to keep participant active
+      _timeoutService.startHeartbeat(meetingId);
+      
       startTimer();
       update();
     } catch (e) {
@@ -776,6 +800,10 @@ class MeetingController extends GetxController {
     _leaveSubscription?.cancel();
     _muteSubscription?.cancel();
     _meetingSubscription?.cancel();
+    
+    // Clear meeting status from lifecycle manager
+    _lifecycleManager.clearMeetingStatus();
+    
     super.onClose();
   }
 

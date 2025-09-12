@@ -139,6 +139,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     if (state == AppLifecycleState.paused && meetingController.isJoined.value) {
       enterPipMode();
     }
+    // AppLifecycleManager will handle app termination cleanup automatically
   }
 
   @override
