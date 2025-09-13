@@ -9,7 +9,6 @@ import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
-import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/utils/warm_color_generator.dart';
 
 class AppFirebaseService {
@@ -335,23 +334,125 @@ class AppFirebaseService {
         .snapshots();
   }
 
-  Future<void> requestToJoinMeeting(String meetingId, int userId) async {
-    await meetingsCollection.doc(meetingId).update({
-      'pendingApprovals': FieldValue.arrayUnion([userId]),
-    });
+  /// Request to join a meeting using sub-collection approach
+  /// Creates a document in /meetings/{meetingId}/joinRequests/{userId}
+  Future<void> requestToJoinMeeting(String meetingId, int userId, {String? userName, String? userEmail}) async {
+    try {
+      final requestData = {
+        'userId': userId,
+        'status': 'pending',
+        'requestedAt': FieldValue.serverTimestamp(),
+        if (userName != null) 'userName': userName,
+        if (userEmail != null) 'userEmail': userEmail,
+      };
+
+      await meetingsCollection
+          .doc(meetingId)
+          .collection('joinRequests')
+          .doc(userId.toString())
+          .set(requestData);
+
+      AppLogger.print('Join request created for user $userId in meeting $meetingId');
+    } catch (e) {
+      AppLogger.print('Error creating join request: $e');
+      rethrow;
+    }
   }
 
+  /// Approve a join request and add user to participants
   Future<void> approveMeetingJoinRequest(String meetingId, int userId) async {
-    await meetingsCollection.doc(meetingId).update({
-      'pendingApprovals': FieldValue.arrayRemove([userId]),
-    });
-    await addParticipants(meetingId, userId);
+    try {
+      // Update the join request status to accepted
+      await meetingsCollection
+          .doc(meetingId)
+          .collection('joinRequests')
+          .doc(userId.toString())
+          .update({'status': 'accepted'});
+
+      // Add user to participants
+      await addParticipants(meetingId, userId);
+
+      AppLogger.print('Join request approved for user $userId in meeting $meetingId');
+    } catch (e) {
+      AppLogger.print('Error approving join request: $e');
+      rethrow;
+    }
   }
 
+  /// Reject a join request
   Future<void> rejectMeetingJoinRequest(String meetingId, int userId) async {
-    await meetingsCollection.doc(meetingId).update({
-      'pendingApprovals': FieldValue.arrayRemove([userId]),
-    });
+    try {
+      await meetingsCollection
+          .doc(meetingId)
+          .collection('joinRequests')
+          .doc(userId.toString())
+          .update({'status': 'rejected'});
+
+      AppLogger.print('Join request rejected for user $userId in meeting $meetingId');
+    } catch (e) {
+      AppLogger.print('Error rejecting join request: $e');
+      rethrow;
+    }
+  }
+
+  /// Mark join request as joined (when user successfully joins the meeting)
+  Future<void> markJoinRequestAsJoined(String meetingId, int userId) async {
+    try {
+      await meetingsCollection
+          .doc(meetingId)
+          .collection('joinRequests')
+          .doc(userId.toString())
+          .update({'status': 'joined'});
+
+      AppLogger.print('Join request marked as joined for user $userId in meeting $meetingId');
+    } catch (e) {
+      AppLogger.print('Error marking join request as joined: $e');
+      rethrow;
+    }
+  }
+
+  /// Get stream of pending join requests for a meeting
+  Stream<QuerySnapshot> getPendingJoinRequestsStream(String meetingId) {
+    return meetingsCollection
+        .doc(meetingId)
+        .collection('joinRequests')
+        .where('status', isEqualTo: 'pending')
+        .orderBy('requestedAt', descending: false)
+        .snapshots();
+  }
+
+  /// Get stream of all join requests for a meeting
+  Stream<QuerySnapshot> getAllJoinRequestsStream(String meetingId) {
+    return meetingsCollection
+        .doc(meetingId)
+        .collection('joinRequests')
+        .orderBy('requestedAt', descending: false)
+        .snapshots();
+  }
+
+  /// Get a specific join request document
+  Stream<DocumentSnapshot> getJoinRequestStream(String meetingId, int userId) {
+    return meetingsCollection
+        .doc(meetingId)
+        .collection('joinRequests')
+        .doc(userId.toString())
+        .snapshots();
+  }
+
+  /// Cancel a join request (remove the document)
+  Future<void> cancelJoinRequest(String meetingId, int userId) async {
+    try {
+      await meetingsCollection
+          .doc(meetingId)
+          .collection('joinRequests')
+          .doc(userId.toString())
+          .delete();
+
+      AppLogger.print('Join request cancelled for user $userId in meeting $meetingId');
+    } catch (e) {
+      AppLogger.print('Error cancelling join request: $e');
+      rethrow;
+    }
   }
 
   Stream<QuerySnapshot> getHostMeetingsStream(int hostId) {
@@ -595,25 +696,6 @@ class AppFirebaseService {
     });
   }
 
-  void cancelJoinRequest(int userId, String s) {
-    try {
-      meetingsCollection
-          .doc(s)
-          .update({
-            'pendingApprovals': FieldValue.arrayRemove([userId]),
-          })
-          .then((value) {
-            AppToastUtil.showSuccessToast('Request cancelled successfully');
-          })
-          .catchError((error) {
-            AppLogger.print('Error cancelling request: $error');
-            AppToastUtil.showErrorToast('Failed to cancel request');
-          });
-    } catch (e) {
-      AppLogger.print('Error cancelling request: $e');
-      AppToastUtil.showErrorToast('Failed to cancel request');
-    }
-  }
 
   Stream<DocumentSnapshot> getMeetingStream(String meetingId) {
     return meetingsCollection.doc(meetingId).snapshots();

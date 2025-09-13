@@ -63,13 +63,13 @@ class JoinMeetingController extends GetxController {
   }
 
   void cancelJoinRequest() {
-      joinRequestService.stopListening();
+    joinRequestService.stopListening();
     isWaitingForApproval.value = false;
 
     if (meetingId.value != null) {
       firebaseService.cancelJoinRequest(
-        AppLocalStorage.getUserDetails().userId,
         meetingId.value!,
+        AppLocalStorage.getUserDetails().userId,
       );
     }
     clearState();

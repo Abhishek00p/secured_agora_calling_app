@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 
 class MeetingListenerService {
   static final MeetingListenerService _instance =
@@ -9,15 +10,15 @@ class MeetingListenerService {
   factory MeetingListenerService() => _instance;
   MeetingListenerService._internal();
 
-  StreamSubscription<DocumentSnapshot>? _meetingDataListener;
+  final _firebaseService = AppFirebaseService.instance;
+  StreamSubscription<DocumentSnapshot>? _joinRequestListener;
   StreamSubscription<QuerySnapshot>? _participantsListener;
   String? _currentMeetingId;
   int? _currentUserId;
-  BuildContext? _context;
   VoidCallback? _onApprovalReceived;
   VoidCallback? _onRejectionReceived;
 
-  /// Start listening for meeting data and participants changes
+  /// Start listening for join request status changes using sub-collection
   void startListening({
     required String meetingId,
     required int userId,
@@ -30,138 +31,68 @@ class MeetingListenerService {
 
     _currentMeetingId = meetingId;
     _currentUserId = userId;
-    _context = context;
     _onApprovalReceived = onApprovalReceived;
     _onRejectionReceived = onRejectionReceived;
 
-    _startMeetingDataListener();
-    _startParticipantsListener();
+    _startJoinRequestListener();
   }
 
-  /// Start listening for meeting data changes (pendingApprovals, etc.)
-  void _startMeetingDataListener() {
-    if (_currentMeetingId == null) return;
-
-    _meetingDataListener = FirebaseFirestore.instance
-        .collection('meetings')
-        .doc(_currentMeetingId!)
-        .snapshots()
-        .listen(
-          (meetingSnapshot) {
-            if (!meetingSnapshot.exists) return;
-
-            final meetingData = meetingSnapshot.data()!;
-            final pendingRequests = List<int>.from(
-              meetingData['pendingApprovals'] ?? [],
-            );
-
-            // Check if user is no longer in pending requests
-            if (!pendingRequests.contains(_currentUserId)) {
-              _checkParticipantStatus();
-            } else {
-              print('User still waiting for host approval: $pendingRequests');
-            }
-          },
-          onError: (error) {
-            print('Meeting data listener error: $error');
-            AppToastUtil.showErrorToast('Error listening for meeting updates');
-          },
-        );
-  }
-
-  /// Start listening for participants collection changes
-  void _startParticipantsListener() {
+  /// Start listening for join request status changes
+  void _startJoinRequestListener() {
     if (_currentMeetingId == null || _currentUserId == null) return;
 
-    _participantsListener = FirebaseFirestore.instance
-        .collection('meetings')
-        .doc(_currentMeetingId!)
-        .collection('participants')
-        .snapshots()
+    _joinRequestListener = _firebaseService
+        .getJoinRequestStream(_currentMeetingId!, _currentUserId!)
         .listen(
-          (participantsSnapshot) {
-            final participantData =
-                participantsSnapshot.docs
-                    .where((doc) => doc.id == _currentUserId.toString())
-                    .firstOrNull
-                    ?.data() ??
-                {};
+          (docSnapshot) {
+            if (!docSnapshot.exists) {
+              print('Join request document not found');
+              return;
+            }
 
-            if (participantData.isNotEmpty) {
-              _checkParticipantStatus();
+            final data = docSnapshot.data() as Map<String, dynamic>?;
+            if (data == null) return;
+
+            final status = data['status'] as String?;
+            print('Join request status changed to: $status');
+
+            switch (status) {
+              case 'accepted':
+                print('Join request approved');
+                _stopListening();
+                _onApprovalReceived?.call();
+                break;
+              case 'rejected':
+                print('Join request rejected');
+                _stopListening();
+                _onRejectionReceived?.call();
+                AppToastUtil.showErrorToast(
+                  'Your request to join the meeting has been rejected by the host.',
+                );
+                break;
+              case 'joined':
+                print('User has joined the meeting');
+                // This status is set when user successfully joins
+                break;
+              case 'pending':
+                print('Still waiting for host approval');
+                break;
+              default:
+                print('Unknown join request status: $status');
             }
           },
           onError: (error) {
-            print('Participants listener error: $error');
-            AppToastUtil.showErrorToast(
-              'Error listening for participant updates',
-            );
+            print('Join request listener error: $error');
+            AppToastUtil.showErrorToast('Error listening for join request updates');
           },
         );
-  }
-
-  /// Check the current status of the participant and take appropriate action
-  void _checkParticipantStatus() async {
-    if (_currentMeetingId == null || _currentUserId == null || _context == null)
-      return;
-
-    try {
-      // Get fresh meeting data
-      final meetingDoc =
-          await FirebaseFirestore.instance
-              .collection('meetings')
-              .doc(_currentMeetingId!)
-              .get();
-
-      if (!meetingDoc.exists) return;
-
-      final meetingData = meetingDoc.data()!;
-      final pendingRequests = List<int>.from(
-        meetingData['pendingApprovals'] ?? [],
-      );
-
-      // Get fresh participant data
-      final participantDoc =
-          await FirebaseFirestore.instance
-              .collection('meetings')
-              .doc(_currentMeetingId!)
-              .collection('participants')
-              .doc(_currentUserId.toString())
-              .get();
-
-      final participantData = participantDoc.data() ?? {};
-
-      // Check if user is approved and active
-      if (!pendingRequests.contains(_currentUserId) &&
-          participantData.isNotEmpty &&
-          participantData['isActive'] == true) {
-        // User has been approved and is active
-        _stopListening();
-        _onApprovalReceived?.call();
-        
-        // Navigation is handled by the callback, not here
-        // This prevents double navigation
-      } else if (!pendingRequests.contains(_currentUserId) &&
-          (participantData.isEmpty || participantData['isActive'] == false)) {
-        // User has been rejected
-        _stopListening();
-        _onRejectionReceived?.call();
-
-        AppToastUtil.showErrorToast(
-          'Your request to join the meeting has been rejected by the host.',
-        );
-      }
-    } catch (e) {
-      print('Error checking participant status: $e');
-      AppToastUtil.showErrorToast('Error checking meeting status');
-    }
   }
 
   /// Stop all listeners
   void _stopListening() {
-    _meetingDataListener?.cancel();
+    _joinRequestListener?.cancel();
     _participantsListener?.cancel();
-    _meetingDataListener = null;
+    _joinRequestListener = null;
     _participantsListener = null;
   }
 
@@ -170,14 +101,13 @@ class MeetingListenerService {
     _stopListening();
     _currentMeetingId = null;
     _currentUserId = null;
-    _context = null;
     _onApprovalReceived = null;
     _onRejectionReceived = null;
   }
 
   /// Check if currently listening
   bool get isListening =>
-      _meetingDataListener != null || _participantsListener != null;
+      _joinRequestListener != null || _participantsListener != null;
 
   /// Dispose all resources
   void dispose() {

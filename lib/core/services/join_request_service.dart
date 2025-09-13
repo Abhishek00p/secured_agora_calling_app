@@ -17,7 +17,7 @@ class JoinRequestService {
   final _firebaseService = AppFirebaseService.instance;
   final _meetingListenerService = MeetingListenerService();
 
-  /// Request to join a meeting with approval flow
+  /// Request to join a meeting with approval flow using sub-collection approach
   /// 
   /// [context] - BuildContext for navigation and UI updates
   /// [meeting] - MeetingModel of the meeting to join
@@ -32,10 +32,16 @@ class JoinRequestService {
     try {
       AppLogger.print('Requesting to join meeting: ${meeting.meetId}');
       
-      final userId = AppLocalStorage.getUserDetails().userId;
+      final currentUser = AppLocalStorage.getUserDetails();
+      final userId = currentUser.userId;
       
-      // Send join request to Firebase
-      await _firebaseService.requestToJoinMeeting(meeting.meetId, userId);
+      // Send join request to Firebase sub-collection
+      await _firebaseService.requestToJoinMeeting(
+        meeting.meetId, 
+        userId,
+        userName: currentUser.name,
+        userEmail: currentUser.email,
+      );
       
       // Update UI state
       onStateChanged?.call(true, null);
@@ -43,7 +49,7 @@ class JoinRequestService {
       // Show success message
       _showSuccessMessage(context, meeting.meetingName);
       
-      // Start listening for approval/rejection
+      // Start listening for approval/rejection using sub-collection
       _startListeningForResponse(
         context: context,
         meeting: meeting,
@@ -63,25 +69,53 @@ class JoinRequestService {
     }
   }
 
-  /// Start listening for approval/rejection response
+  /// Start listening for approval/rejection response using sub-collection
   void _startListeningForResponse({
     required BuildContext context,
     required MeetingModel meeting,
     required int userId,
     Function(bool isWaiting, String? errorMessage)? onStateChanged,
   }) {
-    _meetingListenerService.startListening(
-      meetingId: meeting.meetId,
-      userId: userId,
-      context: context,
-      onApprovalReceived: () {
-        AppLogger.print('Join request approved for meeting: ${meeting.meetId}');
-        onStateChanged?.call(false, null);
-        _navigateToMeetingRoom(context, meeting);
+    // Listen to the specific join request document
+    _firebaseService.getJoinRequestStream(meeting.meetId, userId).listen(
+      (docSnapshot) {
+        if (!docSnapshot.exists) {
+          AppLogger.print('Join request document not found');
+          return;
+        }
+
+        final data = docSnapshot.data() as Map<String, dynamic>?;
+        if (data == null) return;
+
+        final status = data['status'] as String?;
+        AppLogger.print('Join request status changed to: $status');
+
+        switch (status) {
+          case 'accepted':
+            AppLogger.print('Join request approved for meeting: ${meeting.meetId}');
+            onStateChanged?.call(false, null);
+            _navigateToMeetingRoom(context, meeting);
+            break;
+          case 'rejected':
+            AppLogger.print('Join request rejected for meeting: ${meeting.meetId}');
+            const errorMessage = 'Your request to join the meeting has been rejected by the host.';
+            onStateChanged?.call(false, errorMessage);
+            _showErrorMessage(context, errorMessage);
+            break;
+          case 'joined':
+            AppLogger.print('User has joined the meeting: ${meeting.meetId}');
+            // This status is set when user successfully joins
+            break;
+          case 'pending':
+            // Still waiting for response
+            break;
+          default:
+            AppLogger.print('Unknown join request status: $status');
+        }
       },
-      onRejectionReceived: () {
-        AppLogger.print('Join request rejected for meeting: ${meeting.meetId}');
-        const errorMessage = 'Your request to join the meeting has been rejected by the host.';
+      onError: (error) {
+        AppLogger.print('Error listening to join request: $error');
+        final errorMessage = 'Error monitoring join request: $error';
         onStateChanged?.call(false, errorMessage);
         _showErrorMessage(context, errorMessage);
       },

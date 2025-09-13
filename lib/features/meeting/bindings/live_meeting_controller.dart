@@ -740,32 +740,23 @@ class MeetingController extends GetxController {
   }
 
   Stream<List<Map<String, dynamic>>> fetchPendingRequests() async* {
-    yield* _firebaseService.meetingsCollection
-        .doc(meetingId)
-        .snapshots()
-        .asyncMap((docSnapshot) async {
-          final meetingData = docSnapshot.data() as Map<String, dynamic>?;
-          if (meetingData == null) return [];
-
-          final pendingUserIds =
-              meetingData['pendingApprovals'] as List<dynamic>;
-          final List<Map<String, dynamic>> requests = [];
-
-          for (final userId in pendingUserIds) {
-            final userDoc = await _firebaseService.getUserData(
-              userId.toString(),
-            );
-            final userData = userDoc.data() as Map<String, dynamic>?;
-            if (userData != null) {
-              requests.add({
-                'userId': userId,
-                'name': userData['name'] ?? 'Unknown User',
-              });
-            }
-          }
-
-          return requests;
-        });
+    yield* _firebaseService.getPendingJoinRequestsStream(meetingId).map(
+      (querySnapshot) {
+        final List<Map<String, dynamic>> requests = [];
+        
+        for (final doc in querySnapshot.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          requests.add({
+            'userId': data['userId'] as int,
+            'name': data['userName'] ?? 'Unknown User',
+            'requestId': doc.id,
+            'requestedAt': data['requestedAt'],
+          });
+        }
+        
+        return requests;
+      },
+    );
   }
 
   Future<void> approveJoinRequest(int userId) async {
@@ -874,6 +865,11 @@ class MeetingController extends GetxController {
       isJoined.value = true;
       final currentUserId = AppLocalStorage.getUserDetails().userId;
       _firebaseService.addParticipants(meetingId, currentUserId);
+      
+      // Mark join request as joined if user was approved
+      if (!isHost) {
+        _firebaseService.markJoinRequestAsJoined(meetingId, currentUserId);
+      }
       
       // Notify lifecycle manager that user is in a meeting
       _lifecycleManager.setMeetingStatus(
