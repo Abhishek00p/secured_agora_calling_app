@@ -525,6 +525,23 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
             }
             return SizedBox.shrink();
           }),
+          // Host-only remove button
+          if (meetingController.isHost && user.userId != meetingController.currentUser.userId)
+            Positioned(
+              top: 8,
+              left: 8,
+              child: GestureDetector(
+                onTap: () => _showRemoveParticipantDialog(context, user, meetingController),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.close, color: Colors.white, size: 14),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -586,5 +603,36 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
         return Container();
       }
     });
+  }
+
+  /// Show confirmation dialog for removing participant
+  void _showRemoveParticipantDialog(
+    BuildContext context,
+    ParticipantModel participant,
+    MeetingController meetingController,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove Participant'),
+        content: Text(
+          'Are you sure you want to remove "${participant.name}" from the meeting?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await meetingController.removeParticipantForcefully(participant.userId);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
   }
 }

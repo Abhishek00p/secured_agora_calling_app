@@ -500,6 +500,7 @@ class MeetingController extends GetxController {
       }
 
       _firebaseService.getParticipantsStream(meetingId).listen((snapshot) {
+        final currentUserId = AppLocalStorage.getUserDetails().userId;
         final newParticipants =
             snapshot.docs
                 .where((doc) {
@@ -521,6 +522,17 @@ class MeetingController extends GetxController {
                   );
                 })
                 .toList();
+        
+        // Check if current user was forcefully removed
+        final wasUserRemoved = participants.any((p) => p.userId == currentUserId) && 
+                              !newParticipants.any((p) => p.userId == currentUserId);
+        
+        if (wasUserRemoved) {
+          AppLogger.print('User was forcefully removed from meeting');
+          _handleForceRemoval();
+          return;
+        }
+        
         participants = newParticipants;
         update();
       });
@@ -761,6 +773,54 @@ class MeetingController extends GetxController {
       await _firebaseService.rejectMeetingJoinRequest(meetingId, userId);
     } catch (e) {
       error.value = 'Error rejecting request: $e';
+    }
+  }
+
+  /// Host-only feature: Forcefully remove a participant from the meeting
+  Future<void> removeParticipantForcefully(int userId) async {
+    if (!isHost) {
+      AppToastUtil.showErrorToast('Only host can remove participants');
+      return;
+    }
+
+    try {
+      // Remove participant from Firebase
+      await _firebaseService.removeParticipants(meetingId, userId);
+      
+      // Show success message
+      AppToastUtil.showSuccessToast('Participant removed from meeting');
+      
+      AppLogger.print('Host removed participant $userId from meeting $meetingId');
+    } catch (e) {
+      AppLogger.print('Error removing participant: $e');
+      AppToastUtil.showErrorToast('Error removing participant: $e');
+    }
+  }
+
+  /// Handle when current user is forcefully removed from meeting
+  void _handleForceRemoval() {
+    try {
+      AppLogger.print('Handling force removal cleanup...');
+      
+      // Show notification to user
+      AppToastUtil.showErrorToast('You have been removed from the meeting by the host');
+      
+      // Leave Agora channel
+      _agoraService.leaveChannel();
+      
+      // Clear all meeting state
+      _clearMeetingState();
+      
+      // Navigate back to home
+      if (Get.context != null && Get.context!.mounted) {
+        Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      AppLogger.print('Error handling force removal: $e');
+      // Even if there's an error, try to navigate back
+      if (Get.context != null && Get.context!.mounted) {
+        Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+      }
     }
   }
 

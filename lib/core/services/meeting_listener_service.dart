@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:secured_calling/core/routes/app_router.dart';
-import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 
 class MeetingListenerService {
-  static final MeetingListenerService _instance = MeetingListenerService._internal();
+  static final MeetingListenerService _instance =
+      MeetingListenerService._internal();
   factory MeetingListenerService() => _instance;
   MeetingListenerService._internal();
 
@@ -28,7 +27,7 @@ class MeetingListenerService {
   }) {
     // Stop any existing listeners before starting new ones
     _stopListening();
-    
+
     _currentMeetingId = meetingId;
     _currentUserId = userId;
     _context = context;
@@ -48,26 +47,26 @@ class MeetingListenerService {
         .doc(_currentMeetingId!)
         .snapshots()
         .listen(
-      (meetingSnapshot) {
-        if (!meetingSnapshot.exists) return;
-        
-        final meetingData = meetingSnapshot.data()!;
-        final pendingRequests = List<String>.from(
-          meetingData['pendingApprovals'] ?? [],
-        );
+          (meetingSnapshot) {
+            if (!meetingSnapshot.exists) return;
 
-        // Check if user is no longer in pending requests
-        if (!pendingRequests.contains(_currentUserId.toString())) {
-          _checkParticipantStatus();
-        } else {
-          print('User still waiting for host approval: $pendingRequests');
-        }
-      },
-      onError: (error) {
-        print('Meeting data listener error: $error');
-        AppToastUtil.showErrorToast('Error listening for meeting updates');
-      },
-    );
+            final meetingData = meetingSnapshot.data()!;
+            final pendingRequests = List<int>.from(
+              meetingData['pendingApprovals'] ?? [],
+            );
+
+            // Check if user is no longer in pending requests
+            if (!pendingRequests.contains(_currentUserId)) {
+              _checkParticipantStatus();
+            } else {
+              print('User still waiting for host approval: $pendingRequests');
+            }
+          },
+          onError: (error) {
+            print('Meeting data listener error: $error');
+            AppToastUtil.showErrorToast('Error listening for meeting updates');
+          },
+        );
   }
 
   /// Start listening for participants collection changes
@@ -80,79 +79,74 @@ class MeetingListenerService {
         .collection('participants')
         .snapshots()
         .listen(
-      (participantsSnapshot) {
-        final participantData = participantsSnapshot.docs
-            .where((doc) => doc.id == _currentUserId.toString())
-            .firstOrNull
-            ?.data() ?? {};
+          (participantsSnapshot) {
+            final participantData =
+                participantsSnapshot.docs
+                    .where((doc) => doc.id == _currentUserId.toString())
+                    .firstOrNull
+                    ?.data() ??
+                {};
 
-        if (participantData.isNotEmpty) {
-          _checkParticipantStatus();
-        }
-      },
-      onError: (error) {
-        print('Participants listener error: $error');
-        AppToastUtil.showErrorToast('Error listening for participant updates');
-      },
-    );
+            if (participantData.isNotEmpty) {
+              _checkParticipantStatus();
+            }
+          },
+          onError: (error) {
+            print('Participants listener error: $error');
+            AppToastUtil.showErrorToast(
+              'Error listening for participant updates',
+            );
+          },
+        );
   }
 
   /// Check the current status of the participant and take appropriate action
   void _checkParticipantStatus() async {
-    if (_currentMeetingId == null || _currentUserId == null || _context == null) return;
+    if (_currentMeetingId == null || _currentUserId == null || _context == null)
+      return;
 
     try {
       // Get fresh meeting data
-      final meetingDoc = await FirebaseFirestore.instance
-          .collection('meetings')
-          .doc(_currentMeetingId!)
-          .get();
+      final meetingDoc =
+          await FirebaseFirestore.instance
+              .collection('meetings')
+              .doc(_currentMeetingId!)
+              .get();
 
       if (!meetingDoc.exists) return;
 
       final meetingData = meetingDoc.data()!;
-      final pendingRequests = List<String>.from(
+      final pendingRequests = List<int>.from(
         meetingData['pendingApprovals'] ?? [],
       );
 
       // Get fresh participant data
-      final participantDoc = await FirebaseFirestore.instance
-          .collection('meetings')
-          .doc(_currentMeetingId!)
-          .collection('participants')
-          .doc(_currentUserId.toString())
-          .get();
+      final participantDoc =
+          await FirebaseFirestore.instance
+              .collection('meetings')
+              .doc(_currentMeetingId!)
+              .collection('participants')
+              .doc(_currentUserId.toString())
+              .get();
 
       final participantData = participantDoc.data() ?? {};
 
       // Check if user is approved and active
-      if (!pendingRequests.contains(_currentUserId.toString()) &&
+      if (!pendingRequests.contains(_currentUserId) &&
           participantData.isNotEmpty &&
           participantData['isActive'] == true) {
-        
         // User has been approved and is active
         _stopListening();
         _onApprovalReceived?.call();
         
-        if (_context != null && _context!.mounted) {
-          Navigator.pushNamed(
-            _context!,
-            AppRouter.meetingRoomRoute,
-            arguments: {
-              'channelName': meetingData['channelName'],
-              'isHost': meetingData['hostId'] == 
-                  AppLocalStorage.getUserDetails().firebaseUserId,
-              'meetingId': _currentMeetingId,
-            },
-          );
-        }
-      } else if (!pendingRequests.contains(_currentUserId.toString()) &&
+        // Navigation is handled by the callback, not here
+        // This prevents double navigation
+      } else if (!pendingRequests.contains(_currentUserId) &&
           (participantData.isEmpty || participantData['isActive'] == false)) {
-        
         // User has been rejected
         _stopListening();
         _onRejectionReceived?.call();
-        
+
         AppToastUtil.showErrorToast(
           'Your request to join the meeting has been rejected by the host.',
         );
@@ -182,7 +176,7 @@ class MeetingListenerService {
   }
 
   /// Check if currently listening
-  bool get isListening => 
+  bool get isListening =>
       _meetingDataListener != null || _participantsListener != null;
 
   /// Dispose all resources
