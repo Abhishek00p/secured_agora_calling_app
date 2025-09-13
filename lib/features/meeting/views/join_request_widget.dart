@@ -21,22 +21,35 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
   @override
   void initState() {
     super.initState();
+    AppLogger.print('JoinRequestWidget: Initializing join request listener');
 
-    meetingController.fetchPendingRequests().listen((newRequests) {
-      if (!_areListsEqual(_previousRequests, newRequests)) {
-        AppLogger.print(
-          'prv list: $_previousRequests \nnew list: $newRequests',
-        );
+    meetingController.fetchPendingRequests().listen(
+      (newRequests) {
+        AppLogger.print('JoinRequestWidget: Received ${newRequests.length} requests');
+        
+        if (!_areListsEqual(_previousRequests, newRequests)) {
+          AppLogger.print(
+            'JoinRequestWidget: Request list changed - prv: ${_previousRequests.length}, new: ${newRequests.length}',
+          );
+          AppLogger.print('Previous list: $_previousRequests');
+          AppLogger.print('New list: $newRequests');
 
-        // Play sound when new join requests arrive
-        if (newRequests.length > _previousRequests.length) {
-          AppSoundService().playJoinRequestSound(AssetPaths.joinSound);
+          // Play sound when new join requests arrive
+          if (newRequests.length > _previousRequests.length) {
+            AppLogger.print('JoinRequestWidget: Playing join request sound');
+            AppSoundService().playJoinRequestSound(AssetPaths.joinSound);
+          }
+
+          _previousRequests = List.from(newRequests);
+          _requestsNotifier.value = newRequests;
+        } else {
+          AppLogger.print('JoinRequestWidget: No change in request list');
         }
-
-        _previousRequests = List.from(newRequests);
-        _requestsNotifier.value = newRequests;
-      }
-    });
+      },
+      onError: (error) {
+        AppLogger.print('JoinRequestWidget: Error listening to requests: $error');
+      },
+    );
   }
 
   @override
@@ -50,8 +63,14 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
     return ValueListenableBuilder<List<Map<String, dynamic>>>(
       valueListenable: _requestsNotifier,
       builder: (context, requests, _) {
-        if (requests.isEmpty) return const SizedBox.shrink();
+        AppLogger.print('JoinRequestWidget: Building with ${requests.length} requests');
+        
+        if (requests.isEmpty) {
+          AppLogger.print('JoinRequestWidget: No requests to display');
+          return const SizedBox.shrink();
+        }
 
+        AppLogger.print('JoinRequestWidget: Displaying ${requests.length} join requests');
         return Column(
           children: List.generate(
             requests.length,

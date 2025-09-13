@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 
 class MeetingListenerService {
   static final MeetingListenerService _instance =
@@ -13,10 +14,12 @@ class MeetingListenerService {
   final _firebaseService = AppFirebaseService.instance;
   StreamSubscription<DocumentSnapshot>? _joinRequestListener;
   StreamSubscription<QuerySnapshot>? _participantsListener;
+  Timer? _timeoutTimer;
   String? _currentMeetingId;
   int? _currentUserId;
   VoidCallback? _onApprovalReceived;
   VoidCallback? _onRejectionReceived;
+  VoidCallback? _onTimeoutReached;
 
   /// Start listening for join request status changes using sub-collection
   void startListening({
@@ -25,6 +28,7 @@ class MeetingListenerService {
     required BuildContext context,
     VoidCallback? onApprovalReceived,
     VoidCallback? onRejectionReceived,
+    VoidCallback? onTimeoutReached,
   }) {
     // Stop any existing listeners before starting new ones
     _stopListening();
@@ -33,8 +37,10 @@ class MeetingListenerService {
     _currentUserId = userId;
     _onApprovalReceived = onApprovalReceived;
     _onRejectionReceived = onRejectionReceived;
+    _onTimeoutReached = onTimeoutReached;
 
     _startJoinRequestListener();
+    _startTimeoutTimer();
   }
 
   /// Start listening for join request status changes
@@ -46,7 +52,7 @@ class MeetingListenerService {
         .listen(
           (docSnapshot) {
             if (!docSnapshot.exists) {
-              print('Join request document not found');
+              AppLogger.print('Join request document not found');
               return;
             }
 
@@ -54,16 +60,16 @@ class MeetingListenerService {
             if (data == null) return;
 
             final status = data['status'] as String?;
-            print('Join request status changed to: $status');
+            AppLogger.print('Join request status changed to: $status');
 
             switch (status) {
               case 'accepted':
-                print('Join request approved');
+                AppLogger.print('Join request approved');
                 _stopListening();
                 _onApprovalReceived?.call();
                 break;
               case 'rejected':
-                print('Join request rejected');
+                AppLogger.print('Join request rejected');
                 _stopListening();
                 _onRejectionReceived?.call();
                 AppToastUtil.showErrorToast(
@@ -71,29 +77,56 @@ class MeetingListenerService {
                 );
                 break;
               case 'joined':
-                print('User has joined the meeting');
+                AppLogger.print('User has joined the meeting');
                 // This status is set when user successfully joins
                 break;
               case 'pending':
-                print('Still waiting for host approval');
+                AppLogger.print('Still waiting for host approval');
                 break;
               default:
-                print('Unknown join request status: $status');
+                AppLogger.print('Unknown join request status: $status');
             }
           },
           onError: (error) {
-            print('Join request listener error: $error');
+            AppLogger.print('Join request listener error: $error');
             AppToastUtil.showErrorToast('Error listening for join request updates');
           },
         );
   }
 
-  /// Stop all listeners
+  /// Start timeout timer for join request (1 minute)
+  void _startTimeoutTimer() {
+    _timeoutTimer?.cancel();
+    _timeoutTimer = Timer(const Duration(minutes: 1), () {
+      AppLogger.print('Join request timeout reached - no response from host');
+      _handleTimeout();
+    });
+  }
+
+  /// Handle timeout scenario
+  void _handleTimeout() {
+    AppLogger.print('Join request timed out after 1 minute');
+    
+    // Stop all listeners
+    _stopListening();
+    
+    // Show timeout message to user
+    AppToastUtil.showErrorToast(
+      'Your join request timed out. The host did not respond within 1 minute.',
+    );
+    
+    // Call timeout callback
+    _onTimeoutReached?.call();
+  }
+
+  /// Stop all listeners and timers
   void _stopListening() {
     _joinRequestListener?.cancel();
     _participantsListener?.cancel();
+    _timeoutTimer?.cancel();
     _joinRequestListener = null;
     _participantsListener = null;
+    _timeoutTimer = null;
   }
 
   /// Public method to stop listening
@@ -103,6 +136,7 @@ class MeetingListenerService {
     _currentUserId = null;
     _onApprovalReceived = null;
     _onRejectionReceived = null;
+    _onTimeoutReached = null;
   }
 
   /// Check if currently listening

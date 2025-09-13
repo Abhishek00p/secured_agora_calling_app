@@ -76,48 +76,29 @@ class JoinRequestService {
     required int userId,
     Function(bool isWaiting, String? errorMessage)? onStateChanged,
   }) {
-    // Listen to the specific join request document
-    _firebaseService.getJoinRequestStream(meeting.meetId, userId).listen(
-      (docSnapshot) {
-        if (!docSnapshot.exists) {
-          AppLogger.print('Join request document not found');
-          return;
-        }
-
-        final data = docSnapshot.data() as Map<String, dynamic>?;
-        if (data == null) return;
-
-        final status = data['status'] as String?;
-        AppLogger.print('Join request status changed to: $status');
-
-        switch (status) {
-          case 'accepted':
-            AppLogger.print('Join request approved for meeting: ${meeting.meetId}');
-            onStateChanged?.call(false, null);
-            _navigateToMeetingRoom(context, meeting);
-            break;
-          case 'rejected':
-            AppLogger.print('Join request rejected for meeting: ${meeting.meetId}');
-            const errorMessage = 'Your request to join the meeting has been rejected by the host.';
-            onStateChanged?.call(false, errorMessage);
-            _showErrorMessage(context, errorMessage);
-            break;
-          case 'joined':
-            AppLogger.print('User has joined the meeting: ${meeting.meetId}');
-            // This status is set when user successfully joins
-            break;
-          case 'pending':
-            // Still waiting for response
-            break;
-          default:
-            AppLogger.print('Unknown join request status: $status');
-        }
+    _meetingListenerService.startListening(
+      meetingId: meeting.meetId,
+      userId: userId,
+      context: context,
+      onApprovalReceived: () {
+        AppLogger.print('Join request approved for meeting: ${meeting.meetId}');
+        onStateChanged?.call(false, null);
+        _navigateToMeetingRoom(context, meeting);
       },
-      onError: (error) {
-        AppLogger.print('Error listening to join request: $error');
-        final errorMessage = 'Error monitoring join request: $error';
+      onRejectionReceived: () {
+        AppLogger.print('Join request rejected for meeting: ${meeting.meetId}');
+        const errorMessage = 'Your request to join the meeting has been rejected by the host.';
         onStateChanged?.call(false, errorMessage);
         _showErrorMessage(context, errorMessage);
+      },
+      onTimeoutReached: () {
+        AppLogger.print('Join request timed out for meeting: ${meeting.meetId}');
+        const errorMessage = 'Your join request timed out. The host did not respond within 1 minute.';
+        onStateChanged?.call(false, errorMessage);
+        _showErrorMessage(context, errorMessage);
+        
+        // Cancel the join request from Firebase
+        _cancelJoinRequestOnTimeout(meeting.meetId, userId);
       },
     );
   }
@@ -163,6 +144,17 @@ class JoinRequestService {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  /// Cancel join request on timeout (private helper method)
+  Future<void> _cancelJoinRequestOnTimeout(String meetingId, int userId) async {
+    try {
+      await _firebaseService.cancelJoinRequest(meetingId, userId);
+      AppLogger.print('Join request cancelled due to timeout for user $userId in meeting $meetingId');
+    } catch (e) {
+      AppLogger.print('Error cancelling join request on timeout: $e');
+      // Don't show error to user as they already got the timeout message
+    }
   }
 
   /// Stop listening for join request responses

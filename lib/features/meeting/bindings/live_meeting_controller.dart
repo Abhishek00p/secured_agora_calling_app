@@ -4,6 +4,7 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
@@ -28,7 +29,7 @@ class MeetingController extends GetxController {
   final error = RxnString();
 
   final isMuted = false.obs;
-  final isOnSpeaker = false.obs;
+  final isOnSpeaker = true.obs;
   final isJoined = false.obs;
   final isVideoEnabled = true.obs;
   final isScreenSharing = false.obs;
@@ -341,13 +342,13 @@ class MeetingController extends GetxController {
 
       // Navigate back to home page
       if (Get.context != null && Get.context!.mounted) {
-        Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+        Get.offAllNamed(AppRouter.homeRoute);
       }
     } catch (e) {
       AppLogger.print('Error force ending meeting: $e');
       // Even if there's an error, try to navigate back
       if (Get.context != null && Get.context!.mounted) {
-        Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+         Get.offAllNamed(AppRouter.homeRoute);
       }
     }
   }
@@ -707,7 +708,7 @@ class MeetingController extends GetxController {
       try {
         _clearMeetingState();
         if (Get.context != null && Get.context!.mounted) {
-          Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+           Get.offAllNamed(AppRouter.homeRoute);
         }
       } catch (cleanupError) {
         AppLogger.print('Error during cleanup: $cleanupError');
@@ -739,13 +740,34 @@ class MeetingController extends GetxController {
     await _firebaseService.removeAllParticipants(meetingId);
   }
 
+  /// Debug method to test join request creation
+  Future<void> testCreateJoinRequest() async {
+    try {
+      AppLogger.print('Testing join request creation for meeting: $meetingId');
+      await _firebaseService.requestToJoinMeeting(
+        meetingId, 
+        999999, // Test user ID
+        userName: 'Test User',
+        userEmail: 'test@example.com',
+      );
+      AppLogger.print('Test join request created successfully');
+    } catch (e) {
+      AppLogger.print('Error creating test join request: $e');
+    }
+  }
+
   Stream<List<Map<String, dynamic>>> fetchPendingRequests() async* {
+    AppLogger.print('Starting to listen for pending join requests for meeting: $meetingId');
+    
     yield* _firebaseService.getPendingJoinRequestsStream(meetingId).map(
       (querySnapshot) {
+        AppLogger.print('Received querySnapshot with ${querySnapshot.docs.length} documents');
         final List<Map<String, dynamic>> requests = [];
         
         for (final doc in querySnapshot.docs) {
           final data = doc.data() as Map<String, dynamic>;
+          AppLogger.print('Processing join request document: ${doc.id}, data: $data');
+          
           requests.add({
             'userId': data['userId'] as int,
             'name': data['userName'] ?? 'Unknown User',
@@ -754,6 +776,7 @@ class MeetingController extends GetxController {
           });
         }
         
+        AppLogger.print('Processed ${requests.length} join requests: $requests');
         return requests;
       },
     );
@@ -812,13 +835,13 @@ class MeetingController extends GetxController {
       
       // Navigate back to home
       if (Get.context != null && Get.context!.mounted) {
-        Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+         Get.offAllNamed(AppRouter.homeRoute);
       }
     } catch (e) {
       AppLogger.print('Error handling force removal: $e');
       // Even if there's an error, try to navigate back
       if (Get.context != null && Get.context!.mounted) {
-        Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+         Get.offAllNamed(AppRouter.homeRoute);
       }
     }
   }

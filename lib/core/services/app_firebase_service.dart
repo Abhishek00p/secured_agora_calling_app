@@ -346,13 +346,16 @@ class AppFirebaseService {
         if (userEmail != null) 'userEmail': userEmail,
       };
 
+      AppLogger.print('Creating join request for user $userId in meeting $meetingId');
+      AppLogger.print('Request data: $requestData');
+
       await meetingsCollection
           .doc(meetingId)
           .collection('joinRequests')
           .doc(userId.toString())
           .set(requestData);
 
-      AppLogger.print('Join request created for user $userId in meeting $meetingId');
+      AppLogger.print('Join request created successfully for user $userId in meeting $meetingId');
     } catch (e) {
       AppLogger.print('Error creating join request: $e');
       rethrow;
@@ -413,12 +416,20 @@ class AppFirebaseService {
 
   /// Get stream of pending join requests for a meeting
   Stream<QuerySnapshot> getPendingJoinRequestsStream(String meetingId) {
+    AppLogger.print('Setting up pending join requests stream for meeting: $meetingId');
+    
     return meetingsCollection
         .doc(meetingId)
         .collection('joinRequests')
         .where('status', isEqualTo: 'pending')
-        .orderBy('requestedAt', descending: false)
-        .snapshots();
+        .snapshots()
+        .map((snapshot) {
+          AppLogger.print('Firebase query result: ${snapshot.docs.length} pending requests found');
+          for (final doc in snapshot.docs) {
+            AppLogger.print('Pending request doc: ${doc.id} - ${doc.data()}');
+          }
+          return snapshot;
+        });
   }
 
   /// Get stream of all join requests for a meeting
