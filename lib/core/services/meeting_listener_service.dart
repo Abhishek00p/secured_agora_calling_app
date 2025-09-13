@@ -26,6 +26,9 @@ class MeetingListenerService {
     VoidCallback? onApprovalReceived,
     VoidCallback? onRejectionReceived,
   }) {
+    // Stop any existing listeners before starting new ones
+    _stopListening();
+    
     _currentMeetingId = meetingId;
     _currentUserId = userId;
     _context = context;

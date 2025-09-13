@@ -188,6 +188,8 @@ class _UserTabState extends State<UserTab> {
             backgroundColor: AppTheme.successColor,
           ),
         );
+        // Cancel any existing listener before starting new one
+        _listener?.cancel();
         listenForParticipantAddition(meeting, userId, context);
       }
     } catch (e) {
@@ -230,5 +232,12 @@ class _UserTabState extends State<UserTab> {
             }
           }
         });
+  }
+
+  @override
+  void dispose() {
+    _listener?.cancel();
+    _listener = null;
+    super.dispose();
   }
 }

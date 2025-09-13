@@ -9,22 +9,27 @@ import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/meeting/views/meeting_tile_widget.dart';
 
-class ViewAllMeetingList extends StatelessWidget {
-  ViewAllMeetingList({super.key, required this.meetings, this.listener});
+class ViewAllMeetingList extends StatefulWidget {
+  ViewAllMeetingList({super.key, required this.meetings});
   final List<MeetingModel> meetings;
 
+  @override
+  State<ViewAllMeetingList> createState() => _ViewAllMeetingListState();
+}
+
+class _ViewAllMeetingListState extends State<ViewAllMeetingList> {
   StreamSubscription<DocumentSnapshot>? listener;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('View All Meetings')),
-      body: meetings.isNotEmpty
+      body: widget.meetings.isNotEmpty
               ? ListView.builder(
                 padding: const EdgeInsets.all(16.0),
-                itemCount: meetings.length,
+                itemCount: widget.meetings.length,
                 itemBuilder: (context, index) {
-                  final meeting = meetings[index];
+                  final meeting = widget.meetings[index];
                   return MeetingTileWidget(model: meeting);
                 },
               )
@@ -60,6 +65,8 @@ class ViewAllMeetingList extends StatelessWidget {
             backgroundColor: AppTheme.successColor,
           ),
         );
+        // Cancel any existing listener before starting new one
+        listener?.cancel();
         listenForParticipantAddition(meeting, userId, context);
       }
     } catch (e) {
@@ -102,5 +109,12 @@ class ViewAllMeetingList extends StatelessWidget {
             }
           }
         });
+  }
+
+  @override
+  void dispose() {
+    listener?.cancel();
+    listener = null;
+    super.dispose();
   }
 }
