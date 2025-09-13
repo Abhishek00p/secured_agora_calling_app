@@ -524,13 +524,21 @@ class MeetingController extends GetxController {
                 .toList();
         
         // Check if current user was forcefully removed
-        final wasUserRemoved = participants.any((p) => p.userId == currentUserId) && 
-                              !newParticipants.any((p) => p.userId == currentUserId);
+        // Only check for removal if user was previously in the meeting and is now removed
+        final wasUserInMeeting = participants.any((p) => p.userId == currentUserId);
+        final isUserStillInMeeting = newParticipants.any((p) => p.userId == currentUserId);
         
-        if (wasUserRemoved) {
+        if (wasUserInMeeting && !isUserStillInMeeting) {
           AppLogger.print('User was forcefully removed from meeting');
           _handleForceRemoval();
           return;
+        }
+        
+        // Check if user just joined the meeting (for join request approval)
+        if (!wasUserInMeeting && isUserStillInMeeting) {
+          AppLogger.print('User was approved and joined the meeting');
+          // The MeetingListenerService will handle navigation
+          // This is just for logging purposes
         }
         
         participants = newParticipants;

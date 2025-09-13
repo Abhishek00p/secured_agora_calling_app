@@ -5,7 +5,7 @@ import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
-import 'package:secured_calling/core/services/meeting_listener_service.dart';
+import 'package:secured_calling/core/services/join_request_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
 
@@ -14,7 +14,7 @@ class JoinMeetingController extends GetxController {
   final passwordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   final firebaseService = AppFirebaseService.instance;
-  final meetingListenerService = MeetingListenerService();
+  final joinRequestService = JoinRequestService();
 
   final isLoading = false.obs;
   final errorMessage = RxnString();
@@ -63,7 +63,7 @@ class JoinMeetingController extends GetxController {
   }
 
   void cancelJoinRequest() {
-    meetingListenerService.stopListening();
+      joinRequestService.stopListening();
     isWaitingForApproval.value = false;
 
     if (meetingId.value != null) {
@@ -88,7 +88,7 @@ void clearState() {
   selectedUsers.clear();
   showUserSelection.value = false;
   inviteType.value = 'all';
-  meetingListenerService.stopListening();
+      joinRequestService.stopListening();
 }
 
 
@@ -140,36 +140,19 @@ void clearState() {
     if (meetingId.value == null || meetingData.value == null) return;
 
     isLoading.value = true;
-    try {
-      final userId = AppLocalStorage.getUserDetails().userId;
-      await firebaseService.requestToJoinMeeting(meetingId.value!, userId);
-      
-      isWaitingForApproval.value = true;
-      isLoading.value = false;
-      
-      Get.snackbar(
-        'Request Sent',
-        'Request sent to join ${meetingData.value!.meetingName}',
-        backgroundColor: AppTheme.successColor,
-        colorText: Colors.white,
-      );
+    
+    // Use centralized join request service
+    final success = await joinRequestService.requestToJoinMeeting(
+      context: Get.context!,
+      meeting: meetingData.value!,
+      onStateChanged: (isWaiting, errorMessage) {
+        isWaitingForApproval.value = isWaiting;
+        this.errorMessage.value = errorMessage;
+        isLoading.value = false;
+      },
+    );
 
-      // Start listening for approval/rejection using the service
-      meetingListenerService.startListening(
-        meetingId: meetingId.value!,
-        userId: userId,
-        context: Get.context!,
-        onApprovalReceived: () {
-          isWaitingForApproval.value = false;
-          joinMeeting();
-        },
-        onRejectionReceived: () {
-          isWaitingForApproval.value = false;
-          errorMessage.value = 'Your request to join the meeting has been rejected by the host.';
-        },
-      );
-    } catch (e) {
-      errorMessage.value = 'Error requesting to join: $e';
+    if (!success) {
       isLoading.value = false;
     }
   }
@@ -190,6 +173,7 @@ void clearState() {
 
   @override
   void onClose() {
+    joinRequestService.stopListening();
     clearState();
     super.onClose();
   }

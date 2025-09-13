@@ -6,7 +6,7 @@ import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
-import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/services/join_request_service.dart';
 import 'package:secured_calling/features/home/views/meeting_action_card.dart';
 import 'package:secured_calling/features/meeting/views/join_meeting_dialog.dart';
 import 'package:secured_calling/features/meeting/views/meeting_tile_widget.dart';
@@ -22,6 +22,7 @@ class _UserTabState extends State<UserTab> {
   StreamSubscription<DocumentSnapshot>? _listener;
 
   final firebaseService = AppFirebaseService.instance;
+  final joinRequestService = JoinRequestService();
 
   final ValueNotifier<List<MeetingModel>> upcomingMeetings = ValueNotifier([]);
 
@@ -172,32 +173,17 @@ class _UserTabState extends State<UserTab> {
     BuildContext context,
     MeetingModel meeting,
   ) async {
-    try {
-      final userId = AppLocalStorage.getUserDetails().userId;
-      await AppFirebaseService.instance.requestToJoinMeeting(
-        meeting.meetId,
-        userId,
-      );
+    if (!context.mounted) return;
 
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Request sent to join ${meeting.meetingName} meeting',
-            ),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-        // Cancel any existing listener before starting new one
-        _listener?.cancel();
-        listenForParticipantAddition(meeting, userId, context);
-      }
-    } catch (e) {
-      SnackBar(
-        content: Text('Error sending request: $e'),
-        backgroundColor: AppTheme.errorColor,
-      );
-    }
+    // Use centralized join request service
+    await joinRequestService.requestToJoinMeeting(
+      context: context,
+      meeting: meeting,
+      onStateChanged: (isWaiting, errorMessage) {
+        // This implementation uses the old listener approach
+        // but we can still use the centralized service for consistency
+      },
+    );
   }
 
   void listenForParticipantAddition(
@@ -238,6 +224,7 @@ class _UserTabState extends State<UserTab> {
   void dispose() {
     _listener?.cancel();
     _listener = null;
+    joinRequestService.stopListening();
     super.dispose();
   }
 }

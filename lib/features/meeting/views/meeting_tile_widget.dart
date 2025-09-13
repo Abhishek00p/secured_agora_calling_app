@@ -3,9 +3,8 @@ import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
-import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
-import 'package:secured_calling/core/services/meeting_listener_service.dart';
+import 'package:secured_calling/core/services/join_request_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/utils/helper.dart';
 
@@ -21,7 +20,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
   Color theCardColor = AppTheme.cardBackgroundColors[0];
   bool isButtonEnabled = false;
   bool isCurrentUserHost = false;
-  final MeetingListenerService _meetingListenerService = MeetingListenerService();
+  final JoinRequestService _joinRequestService = JoinRequestService();
   bool _isWaitingForApproval = false;
 
   String meetingDate = '';
@@ -53,7 +52,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
 
   @override
   void dispose() {
-    _meetingListenerService.stopListening();
+    _joinRequestService.stopListening();
     super.dispose();
   }
 
@@ -61,58 +60,20 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
     BuildContext context,
     MeetingModel meeting,
   ) async {
-    try {
-      final userId = AppLocalStorage.getUserDetails().userId;
-      await AppFirebaseService.instance.requestToJoinMeeting(
-        meeting.meetId,
-        userId,
-      );
+    if (!context.mounted) return;
 
-      if (context.mounted) {
-        setState(() {
-          _isWaitingForApproval = true;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Request sent to join ${meeting.meetingName} meeting',
-            ),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-
-        // Start listening for approval/rejection
-        _meetingListenerService.startListening(
-          meetingId: meeting.meetId,
-          userId: userId,
-          context: context,
-          onApprovalReceived: () {
-            if (mounted) {
-              setState(() {
-                _isWaitingForApproval = false;
-              });
-            }
-          },
-          onRejectionReceived: () {
-            if (mounted) {
-              setState(() {
-                _isWaitingForApproval = false;
-              });
-            }
-          },
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error sending request: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
-      }
-    }
+    // Use centralized join request service
+    await _joinRequestService.requestToJoinMeeting(
+      context: context,
+      meeting: meeting,
+      onStateChanged: (isWaiting, errorMessage) {
+        if (mounted) {
+          setState(() {
+            _isWaitingForApproval = isWaiting;
+          });
+        }
+      },
+    );
   }
 
 
