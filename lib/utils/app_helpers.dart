@@ -32,11 +32,22 @@ String getInitial(String name) {
 /// Useful for getting varied colors for avatars.
 Color getAvatarColor(int index) {
   final List<Color> materialColors = [
-    Colors.red[400]!, Colors.pink[400]!, Colors.purple[400]!, Colors.deepPurple[400]!,
-    Colors.indigo[400]!, Colors.blue[400]!, Colors.lightBlue[400]!, Colors.cyan[400]!,
-    Colors.teal[400]!, Colors.green[400]!, Colors.lightGreen[400]!,
-    Colors.amber[400]!, Colors.orange[400]!, Colors.deepOrange[400]!,
-    Colors.brown[400]!, Colors.blueGrey[400]!
+    Colors.red[400]!,
+    Colors.pink[400]!,
+    Colors.purple[400]!,
+    Colors.deepPurple[400]!,
+    Colors.indigo[400]!,
+    Colors.blue[400]!,
+    Colors.lightBlue[400]!,
+    Colors.cyan[400]!,
+    Colors.teal[400]!,
+    Colors.green[400]!,
+    Colors.lightGreen[400]!,
+    Colors.amber[400]!,
+    Colors.orange[400]!,
+    Colors.deepOrange[400]!,
+    Colors.brown[400]!,
+    Colors.blueGrey[400]!,
   ];
   return materialColors[index % materialColors.length];
 }
@@ -71,7 +82,10 @@ Widget buildStatusChip(String status) {
 
   return Chip(
     avatar: Icon(iconData, color: Colors.white, size: 16),
-    label: Text(chipLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+    label: Text(
+      chipLabel,
+      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+    ),
     backgroundColor: chipColor,
     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
   );

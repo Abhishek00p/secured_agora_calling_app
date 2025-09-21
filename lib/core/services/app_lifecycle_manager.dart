@@ -9,18 +9,18 @@ import 'package:secured_calling/utils/app_logger.dart';
 /// Manages app lifecycle events and ensures proper cleanup when app is terminated
 class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
   static AppLifecycleManager get instance => Get.find<AppLifecycleManager>();
-  
+
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
   // AppLocalStorage is used statically
-  
+
   // Track if user is currently in a meeting
   bool _isInMeeting = false;
   String _currentMeetingId = '';
   bool _isHost = false;
-  
+
   // Timer to handle delayed cleanup (in case app is quickly reopened)
   Timer? _cleanupTimer;
-  
+
   @override
   void onInit() {
     super.onInit();
@@ -38,7 +38,7 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
+
     switch (state) {
       case AppLifecycleState.paused:
         _handleAppPaused();
@@ -61,18 +61,22 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
   /// Called when app is paused (moved to background)
   void _handleAppPaused() {
     AppLogger.print('App paused - checking meeting status');
-    
+
     // Check if user is in a meeting
     _checkMeetingStatus();
-    
+
     if (_isInMeeting) {
-      AppLogger.print('User is in meeting during pause - setting up delayed cleanup');
-      
+      AppLogger.print(
+        'User is in meeting during pause - setting up delayed cleanup',
+      );
+
       // Set up a delayed cleanup timer (30 seconds)
       // This gives the app a chance to resume if it was just minimized
       _cleanupTimer?.cancel();
       _cleanupTimer = Timer(const Duration(seconds: 30), () {
-        AppLogger.print('Delayed cleanup triggered - app was not resumed in time');
+        AppLogger.print(
+          'Delayed cleanup triggered - app was not resumed in time',
+        );
         _performMeetingCleanup();
       });
     }
@@ -81,10 +85,10 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
   /// Called when app is detached (forcefully terminated)
   void _handleAppDetached() {
     AppLogger.print('App detached - performing immediate cleanup');
-    
+
     // Cancel any pending cleanup timer
     _cleanupTimer?.cancel();
-    
+
     // Perform immediate cleanup
     _performMeetingCleanup();
   }
@@ -92,10 +96,10 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
   /// Handle app termination from background (Android specific)
   void _handleAppTerminated() {
     AppLogger.print('App terminated from background - performing cleanup');
-    
+
     // Cancel any pending cleanup timer
     _cleanupTimer?.cancel();
-    
+
     // Perform immediate cleanup
     _performMeetingCleanup();
   }
@@ -103,7 +107,7 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
   /// Called when app is resumed
   void _handleAppResumed() {
     AppLogger.print('App resumed - canceling cleanup timer');
-    
+
     // Cancel cleanup timer if app is resumed quickly
     _cleanupTimer?.cancel();
   }
@@ -117,8 +121,10 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
         _isInMeeting = meetingController.isJoined.value;
         _currentMeetingId = meetingController.meetingId;
         _isHost = meetingController.isHost;
-        
-        AppLogger.print('Meeting status - InMeeting: $_isInMeeting, MeetingId: $_currentMeetingId, IsHost: $_isHost');
+
+        AppLogger.print(
+          'Meeting status - InMeeting: $_isInMeeting, MeetingId: $_currentMeetingId, IsHost: $_isHost',
+        );
       } else {
         _isInMeeting = false;
         _currentMeetingId = '';
@@ -140,25 +146,28 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
     }
 
     try {
-      AppLogger.print('Performing meeting cleanup for meeting: $_currentMeetingId');
-      
+      AppLogger.print(
+        'Performing meeting cleanup for meeting: $_currentMeetingId',
+      );
+
       final currentUser = AppLocalStorage.getUserDetails();
-      
+
       // Remove user from meeting participants
       await _firebaseService.removeParticipantFromMeeting(
-        _currentMeetingId, 
-        currentUser.userId
+        _currentMeetingId,
+        currentUser.userId,
       );
-      
+
       // If user was host, end the meeting for everyone
       if (_isHost) {
-        AppLogger.print('Host terminated app - ending meeting for all participants');
+        AppLogger.print(
+          'Host terminated app - ending meeting for all participants',
+        );
         await _firebaseService.removeAllParticipants(_currentMeetingId);
         await _firebaseService.endMeeting(_currentMeetingId);
       }
-      
+
       AppLogger.print('Meeting cleanup completed successfully');
-      
     } catch (e) {
       AppLogger.print('Error during meeting cleanup: $e');
     } finally {
@@ -178,8 +187,10 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
     _isInMeeting = isInMeeting;
     _currentMeetingId = meetingId;
     _isHost = isHost;
-    
-    AppLogger.print('Meeting status updated - InMeeting: $isInMeeting, MeetingId: $meetingId, IsHost: $isHost');
+
+    AppLogger.print(
+      'Meeting status updated - InMeeting: $isInMeeting, MeetingId: $meetingId, IsHost: $isHost',
+    );
   }
 
   /// Clear meeting status (called when meeting ends normally)
@@ -187,10 +198,10 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
     _isInMeeting = false;
     _currentMeetingId = '';
     _isHost = false;
-    
+
     // Cancel any pending cleanup
     _cleanupTimer?.cancel();
-    
+
     AppLogger.print('Meeting status cleared');
   }
 

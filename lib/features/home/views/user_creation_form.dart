@@ -57,11 +57,10 @@ class _UserCreationFormState extends State<UserCreationForm> {
         _nameController.clear();
         _emailController.clear();
         _passwordController.clear();
-        
+
         // Return true to indicate successful creation
         Navigator.pop(context, true);
       }
-      
     } catch (e) {
       if (mounted) {
         AppToastUtil.showErrorToast('Failed to create user: $e');
@@ -90,7 +89,7 @@ class _UserCreationFormState extends State<UserCreationForm> {
           child: ListView(
             children: [
               const SizedBox(height: 24),
-              
+
               // Info Card
               Container(
                 padding: const EdgeInsets.all(16),
@@ -104,7 +103,11 @@ class _UserCreationFormState extends State<UserCreationForm> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.blue[700],
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Creating User Under Member Code',
@@ -126,17 +129,14 @@ class _UserCreationFormState extends State<UserCreationForm> {
                     const SizedBox(height: 8),
                     Text(
                       'This user will be automatically associated with your member code and will have access to your meetings.',
-                      style: TextStyle(
-                        color: Colors.blue[700],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.blue[700], fontSize: 14),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Name Field
               AppTextFormField(
                 controller: _nameController,
@@ -149,9 +149,9 @@ class _UserCreationFormState extends State<UserCreationForm> {
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Email Field
               AppTextFormField(
                 controller: _emailController,
@@ -161,15 +161,17 @@ class _UserCreationFormState extends State<UserCreationForm> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter the user\'s email';
                   }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                  if (!RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  ).hasMatch(value)) {
                     return 'Please enter a valid email';
                   }
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Password Field
               AppTextFormField(
                 controller: _passwordController,
@@ -186,9 +188,9 @@ class _UserCreationFormState extends State<UserCreationForm> {
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Create Button
               SizedBox(
                 width: double.infinity,
@@ -201,28 +203,31 @@ class _UserCreationFormState extends State<UserCreationForm> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  child:
+                      _isLoading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : const Text(
+                            'Create User',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        )
-                      : const Text(
-                          'Create User',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Additional Info
               Container(
                 padding: const EdgeInsets.all(12),
@@ -233,7 +238,11 @@ class _UserCreationFormState extends State<UserCreationForm> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_outlined, color: Colors.orange[700], size: 20),
+                    Icon(
+                      Icons.warning_amber_outlined,
+                      color: Colors.orange[700],
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(

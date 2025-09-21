@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:secured_calling/utils/permission_popup.dart';
 
-
 class PermissionService {
   static Future<bool> requestPermission({
     required BuildContext context,
@@ -15,11 +14,12 @@ class PermissionService {
 
     final shouldRequest = await showDialog<bool>(
       context: context,
-      builder: (_) => PermissionPopup(
-        icon: type.icon,
-        title: type.title,
-        description: type.description,
-      ),
+      builder:
+          (_) => PermissionPopup(
+            icon: type.icon,
+            title: type.title,
+            description: type.description,
+          ),
     );
 
     if (shouldRequest == true) {
@@ -30,8 +30,6 @@ class PermissionService {
     return false;
   }
 }
-
-
 
 enum AppPermissionType {
   microphone,

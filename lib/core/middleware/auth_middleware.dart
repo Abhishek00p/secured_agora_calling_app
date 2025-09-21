@@ -13,32 +13,33 @@ class AuthMiddleware extends GetMiddleware {
   @override
   RouteSettings? redirect(String? route) {
     AppLogger.print('AuthMiddleware: Checking route - $route');
-    
+
     // Routes that don't require authentication
-    final publicRoutes = [
-      AppRouter.welcomeRoute,
-      AppRouter.loginRoute,
-    ];
-    
+    final publicRoutes = [AppRouter.welcomeRoute, AppRouter.loginRoute];
+
     // If it's a public route, allow access
     if (publicRoutes.contains(route)) {
       AppLogger.print('AuthMiddleware: Public route, allowing access');
       return null;
     }
-    
+
     // Check authentication status
     final isLoggedIn = AppLocalStorage.getLoggedInStatus();
     final token = AppLocalStorage.getToken();
     final userDetails = AppLocalStorage.getUserDetails();
-    
-    AppLogger.print('AuthMiddleware: Auth check - isLoggedIn: $isLoggedIn, hasToken: ${token != null}, hasUser: ${!userDetails.isEmpty}');
-    
+
+    AppLogger.print(
+      'AuthMiddleware: Auth check - isLoggedIn: $isLoggedIn, hasToken: ${token != null}, hasUser: ${!userDetails.isEmpty}',
+    );
+
     // If user is not authenticated, redirect to login
     if (!isLoggedIn || token == null || userDetails.isEmpty) {
-      AppLogger.print('AuthMiddleware: User not authenticated, redirecting to login');
+      AppLogger.print(
+        'AuthMiddleware: User not authenticated, redirecting to login',
+      );
       return const RouteSettings(name: AppRouter.loginRoute);
     }
-    
+
     // User appears to be authenticated, allow access
     AppLogger.print('AuthMiddleware: User authenticated, allowing access');
     return null;
@@ -57,24 +58,30 @@ class WelcomeMiddleware extends GetMiddleware {
     if (route != AppRouter.welcomeRoute) {
       return null;
     }
-    
+
     AppLogger.print('WelcomeMiddleware: Checking authentication status...');
-    
+
     // Check if user is already logged in
     final isLoggedIn = AppLocalStorage.getLoggedInStatus();
     final token = AppLocalStorage.getToken();
     final userDetails = AppLocalStorage.getUserDetails();
-    
-    AppLogger.print('WelcomeMiddleware: Auth check - isLoggedIn: $isLoggedIn, hasToken: ${token != null}, hasUser: ${!userDetails.isEmpty}');
-    
+
+    AppLogger.print(
+      'WelcomeMiddleware: Auth check - isLoggedIn: $isLoggedIn, hasToken: ${token != null}, hasUser: ${!userDetails.isEmpty}',
+    );
+
     // If user is authenticated, redirect to home
     if (isLoggedIn && token != null && !userDetails.isEmpty) {
-      AppLogger.print('WelcomeMiddleware: User is authenticated, redirecting to home');
+      AppLogger.print(
+        'WelcomeMiddleware: User is authenticated, redirecting to home',
+      );
       return const RouteSettings(name: AppRouter.homeRoute);
     }
-    
+
     // User is not authenticated, show welcome screen
-    AppLogger.print('WelcomeMiddleware: User not authenticated, showing welcome screen');
+    AppLogger.print(
+      'WelcomeMiddleware: User not authenticated, showing welcome screen',
+    );
     return null;
   }
 }
@@ -91,24 +98,32 @@ class LoginMiddleware extends GetMiddleware {
     if (route != AppRouter.loginRoute) {
       return null;
     }
-    
-    AppLogger.print('LoginMiddleware: Checking if user is already authenticated...');
-    
+
+    AppLogger.print(
+      'LoginMiddleware: Checking if user is already authenticated...',
+    );
+
     // Check if user is already logged in
     final isLoggedIn = AppLocalStorage.getLoggedInStatus();
     final token = AppLocalStorage.getToken();
     final userDetails = AppLocalStorage.getUserDetails();
-    
-    AppLogger.print('LoginMiddleware: Auth check - isLoggedIn: $isLoggedIn, hasToken: ${token != null}, hasUser: ${!userDetails.isEmpty}');
-    
+
+    AppLogger.print(
+      'LoginMiddleware: Auth check - isLoggedIn: $isLoggedIn, hasToken: ${token != null}, hasUser: ${!userDetails.isEmpty}',
+    );
+
     // If user is authenticated, redirect to home
     if (isLoggedIn && token != null && !userDetails.isEmpty) {
-      AppLogger.print('LoginMiddleware: User is already authenticated, redirecting to home');
+      AppLogger.print(
+        'LoginMiddleware: User is already authenticated, redirecting to home',
+      );
       return const RouteSettings(name: AppRouter.homeRoute);
     }
-    
+
     // User is not authenticated, show login screen
-    AppLogger.print('LoginMiddleware: User not authenticated, showing login screen');
+    AppLogger.print(
+      'LoginMiddleware: User not authenticated, showing login screen',
+    );
     return null;
   }
 }

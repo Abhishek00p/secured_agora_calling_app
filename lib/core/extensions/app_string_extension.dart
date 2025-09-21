@@ -14,7 +14,12 @@ extension AppStringExtension on String {
       trim().isEmpty
           ? ''
           : split(' ')
-              .map((e) => e.trim().isEmpty ? '' : '${e.trim()[0].capitalizeAll}${e.trim().substring(1)}')
+              .map(
+                (e) =>
+                    e.trim().isEmpty
+                        ? ''
+                        : '${e.trim()[0].capitalizeAll}${e.trim().substring(1)}',
+              )
               .join(' ');
 
   DateTime get toDateTimeFromEpoch {
@@ -29,13 +34,13 @@ extension AppStringExtension on String {
 
     // List of supported formats
     final formats = [
-      DateFormat("yyyy-MM-dd"),     // 2025-11-13
-      DateFormat("dd/MM/yyyy"),     // 13/11/2025
-      DateFormat("dd-MM-yyyy"),     // 13-11-2025
-      DateFormat("MM/dd/yyyy"),     // 11/13/2025
-      DateFormat("yyyy/MM/dd"),     // 2025/11/13
-      DateFormat("yyyy.MM.dd"),     // 2025.11.13
-      DateFormat("dd.MM.yyyy"),     // 13.11.2025
+      DateFormat("yyyy-MM-dd"), // 2025-11-13
+      DateFormat("dd/MM/yyyy"), // 13/11/2025
+      DateFormat("dd-MM-yyyy"), // 13-11-2025
+      DateFormat("MM/dd/yyyy"), // 11/13/2025
+      DateFormat("yyyy/MM/dd"), // 2025/11/13
+      DateFormat("yyyy.MM.dd"), // 2025.11.13
+      DateFormat("dd.MM.yyyy"), // 13.11.2025
     ];
 
     for (final format in formats) {

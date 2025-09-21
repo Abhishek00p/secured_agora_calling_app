@@ -18,10 +18,7 @@ class MemberForm extends StatefulWidget {
 
 class _MemberFormState extends State<MemberForm> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController name,
-      email,
-      password,
-      maxParticipantsAllowed;
+  late TextEditingController name, email, password, maxParticipantsAllowed;
   DateTime purchaseDate = DateTime.now();
   bool isActive = true;
   bool _isLoading = false;
@@ -58,16 +55,17 @@ class _MemberFormState extends State<MemberForm> {
     maxParticipantsAllowed = TextEditingController(
       text: widget.member?.maxParticipantsAllowed.toString() ?? '',
     );
-    
+
     // Set initial subscription plan if editing existing member
     if (widget.member != null) {
       final days = widget.member!.planDays;
-      selectedPlan = subscriptionPlans.entries
-          .firstWhere(
-            (entry) => entry.value == days,
-            orElse: () => subscriptionPlans.entries.first,
-          )
-          .key;
+      selectedPlan =
+          subscriptionPlans.entries
+              .firstWhere(
+                (entry) => entry.value == days,
+                orElse: () => subscriptionPlans.entries.first,
+              )
+              .key;
     }
   }
 
@@ -103,13 +101,14 @@ class _MemberFormState extends State<MemberForm> {
           memberCode: memberCode,
           purchaseDate: purchaseDate,
           planDays: planDays,
-          maxParticipantsAllowed: int.parse(maxParticipantsAllowed.text) <= 0 ? 45 : int.parse(maxParticipantsAllowed.text),
+          maxParticipantsAllowed:
+              int.parse(maxParticipantsAllowed.text) <= 0
+                  ? 45
+                  : int.parse(maxParticipantsAllowed.text),
         );
 
         if (success && mounted) {
-          AppToastUtil.showSuccessToast(
-            'Member created successfully.',
-          );
+          AppToastUtil.showSuccessToast('Member created successfully.');
           Navigator.pop(context);
         }
       } else {
@@ -154,17 +153,18 @@ class _MemberFormState extends State<MemberForm> {
           padding: const EdgeInsets.all(8.0),
           child: ElevatedButton(
             onPressed: _isLoading ? null : _saveMember,
-            child: _isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(
-                    widget.member == null
-                        ? "Save & Register Member"
-                        : "Update Member Details",
-                  ),
+            child:
+                _isLoading
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : Text(
+                      widget.member == null
+                          ? "Save & Register Member"
+                          : "Update Member Details",
+                    ),
           ),
         ),
         appBar: AppBar(
@@ -202,16 +202,19 @@ class _MemberFormState extends State<MemberForm> {
                   text: purchaseDate.formatDate,
                   label: "Purchase Date",
                   prefixIcon: Icons.calendar_month,
-                  onPressed: () => showDatePicker(
-                    context: context,
-                    initialDate: purchaseDate,
-                    firstDate: DateTime.now().subtract(const Duration(days: 60)),
-                    lastDate: DateTime(2100),
-                  ).then((value) {
-                    if (value != null) {
-                      setState(() => purchaseDate = value);
-                    }
-                  }),
+                  onPressed:
+                      () => showDatePicker(
+                        context: context,
+                        initialDate: purchaseDate,
+                        firstDate: DateTime.now().subtract(
+                          const Duration(days: 60),
+                        ),
+                        lastDate: DateTime(2100),
+                      ).then((value) {
+                        if (value != null) {
+                          setState(() => purchaseDate = value);
+                        }
+                      }),
                 ),
                 const SizedBox(height: 12),
                 AppDropdownField<String>(
@@ -241,7 +244,8 @@ class _MemberFormState extends State<MemberForm> {
                     }
                     return null;
                   },
-                  helperText: "Max number of participants allowed in a Meeting in Multple of 5, eg: 5, 10, 15...",
+                  helperText:
+                      "Max number of participants allowed in a Meeting in Multple of 5, eg: 5, 10, 15...",
                   prefixIcon: Icons.group,
                 ),
                 const SizedBox(height: 8),

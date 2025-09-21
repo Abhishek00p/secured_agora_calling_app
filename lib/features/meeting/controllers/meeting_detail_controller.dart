@@ -15,12 +15,12 @@ class MeetingDetailController extends GetxController {
   final isLoading = false.obs;
   final hasError = false.obs;
   final errorMessage = RxnString();
-  
+
   // Real-time updates
   final isRealTimeLoading = false.obs;
   final realTimeError = RxnString();
   final lastUpdated = Rxn<DateTime>();
-  
+
   // Stream subscriptions
   StreamSubscription<DocumentSnapshot>? _meetingStreamSubscription;
 
@@ -48,7 +48,7 @@ class MeetingDetailController extends GetxController {
 
       final details = await _meetingService.fetchMeetingDetail(meetingId);
       meetingDetail.value = details;
-      
+
       AppLogger.print('Meeting details loaded successfully');
     } catch (e) {
       hasError.value = true;
@@ -83,25 +83,27 @@ class MeetingDetailController extends GetxController {
       isRealTimeLoading.value = true;
       realTimeError.value = null;
 
-      _meetingStreamSubscription = _meetingService.getMeetingStream(meetingId).listen(
-        (snapshot) {
-          if (snapshot.exists) {
-            final data = snapshot.data() as Map<String, dynamic>?;
-            if (data != null) {
-              final lastExtendedAt = data['lastExtendedAt'];
-              if (lastExtendedAt != null) {
-                lastUpdated.value = lastExtendedAt.toDate();
+      _meetingStreamSubscription = _meetingService
+          .getMeetingStream(meetingId)
+          .listen(
+            (snapshot) {
+              if (snapshot.exists) {
+                final data = snapshot.data() as Map<String, dynamic>?;
+                if (data != null) {
+                  final lastExtendedAt = data['lastExtendedAt'];
+                  if (lastExtendedAt != null) {
+                    lastUpdated.value = lastExtendedAt.toDate();
+                  }
+                }
               }
-            }
-          }
-          isRealTimeLoading.value = false;
-        },
-        onError: (error) {
-          realTimeError.value = error.toString();
-          isRealTimeLoading.value = false;
-          AppLogger.print('Real-time updates error: $error');
-        },
-      );
+              isRealTimeLoading.value = false;
+            },
+            onError: (error) {
+              realTimeError.value = error.toString();
+              isRealTimeLoading.value = false;
+              AppLogger.print('Real-time updates error: $error');
+            },
+          );
     } catch (e) {
       realTimeError.value = e.toString();
       isRealTimeLoading.value = false;
@@ -109,17 +111,11 @@ class MeetingDetailController extends GetxController {
     }
   }
 
-
-
   // /// Refresh real-time updates
   // Future<void> refreshRealTimeUpdates() async {
   //   _meetingStreamSubscription?.cancel();
   //   _initializeRealTimeUpdates();
   // }
-
-
-
-
 
   /// Get meeting status for UI updates
   String get meetingStatus {

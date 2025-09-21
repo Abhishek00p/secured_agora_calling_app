@@ -111,76 +111,81 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
     final showAbove = bottomSpace < (widget.menuMaxHeight ?? 300);
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        width: size.width,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0, showAbove ? -(size.height + 8) : (size.height )),
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            child: Container(
-              constraints: BoxConstraints(
-                maxHeight: widget.menuMaxHeight ?? 300,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
+      builder:
+          (context) => Positioned(
+            width: size.width,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: Offset(0, showAbove ? -(size.height + 8) : (size.height)),
+              child: Material(
+                elevation: 8,
                 borderRadius: BorderRadius.circular(widget.borderRadius),
-              ),
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                itemCount: widget.items.length,
-                itemBuilder: (context, index) {
-                  final item = widget.items[index];
-                  final isSelected = item.value == _selectedValue;
-                  return ListTile(
-                    dense: true,
-                    selected: isSelected,
-                    selectedTileColor: Colors.blue.withOpacity(0.1),
-                    leading: Checkbox(
-                      value: isSelected,
-                      onChanged: (bool? value) {
-                        if (value == true) {
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: widget.menuMaxHeight ?? 300,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(widget.borderRadius),
+                  ),
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: widget.items.length,
+                    itemBuilder: (context, index) {
+                      final item = widget.items[index];
+                      final isSelected = item.value == _selectedValue;
+                      return ListTile(
+                        dense: true,
+                        selected: isSelected,
+                        selectedTileColor: Colors.blue.withOpacity(0.1),
+                        leading: Checkbox(
+                          value: isSelected,
+                          onChanged: (bool? value) {
+                            if (value == true) {
+                              setState(() {
+                                _selectedValue = item.value;
+                              });
+                              widget.onChanged?.call(item.value);
+                              _removeOverlay();
+                            }
+                          },
+                        ),
+                        title: Text(
+                          item.label,
+                          style: TextStyle(
+                            color: isSelected ? Colors.blue : Colors.black,
+                            fontWeight:
+                                isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                          ),
+                        ),
+                        trailing:
+                            item.description != null
+                                ? Text(
+                                  item.description!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                )
+                                : null,
+                        onTap: () {
                           setState(() {
                             _selectedValue = item.value;
                           });
                           widget.onChanged?.call(item.value);
                           _removeOverlay();
-                        }
-                      },
-                    ),
-                    title: Text(
-                      item.label,
-                      style: TextStyle(
-                        color: isSelected ? Colors.blue : Colors.black,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                    trailing: item.description != null
-                        ? Text(
-                            item.description!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          )
-                        : null,
-                    onTap: () {
-                      setState(() {
-                        _selectedValue = item.value;
-                      });
-                      widget.onChanged?.call(item.value);
-                      _removeOverlay();
+                        },
+                      );
                     },
-                  );
-                },
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
     );
 
     Overlay.of(context).insert(_overlayEntry!);
@@ -217,11 +222,13 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
         if (widget.label != null) ...[
           Text(
             widget.label!,
-            style: widget.labelStyle ?? const TextStyle(
-              fontSize: 12,
-              color: Colors.black,
-              fontWeight: FontWeight.w500,
-            ),
+            style:
+                widget.labelStyle ??
+                const TextStyle(
+                  fontSize: 12,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
           const SizedBox(height: 8),
         ],
@@ -238,7 +245,9 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                 color: widget.fillColor ?? Colors.grey.shade50,
               ),
               child: Padding(
-                padding: widget.contentPadding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding:
+                    widget.contentPadding ??
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
                   children: [
                     if (widget.prefixIcon != null) ...[
@@ -256,10 +265,12 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                         children: [
                           Text(
                             selectedItem.label,
-                            style: widget.style ?? const TextStyle(
-                              fontSize: 12,
-                              color: Colors.black,
-                            ),
+                            style:
+                                widget.style ??
+                                const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                ),
                           ),
                           if (selectedItem.description != null) ...[
                             const SizedBox(height: 4),
@@ -288,23 +299,21 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
           const SizedBox(height: 4),
           Text(
             widget.helperText!,
-            style: widget.helperStyle ?? TextStyle(
-              fontSize: 10,
-              color: Colors.grey.shade600,
-            ),
+            style:
+                widget.helperStyle ??
+                TextStyle(fontSize: 10, color: Colors.grey.shade600),
           ),
         ],
         if (widget.errorText != null) ...[
           const SizedBox(height: 4),
           Text(
             widget.errorText!,
-            style: widget.errorStyle ?? TextStyle(
-              fontSize: 10,
-              color: theme.colorScheme.error,
-            ),
+            style:
+                widget.errorStyle ??
+                TextStyle(fontSize: 10, color: theme.colorScheme.error),
           ),
         ],
       ],
     );
   }
-} 
+}

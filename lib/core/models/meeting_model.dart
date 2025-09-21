@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MeetingModel {
@@ -28,12 +27,12 @@ class MeetingModel {
   final DateTime createdAt;
   final DateTime? actualStartTime;
   final DateTime? actualEndTime;
-  
+
   // Meeting statistics
   final int totalParticipantsCount;
   final Duration actualDuration;
   final int? totalExtensions;
-  
+
   // Detailed participant tracking
   final List<ParticipantLog> participantHistory;
 
@@ -69,33 +68,33 @@ class MeetingModel {
   bool get isEmpty => this == MeetingModel.toEmpty();
 
   factory MeetingModel.toEmpty() => MeetingModel(
-        meetId: '',
-        meetingName: '',
-        channelName: '',
-        hostId: '',
-        hostUserId: 0,
-        hostName: '',
-        password: null,
-        memberCode: null,
-        requiresApproval: false,
-        status: '',
-        isParticipantsMuted: {},
-        maxParticipants: 0,
-        duration: 0,
-        participants: [],
-        allParticipants: [],
-        pendingApprovals: [],
-        invitedUsers: [],
-        scheduledStartTime: DateTime.fromMillisecondsSinceEpoch(0),
-        scheduledEndTime: DateTime.fromMillisecondsSinceEpoch(0),
-        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-        actualStartTime: null,
-        actualEndTime: null,
-        totalParticipantsCount: 0,
-        actualDuration: Duration.zero,
-        totalExtensions: null,
-        participantHistory: [],
-      );
+    meetId: '',
+    meetingName: '',
+    channelName: '',
+    hostId: '',
+    hostUserId: 0,
+    hostName: '',
+    password: null,
+    memberCode: null,
+    requiresApproval: false,
+    status: '',
+    isParticipantsMuted: {},
+    maxParticipants: 0,
+    duration: 0,
+    participants: [],
+    allParticipants: [],
+    pendingApprovals: [],
+    invitedUsers: [],
+    scheduledStartTime: DateTime.fromMillisecondsSinceEpoch(0),
+    scheduledEndTime: DateTime.fromMillisecondsSinceEpoch(0),
+    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+    actualStartTime: null,
+    actualEndTime: null,
+    totalParticipantsCount: 0,
+    actualDuration: Duration.zero,
+    totalExtensions: null,
+    participantHistory: [],
+  );
 
   factory MeetingModel.fromJson(Map<String, dynamic> json) {
     return MeetingModel(
@@ -109,7 +108,9 @@ class MeetingModel {
       memberCode: json['memberCode'],
       requiresApproval: json['requiresApproval'] ?? false,
       status: json['status'] ?? '',
-      isParticipantsMuted: Map<String, bool>.from(json['isParticipantsMuted'] ?? {}),
+      isParticipantsMuted: Map<String, bool>.from(
+        json['isParticipantsMuted'] ?? {},
+      ),
       maxParticipants: json['maxParticipants'] ?? 0,
       duration: json['duration'] ?? 0,
       participants: List<int>.from(json['participants'] ?? []),
@@ -129,38 +130,40 @@ class MeetingModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'meet_id': meetId,
-        'meetingName': meetingName,
-        'channelName': channelName,
-        'hostId': hostId,
-        'hostName': hostName,
-        'hostUserId': hostUserId,
-        'password': password,
-        'memberCode': memberCode,
-        'requiresApproval': requiresApproval,
-        'status': status,
-        'isParticipantsMuted': isParticipantsMuted,
-        'maxParticipants': maxParticipants,
-        'duration': duration,
-        'participants': participants,
-        'allParticipants': allParticipants,
-        'pendingApprovals': pendingApprovals,
-        'invitedUsers': invitedUsers,
-        'scheduledStartTime': scheduledStartTime.toIso8601String(),
-        'scheduledEndTime': scheduledEndTime.toIso8601String(),
-        'createdAt': createdAt.toIso8601String(),
-        'actualStartTime': actualStartTime?.toIso8601String(),
-        'actualEndTime': actualEndTime?.toIso8601String(),
-        'totalParticipantsCount': totalParticipantsCount,
-        'actualDuration': actualDuration.inSeconds,
-        'totalExtensions': totalExtensions,
-        'participantHistory': participantHistory.map((log) => log.toJson()).toList(),
-      };
+    'meet_id': meetId,
+    'meetingName': meetingName,
+    'channelName': channelName,
+    'hostId': hostId,
+    'hostName': hostName,
+    'hostUserId': hostUserId,
+    'password': password,
+    'memberCode': memberCode,
+    'requiresApproval': requiresApproval,
+    'status': status,
+    'isParticipantsMuted': isParticipantsMuted,
+    'maxParticipants': maxParticipants,
+    'duration': duration,
+    'participants': participants,
+    'allParticipants': allParticipants,
+    'pendingApprovals': pendingApprovals,
+    'invitedUsers': invitedUsers,
+    'scheduledStartTime': scheduledStartTime.toIso8601String(),
+    'scheduledEndTime': scheduledEndTime.toIso8601String(),
+    'createdAt': createdAt.toIso8601String(),
+    'actualStartTime': actualStartTime?.toIso8601String(),
+    'actualEndTime': actualEndTime?.toIso8601String(),
+    'totalParticipantsCount': totalParticipantsCount,
+    'actualDuration': actualDuration.inSeconds,
+    'totalExtensions': totalExtensions,
+    'participantHistory':
+        participantHistory.map((log) => log.toJson()).toList(),
+  };
 
   static DateTime _toDateTime(dynamic value) {
     if (value == null) return DateTime.fromMillisecondsSinceEpoch(0);
     if (value is Timestamp) return value.toDate();
-    if (value is String) return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    if (value is String)
+      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
@@ -216,12 +219,12 @@ class ParticipantLog {
   }
 
   Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'userName': userName,
-        'joinTime': joinTime.toIso8601String(),
-        'leaveTime': leaveTime?.toIso8601String(),
-        'duration': duration?.inSeconds,
-      };
+    'userId': userId,
+    'userName': userName,
+    'joinTime': joinTime.toIso8601String(),
+    'leaveTime': leaveTime?.toIso8601String(),
+    'duration': duration?.inSeconds,
+  };
 
   ParticipantLog copyWith({
     int? userId,

@@ -18,11 +18,11 @@ class JoinRequestService {
   final _meetingListenerService = MeetingListenerService();
 
   /// Request to join a meeting with approval flow using sub-collection approach
-  /// 
+  ///
   /// [context] - BuildContext for navigation and UI updates
   /// [meeting] - MeetingModel of the meeting to join
   /// [onStateChanged] - Callback for UI state updates (optional)
-  /// 
+  ///
   /// Returns true if request was sent successfully, false otherwise
   Future<bool> requestToJoinMeeting({
     required BuildContext context,
@@ -31,24 +31,24 @@ class JoinRequestService {
   }) async {
     try {
       AppLogger.print('Requesting to join meeting: ${meeting.meetId}');
-      
+
       final currentUser = AppLocalStorage.getUserDetails();
       final userId = currentUser.userId;
-      
+
       // Send join request to Firebase sub-collection
       await _firebaseService.requestToJoinMeeting(
-        meeting.meetId, 
+        meeting.meetId,
         userId,
         userName: currentUser.name,
         userEmail: currentUser.email,
       );
-      
+
       // Update UI state
       onStateChanged?.call(true, null);
-      
+
       // Show success message
       _showSuccessMessage(context, meeting.meetingName);
-      
+
       // Start listening for approval/rejection using sub-collection
       _startListeningForResponse(
         context: context,
@@ -56,10 +56,11 @@ class JoinRequestService {
         userId: userId,
         onStateChanged: onStateChanged,
       );
-      
-      AppLogger.print('Join request sent successfully for meeting: ${meeting.meetId}');
+
+      AppLogger.print(
+        'Join request sent successfully for meeting: ${meeting.meetId}',
+      );
       return true;
-      
     } catch (e) {
       AppLogger.print('Error requesting to join meeting: $e');
       final errorMessage = 'Error requesting to join: $e';
@@ -87,16 +88,20 @@ class JoinRequestService {
       },
       onRejectionReceived: () {
         AppLogger.print('Join request rejected for meeting: ${meeting.meetId}');
-        const errorMessage = 'Your request to join the meeting has been rejected by the host.';
+        const errorMessage =
+            'Your request to join the meeting has been rejected by the host.';
         onStateChanged?.call(false, errorMessage);
         _showErrorMessage(context, errorMessage);
       },
       onTimeoutReached: () {
-        AppLogger.print('Join request timed out for meeting: ${meeting.meetId}');
-        const errorMessage = 'Your join request timed out. The host did not respond within 1 minute.';
+        AppLogger.print(
+          'Join request timed out for meeting: ${meeting.meetId}',
+        );
+        const errorMessage =
+            'Your join request timed out. The host did not respond within 1 minute.';
         onStateChanged?.call(false, errorMessage);
         _showErrorMessage(context, errorMessage);
-        
+
         // Cancel the join request from Firebase
         _cancelJoinRequestOnTimeout(meeting.meetId, userId);
       },
@@ -106,15 +111,16 @@ class JoinRequestService {
   /// Navigate to meeting room
   void _navigateToMeetingRoom(BuildContext context, MeetingModel meeting) {
     if (!context.mounted) return;
-    
+
     AppLogger.print('Navigating to meeting room: ${meeting.meetId}');
-    
+
     Navigator.pushNamed(
       context,
       AppRouter.meetingRoomRoute,
       arguments: {
         'channelName': meeting.channelName,
-        'isHost': meeting.hostId == AppLocalStorage.getUserDetails().firebaseUserId,
+        'isHost':
+            meeting.hostId == AppLocalStorage.getUserDetails().firebaseUserId,
         'meetingId': meeting.meetId,
       },
     );
@@ -123,7 +129,7 @@ class JoinRequestService {
   /// Show success message
   void _showSuccessMessage(BuildContext context, String meetingName) {
     if (!context.mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Request sent to join $meetingName meeting'),
@@ -136,7 +142,7 @@ class JoinRequestService {
   /// Show error message
   void _showErrorMessage(BuildContext context, String message) {
     if (!context.mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -150,7 +156,9 @@ class JoinRequestService {
   Future<void> _cancelJoinRequestOnTimeout(String meetingId, int userId) async {
     try {
       await _firebaseService.cancelJoinRequest(meetingId, userId);
-      AppLogger.print('Join request cancelled due to timeout for user $userId in meeting $meetingId');
+      AppLogger.print(
+        'Join request cancelled due to timeout for user $userId in meeting $meetingId',
+      );
     } catch (e) {
       AppLogger.print('Error cancelling join request on timeout: $e');
       // Don't show error to user as they already got the timeout message

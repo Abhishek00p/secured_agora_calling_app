@@ -11,40 +11,49 @@ class MeetingDetailService {
 
   Future<MeetingDetail> fetchMeetingDetail(String meetingId) async {
     try {
-      final meetingDoc = await _firestore.collection('meetings').doc(meetingId).get();
-      
+      final meetingDoc =
+          await _firestore.collection('meetings').doc(meetingId).get();
+
       if (!meetingDoc.exists) {
         throw Exception('Meeting not found');
       }
 
       final meetingData = meetingDoc.data() as Map<String, dynamic>;
-      
-      // Fetch participants
-      final participantsSnapshot = await _firestore
-          .collection('meetings')
-          .doc(meetingId)
-          .collection('participants')
-          .get();
 
-      final participants = participantsSnapshot.docs.map((doc) {
-        final data = doc.data();
-        return ParticipantDetail(
-          userId: data['userId']?.toString() ?? 'Unknown',
-          username: data['username'] ?? 'Unknown User',
-          joinTime: data['joinTime']?.toDate() ?? DateTime.now(),
-          leaveTime: data['leaveTime']?.toDate(),
-        );
-      }).toList();
+      // Fetch participants
+      final participantsSnapshot =
+          await _firestore
+              .collection('meetings')
+              .doc(meetingId)
+              .collection('participants')
+              .get();
+
+      final participants =
+          participantsSnapshot.docs.map((doc) {
+            final data = doc.data();
+            return ParticipantDetail(
+              userId: data['userId']?.toString() ?? 'Unknown',
+              username: data['username'] ?? 'Unknown User',
+              joinTime: data['joinTime']?.toDate() ?? DateTime.now(),
+              leaveTime: data['leaveTime']?.toDate(),
+            );
+          }).toList();
 
       // Parse meeting data
-      final scheduledStartTime = _parseDateTime(meetingData['scheduledStartTime']);
+      final scheduledStartTime = _parseDateTime(
+        meetingData['scheduledStartTime'],
+      );
       final scheduledEndTime = _parseDateTime(meetingData['scheduledEndTime']);
-      final actualStartTime = _parseNullableDateTime(meetingData['actualStartTime']);
-      final actualEndTime = _parseNullableDateTime(meetingData['actualEndTime']);
-      
+      final actualStartTime = _parseNullableDateTime(
+        meetingData['actualStartTime'],
+      );
+      final actualEndTime = _parseNullableDateTime(
+        meetingData['actualEndTime'],
+      );
+
       // Calculate duration
       final duration = Duration(minutes: meetingData['duration'] ?? 60);
-      
+
       // Determine status
       final status = _determineMeetingStatus(
         meetingData['status'],
@@ -77,19 +86,24 @@ class MeetingDetailService {
   }
 
   /// Extend meeting duration
-  Future<bool> extendMeeting(String meetingId, int additionalMinutes, {String? reason}) async {
+  Future<bool> extendMeeting(
+    String meetingId,
+    int additionalMinutes, {
+    String? reason,
+  }) async {
     try {
       // Check if current user is the host
       final currentUser = AppLocalStorage.getUserDetails();
-      final meetingDoc = await _firestore.collection('meetings').doc(meetingId).get();
-      
+      final meetingDoc =
+          await _firestore.collection('meetings').doc(meetingId).get();
+
       if (!meetingDoc.exists) {
         throw Exception('Meeting not found');
       }
 
       final meetingData = meetingDoc.data() as Map<String, dynamic>;
       final hostUserId = meetingData['hostUserId'] as int?;
-      
+
       if (hostUserId != currentUser.userId) {
         throw Exception('Only the meeting host can extend the meeting');
       }
@@ -117,17 +131,18 @@ class MeetingDetailService {
   Future<bool> canExtendMeeting(String meetingId) async {
     try {
       final currentUser = AppLocalStorage.getUserDetails();
-      final meetingDoc = await _firestore.collection('meetings').doc(meetingId).get();
-      
+      final meetingDoc =
+          await _firestore.collection('meetings').doc(meetingId).get();
+
       if (!meetingDoc.exists) return false;
 
       final meetingData = meetingDoc.data() as Map<String, dynamic>;
       final hostUserId = meetingData['hostUserId'] as int?;
       final status = meetingData['status'] as String?;
-      
+
       // Only host can extend, and meeting must be active
-      return hostUserId == currentUser.userId && 
-             (status == 'scheduled' || status == 'live');
+      return hostUserId == currentUser.userId &&
+          (status == 'scheduled' || status == 'live');
     } catch (e) {
       AppLogger.print('Error checking extend permission: $e');
       return false;
@@ -162,11 +177,11 @@ class MeetingDetailService {
     if (status == 'ended' || actualEndTime != null) return 'ended';
     if (status == 'cancelled') return 'cancelled';
     if (status == 'live' || actualStartTime != null) return 'ongoing';
-    
+
     final now = DateTime.now();
     if (now.isBefore(scheduledStartTime)) return 'upcoming';
     if (now.isAfter(scheduledEndTime)) return 'overdue';
-    
+
     return 'ongoing';
   }
 }

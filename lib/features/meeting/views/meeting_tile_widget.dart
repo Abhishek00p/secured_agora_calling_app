@@ -76,7 +76,6 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -202,9 +201,10 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                   ],
                   if (widget.model.scheduledEndTime.isAfter(DateTime.now()))
                     ElevatedButton(
-                      onPressed: _isWaitingForApproval
-                          ? null // Disable button while waiting
-                          : isButtonEnabled
+                      onPressed:
+                          _isWaitingForApproval
+                              ? null // Disable button while waiting
+                              : isButtonEnabled
                               ? () {
                                 if (widget.model.requiresApproval &&
                                     !isCurrentUserHost) {
@@ -269,9 +269,10 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                                 setState(() {});
                               },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _isWaitingForApproval
-                            ? Colors.orange
-                            : isButtonEnabled
+                        backgroundColor:
+                            _isWaitingForApproval
+                                ? Colors.orange
+                                : isButtonEnabled
                                 ? const Color(0xFF4C5FE2)
                                 : Colors.grey,
                         foregroundColor: Colors.white,
@@ -283,35 +284,42 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                           borderRadius: BorderRadius.circular(24),
                         ),
                       ),
-                      child: _isWaitingForApproval
-                          ? Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
+                      child:
+                          _isWaitingForApproval
+                              ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
                                     ),
                                   ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Waiting for Approval',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              )
+                              : Text(
+                                '${widget.model.participants.isNotEmpty
+                                    ? 'Join'
+                                    : (isCurrentUserHost && widget.model.scheduledStartTime.isToday)
+                                    ? 'Start'
+                                    : 'Join'} Now',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Waiting for Approval',
-                                  style: TextStyle(color: Colors.white, fontSize: 12),
-                                ),
-                              ],
-                            )
-                          : Text(
-                              '${widget.model.participants.isNotEmpty
-                                  ? 'Join'
-                                  : (isCurrentUserHost && widget.model.scheduledStartTime.isToday)
-                                  ? 'Start'
-                                  : 'Join'} Now',
-                              style: TextStyle(color: Colors.white, fontSize: 12),
-                            ),
+                              ),
                     ),
                 ],
               ),

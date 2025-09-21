@@ -63,18 +63,15 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
   @override
   Widget build(BuildContext context) {
     final currentUserRole = AppUserRoleService.getCurrentUserRole();
-    final canResetPassword = currentUserRole == UserRole.admin || 
-                           currentUserRole == UserRole.superAdmin || 
-                           currentUserRole == UserRole.member;
+    final canResetPassword =
+        currentUserRole == UserRole.admin ||
+        currentUserRole == UserRole.superAdmin ||
+        currentUserRole == UserRole.member;
 
     return AlertDialog(
       title: Row(
         children: [
-          Icon(
-            Icons.lock_reset,
-            color: AppTheme.primaryColor,
-            size: 24,
-          ),
+          Icon(Icons.lock_reset, color: AppTheme.primaryColor, size: 24),
           const SizedBox(width: 8),
           Text('Reset Password'),
         ],
@@ -87,10 +84,7 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
           children: [
             Text(
               'Reset password for:',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
             const SizedBox(height: 8),
             Container(
@@ -112,17 +106,11 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
                   ),
                   Text(
                     widget.targetEmail,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   Text(
                     'Role: ${widget.isMember ? 'Member' : 'User'}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
                 ],
               ),
@@ -152,10 +140,7 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
             ] else ...[
               Text(
                 'Enter new temporary password:',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -196,12 +181,19 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.orange[600], size: 16),
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.orange[600],
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'A password reset email will be sent to the user.',
-                        style: TextStyle(color: Colors.orange[700], fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.orange[700],
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -223,16 +215,17 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
             ),
-            child: _isLoading
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Text('Reset Password'),
+            child:
+                _isLoading
+                    ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                    : const Text('Reset Password'),
           ),
       ],
     );

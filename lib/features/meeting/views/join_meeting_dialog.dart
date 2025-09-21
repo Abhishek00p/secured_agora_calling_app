@@ -22,7 +22,7 @@ class JoinMeetingController extends GetxController {
   final meetingId = RxnString();
   final meetingData = Rxn<MeetingModel>();
   final isWaitingForApproval = false.obs;
-  
+
   // New variables for upcoming meetings and user selection
   final upcomingMeetings = <MeetingModel>[].obs;
   final selectedUsers = <AppUser>[].obs;
@@ -37,8 +37,6 @@ class JoinMeetingController extends GetxController {
     // loadUpcomingMeetings();
     // loadAvailableUsers();
   }
-
-
 
   void toggleUserSelection() {
     showUserSelection.value = !showUserSelection.value;
@@ -76,21 +74,20 @@ class JoinMeetingController extends GetxController {
     Get.back();
   }
 
-void clearState() {
-  isLoading.value = false;
-  errorMessage.value = null;
-  meetingFound.value = false;
-  meetingData.value = null;
-  meetingId.value = null;
-  isWaitingForApproval.value = false;
-  meetingIdController.clear();
-  passwordController.clear();
-  selectedUsers.clear();
-  showUserSelection.value = false;
-  inviteType.value = 'all';
-      joinRequestService.stopListening();
-}
-
+  void clearState() {
+    isLoading.value = false;
+    errorMessage.value = null;
+    meetingFound.value = false;
+    meetingData.value = null;
+    meetingId.value = null;
+    isWaitingForApproval.value = false;
+    meetingIdController.clear();
+    passwordController.clear();
+    selectedUsers.clear();
+    showUserSelection.value = false;
+    inviteType.value = 'all';
+    joinRequestService.stopListening();
+  }
 
   void searchMeeting() async {
     if (!formKey.currentState!.validate()) return;
@@ -136,11 +133,11 @@ void clearState() {
     }
   }
 
-    void requestToJoin() async {
+  void requestToJoin() async {
     if (meetingId.value == null || meetingData.value == null) return;
 
     isLoading.value = true;
-    
+
     // Use centralized join request service
     final success = await joinRequestService.requestToJoinMeeting(
       context: Get.context!,
@@ -156,7 +153,6 @@ void clearState() {
       isLoading.value = false;
     }
   }
-
 
   void joinMeeting() {
     if (meetingData.value == null) return;
@@ -201,7 +197,7 @@ class JoinMeetingDialog extends StatelessWidget {
                 children: [
                   _buildDialogTitle(),
                   const SizedBox(height: 24),
-                  
+
                   // Upcoming Meetings Section (for members only)
                   // Obx(() {
                   //   final currentUser = AppLocalStorage.getUserDetails();
@@ -273,7 +269,7 @@ class JoinMeetingDialog extends StatelessWidget {
                   //   }
                   //   return const SizedBox.shrink();
                   // }),
-                  
+
                   // User Selection Section (for members only)
                   // Obx(() {
                   //   final currentUser = AppLocalStorage.getUserDetails();
@@ -292,8 +288,8 @@ class JoinMeetingDialog extends StatelessWidget {
                   //             const Spacer(),
                   //             IconButton(
                   //               icon: Icon(
-                  //                 controller.showUserSelection.value 
-                  //                   ? Icons.expand_less 
+                  //                 controller.showUserSelection.value
+                  //                   ? Icons.expand_less
                   //                   : Icons.expand_more,
                   //               ),
                   //               onPressed: controller.toggleUserSelection,
@@ -352,7 +348,6 @@ class JoinMeetingDialog extends StatelessWidget {
                   //   }
                   //   return const SizedBox.shrink();
                   // }),
-                  
                   AppTextFormField(
                     controller: controller.meetingIdController,
                     labelText: 'Meeting ID',
@@ -512,9 +507,8 @@ class JoinMeetingDialog extends StatelessWidget {
                       : controller.joinMeeting)
                   : controller.searchMeeting,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isWaitingForApproval
-                ? Colors.orange
-                : AppTheme.successColor,
+            backgroundColor:
+                isWaitingForApproval ? Colors.orange : AppTheme.successColor,
           ),
           child:
               isLoading
@@ -527,41 +521,41 @@ class JoinMeetingDialog extends StatelessWidget {
                     ),
                   )
                   : isWaitingForApproval
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Waiting for Approval',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Text(
-                          meetingFound && meetingData != null
-                              ? (meetingData.requiresApproval
-                                  ? 'Request to Join'
-                                  : 'Join Now')
-                              : 'Search',
-                          style: TextStyle(
-                            fontSize: meetingFound && meetingData != null ? 12 : 14,
-                            fontWeight: FontWeight.bold,
+                  ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
                           ),
                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Waiting for Approval',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  )
+                  : Text(
+                    meetingFound && meetingData != null
+                        ? (meetingData.requiresApproval
+                            ? 'Request to Join'
+                            : 'Join Now')
+                        : 'Search',
+                    style: TextStyle(
+                      fontSize: meetingFound && meetingData != null ? 12 : 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
         ),
       ],
     );

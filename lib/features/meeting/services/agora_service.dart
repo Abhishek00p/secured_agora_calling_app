@@ -38,14 +38,14 @@ class AgoraService {
       _engine = createAgoraRtcEngine();
       await _engine!.initialize(const RtcEngineContext(appId: agoraAppId));
       await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-      
+
       await _engine!.enableAudioVolumeIndication(
         interval: 200,
         smooth: 3,
         reportVad: true,
       );
       _engine!.registerEventHandler(rtcEngineEventHandler);
-     
+
       _isInitialized = true;
       return true;
     } catch (e) {
@@ -93,7 +93,7 @@ class AgoraService {
         } catch (e) {
           AppLogger.print('Error leaving channel during destroy: $e');
         }
-        
+
         // Release the engine
         await _engine!.release();
         AppLogger.print('Agora engine released successfully');
@@ -108,7 +108,6 @@ class AgoraService {
 
   // Basic audio/video toggles
   Future<void> muteLocalAudio(bool mute) async {
-
     await _engine?.muteLocalAudioStream(mute);
   }
 

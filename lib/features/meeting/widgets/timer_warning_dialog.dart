@@ -42,10 +42,7 @@ class TimerWarningDialogState extends State<TimerWarningDialog> {
           const SizedBox(width: 12),
           const Text(
             'Meeting Time Warning',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -62,7 +59,7 @@ class TimerWarningDialogState extends State<TimerWarningDialog> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Large countdown timer
           Container(
             width: double.infinity,
@@ -95,27 +92,21 @@ class TimerWarningDialogState extends State<TimerWarningDialog> {
                 const SizedBox(height: 8),
                 Text(
                   'minutes:seconds',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.red[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.red[600]),
                 ),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           Text(
             'To continue your meeting, you can extend the time using the button below.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -130,10 +121,7 @@ class TimerWarningDialogState extends State<TimerWarningDialog> {
                 Expanded(
                   child: Text(
                     'This dialog will stay open until you take action or the meeting ends.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue[700],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.blue[700]),
                   ),
                 ),
               ],
@@ -146,12 +134,9 @@ class TimerWarningDialogState extends State<TimerWarningDialog> {
         if (_remainingSeconds > 60) // Hide dismiss button in last minute
           TextButton(
             onPressed: widget.onDismiss,
-            child: const Text(
-              'Dismiss',
-              style: TextStyle(color: Colors.grey),
-            ),
+            child: const Text('Dismiss', style: TextStyle(color: Colors.grey)),
           ),
-        
+
         // Extend meeting button
         ElevatedButton.icon(
           onPressed: widget.onExtend,

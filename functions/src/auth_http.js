@@ -63,13 +63,32 @@ function isValidEmail(email) {
 }
 
 // Helper function to generate unique user ID
+
 async function generateUniqueUserId() {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000);
-  const value = `${timestamp}${random}`; // concatenate
-  const intValue = parseInt(value, 10); // convert to int
-  return intValue;
+  const MAX_32BIT = 0x7fffffff; // 2^31 - 1
+
+  // Fetch all existing user doc IDs
+  const snapshot = await db.collection("users").get();
+  const existingIds = snapshot.docs.map(doc => doc.id); // array of strings
+
+  let userId;
+  let tries = 0;
+
+  do {
+    // Safety: prevent infinite loop
+    if (tries > 100) throw new Error("Unable to generate unique ID after 100 tries");
+
+    // Generate 32-bit integer
+    const timestampPart = Date.now() % 10000000; // last 7 digits of timestamp
+    const randomPart = Math.floor(Math.random() * 1000); // 0-999
+    userId = (timestampPart * 1000 + randomPart) % MAX_32BIT;
+
+    tries++;
+  } while (existingIds.includes(userId.toString())); // convert to string for comparison
+
+  return userId;
 }
+
 
 // 1. User Login - HTTP Function
 exports.login = functions.https.onRequest(async (req, res) => {

@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
-              
+
               // App Logo
               Center(
                 child: Container(
@@ -48,9 +48,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Icon(Icons.call, size: 40, color: Colors.white),
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Welcome Text
               Text(
                 'Welcome Back',
@@ -59,26 +59,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: AppTheme.primaryColor,
                 ),
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               Text(
                 'Sign in to continue to SecuredCalling',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey[600],
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // Login Form
-              LoginForm(
-                formKey: _loginFormKey,
-                onSubmit: _login,
-              ),
-              
+              LoginForm(formKey: _loginFormKey, onSubmit: _login),
+
               const SizedBox(height: 24),
-              
+
               // Info Message
               Container(
                 padding: const EdgeInsets.all(16),
@@ -94,18 +91,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(
                       child: Text(
                         'New users must be registered by a member or admin. Please contact your organization for access.',
-                        style: TextStyle(
-                          color: Colors.blue[700],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.blue[700], fontSize: 14),
                       ),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
             ],
           ),
         ),
@@ -116,12 +109,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     final loginRegisterController = Get.find<LoginRegisterController>();
     AppLogger.print("login button pressed in ui");
-    
+
     if (!_loginFormKey.currentState!.validate()) {
       AppToastUtil.showErrorToast('Form Invalid');
       return;
     }
-    
+
     loginRegisterController.update();
     final result = await loginRegisterController.login(context: context);
 
@@ -132,7 +125,11 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Widget _buildDebugButton(String label, IconData icon, VoidCallback onPressed) {
+  Widget _buildDebugButton(
+    String label,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 16),
@@ -141,9 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.orange[100],
         foregroundColor: Colors.orange[800],
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -153,18 +148,15 @@ class LoginForm extends StatefulWidget {
   final GlobalKey<FormState> formKey;
   final VoidCallback onSubmit;
 
-  const LoginForm({
-    super.key,
-    required this.formKey,
-    required this.onSubmit,
-  });
+  const LoginForm({super.key, required this.formKey, required this.onSubmit});
 
   @override
   State<LoginForm> createState() => _LoginFormState();
 }
 
 class _LoginFormState extends State<LoginForm> {
-  final LoginRegisterController loginRegisterController = Get.find<LoginRegisterController>();
+  final LoginRegisterController loginRegisterController =
+      Get.find<LoginRegisterController>();
 
   @override
   Widget build(BuildContext context) {
@@ -177,48 +169,56 @@ class _LoginFormState extends State<LoginForm> {
             labelText: 'Email',
             type: AppTextFormFieldType.email,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           AppTextFormField(
             controller: loginRegisterController.loginPasswordController,
             labelText: 'Password',
             type: AppTextFormFieldType.password,
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // Use Obx for reactive state management
-          Obx(() => SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: loginRegisterController.isLoading.value ? null : widget.onSubmit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          Obx(
+            () => SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed:
+                    loginRegisterController.isLoading.value
+                        ? null
+                        : widget.onSubmit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
+                child:
+                    loginRegisterController.isLoading.value
+                        ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                        : const Text(
+                          'Login',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
               ),
-              child: loginRegisterController.isLoading.value
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'Login',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
             ),
-          )),
+          ),
         ],
       ),
     );

@@ -40,7 +40,8 @@ class RegisterForm extends StatelessWidget {
                       loginRegisterController.registerMemberCodeController,
                   labelText: 'Member Code',
                   type: AppTextFormFieldType.text,
-                  helperText: 'Enter the member code provided by your organization',
+                  helperText:
+                      'Enter the member code provided by your organization',
                   validator:
                       (value) =>
                           value == null || value.isEmpty
@@ -75,17 +76,23 @@ class RegisterForm extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: loginRegisterController.isLoading.value ? null : onSubmit,
-                    child: loginRegisterController.isLoading.value
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text('Create Account'),
+                    onPressed:
+                        loginRegisterController.isLoading.value
+                            ? null
+                            : onSubmit,
+                    child:
+                        loginRegisterController.isLoading.value
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                            : const Text('Create Account'),
                   ),
                 ),
               ],

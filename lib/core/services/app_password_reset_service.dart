@@ -44,7 +44,9 @@ class AppPasswordResetService {
   /// Get user credentials (email + password) for display
   static Future<Map<String, dynamic>?> getUserCredentials(String email) async {
     try {
-      final credentials = await AppAuthService.instance.getUserCredentials(email);
+      final credentials = await AppAuthService.instance.getUserCredentials(
+        email,
+      );
       return credentials;
     } catch (e) {
       AppToastUtil.showErrorToast('Failed to get credentials: $e');

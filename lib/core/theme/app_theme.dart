@@ -28,8 +28,8 @@ class AppTheme {
     end: Alignment.bottomRight,
   );
   static List<Color> cardBackgroundColors = [
-   Colors.white, //  White
-   Colors.grey.shade50, //  Grey
+    Colors.white, //  White
+    Colors.grey.shade50, //  Grey
   ];
 
   static ThemeData get lightTheme {

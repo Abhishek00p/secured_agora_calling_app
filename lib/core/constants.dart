@@ -1,6 +1,1 @@
-enum MeetingStatus {
-  scheduled,
-  ongoing,
-  completed,
-  cancelled,
-}
+enum MeetingStatus { scheduled, ongoing, completed, cancelled }

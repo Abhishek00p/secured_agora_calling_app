@@ -24,7 +24,14 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
   int _selectedMinutes = 30;
   bool _isLoading = false;
 
-  final List<int> _extensionOptions = [30, 60, 120, 180, 240, 300]; // in minutes
+  final List<int> _extensionOptions = [
+    30,
+    60,
+    120,
+    180,
+    240,
+    300,
+  ]; // in minutes
 
   @override
   void dispose() {
@@ -40,11 +47,18 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
     });
 
     try {
-      await widget.onExtend(_selectedMinutes, _reasonController.text.trim().isEmpty ? null : _reasonController.text.trim());
-      
+      await widget.onExtend(
+        _selectedMinutes,
+        _reasonController.text.trim().isEmpty
+            ? null
+            : _reasonController.text.trim(),
+      );
+
       if (mounted) {
         Navigator.of(context).pop(true);
-        AppToastUtil.showSuccessToast('Meeting extended successfully by $_selectedMinutes minutes');
+        AppToastUtil.showSuccessToast(
+          'Meeting extended successfully by $_selectedMinutes minutes',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -77,54 +91,67 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
           children: [
             Text(
               'Extend "${widget.meetingTitle}"',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
-            
+
             // Duration selection
             Text(
               'Additional Duration:',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: _extensionOptions.map((minutes) {
-                final isSelected = _selectedMinutes == minutes;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedMinutes = minutes;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppTheme.primaryColor : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? AppTheme.primaryColor : Colors.grey[400]!,
+              children:
+                  _extensionOptions.map((minutes) {
+                    final isSelected = _selectedMinutes == minutes;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedMinutes = minutes;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              isSelected
+                                  ? AppTheme.primaryColor
+                                  : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color:
+                                isSelected
+                                    ? AppTheme.primaryColor
+                                    : Colors.grey[400]!,
+                          ),
+                        ),
+                        child: Text(
+                          minutes < 60 ? '${minutes}m' : '${minutes ~/ 60}h ',
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.grey[700],
+                            fontWeight:
+                                isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      minutes < 60 ? '${minutes}m' : '${minutes ~/ 60}h ',
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.grey[700],
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Reason input (optional)
             TextFormField(
               controller: _reasonController,
@@ -137,7 +164,7 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
               maxLines: 2,
               maxLength: 200,
             ),
-            
+
             const SizedBox(height: 8),
             Text(
               'The meeting will be extended by $_selectedMinutes minutes',
@@ -160,16 +187,17 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,
           ),
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : const Text('Extend Meeting'),
+          child:
+              _isLoading
+                  ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                  : const Text('Extend Meeting'),
         ),
       ],
     );

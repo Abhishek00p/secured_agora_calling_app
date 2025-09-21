@@ -23,7 +23,7 @@ class MeetingDialogController extends GetxController {
   final isApprovalRequired = true.obs;
   final selectedDate = Rxn<DateTime>();
   final selectedTime = Rxn<TimeOfDay>();
-  
+
   // New variables for user selection
   final selectedUsers = <AppUser>[].obs;
   final showUserSelection = false.obs;
@@ -34,7 +34,6 @@ class MeetingDialogController extends GetxController {
   void onInit() {
     super.onInit();
   }
-
 
   void toggleUserSelection() {
     showUserSelection.value = !showUserSelection.value;
@@ -78,15 +77,14 @@ class MeetingUtil {
     if (result == null) return;
 
     try {
-      meetingName=
-      result['title'];
+      meetingName = result['title'];
 
       final docRef = await firebaseService.createMeeting(
         hostId: AppLocalStorage.getUserDetails().firebaseUserId,
         hostUserId: AppLocalStorage.getUserDetails().userId,
         hostName: AppLocalStorage.getUserDetails().name,
         meetingName: meetingName,
-        scheduledStartTime: result['scheduledStart']??now,
+        scheduledStartTime: result['scheduledStart'] ?? now,
         requiresApproval: result['isApprovalRequired'] ?? false,
         maxParticipants: result['maxParticipants'] ?? 45,
         password:
@@ -97,15 +95,17 @@ class MeetingUtil {
       final doc = await docRef.get();
       final meetingData = doc.data() as Map<String, dynamic>;
       final instant = result['isInstant'] ?? false;
-      AppLogger.print( 'Meeting created: ${doc.id}, Instant: $instant, \n Data: $meetingData');
-      
+      AppLogger.print(
+        'Meeting created: ${doc.id}, Instant: $instant, \n Data: $meetingData',
+      );
+
       // Handle user invites if specified
       final inviteType = result['inviteType'] as String?;
       final selectedUserIds = result['selectedUsers'] as List<int>?;
       if (inviteType != null && selectedUserIds != null) {
         await _handleUserInvites(doc.id, inviteType, selectedUserIds);
       }
-      
+
       if (instant) {
         Navigator.pushNamed(
           context,
@@ -139,7 +139,11 @@ class MeetingUtil {
       Navigator.pushNamed(
         context,
         AppRouter.meetingRoomRoute,
-        arguments: {'channelName': channelName, 'isHost': true,'meetingId': meetingId},
+        arguments: {
+          'channelName': channelName,
+          'isHost': true,
+          'meetingId': meetingId,
+        },
       );
     } catch (e) {
       AppToastUtil.showErrorToast('Error starting meeting: $e');
@@ -282,7 +286,7 @@ class MeetingUtil {
                       ),
                     ],
                   ),
-                  
+
                   // // User Selection Section (for members only)
                   // if (member.isNotEmpty) ...[
                   //   const SizedBox(height: 16),
@@ -297,8 +301,8 @@ class MeetingUtil {
                   //       const Spacer(),
                   //       IconButton(
                   //         icon: Icon(
-                  //           controller.showUserSelection.value 
-                  //             ? Icons.expand_less 
+                  //           controller.showUserSelection.value
+                  //             ? Icons.expand_less
                   //             : Icons.expand_more,
                   //         ),
                   //         onPressed: controller.toggleUserSelection,
@@ -352,7 +356,6 @@ class MeetingUtil {
                   //     ],
                   //   ],
                   // ],
-                  
                   if (controller.isScheduled.value) ...[
                     const SizedBox(height: 10),
                     Container(
@@ -481,7 +484,10 @@ class MeetingUtil {
                               'maxParticipants':
                                   controller.maxParticipants.value,
                               'inviteType': controller.inviteType.value,
-                              'selectedUsers': controller.selectedUsers.map((user) => user.userId).toList(),
+                              'selectedUsers':
+                                  controller.selectedUsers
+                                      .map((user) => user.userId)
+                                      .toList(),
                             });
                           },
                           child: const Text('Create'),
@@ -502,15 +508,21 @@ class MeetingUtil {
     return result;
   }
 
-  static Future<void> _handleUserInvites(String meetingId, String inviteType, List<int> selectedUserIds) async {
+  static Future<void> _handleUserInvites(
+    String meetingId,
+    String inviteType,
+    List<int> selectedUserIds,
+  ) async {
     try {
       final currentUser = AppLocalStorage.getUserDetails();
       if (currentUser.isMember && currentUser.memberCode.isNotEmpty) {
         if (inviteType == 'all') {
           // Get all users for this member
-          final allUsers = await firebaseService.getAllUserOfMember(currentUser.memberCode);
+          final allUsers = await firebaseService.getAllUserOfMember(
+            currentUser.memberCode,
+          );
           final allUserIds = allUsers.map((user) => user.userId).toList();
-          
+
           // Add all users to the meeting's invited users list
           await firebaseService.addInvitedUsers(meetingId, allUserIds);
         } else if (inviteType == 'selected' && selectedUserIds.isNotEmpty) {

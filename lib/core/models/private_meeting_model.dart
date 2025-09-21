@@ -68,6 +68,7 @@ class PrivateMeetingModel {
       'tokens': tokens,
     };
   }
+
   @override
   String toString() {
     return 'PrivateMeetingModel(meetId: $meetId, parentMeetingId: $parentMeetingId, channelName: $channelName, hostId: $hostId, hostName: $hostName, participantId: $participantId, participantName: $participantName, maxParticipants: $maxParticipants, createdAt: $createdAt, scheduledStartTime: $scheduledStartTime, scheduledEndTime: $scheduledEndTime, status: $status, duration: $duration, tokens: $tokens)';

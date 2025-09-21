@@ -13,8 +13,10 @@ void showMeetingInfo(BuildContext context) {
         (context) => GetBuilder<MeetingController>(
           builder: (controller) {
             final currentUser = AppLocalStorage.getUserDetails();
-            final isHost = controller.meetingModel.value.hostId == currentUser.firebaseUserId;
-            
+            final isHost =
+                controller.meetingModel.value.hostId ==
+                currentUser.firebaseUserId;
+
             return FutureBuilder(
               future: AppFirebaseService.instance.getMeetingData(
                 controller.meetingId,
@@ -38,9 +40,9 @@ void showMeetingInfo(BuildContext context) {
                       const SizedBox(height: 8),
                       SelectableText('Meeting Id: ${result?['meet_id']}'),
                       SelectableText('Password: ${result?['password']}'),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Host Controls Section
                       if (isHost) ...[
                         const Text(
@@ -83,24 +85,28 @@ void showMeetingInfo(BuildContext context) {
   );
 }
 
-void _showExtendMeetingDialog(BuildContext context, MeetingController controller) {
+void _showExtendMeetingDialog(
+  BuildContext context,
+  MeetingController controller,
+) {
   showDialog(
     context: context,
-    builder: (context) => ExtendMeetingDialog(
-      meetingId: controller.meetingId,
-      meetingTitle: controller.meetingModel.value.meetingName,
-      onExtend: (additionalMinutes, reason) async {
-        try {
-          await controller.extendMeetingWithOptions(
-            additionalMinutes: additionalMinutes,
-            reason: reason,
-          );
-          return true;
-        } catch (e) {
-          AppToastUtil.showErrorToast('Failed to extend meeting: $e');
-          return false;
-        }
-      },
-    ),
+    builder:
+        (context) => ExtendMeetingDialog(
+          meetingId: controller.meetingId,
+          meetingTitle: controller.meetingModel.value.meetingName,
+          onExtend: (additionalMinutes, reason) async {
+            try {
+              await controller.extendMeetingWithOptions(
+                additionalMinutes: additionalMinutes,
+                reason: reason,
+              );
+              return true;
+            } catch (e) {
+              AppToastUtil.showErrorToast('Failed to extend meeting: $e');
+              return false;
+            }
+          },
+        ),
   );
 }

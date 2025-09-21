@@ -192,9 +192,10 @@ class _HomeScreenState extends State<HomeScreen>
                         );
                       }
                     },
-                    tooltip: AppUserRoleService.isAdmin()
-                        ? 'Admin Section'
-                        : 'View Associated Users',
+                    tooltip:
+                        AppUserRoleService.isAdmin()
+                            ? 'Admin Section'
+                            : 'View Associated Users',
                   ),
         ),
 
@@ -230,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    if ( user.memberCode.isNotEmpty) ...[
+                    if (user.memberCode.isNotEmpty) ...[
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -285,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
 
-                    if ( !user.subscription.isEmpty) ...[
+                    if (!user.subscription.isEmpty) ...[
                       const SizedBox(height: 8),
                       Row(
                         // mainAxisSize: MainAxisSize.min,

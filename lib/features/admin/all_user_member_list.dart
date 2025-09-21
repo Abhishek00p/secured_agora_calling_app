@@ -19,9 +19,7 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Member Details"),
-      ),
+      appBar: AppBar(title: const Text("Member Details")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -32,10 +30,7 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Member Info",
-                      style: theme.textTheme.titleLarge,
-                    ),
+                    Text("Member Info", style: theme.textTheme.titleLarge),
                     const SizedBox(height: 12),
                     _infoRow("Name", member.name, theme),
                     _infoRow("Email", member.email, theme),
@@ -61,7 +56,9 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                   return Center(
                     child: Text(
                       'Error: ${snapshot.error}',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
                     ),
                   );
                 }
@@ -94,7 +91,8 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                           tileColor: Colors.white54,
                           contentPadding: EdgeInsets.symmetric(horizontal: 16),
                           leading: CircleAvatar(
-                            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                            backgroundColor: theme.colorScheme.primary
+                                .withOpacity(0.1),
                             child: Text(
                               user.name[0].capitalizeAll,
                               style: theme.textTheme.titleMedium?.copyWith(
@@ -102,8 +100,14 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                               ),
                             ),
                           ),
-                          title: Text(user.name, style: theme.textTheme.bodyLarge),
-                          subtitle: Text(user.email, style: theme.textTheme.bodyMedium),
+                          title: Text(
+                            user.name,
+                            style: theme.textTheme.bodyLarge,
+                          ),
+                          subtitle: Text(
+                            user.email,
+                            style: theme.textTheme.bodyMedium,
+                          ),
                         );
                       },
                     ),
@@ -133,10 +137,7 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
           ),
           Expanded(
             flex: 3,
-            child: Text(
-              value,
-              style: theme.textTheme.bodyMedium,
-            ),
+            child: Text(value, style: theme.textTheme.bodyMedium),
           ),
         ],
       ),

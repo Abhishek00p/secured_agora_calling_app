@@ -33,13 +33,15 @@ class _UsersScreenState extends State<UsersScreen> {
 
     try {
       final currentUser = AppLocalStorage.getUserDetails();
-      final users = await AppFirebaseService.instance.getUsersByMemberCodeData(currentUser.memberCode);
+      final users = await AppFirebaseService.instance.getUsersByMemberCodeData(
+        currentUser.memberCode,
+      );
       print('Total users fetched: ${users.length}');
       // Filter users based on member code
       final filteredUsers =
-      users.where((user) => 
-        user.memberCode == currentUser.memberCode
-      ).toList();
+          users
+              .where((user) => user.memberCode == currentUser.memberCode)
+              .toList();
 
       setState(() {
         _users = filteredUsers;
@@ -56,12 +58,13 @@ class _UsersScreenState extends State<UsersScreen> {
 
   void _filterUsers(String query) {
     setState(() {
-      _filteredUsers = _users.where((user) {
-        final name = user.name.toLowerCase();
-        final email = user.email.toLowerCase();
-        final searchLower = query.toLowerCase();
-        return name.contains(searchLower) || email.contains(searchLower);
-      }).toList();
+      _filteredUsers =
+          _users.where((user) {
+            final name = user.name.toLowerCase();
+            final email = user.email.toLowerCase();
+            final searchLower = query.toLowerCase();
+            return name.contains(searchLower) || email.contains(searchLower);
+          }).toList();
     });
   }
 
@@ -93,139 +96,153 @@ class _UsersScreenState extends State<UsersScreen> {
               ),
             ),
           ),
-          
+
           // Users List
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _error != null
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-                            const SizedBox(height: 16),
-                            Text(
-                              _error!,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadUsers,
-                              child: const Text('Retry'),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _error!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadUsers,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    )
+                    : _filteredUsers.isEmpty
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchController.text.isEmpty
+                                ? 'No users found'
+                                : 'No users match your search',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                          if (_searchController.text.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: () {
+                                _searchController.clear();
+                                _filterUsers('');
+                              },
+                              child: const Text('Clear search'),
                             ),
                           ],
-                        ),
-                      )
-                    : _filteredUsers.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _searchController.text.isEmpty
-                                      ? 'No users found'
-                                      : 'No users match your search',
-                                  style: TextStyle(color: Colors.grey[600]),
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _filteredUsers.length,
+                      itemBuilder: (context, index) {
+                        final user = _filteredUsers[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.blue[100],
+                              child: Text(
+                                user.name.isNotEmpty
+                                    ? user.name[0].toUpperCase()
+                                    : 'U',
+                                style: TextStyle(
+                                  color: Colors.blue[700],
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                if (_searchController.text.isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  TextButton(
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      _filterUsers('');
-                                    },
-                                    child: const Text('Clear search'),
-                                  ),
-                                ],
-                              ],
+                              ),
                             ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _filteredUsers.length,
-                            itemBuilder: (context, index) {
-                              final user = _filteredUsers[index];
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: Colors.blue[100],
-                                    child: Text(
-                                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                                      style: TextStyle(
-                                        color: Colors.blue[700],
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                            title: Text(
+                              user.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(user.email),
+                                if (user.createdAt != null)
+                                  Text(
+                                    'Joined: ${_formatDate(user.createdAt)}',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
                                     ),
                                   ),
-                                  title: Text(
-                                    user.name,
-                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
                                   ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(user.email),
-                                      if (user.createdAt != null)
-                                        Text(
-                                          'Joined: ${_formatDate(user.createdAt)}',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                    ],
+                                  decoration: BoxDecoration(
+                                    color: Colors.green[100],
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.green[100],
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          'User',
-                                          style: TextStyle(
-                                            color: Colors.green[700],
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      IconButton(
-                                        icon: Icon(
-                                          Icons.visibility,
-                                          color: Colors.blue[600],
-                                          size: 20,
-                                        ),
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) => UserCredentialsDialog(
-                                              targetEmail: user.email,
-                                              targetName: user.name,
-                                              isMember: false,
-                                            ),
-                                          );
-                                        },
-                                        tooltip: 'View Credentials',
-                                      ),
-                                    ],
+                                  child: Text(
+                                    'User',
+                                    style: TextStyle(
+                                      color: Colors.green[700],
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
-                              );
-                            },
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.visibility,
+                                    color: Colors.blue[600],
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder:
+                                          (context) => UserCredentialsDialog(
+                                            targetEmail: user.email,
+                                            targetName: user.name,
+                                            isMember: false,
+                                          ),
+                                    );
+                                  },
+                                  tooltip: 'View Credentials',
+                                ),
+                              ],
+                            ),
                           ),
+                        );
+                      },
+                    ),
           ),
         ],
       ),
@@ -233,9 +250,7 @@ class _UsersScreenState extends State<UsersScreen> {
         onPressed: () async {
           final result = await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const UserCreationForm(),
-            ),
+            MaterialPageRoute(builder: (context) => const UserCreationForm()),
           );
           // Reload users after creation
           if (result == true) {
@@ -251,4 +266,4 @@ class _UsersScreenState extends State<UsersScreen> {
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
-} 
+}

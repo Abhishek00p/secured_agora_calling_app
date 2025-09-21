@@ -33,7 +33,6 @@ class Member {
       totalUsers: data['totalUsers'],
       memberCode: data['memberCode'] ?? '',
       maxParticipantsAllowed: data['maxParticipantsAllowed'] ?? 0,
-      
     );
   }
 
@@ -54,16 +53,18 @@ class Member {
 
   bool get isEmpty => name.isEmpty && email.isEmpty;
   bool get isNotEmpty => !isEmpty;
-  
+
   static Future<Member> toEmpty() {
-    return Future.value(Member(
-      id: '',
-      name: '',
-      email: '',
-      purchaseDate: DateTime.fromMillisecondsSinceEpoch(0),
-      planDays: 0,
-      isActive: false,
-      totalUsers: 0,
-    ));
+    return Future.value(
+      Member(
+        id: '',
+        name: '',
+        email: '',
+        purchaseDate: DateTime.fromMillisecondsSinceEpoch(0),
+        planDays: 0,
+        isActive: false,
+        totalUsers: 0,
+      ),
+    );
   }
 }

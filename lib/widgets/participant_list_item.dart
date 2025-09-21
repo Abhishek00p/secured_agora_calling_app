@@ -6,7 +6,11 @@ class ParticipantListItem extends StatelessWidget {
   final ParticipantDetail participant;
   final int index;
 
-  const ParticipantListItem({super.key, required this.participant, required this.index});
+  const ParticipantListItem({
+    super.key,
+    required this.participant,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +27,11 @@ class ParticipantListItem extends StatelessWidget {
               backgroundColor: getAvatarColor(index),
               child: Text(
                 getInitial(participant.username),
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(width: 16.0),
@@ -33,7 +41,9 @@ class ParticipantListItem extends StatelessWidget {
                 children: [
                   Text(
                     participant.username,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4.0),
                   Text(
@@ -48,16 +58,16 @@ class ParticipantListItem extends StatelessWidget {
                   const SizedBox(height: 4.0),
                   participant.leaveTime != null
                       ? Text(
-                          'Left: ${formatDateTime(participant.leaveTime!)}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        )
+                        'Left: ${formatDateTime(participant.leaveTime!)}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      )
                       : Text(
-                          'Still in meeting',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontStyle: FontStyle.italic,
-                                color: Colors.green,
-                              ),
+                        'Still in meeting',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.green,
                         ),
+                      ),
                 ],
               ),
             ),

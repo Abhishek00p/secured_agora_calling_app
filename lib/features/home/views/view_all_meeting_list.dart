@@ -24,7 +24,8 @@ class _ViewAllMeetingListState extends State<ViewAllMeetingList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('View All Meetings')),
-      body: widget.meetings.isNotEmpty
+      body:
+          widget.meetings.isNotEmpty
               ? ListView.builder(
                 padding: const EdgeInsets.all(16.0),
                 itemCount: widget.meetings.length,

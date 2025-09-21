@@ -43,16 +43,13 @@ class AppTextContainer extends StatelessWidget {
             child: Row(
               children: [
                 if (prefixIcon != null) ...[
-                  Icon(prefixIcon, color: Colors.black,size: 20,),
+                  Icon(prefixIcon, color: Colors.black, size: 20),
                   const SizedBox(width: 12),
                 ],
                 Expanded(
                   child: Text(
                     text,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
+                    style: const TextStyle(fontSize: 16, color: Colors.black87),
                   ),
                 ),
                 if (suffixIcon != null) ...[

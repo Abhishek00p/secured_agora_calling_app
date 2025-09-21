@@ -29,7 +29,7 @@ class AppRouter {
   static const String usersRoute = '/users';
   static const String userCreationRoute = '/user-creation';
   static const String memberFormRoute = '/member-form';
-  
+
   // Meeting routes
   static const String meetingRoomRoute = '/meeting';
   static const String meetingViewAllRoute = '/meeting/view_all';
@@ -73,7 +73,7 @@ class AppRouter {
       page: () => const MemberForm(),
       middlewares: [AuthMiddleware()],
     ),
-    
+
     // Meeting routes
     GetPage(
       name: meetingRoomRoute,

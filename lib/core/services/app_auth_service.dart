@@ -9,6 +9,7 @@ import 'dart:io';
 class AppAuthService {
   static final AppAuthService _instance = AppAuthService._();
   static AppAuthService get instance => _instance;
+
   /// Get the appropriate base URL based on platform and environment
   String get baseUrl {
     if (kDebugMode) {
@@ -25,6 +26,7 @@ class AppAuthService {
       return 'https://us-central1-secure-calling-2025.cloudfunctions.net';
     }
   }
+
   // final FirebaseFunctions _functions = FirebaseFunctions.instance; // Not used in HTTP implementation
   String? _currentToken;
   AppUser? _currentUser;
@@ -64,11 +66,11 @@ class AppAuthService {
   //     // Check if response has standardized format
   //     if (response.containsKey('success')) {
   //       AppLogger.print("the data recieved from api is : $response");
-  //       if (response['success'] == true) {  
+  //       if (response['success'] == true) {
   //         // Extract data from standardized response
   //         final encodedJson = json.encode(response['data']);
   //         final data =response['data']!=null?  Map<String, dynamic>.from(json.decode(encodedJson)):{};
-          
+
   //         // Store token and user data
   //         _currentToken = data['token'];
   //         _currentUser = AppUser.fromJson(data['user']);
@@ -96,7 +98,7 @@ class AppAuthService {
   //   } on FirebaseFunctionsException catch (e) {
   //     AppLogger.print('Firebase Functions error: ${e.code} - ${e.message}');
   //     String errorMessage = 'Login failed';
-      
+
   //     switch (e.code) {
   //       case 'not-found':
   //         errorMessage = 'User not found';
@@ -113,7 +115,7 @@ class AppAuthService {
   //       default:
   //         errorMessage = e.message ?? 'Login failed';
   //     }
-      
+
   //     throw Exception(errorMessage);
   //   } catch (e) {
   //     AppLogger.print(' Login error in login func of appauthservice.dart: $e');
@@ -132,10 +134,7 @@ class AppAuthService {
       // Use the new CRUD function with includeAuth: false for login
       final response = await _httpService.post(
         'login',
-        body: {
-          'email': email.trim().toLowerCase(),
-          'password': password,
-        },
+        body: {'email': email.trim().toLowerCase(), 'password': password},
         includeAuth: false, // Don't include auth token for login
       );
 
@@ -144,17 +143,18 @@ class AppAuthService {
 
         if (response['success'] == true) {
           // Extract token + user
-          final data = response['data'] != null
-              ? Map<String, dynamic>.from(response['data'])
-              : {};
+          final data =
+              response['data'] != null
+                  ? Map<String, dynamic>.from(response['data'])
+                  : {};
           print("the token received from api is : ${data['token']}");
           _currentToken = data['token'];
           _currentUser = AppUser.fromJson(data['user']);
 
           // Save locally
-           AppLocalStorage.storeUserDetails(_currentUser!);
-           AppLocalStorage.setLoggedIn(true);
-           AppLocalStorage.storeToken(_currentToken!);
+          AppLocalStorage.storeUserDetails(_currentUser!);
+          AppLocalStorage.setLoggedIn(true);
+          AppLocalStorage.storeToken(_currentToken!);
 
           AppLogger.print('Login successful for user: ${_currentUser!.name}');
           return {
@@ -174,7 +174,6 @@ class AppAuthService {
       throw Exception('Login failed: $e');
     }
   }
-
 
   // /// Create new user (called by members)
   // Future<bool> createUser({
@@ -222,7 +221,7 @@ class AppAuthService {
   //   } on FirebaseFunctionsException catch (e) {
   //     AppLogger.print('Create user error: ${e.code} - ${e.message}');
   //     String errorMessage = 'Failed to create user';
-      
+
   //     switch (e.code) {
   //       case 'permission-denied':
   //         errorMessage = 'You do not have permission to create users';
@@ -236,7 +235,7 @@ class AppAuthService {
   //       default:
   //         errorMessage = e.message ?? 'Failed to create user';
   //     }
-      
+
   //     AppToastUtil.showErrorToast(errorMessage);
   //     return false;
   //   } catch (e) {
@@ -275,7 +274,8 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('User created successfully');
         return true;
       } else {
-        final errorMessage = response['error_message'] ?? 'Failed to create user';
+        final errorMessage =
+            response['error_message'] ?? 'Failed to create user';
         throw Exception(errorMessage);
       }
     } catch (e) {
@@ -337,7 +337,7 @@ class AppAuthService {
   //   } on FirebaseFunctionsException catch (e) {
   //     AppLogger.print('Create member error: ${e.code} - ${e.message}');
   //     String errorMessage = 'Failed to create member';
-      
+
   //     switch (e.code) {
   //       case 'permission-denied':
   //         errorMessage = 'You do not have permission to create members';
@@ -351,7 +351,7 @@ class AppAuthService {
   //       default:
   //         errorMessage = e.message ?? 'Failed to create member';
   //     }
-      
+
   //     AppToastUtil.showErrorToast(errorMessage);
   //     return false;
   //   } catch (e) {
@@ -395,7 +395,8 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('Member created successfully');
         return true;
       } else {
-        final errorMessage = response['error_message'] ?? 'Failed to create member';
+        final errorMessage =
+            response['error_message'] ?? 'Failed to create member';
         throw Exception(errorMessage);
       }
     } catch (e) {
@@ -447,7 +448,7 @@ class AppAuthService {
   //   } on FirebaseFunctionsException catch (e) {
   //     AppLogger.print('Reset password error: ${e.code} - ${e.message}');
   //     String errorMessage = 'Failed to reset password';
-      
+
   //     switch (e.code) {
   //       case 'permission-denied':
   //         errorMessage = 'You do not have permission to reset this password';
@@ -461,7 +462,7 @@ class AppAuthService {
   //       default:
   //         errorMessage = e.message ?? 'Failed to reset password';
   //     }
-      
+
   //     AppToastUtil.showErrorToast(errorMessage);
   //     return false;
   //   } catch (e) {
@@ -494,7 +495,8 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('Password reset successfully');
         return true;
       } else {
-        final errorMessage = response['error_message'] ?? 'Failed to reset password';
+        final errorMessage =
+            response['error_message'] ?? 'Failed to reset password';
         throw Exception(errorMessage);
       }
     } catch (e) {
@@ -542,7 +544,7 @@ class AppAuthService {
   //   } on FirebaseFunctionsException catch (e) {
   //     AppLogger.print('Get credentials error: ${e.code} - ${e.message}');
   //     String errorMessage = 'Failed to get credentials';
-      
+
   //     switch (e.code) {
   //       case 'permission-denied':
   //         errorMessage = 'You do not have permission to view these credentials';
@@ -553,7 +555,7 @@ class AppAuthService {
   //       default:
   //         errorMessage = e.message ?? 'Failed to get credentials';
   //     }
-      
+
   //     AppToastUtil.showErrorToast(errorMessage);
   //     return null;
   //   } catch (e) {
@@ -572,16 +574,15 @@ class AppAuthService {
       // Use the new CRUD function (auth token will be added automatically)
       final response = await _httpService.post(
         'getUserCredentials',
-        body: {
-          'targetEmail': targetEmail.trim().toLowerCase(),
-        },
+        body: {'targetEmail': targetEmail.trim().toLowerCase()},
       );
 
       if (response['success'] == true) {
         final data = Map<String, dynamic>.from(response['data']);
         return data['credentials'] as Map<String, dynamic>?;
       } else {
-        final errorMessage = response['error_message'] ?? 'Failed to get credentials';
+        final errorMessage =
+            response['error_message'] ?? 'Failed to get credentials';
         throw Exception(errorMessage);
       }
     } catch (e) {
@@ -666,12 +667,12 @@ class AppAuthService {
     try {
       _currentToken = null;
       _currentUser = null;
-      
+
       // Clear local storage
       AppLocalStorage.setLoggedIn(false);
       AppLocalStorage.clearUserDetails();
       AppLocalStorage.clearToken();
-      
+
       AppLogger.print('User logged out successfully');
     } catch (e) {
       AppLogger.print('Logout error: $e');
@@ -690,7 +691,7 @@ class AppAuthService {
       // In production, you might want to validate JWT token expiration
       _currentToken = token;
       _currentUser = AppLocalStorage.getUserDetails();
-      
+
       return _currentUser != null && !_currentUser!.isEmpty;
     } catch (e) {
       AppLogger.print('Token validation error: $e');

@@ -17,7 +17,7 @@ class AppLocalStorage {
   static const String userDetails = 'user-details';
   static const String isUserLoggedIn = 'is-user-logged-in';
   static const String authToken = 'auth-token';
-  
+
   // functions
   static Future<void> init() async {
     _preferences = await SharedPreferences.getInstance();
@@ -31,9 +31,7 @@ class AppLocalStorage {
   static AppUser getUserDetails() {
     try {
       final details = _preferences.getString(userDetails);
-      return AppUser.fromJson(
-        jsonDecode(details ?? '{}'),
-      );
+      return AppUser.fromJson(jsonDecode(details ?? '{}'));
     } catch (e) {
       AppLogger.print("error while fetching user detail from local  : $e");
       return AppUser.toEmpty();

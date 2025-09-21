@@ -40,10 +40,14 @@ class AppUser {
           json['createdAt'] is String
               ? DateTime.parse(json['createdAt'])
               : json['createdAt'] is Timestamp
-                  ? (json['createdAt'] as Timestamp?)?.toDate()
-                  : null,
+              ? (json['createdAt'] as Timestamp?)?.toDate()
+              : null,
       subscription: Subscription.fromJson(json['subscription']),
-      planExpiryDate: json['planExpiryDate']==null ||  json['planExpiryDate'].toString().trim().isEmpty? null: json['planExpiryDate'].toString().toDateTime.formatDate,
+      planExpiryDate:
+          json['planExpiryDate'] == null ||
+                  json['planExpiryDate'].toString().trim().isEmpty
+              ? null
+              : json['planExpiryDate'].toString().toDateTime.formatDate,
     );
   }
 
@@ -103,21 +107,23 @@ class Subscription {
 
   factory Subscription.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Subscription.toEmpty();
-    print(" we are inside usermodel parsing user data and subscription data re : $json");
+    print(
+      " we are inside usermodel parsing user data and subscription data re : $json",
+    );
     return Subscription(
       plan: json['plan'] as String? ?? '',
       startDate:
           json['startDate'] is String
               ? DateTime.parse(json['startDate'])
               : json['startDate'] is Timestamp
-                  ? (json['startDate'] as Timestamp?)?.toDate()
-                  : null,
+              ? (json['startDate'] as Timestamp?)?.toDate()
+              : null,
       expiryDate:
           json['expiryDate'] is String
               ? DateTime.parse(json['expiryDate'])
               : json['expiryDate'] is Timestamp
-                  ? (json['expiryDate'] as Timestamp?)?.toDate()
-                  : null,
+              ? (json['expiryDate'] as Timestamp?)?.toDate()
+              : null,
     );
   }
 

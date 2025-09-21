@@ -25,6 +25,7 @@ extension AppDateTimeExtension on DateTime? {
         date.month == now.month &&
         date.day == now.day + 1;
   }
+
   bool get isYesterday {
     final date = this;
     if (date == null) return false;
@@ -61,7 +62,7 @@ extension AppDateTimeExtension on DateTime? {
   String get formatDate {
     final date = this;
     if (date == null) return 'N/A';
-    return  '${date.day}/${date.month}/${date.year}';
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   String get formatTime {
@@ -87,6 +88,4 @@ extension AppDateTimeExtension on DateTime? {
     final now = DateTime.now();
     return now.difference(date).inMinutes;
   }
-
-  
 }

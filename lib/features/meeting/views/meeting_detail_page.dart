@@ -17,10 +17,11 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
   Widget build(BuildContext context) {
     // Initialize controller with meeting ID
     Get.put(MeetingDetailController(meetingId: meetingId));
-    
+
     return Scaffold(
       body: Obx(() {
-        if (controller.isLoading.value && controller.meetingDetail.value == null) {
+        if (controller.isLoading.value &&
+            controller.meetingDetail.value == null) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -38,9 +39,9 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                 const SizedBox(height: 8),
                 Text(
                   controller.errorMessage.value ?? 'Unknown error occurred',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -49,7 +50,10 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                   icon: const Icon(Icons.refresh),
                   label: const Text('Try Again'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ],
@@ -88,9 +92,7 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                 ],
               ),
               SliverToBoxAdapter(
-                child: MeetingInfoCard(
-                  meeting: meetingDetail,
-                ),
+                child: MeetingInfoCard(meeting: meetingDetail),
               ),
               SliverToBoxAdapter(
                 child: Padding(
@@ -100,9 +102,8 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                     children: [
                       Text(
                         'Participants (${meetingDetail.participants.length})',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       // Quick refresh button for participants
                       // IconButton(
@@ -115,18 +116,12 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                 ),
               ),
               _buildParticipantsList(meetingDetail),
-              
-              
-
             ],
           ),
         );
       }),
     );
   }
-
-
-
 
   Widget _buildParticipantsList(MeetingDetail meetingDetail) {
     if (meetingDetail.participants.isEmpty) {
@@ -141,14 +136,10 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
     }
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final participant = meetingDetail.participants[index];
-          return ParticipantListItem(participant: participant, index: index);
-        },
-        childCount: meetingDetail.participants.length,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final participant = meetingDetail.participants[index];
+        return ParticipantListItem(participant: participant, index: index);
+      }, childCount: meetingDetail.participants.length),
     );
   }
-
 }

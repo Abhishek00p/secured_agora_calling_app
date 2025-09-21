@@ -13,4 +13,5 @@ exports.getUsersForPasswordReset = authHttp.getUsersForPasswordReset;
 
 // Export all Agora service functions
 exports.generateToken = agora.generateToken;
+exports.verifyToken = agora.verifyToken;
 exports.sendNotification = agora.sendNotification;

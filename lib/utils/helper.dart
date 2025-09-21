@@ -1,5 +1,5 @@
 class AppHelper {
- static String timeDifference(DateTime startTime, DateTime endTime) {
+  static String timeDifference(DateTime startTime, DateTime endTime) {
     final duration = endTime.difference(startTime);
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);

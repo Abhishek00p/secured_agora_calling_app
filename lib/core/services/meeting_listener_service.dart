@@ -89,7 +89,9 @@ class MeetingListenerService {
           },
           onError: (error) {
             AppLogger.print('Join request listener error: $error');
-            AppToastUtil.showErrorToast('Error listening for join request updates');
+            AppToastUtil.showErrorToast(
+              'Error listening for join request updates',
+            );
           },
         );
   }
@@ -106,15 +108,15 @@ class MeetingListenerService {
   /// Handle timeout scenario
   void _handleTimeout() {
     AppLogger.print('Join request timed out after 1 minute');
-    
+
     // Stop all listeners
     _stopListening();
-    
+
     // Show timeout message to user
     AppToastUtil.showErrorToast(
       'Your join request timed out. The host did not respond within 1 minute.',
     );
-    
+
     // Call timeout callback
     _onTimeoutReached?.call();
   }

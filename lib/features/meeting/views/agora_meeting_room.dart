@@ -27,7 +27,8 @@ class AgoraMeetingRoom extends StatefulWidget {
   State<AgoraMeetingRoom> createState() => _AgoraMeetingRoomState();
 }
 
-class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBindingObserver {
+class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
+    with WidgetsBindingObserver {
   Widget _buildEndCallButton({
     required BuildContext context,
     required bool isHost,
@@ -38,7 +39,8 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
       onTap: () {
         showDialog(
           context: context,
-          builder: (dialogContext) => AlertDialog(
+          builder:
+              (dialogContext) => AlertDialog(
                 title: const Text('Confirmation', textAlign: TextAlign.center),
                 content: Text(
                   isHost
@@ -47,56 +49,60 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                 ),
                 actions: [
                   TextButton(
-                onPressed: () async {
-                  // Close dialog first
-                  Navigator.of(dialogContext).pop();
-                  
-                  // Show loading indicator
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (loadingContext) {
-                      // Store the loading context for later use
-                      final loadingDialogContext = loadingContext;
-                      
-                      // Call the async endMeeting function
-                      onLeaveMeeting().then((_) {
-                        // Close loading dialog
-                        if (loadingDialogContext.mounted) {
-                          Navigator.of(loadingDialogContext).pop();
-                        }
-                        
-                        // Navigation is handled by endMeeting() function
-                        // No need to manually pop here
-                      }).catchError((e) {
-                        // Close loading dialog
-                        if (loadingDialogContext.mounted) {
-                          Navigator.of(loadingDialogContext).pop();
-                        }
-                        
-                        // Show error message
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error leaving meeting: $e'),
-                              backgroundColor: Colors.red,
+                    onPressed: () async {
+                      // Close dialog first
+                      Navigator.of(dialogContext).pop();
+
+                      // Show loading indicator
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (loadingContext) {
+                          // Store the loading context for later use
+                          final loadingDialogContext = loadingContext;
+
+                          // Call the async endMeeting function
+                          onLeaveMeeting()
+                              .then((_) {
+                                // Close loading dialog
+                                if (loadingDialogContext.mounted) {
+                                  Navigator.of(loadingDialogContext).pop();
+                                }
+
+                                // Navigation is handled by endMeeting() function
+                                // No need to manually pop here
+                              })
+                              .catchError((e) {
+                                // Close loading dialog
+                                if (loadingDialogContext.mounted) {
+                                  Navigator.of(loadingDialogContext).pop();
+                                }
+
+                                // Show error message
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Error leaving meeting: $e',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              });
+
+                          return const AlertDialog(
+                            content: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(width: 16),
+                                Text('Leaving meeting...'),
+                              ],
                             ),
                           );
-                        }
-                      });
-                      
-                      return const AlertDialog(
-                        content: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(width: 16),
-                            Text('Leaving meeting...'),
-                          ],
-                        ),
+                        },
                       );
-                    },
-                  );
                     },
                     child: const Text('Leave Meeting'),
                   ),
@@ -113,7 +119,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                   //     ),
                   //   ),
                   TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
+                    onPressed: () => Navigator.of(dialogContext).pop(),
                     child: const Text('Cancel'),
                   ),
                 ],
@@ -146,7 +152,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     );
   }
 
-
   final meetingController = Get.find<MeetingController>();
   final currentUser = AppLocalStorage.getUserDetails();
   static const platform = MethodChannel('com.example.secured_calling/pip');
@@ -158,7 +163,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
       debugPrint("Failed to enter PIP mode: '${e.message}'.");
     }
   }
-
 
   @override
   void initState() {
@@ -208,7 +212,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
               backgroundColor: Colors.black,
               iconTheme: const IconThemeData(color: Colors.white),
               actions: [
-            
                 IconButton(
                   onPressed: () async {
                     // await fetchPendingRequests();
@@ -235,11 +238,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                     if (meetingController.remainingSeconds >= 0) ...[
                       Text(
                         'Time remaining: ${meetingController.remainingSeconds.formatDuration}',
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.red),
+                        style: const TextStyle(fontSize: 12, color: Colors.red),
                       ),
                       // Show extension indicator if meeting was extended
-                      // if (meetingController.meetingModel.value.totalExtensions != null && 
+                      // if (meetingController.meetingModel.value.totalExtensions != null &&
                       //     meetingController.meetingModel.value.totalExtensions! > 0) ...[
                       //   const SizedBox(height: 4),
                       //   Container(
@@ -252,7 +254,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                       //     child: Text(
                       //       'Extended ${meetingController.meetingModel.value.totalExtensions} time(s)',
                       //       style: const TextStyle(
-                      //         fontSize: 10, 
+                      //         fontSize: 10,
                       //         color: Colors.green,
                       //         fontWeight: FontWeight.w500,
                       //       ),
@@ -269,8 +271,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
             body: GetBuilder<MeetingController>(
               builder: (meetingController) {
                 if (!meetingController.meetingModel.value.isEmpty) {
-                  AppFirebaseService.instance
-                      .getMeetingData(widget.meetingId);
+                  AppFirebaseService.instance.getMeetingData(widget.meetingId);
                 } else {
                   AppLogger.print('Meeting Model is empty');
                 }
@@ -280,23 +281,20 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                     child: Column(
                       children: [
                         meetingController.isLoading.value
-                            ? const Center(
-                                child: CircularProgressIndicator())
+                            ? const Center(child: CircularProgressIndicator())
                             : !meetingController.agoraInitialized
-                                ? Center(
-                                    child: Text(
-                                        'Agora not intialized yet...!'),
-                                  )
-                                : Expanded(
-                                    child: meetingController.isHost
-                                        ? _buildHostView(meetingController)
-                                        : _buildParticipantView(
-                                            meetingController,
-                                          ),
-                                  ),
-                        if (meetingController.isHost) ...[
-                          JoinRequestWidget()
-                        ],
+                            ? Center(
+                              child: Text('Agora not intialized yet...!'),
+                            )
+                            : Expanded(
+                              child:
+                                  meetingController.isHost
+                                      ? _buildHostView(meetingController)
+                                      : _buildParticipantView(
+                                        meetingController,
+                                      ),
+                            ),
+                        if (meetingController.isHost) ...[JoinRequestWidget()],
                         Padding(
                           padding: const EdgeInsets.only(bottom: 30.0),
                           child: Wrap(
@@ -316,20 +314,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                     final isPttActive = meetingController
                                         .pttUsers
                                         .contains(
-                                          meetingController
-                                              .currentUser.userId,
+                                          meetingController.currentUser.userId,
                                         );
                                     return CircleAvatar(
                                       radius: 60,
-                                      backgroundColor: isPttActive
-                                          ? Colors.green
-                                          : Colors.white.withAppOpacity(
-                                              0.2,
-                                            ),
+                                      backgroundColor:
+                                          isPttActive
+                                              ? Colors.green
+                                              : Colors.white.withAppOpacity(
+                                                0.2,
+                                              ),
                                       child: Icon(
-                                        isPttActive
-                                            ? Icons.mic
-                                            : Icons.mic_off,
+                                        isPttActive ? Icons.mic : Icons.mic_off,
                                         color: Colors.white,
                                         size: 50,
                                       ),
@@ -350,19 +346,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                     final isPttActive = meetingController
                                         .pttUsers
                                         .contains(
-                                          meetingController
-                                              .currentUser.userId,
+                                          meetingController.currentUser.userId,
                                         );
                                     return CircleAvatar(
                                       radius: 60,
-                                      backgroundColor: isPttActive
-                                          ? Colors.green
-                                          : Colors.white
-                                              .withAppOpacity(0.2),
+                                      backgroundColor:
+                                          isPttActive
+                                              ? Colors.green
+                                              : Colors.white.withAppOpacity(
+                                                0.2,
+                                              ),
                                       child: Icon(
-                                        isPttActive
-                                            ? Icons.mic
-                                            : Icons.mic_off,
+                                        isPttActive ? Icons.mic : Icons.mic_off,
                                         color: Colors.white,
                                         size: 50,
                                       ),
@@ -379,37 +374,35 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                     () => OutlinedButton(
                                       style: OutlinedButton.styleFrom(
                                         side: BorderSide(
-                                          color: meetingController
-                                                  .isOnSpeaker.value
-                                              ? Colors.green
-                                              : Colors.white,
+                                          color:
+                                              meetingController
+                                                      .isOnSpeaker
+                                                      .value
+                                                  ? Colors.green
+                                                  : Colors.white,
                                         ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(
+                                          borderRadius: BorderRadius.circular(
                                             8,
                                           ),
                                         ),
-                                        padding:
-                                            const EdgeInsets.symmetric(
+                                        padding: const EdgeInsets.symmetric(
                                           horizontal: 16,
                                           vertical: 8,
                                         ),
                                       ),
-                                      onPressed: meetingController
-                                          .toggleSpeaker,
+                                      onPressed:
+                                          meetingController.toggleSpeaker,
                                       child: Column(
                                         children: [
                                           Icon(
-                                            meetingController
-                                                    .isOnSpeaker.value
+                                            meetingController.isOnSpeaker.value
                                                 ? Icons.volume_up
                                                 : Icons.volume_off,
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            meetingController
-                                                    .isOnSpeaker.value
+                                            meetingController.isOnSpeaker.value
                                                 ? 'Speaker On'
                                                 : 'Speaker Off',
                                             style: const TextStyle(
@@ -460,7 +453,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
         children: [
           Obx(
             () =>
-         meetingController.pttUsers.contains(user.userId)
+                meetingController.pttUsers.contains(user.userId)
                     ? Positioned.fill(child: WaterRipple(color: user.color))
                     : SizedBox.shrink(),
           ),
@@ -527,12 +520,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
             return SizedBox.shrink();
           }),
           // Host-only remove button
-          if (meetingController.isHost && user.userId != meetingController.currentUser.userId)
+          if (meetingController.isHost &&
+              user.userId != meetingController.currentUser.userId)
             Positioned(
               top: 8,
               left: 8,
               child: GestureDetector(
-                onTap: () => _showRemoveParticipantDialog(context, user, meetingController),
+                onTap:
+                    () => _showRemoveParticipantDialog(
+                      context,
+                      user,
+                      meetingController,
+                    ),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -614,26 +613,29 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
   ) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Remove Participant'),
-        content: Text(
-          'Are you sure you want to remove "${participant.name}" from the meeting?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Remove Participant'),
+            content: Text(
+              'Are you sure you want to remove "${participant.name}" from the meeting?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(dialogContext).pop();
+                  await meetingController.removeParticipantForcefully(
+                    participant.userId,
+                  );
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Remove'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              await meetingController.removeParticipantForcefully(participant.userId);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
     );
   }
 }

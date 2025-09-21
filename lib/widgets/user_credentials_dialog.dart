@@ -35,7 +35,9 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
 
   Future<void> _loadCredentials() async {
     try {
-      final credentials = await AppPasswordResetService.getUserCredentials(widget.targetEmail);
+      final credentials = await AppPasswordResetService.getUserCredentials(
+        widget.targetEmail,
+      );
       setState(() {
         _credentials = credentials;
         _isLoading = false;
@@ -50,11 +52,12 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
   void _showPasswordResetDialog() {
     showDialog(
       context: context,
-      builder: (context) => PasswordResetDialog(
-        targetEmail: widget.targetEmail,
-        targetName: widget.targetName,
-        isMember: widget.isMember,
-      ),
+      builder:
+          (context) => PasswordResetDialog(
+            targetEmail: widget.targetEmail,
+            targetName: widget.targetName,
+            isMember: widget.isMember,
+          ),
     ).then((result) {
       if (result == true) {
         // Refresh credentials after password reset
@@ -71,18 +74,15 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
   @override
   Widget build(BuildContext context) {
     final currentUserRole = AppUserRoleService.getCurrentUserRole();
-    final canViewCredentials = currentUserRole == UserRole.admin || 
-                             currentUserRole == UserRole.superAdmin || 
-                             currentUserRole == UserRole.member;
+    final canViewCredentials =
+        currentUserRole == UserRole.admin ||
+        currentUserRole == UserRole.superAdmin ||
+        currentUserRole == UserRole.member;
 
     return AlertDialog(
       title: Row(
         children: [
-          Icon(
-            Icons.account_circle,
-            color: AppTheme.primaryColor,
-            size: 24,
-          ),
+          Icon(Icons.account_circle, color: AppTheme.primaryColor, size: 24),
           const SizedBox(width: 8),
           Text('User Credentials'),
         ],
@@ -113,23 +113,17 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
                   ),
                   Text(
                     widget.targetEmail,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   Text(
                     'Role: ${widget.isMember ? 'Member' : 'User'}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            
+
             if (!canViewCredentials) ...[
               Container(
                 padding: const EdgeInsets.all(12),
@@ -152,9 +146,7 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
                 ),
               ),
             ] else if (_isLoading) ...[
-              const Center(
-                child: CircularProgressIndicator(),
-              ),
+              const Center(child: CircularProgressIndicator()),
             ] else if (_credentials == null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
@@ -165,12 +157,19 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_outlined, color: Colors.orange[600], size: 20),
+                    Icon(
+                      Icons.warning_amber_outlined,
+                      color: Colors.orange[600],
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Unable to load user credentials.',
-                        style: TextStyle(color: Colors.orange[700], fontSize: 14),
+                        style: TextStyle(
+                          color: Colors.orange[700],
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ],
@@ -187,7 +186,7 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
                 ),
               ),
               const SizedBox(height: 8),
-              
+
               // Email
               Container(
                 padding: const EdgeInsets.all(12),
@@ -224,17 +223,16 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.copy, size: 18),
-                      onPressed: () => _copyToClipboard(
-                        _credentials!['email'],
-                        'Email',
-                      ),
+                      onPressed:
+                          () =>
+                              _copyToClipboard(_credentials!['email'], 'Email'),
                       tooltip: 'Copy email',
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 8),
-              
+
               // Password
               Container(
                 padding: const EdgeInsets.all(12),
@@ -260,7 +258,7 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
                             ),
                           ),
                           Text(
-                            _showPassword 
+                            _showPassword
                                 ? _credentials!['password']
                                 : '••••••••',
                             style: const TextStyle(
@@ -277,7 +275,9 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
                       children: [
                         IconButton(
                           icon: Icon(
-                            _showPassword ? Icons.visibility : Icons.visibility_off,
+                            _showPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                             size: 18,
                           ),
                           onPressed: () {
@@ -285,14 +285,16 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
                               _showPassword = !_showPassword;
                             });
                           },
-                          tooltip: _showPassword ? 'Hide password' : 'Show password',
+                          tooltip:
+                              _showPassword ? 'Hide password' : 'Show password',
                         ),
                         IconButton(
                           icon: const Icon(Icons.copy, size: 18),
-                          onPressed: () => _copyToClipboard(
-                            _credentials!['password'],
-                            'Password',
-                          ),
+                          onPressed:
+                              () => _copyToClipboard(
+                                _credentials!['password'],
+                                'Password',
+                              ),
                           tooltip: 'Copy password',
                         ),
                       ],
@@ -300,9 +302,9 @@ class _UserCredentialsDialogState extends State<UserCredentialsDialog> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Info message
               Container(
                 padding: const EdgeInsets.all(8),

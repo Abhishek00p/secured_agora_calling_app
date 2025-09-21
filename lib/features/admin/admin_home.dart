@@ -57,8 +57,8 @@ class _AdminScreenState extends State<AdminScreen> {
                     children: [
                       FilterChip(
                         label: const Text("All"),
-                        labelStyle:  TextStyle(
-                          color:_filter == 'All'?Colors.white: Colors.black,
+                        labelStyle: TextStyle(
+                          color: _filter == 'All' ? Colors.white : Colors.black,
                           fontSize: 12,
                         ),
                         selected: _filter == 'All',
@@ -67,8 +67,9 @@ class _AdminScreenState extends State<AdminScreen> {
                       const SizedBox(width: 8),
                       FilterChip(
                         label: const Text("Close Expiry"),
-                         labelStyle:  TextStyle(
-                          color:_filter == 'Close'?Colors.white: Colors.black,
+                        labelStyle: TextStyle(
+                          color:
+                              _filter == 'Close' ? Colors.white : Colors.black,
                           fontSize: 12,
                         ),
                         selected: _filter == 'Close',
@@ -77,8 +78,9 @@ class _AdminScreenState extends State<AdminScreen> {
                       const SizedBox(width: 8),
                       FilterChip(
                         label: const Text("Long Expiry"),
-                         labelStyle:  TextStyle(
-                          color:_filter == 'Long'?Colors.white: Colors.black,
+                        labelStyle: TextStyle(
+                          color:
+                              _filter == 'Long' ? Colors.white : Colors.black,
                           fontSize: 12,
                         ),
                         selected: _filter == 'Long',
@@ -108,7 +110,9 @@ class _AdminScreenState extends State<AdminScreen> {
                         .toList();
 
                 final now = DateTime.now();
-                print("Number of members found before filtering: ${members.length}");
+                print(
+                  "Number of members found before filtering: ${members.length}",
+                );
 
                 members =
                     members.where((m) {
@@ -127,9 +131,10 @@ class _AdminScreenState extends State<AdminScreen> {
                       }
                     }).toList();
                 if (members.isEmpty) {
-                  return  SizedBox(
+                  return SizedBox(
                     height: Get.height - 300,
-                    child:  Center(child: Text("No members found.")));
+                    child: Center(child: Text("No members found.")),
+                  );
                 }
                 print("Number of members found: ${members.length}");
                 return ListView.builder(
@@ -312,11 +317,12 @@ class _AdminScreenState extends State<AdminScreen> {
                                 onPressed: () {
                                   showDialog(
                                     context: context,
-                                    builder: (context) => UserCredentialsDialog(
-                                      targetEmail: member.email,
-                                      targetName: member.name,
-                                      isMember: true,
-                                    ),
+                                    builder:
+                                        (context) => UserCredentialsDialog(
+                                          targetEmail: member.email,
+                                          targetName: member.name,
+                                          isMember: true,
+                                        ),
                                   );
                                 },
                                 tooltip: 'View Credentials',

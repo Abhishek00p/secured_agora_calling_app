@@ -37,6 +37,4 @@ class WarmColorGenerator {
     }
     return _shuffledColors[index];
   }
-
-  
 }

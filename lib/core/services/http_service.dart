@@ -28,27 +28,25 @@ class AppHttpService {
     //     return 'http://localhost:4000/secure-calling-2025/us-central1/';
     //   }
     // } else {
-      // Use production URL in release mode
-      return 'https://us-central1-secure-calling-2025.cloudfunctions.net/';
+    // Use production URL in release mode
+    return 'https://us-central1-secure-calling-2025.cloudfunctions.net/';
     // }
   }
 
   /// Request interceptor that adds Bearer token to headers
   Map<String, String> _getHeaders({bool includeAuth = true}) {
-    final headers = {
-      'Content-Type': 'application/json',
-    };
-    
+    final headers = {'Content-Type': 'application/json'};
+
     if (includeAuth) {
       final token = AppLocalStorage.getToken();
       if (token != null && token.isNotEmpty) {
         print('Bearer token before api call : $token');
         headers['Authorization'] = 'Bearer $token';
-      }else{
+      } else {
         print("No auth token found in local storage, while calling api");
       }
     }
-    
+
     return headers;
   }
 
@@ -60,9 +58,8 @@ class AppHttpService {
   }) async {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
-      final finalUri = queryParams != null 
-          ? uri.replace(queryParameters: queryParams)
-          : uri;
+      final finalUri =
+          queryParams != null ? uri.replace(queryParameters: queryParams) : uri;
 
       final response = await FirebaseFunctionLogger.instance.logFunctionCall(
         functionName: endpoint,
@@ -70,10 +67,11 @@ class AppHttpService {
         url: finalUri.toString(),
         headers: _getHeaders(includeAuth: includeAuth),
         body: '',
-        httpCall: () => http.get(
-          finalUri,
-          headers: _getHeaders(includeAuth: includeAuth),
-        ),
+        httpCall:
+            () => http.get(
+              finalUri,
+              headers: _getHeaders(includeAuth: includeAuth),
+            ),
       );
 
       return _handleResponse(response);
@@ -103,11 +101,12 @@ class AppHttpService {
         url: uri.toString(),
         headers: _getHeaders(includeAuth: includeAuth),
         body: requestBody,
-        httpCall: () => http.post(
-          uri,
-          headers: _getHeaders(includeAuth: includeAuth),
-          body: requestBody,
-        ),
+        httpCall:
+            () => http.post(
+              uri,
+              headers: _getHeaders(includeAuth: includeAuth),
+              body: requestBody,
+            ),
       );
 
       return _handleResponse(response);
@@ -137,11 +136,12 @@ class AppHttpService {
         url: uri.toString(),
         headers: _getHeaders(includeAuth: includeAuth),
         body: requestBody,
-        httpCall: () => http.put(
-          uri,
-          headers: _getHeaders(includeAuth: includeAuth),
-          body: requestBody,
-        ),
+        httpCall:
+            () => http.put(
+              uri,
+              headers: _getHeaders(includeAuth: includeAuth),
+              body: requestBody,
+            ),
       );
 
       return _handleResponse(response);
@@ -171,11 +171,12 @@ class AppHttpService {
         url: uri.toString(),
         headers: _getHeaders(includeAuth: includeAuth),
         body: requestBody,
-        httpCall: () => http.delete(
-          uri,
-          headers: _getHeaders(includeAuth: includeAuth),
-          body: requestBody,
-        ),
+        httpCall:
+            () => http.delete(
+              uri,
+              headers: _getHeaders(includeAuth: includeAuth),
+              body: requestBody,
+            ),
       );
 
       return _handleResponse(response);
@@ -200,12 +201,15 @@ class AppHttpService {
     } else {
       try {
         final errorData = jsonDecode(response.body);
-        final errorMessage = errorData['error_message'] ?? 
-            errorData['message'] ?? 
+        final errorMessage =
+            errorData['error_message'] ??
+            errorData['message'] ??
             'Request failed with status ${response.statusCode}';
         throw Exception(errorMessage);
       } catch (e) {
-        throw Exception('Request failed with status ${response.statusCode}: ${response.reasonPhrase}');
+        throw Exception(
+          'Request failed with status ${response.statusCode}: ${response.reasonPhrase}',
+        );
       }
     }
   }
@@ -230,11 +234,7 @@ class AppHttpService {
       // Use the new CRUD function
       final response = await post(
         'generateToken',
-        body: {
-          'channelName': channelName,
-          'uid': uid,
-          'userRole': userRole,
-        },
+        body: {'channelName': channelName, 'uid': uid, 'userRole': userRole},
       );
 
       if (response['success'] == true && response['token'] != null) {
@@ -244,12 +244,15 @@ class AppHttpService {
           channelName: channelName,
           uid: uid,
           token: response['token'],
-          expiryTime: response['expireTime'] ?? 
+          expiryTime:
+              response['expireTime'] ??
               DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
         );
         return response['token'];
       } else {
-        throw Exception(response['error_message'] ?? "Token not found in response");
+        throw Exception(
+          response['error_message'] ?? "Token not found in response",
+        );
       }
     } on SocketException {
       AppToastUtil.showErrorToast('No Internet connection');
@@ -261,7 +264,36 @@ class AppHttpService {
     }
   }
 
+  /// verify token for a user
+  Future<String?> verifyAgoraToken({
+    required String channelName,
+    required int uid,
+    required String userRole,
+  }) async {
+    try {
+      // Use the new CRUD function
+      final response = await post(
+        'verifyToken',
+        body: {'channelName': channelName, 'uid': uid, 'userRole': userRole},
+      );
 
+      if (response['success'] == true) {
+        print('Token verified successfully');
+        return response['token'];
+      } else {
+        throw Exception(
+          response['error_message'] ?? "Token not found in response",
+        );
+      }
+    } on SocketException {
+      AppToastUtil.showErrorToast('No Internet connection');
+      return null;
+    } catch (e) {
+      print('Error verifying token: $e');
+      AppToastUtil.showErrorToast('Error verifying token: $e');
+      return null;
+    }
+  }
 
   //store token in firebase
   Future<void> storeTokenInFirebase({

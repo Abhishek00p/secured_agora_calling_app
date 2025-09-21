@@ -25,8 +25,10 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
 
     meetingController.fetchPendingRequests().listen(
       (newRequests) {
-        AppLogger.print('JoinRequestWidget: Received ${newRequests.length} requests');
-        
+        AppLogger.print(
+          'JoinRequestWidget: Received ${newRequests.length} requests',
+        );
+
         if (!_areListsEqual(_previousRequests, newRequests)) {
           AppLogger.print(
             'JoinRequestWidget: Request list changed - prv: ${_previousRequests.length}, new: ${newRequests.length}',
@@ -47,7 +49,9 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
         }
       },
       onError: (error) {
-        AppLogger.print('JoinRequestWidget: Error listening to requests: $error');
+        AppLogger.print(
+          'JoinRequestWidget: Error listening to requests: $error',
+        );
       },
     );
   }
@@ -63,14 +67,18 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
     return ValueListenableBuilder<List<Map<String, dynamic>>>(
       valueListenable: _requestsNotifier,
       builder: (context, requests, _) {
-        AppLogger.print('JoinRequestWidget: Building with ${requests.length} requests');
-        
+        AppLogger.print(
+          'JoinRequestWidget: Building with ${requests.length} requests',
+        );
+
         if (requests.isEmpty) {
           AppLogger.print('JoinRequestWidget: No requests to display');
           return const SizedBox.shrink();
         }
 
-        AppLogger.print('JoinRequestWidget: Displaying ${requests.length} join requests');
+        AppLogger.print(
+          'JoinRequestWidget: Displaying ${requests.length} join requests',
+        );
         return Column(
           children: List.generate(
             requests.length,

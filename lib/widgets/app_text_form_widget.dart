@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AppTextFormFieldType {
-  name,
-  email,
-  password,
-  text,
-  phoneNumber,
-  number,
-}
+enum AppTextFormFieldType { name, email, password, text, phoneNumber, number }
 
 class AppTextFormField extends StatefulWidget {
   final TextEditingController controller;
@@ -27,7 +20,6 @@ class AppTextFormField extends StatefulWidget {
     this.helperText,
     this.prefixIcon,
     this.isPasswordRequired = true,
-
   });
 
   @override
@@ -71,7 +63,8 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
   }
 
   String? _defaultValidator(String? value) {
-    if(!widget.isPasswordRequired && widget.type==AppTextFormFieldType.password){
+    if (!widget.isPasswordRequired &&
+        widget.type == AppTextFormFieldType.password) {
       return null;
     }
     if (value == null || value.isEmpty) {
@@ -117,49 +110,60 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
     try {
       return TextFormField(
         controller: widget.controller,
-      decoration: InputDecoration(
-        isDense: true,
-        labelText: widget.labelText,
-        prefixIcon: Icon(widget.prefixIcon??_prefixIcon),
-        errorStyle: const TextStyle(color: Colors.red,fontSize: 8),
-        suffixIcon: widget.type == AppTextFormFieldType.password
-            ? IconButton(
-                icon: Icon(
-                  _obscureText ? Icons.visibility : Icons.visibility_off,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscureText = !_obscureText;
-                  });
-                },
-              )
-            : null,
-        helperText: widget.helperText,
-        helperMaxLines: 2,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade400),
+        decoration: InputDecoration(
+          isDense: true,
+          labelText: widget.labelText,
+          prefixIcon: Icon(widget.prefixIcon ?? _prefixIcon),
+          errorStyle: const TextStyle(color: Colors.red, fontSize: 8),
+          suffixIcon:
+              widget.type == AppTextFormFieldType.password
+                  ? IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureText = !_obscureText;
+                      });
+                    },
+                  )
+                  : null,
+          helperText: widget.helperText,
+          helperMaxLines: 2,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade400),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade400),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).primaryColor,
+              width: 2,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.error,
+              width: 2,
+            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade400),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      ),
-      
-        obscureText: widget.type == AppTextFormFieldType.password ? _obscureText : false,
+
+        obscureText:
+            widget.type == AppTextFormFieldType.password ? _obscureText : false,
         keyboardType: _keyboardType,
         validator: widget.validator ?? _defaultValidator,
       );
@@ -174,10 +178,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
         child: Center(
           child: Text(
             widget.labelText,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 16),
           ),
         ),
       );

@@ -7,10 +7,7 @@ import 'package:secured_calling/utils/app_tost_util.dart';
 class MeetingInfoCard extends StatefulWidget {
   final MeetingDetail meeting;
 
-  const MeetingInfoCard({
-    super.key, 
-    required this.meeting,
-  });
+  const MeetingInfoCard({super.key, required this.meeting});
 
   @override
   State<MeetingInfoCard> createState() => _MeetingInfoCardState();
@@ -44,34 +41,50 @@ class _MeetingInfoCardState extends State<MeetingInfoCard> {
             //   ],
             // ),
             // const SizedBox(height: 16.0),
-            
 
-            
             // const Divider(),
             // const SizedBox(height: 16.0),
-            _buildInfoRow(context, Icons.perm_identity, 'Meeting ID', widget.meeting.meetingId, copyable: true),
+            _buildInfoRow(
+              context,
+              Icons.perm_identity,
+              'Meeting ID',
+              widget.meeting.meetingId,
+              copyable: true,
+            ),
             _buildPasswordRow(context),
-            _buildInfoRow(context, Icons.person_outline, 'Host', '${widget.meeting.hostName} '),
+            _buildInfoRow(
+              context,
+              Icons.person_outline,
+              'Host',
+              '${widget.meeting.hostName} ',
+            ),
             // _buildInfoRow(context, Icons.group_outlined, 'Max Participants', widget.meeting.maxParticipants.toString()),
-            _buildInfoRow(context, Icons.timer_outlined, 'Duration', formatDuration(widget.meeting.duration)),
+            _buildInfoRow(
+              context,
+              Icons.timer_outlined,
+              'Duration',
+              formatDuration(widget.meeting.duration),
+            ),
+
             // _buildInfoRow(context, Icons.calendar_today_outlined, 'Scheduled Time', '${formatDateTime(widget.meeting.scheduledStartTime)} - ${formatDateTime(widget.meeting.scheduledEndTime)}'),
             // if (widget.meeting.actualStartTime != null)
             //   _buildInfoRow(context, Icons.access_time, 'Actual Time', '${formatDateTime(widget.meeting.actualStartTime!)} - ${widget.meeting.actualEndTime != null ? formatDateTime(widget.meeting.actualEndTime!) : "Now"}'),
             // const SizedBox(height: 8.0),
             // _buildInfoRow(context, Icons.people_alt_outlined, 'Total Participants', widget.meeting.totalUniqueParticipants.toString()),
-            
-
           ],
         ),
       ),
     );
   }
 
-
-
   Widget _buildPasswordRow(BuildContext context) {
     if (widget.meeting.meetingPass == null) {
-      return _buildInfoRow(context, Icons.lock_outline, 'Password', 'No Password');
+      return _buildInfoRow(
+        context,
+        Icons.lock_outline,
+        'Password',
+        'No Password',
+      );
     }
     return _buildInfoRow(
       context,
@@ -93,7 +106,14 @@ class _MeetingInfoCardState extends State<MeetingInfoCard> {
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, IconData icon, String label, String value, {bool copyable = false, Widget? trailing}) {
+  Widget _buildInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value, {
+    bool copyable = false,
+    Widget? trailing,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -105,7 +125,12 @@ class _MeetingInfoCardState extends State<MeetingInfoCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  label,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 4),
                 Text(value, style: Theme.of(context).textTheme.bodyMedium),
               ],
@@ -116,7 +141,12 @@ class _MeetingInfoCardState extends State<MeetingInfoCard> {
               icon: const Icon(Icons.copy, size: 18.0),
               tooltip: 'Copy',
               onPressed: () {
-                Clipboard.setData(ClipboardData(text: widget.meeting.meetingPass ?? widget.meeting.meetingId));
+                Clipboard.setData(
+                  ClipboardData(
+                    text:
+                        widget.meeting.meetingPass ?? widget.meeting.meetingId,
+                  ),
+                );
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('$label copied to clipboard')),
                 );

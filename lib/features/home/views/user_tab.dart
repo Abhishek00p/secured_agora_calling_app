@@ -29,15 +29,16 @@ class _UserTabState extends State<UserTab> {
   void loadUpcomingMeetings() {
     final currentUser = AppLocalStorage.getUserDetails();
     if (currentUser.memberCode.isNotEmpty) {
-  
-        // Members see all upcoming meetings for their member code
-        firebaseService.getUpcomingMeetingsStream(currentUser.memberCode).listen((snapshot) {
-          final meetings = snapshot.docs.map((doc) {
-            return MeetingModel.fromJson(doc.data() as Map<String, dynamic>);
-          }).toList();
-          upcomingMeetings.value = meetings;
-        });
-     
+      // Members see all upcoming meetings for their member code
+      firebaseService.getUpcomingMeetingsStream(currentUser.memberCode).listen((
+        snapshot,
+      ) {
+        final meetings =
+            snapshot.docs.map((doc) {
+              return MeetingModel.fromJson(doc.data() as Map<String, dynamic>);
+            }).toList();
+        upcomingMeetings.value = meetings;
+      });
     }
   }
 
@@ -63,7 +64,7 @@ class _UserTabState extends State<UserTab> {
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (context) =>  JoinMeetingDialog(),
+                builder: (context) => JoinMeetingDialog(),
               );
             },
           ),
@@ -83,10 +84,9 @@ class _UserTabState extends State<UserTab> {
 
               // Placeholder for call history
               StreamBuilder<QuerySnapshot>(
-                stream: AppFirebaseService.instance
-                    .getUpcomingMeetingsStream(
-                      AppLocalStorage.getUserDetails().memberCode,
-                    ),
+                stream: AppFirebaseService.instance.getUpcomingMeetingsStream(
+                  AppLocalStorage.getUserDetails().memberCode,
+                ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -100,12 +100,13 @@ class _UserTabState extends State<UserTab> {
                     final meetings = getSortedMeetingList(snapshot.data!.docs);
                     return Column(
                       children: [
-                        ...List.generate(meetings.length > 10 ? 10 : meetings.length, (
-                          index,
-                        ) {
-                          final meeting = meetings[index];
-                          return MeetingTileWidget(model: meeting);
-                        }),
+                        ...List.generate(
+                          meetings.length > 10 ? 10 : meetings.length,
+                          (index) {
+                            final meeting = meetings[index];
+                            return MeetingTileWidget(model: meeting);
+                          },
+                        ),
 
                         if (meetings.length > 10)
                           TextButton(
@@ -164,7 +165,6 @@ class _UserTabState extends State<UserTab> {
             meeting.data() as Map<String, dynamic>? ?? {},
           );
         }).toList();
-
 
     return modelList;
   }

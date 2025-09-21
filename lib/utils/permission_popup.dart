@@ -6,7 +6,6 @@ class PermissionPopup extends StatelessWidget {
   final String description;
 
   const PermissionPopup({
-
     super.key,
     required this.icon,
     required this.title,
@@ -39,7 +38,7 @@ class PermissionPopup extends StatelessWidget {
                 onPressed: () => Navigator.pop(context, true),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
