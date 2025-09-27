@@ -52,6 +52,18 @@ class MeetingController extends GetxController {
 
   RxInt activeSpeakerUid = 0.obs;
 
+  @override
+  void onInit() {
+    super.onInit();
+    _muteSubscription = AppFirebaseService.instance
+        .isCurrentUserMutedByHost(meetingId)
+        .listen((s) {
+          if (s) {
+            stopPtt();
+          }
+        });
+  }
+
   void startTimer() async {
     try {
       _meetingTimer?.cancel(); // Cancel any existing timer
@@ -1053,9 +1065,5 @@ class MeetingController extends GetxController {
     } finally {
       update();
     }
-  }
-
-  void muteParticipant(ParticipantModel user) {
-    //TODO: implement mute participant
   }
 }

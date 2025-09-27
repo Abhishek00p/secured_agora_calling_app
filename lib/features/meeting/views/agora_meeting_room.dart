@@ -11,6 +11,7 @@ import 'package:secured_calling/features/meeting/views/join_request_widget.dart'
 import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/show_meeting_info.dart';
 import 'package:secured_calling/widgets/speaker_ripple_effect.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 class AgoraMeetingRoom extends StatefulWidget {
   final String meetingId;
@@ -168,6 +169,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WakelockPlus.enable();
     AppLogger.print('meeting id before init  :${widget.meetingId}');
     meetingController.initializeMeeting(
       meetingId: widget.meetingId,
@@ -179,6 +181,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -538,8 +541,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                       meetingController,
                     );
                   } else if (value == 'mute') {
-                    // TODO: implement mute logic
-                    meetingController.muteParticipant(user);
+                    meetingController.muteThisParticipantsForAllUser(user);
                   }
                 },
                 itemBuilder:
