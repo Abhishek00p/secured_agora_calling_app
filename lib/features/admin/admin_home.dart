@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:secured_calling/core/extensions/app_color_extension.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/models/member_model.dart';
@@ -19,6 +20,38 @@ class AdminScreen extends StatefulWidget {
 class _AdminScreenState extends State<AdminScreen> {
   String _searchQuery = '';
   String _filter = 'All';
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required ThemeData theme,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey[600]),
+          const SizedBox(width: 8),
+          Text(
+            "$label: ",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[700],
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w400,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,115 +179,130 @@ class _AdminScreenState extends State<AdminScreen> {
                     final member = members[index];
                     final isExpiringSoon =
                         member.expiryDate.difference(now).inDays <= 60;
-
                     return Card(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
                       ),
                       shape: RoundedRectangleBorder(
+                        side: BorderSide(
+                          color: Colors.black.withAppOpacity(0.2),
+                        ),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       color:
                           isExpiringSoon ? Colors.red.shade50 : theme.cardColor,
-                      elevation: 1,
+                      elevation: 2,
+                      shadowColor: Colors.black.withAppOpacity(0.08),
                       child: ExpansionTile(
                         tilePadding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 10,
+                          vertical: 12,
                         ),
                         childrenPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 8,
+                          vertical: 12,
                         ),
+                        collapsedShape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+
+                        // Title Section
                         title: Text(
                           member.name.sentenceCase,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: isExpiringSoon ? Colors.red : null,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isExpiringSoon
+                                    ? Colors.red.shade700
+                                    : theme.colorScheme.onSurface,
                           ),
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              member.email,
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Expires: ${DateFormat.yMMMd().format(member.expiryDate)}",
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: isExpiringSoon ? Colors.red : null,
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                member.email,
+                                style: theme.textTheme.bodyMedium,
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.lock_clock,
+                                    size: 14,
+                                    color: Colors.grey,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "Expires: ${DateFormat.yMMMd().format(member.expiryDate)}",
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color:
+                                          isExpiringSoon
+                                              ? Colors.red.shade700
+                                              : Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
+
+                        // Expanded Details
                         children: [
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Left Column
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      "Name: ${member.name}",
-                                      style: theme.textTheme.bodyLarge,
+                                    _buildDetailRow(
+                                      icon: Icons.person,
+                                      label: "Name",
+                                      value: member.name,
+                                      theme: theme,
                                     ),
-                                    4.h,
-                                    Text(
-                                      "Email: ${member.email}",
-                                      style: theme.textTheme.bodyLarge,
+                                    _buildDetailRow(
+                                      icon: Icons.email,
+                                      label: "Email",
+                                      value: member.email,
+                                      theme: theme,
                                     ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.calendar_today,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          "Purchase: ${DateFormat.yMMMd().format(member.purchaseDate)}",
-                                          style: theme.textTheme.bodyMedium,
-                                        ),
-                                      ],
+                                    _buildDetailRow(
+                                      icon: Icons.calendar_today,
+                                      label: "Purchase",
+                                      value: DateFormat.yMMMd().format(
+                                        member.purchaseDate,
+                                      ),
+                                      theme: theme,
                                     ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.lock_clock,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          "Expires: ${DateFormat.yMMMd().format(member.expiryDate)}",
-                                          style: theme.textTheme.bodyMedium,
-                                        ),
-                                      ],
+                                    _buildDetailRow(
+                                      icon: Icons.lock_clock,
+                                      label: "Expires",
+                                      value: DateFormat.yMMMd().format(
+                                        member.expiryDate,
+                                      ),
+                                      theme: theme,
                                     ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.people,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          "Users: ${member.totalUsers}",
-                                          style: theme.textTheme.bodyMedium,
-                                        ),
-                                      ],
+                                    _buildDetailRow(
+                                      icon: Icons.people,
+                                      label: "Users",
+                                      value: member.totalUsers.toString(),
+                                      theme: theme,
                                     ),
                                   ],
                                 ),
                               ),
+
+                              // Right Column (Status)
                               Column(
                                 children: [
                                   Switch(
@@ -270,27 +318,43 @@ class _AdminScreenState extends State<AdminScreen> {
                                   Text(
                                     member.isActive ? "Active" : "Inactive",
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w600,
                                       color:
                                           member.isActive
                                               ? Colors.green
                                               : Colors.red,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
                                 ],
                               ),
                             ],
                           ),
-                          12.h,
+
+                          const SizedBox(height: 12),
+                          const Divider(),
+                          const SizedBox(height: 8),
+
+                          // Action Buttons
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
                               OutlinedButton.icon(
                                 onPressed:
                                     () => showReminderDialog(context, member),
-                                icon: const Icon(Icons.notifications),
-                                label: const Text("Reminder"),
+                                icon: const Icon(Icons.notifications, size: 18),
+                                label: const Text(
+                                  "Reminder",
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
                               ),
                               ElevatedButton.icon(
                                 onPressed: () {
@@ -302,27 +366,34 @@ class _AdminScreenState extends State<AdminScreen> {
                                     ),
                                   );
                                 },
-                                icon: const Icon(Icons.edit),
-                                label: const Text("Edit"),
+                                icon: const Icon(Icons.edit, size: 18),
+                                label: const Text(
+                                  "Edit",
+                                  style: TextStyle(fontSize: 13),
+                                ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: theme.colorScheme.primary,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
                               IconButton(
                                 icon: Icon(
                                   Icons.visibility,
                                   color: Colors.blue[600],
-                                  size: 20,
+                                  size: 22,
                                 ),
                                 onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder:
-                                        (context) => UserCredentialsDialog(
-                                          targetEmail: member.email,
-                                          targetName: member.name,
-                                          isMember: true,
-                                        ),
+                                  UserCredentialsBottomSheet.show(
+                                    context,
+                                    targetEmail: member.email,
+                                    targetName: member.name,
+                                    isMember: true,
                                   );
                                 },
                                 tooltip: 'View Credentials',
@@ -332,6 +403,197 @@ class _AdminScreenState extends State<AdminScreen> {
                         ],
                       ),
                     );
+                    // return Card(
+                    //   margin: const EdgeInsets.symmetric(
+                    //     horizontal: 16,
+                    //     vertical: 8,
+                    //   ),
+                    //   shape: RoundedRectangleBorder(
+                    //     borderRadius: BorderRadius.circular(16),
+                    //   ),
+                    //   color:
+                    //       isExpiringSoon ? Colors.red.shade50 : theme.cardColor,
+                    //   elevation: 1,
+                    //   child: ExpansionTile(
+                    //     tilePadding: const EdgeInsets.symmetric(
+                    //       horizontal: 16,
+                    //       vertical: 10,
+                    //     ),
+                    //     childrenPadding: const EdgeInsets.symmetric(
+                    //       horizontal: 16,
+                    //       vertical: 8,
+                    //     ),
+                    //     title: Text(
+                    //       member.name.sentenceCase,
+                    //       style: theme.textTheme.titleMedium?.copyWith(
+                    //         fontWeight: FontWeight.bold,
+                    //         color: isExpiringSoon ? Colors.red : null,
+                    //       ),
+                    //     ),
+                    //     subtitle: Column(
+                    //       crossAxisAlignment: CrossAxisAlignment.start,
+                    //       children: [
+                    //         Text(
+                    //           member.email,
+                    //           style: theme.textTheme.bodyMedium,
+                    //         ),
+                    //         const SizedBox(height: 4),
+                    //         Text(
+                    //           "Expires: ${DateFormat.yMMMd().format(member.expiryDate)}",
+                    //           style: theme.textTheme.bodySmall?.copyWith(
+                    //             color: isExpiringSoon ? Colors.red : null,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //     children: [
+                    //       Row(
+                    //         crossAxisAlignment: CrossAxisAlignment.start,
+                    //         children: [
+                    //           Expanded(
+                    //             child: Column(
+                    //               crossAxisAlignment: CrossAxisAlignment.start,
+                    //               children: [
+                    //                 Text(
+                    //                   "Name: ${member.name}",
+                    //                   style: theme.textTheme.bodyLarge,
+                    //                 ),
+                    //                 4.h,
+                    //                 Text(
+                    //                   "Email: ${member.email}",
+                    //                   style: theme.textTheme.bodyLarge,
+                    //                 ),
+                    //                 const SizedBox(height: 8),
+                    //                 Row(
+                    //                   children: [
+                    //                     const Icon(
+                    //                       Icons.calendar_today,
+                    //                       size: 16,
+                    //                       color: Colors.grey,
+                    //                     ),
+                    //                     const SizedBox(width: 6),
+                    //                     Text(
+                    //                       "Purchase: ${DateFormat.yMMMd().format(member.purchaseDate)}",
+                    //                       style: theme.textTheme.bodyMedium,
+                    //                     ),
+                    //                   ],
+                    //                 ),
+                    //                 const SizedBox(height: 6),
+                    //                 Row(
+                    //                   children: [
+                    //                     const Icon(
+                    //                       Icons.lock_clock,
+                    //                       size: 16,
+                    //                       color: Colors.grey,
+                    //                     ),
+                    //                     const SizedBox(width: 6),
+                    //                     Text(
+                    //                       "Expires: ${DateFormat.yMMMd().format(member.expiryDate)}",
+                    //                       style: theme.textTheme.bodyMedium,
+                    //                     ),
+                    //                   ],
+                    //                 ),
+                    //                 const SizedBox(height: 6),
+                    //                 Row(
+                    //                   children: [
+                    //                     const Icon(
+                    //                       Icons.people,
+                    //                       size: 16,
+                    //                       color: Colors.grey,
+                    //                     ),
+                    //                     const SizedBox(width: 6),
+                    //                     Text(
+                    //                       "Users: ${member.totalUsers}",
+                    //                       style: theme.textTheme.bodyMedium,
+                    //                     ),
+                    //                   ],
+                    //                 ),
+                    //               ],
+                    //             ),
+                    //           ),
+                    //           Column(
+                    //             children: [
+                    //               Switch(
+                    //                 value: member.isActive,
+                    //                 onChanged: (val) {
+                    //                   FirebaseFirestore.instance
+                    //                       .collection('members')
+                    //                       .doc(member.id)
+                    //                       .update({'isActive': val});
+                    //                 },
+                    //                 activeColor: theme.colorScheme.primary,
+                    //               ),
+                    //               Text(
+                    //                 member.isActive ? "Active" : "Inactive",
+                    //                 style: TextStyle(
+                    //                   fontWeight: FontWeight.w500,
+                    //                   color:
+                    //                       member.isActive
+                    //                           ? Colors.green
+                    //                           : Colors.red,
+                    //                 ),
+                    //               ),
+                    //               const SizedBox(height: 8),
+                    //             ],
+                    //           ),
+                    //         ],
+                    //       ),
+                    //       12.h,
+                    //       Row(
+                    //         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    //         children: [
+                    //           SizedBox(
+                    //             width: MediaQuery.sizeOf(context).width * 0.3,
+                    //             child: OutlinedButton.icon(
+                    //               onPressed:
+                    //                   () => showReminderDialog(context, member),
+                    //               icon: const Icon(Icons.notifications),
+                    //               label: const Text(
+                    //                 "Reminder",
+                    //                 style: TextStyle(fontSize: 12),
+                    //               ),
+                    //             ),
+                    //           ),
+                    //           ElevatedButton.icon(
+                    //             onPressed: () {
+                    //               Navigator.push(
+                    //                 context,
+                    //                 MaterialPageRoute(
+                    //                   builder:
+                    //                       (_) => MemberForm(member: member),
+                    //                 ),
+                    //               );
+                    //             },
+                    //             icon: const Icon(Icons.edit),
+                    //             label: const Text(
+                    //               "Edit",
+                    //               style: TextStyle(fontSize: 12),
+                    //             ),
+                    //             style: ElevatedButton.styleFrom(
+                    //               backgroundColor: theme.colorScheme.primary,
+                    //             ),
+                    //           ),
+                    //           IconButton(
+                    //             icon: Icon(
+                    //               Icons.visibility,
+                    //               color: Colors.blue[600],
+                    //               size: 20,
+                    //             ),
+                    //             onPressed: () {
+                    //               UserCredentialsBottomSheet.show(
+                    //                 context,
+                    //                 targetEmail: member.email,
+                    //                 targetName: member.name,
+                    //                 isMember: true,
+                    //               );
+                    //             },
+                    //             tooltip: 'View Credentials',
+                    //           ),
+                    //         ],
+                    //       ),
+                    //     ],
+                    //   ),
+                    // );
                   },
                 );
               },

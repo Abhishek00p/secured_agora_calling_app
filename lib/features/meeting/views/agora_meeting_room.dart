@@ -349,7 +349,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                                           meetingController.currentUser.userId,
                                         );
                                     return CircleAvatar(
-                                      radius: 60,
+                                      radius: 65,
                                       backgroundColor:
                                           isPttActive
                                               ? Colors.green
@@ -359,7 +359,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                                       child: Icon(
                                         isPttActive ? Icons.mic : Icons.mic_off,
                                         color: Colors.white,
-                                        size: 50,
+                                        size: 55,
                                       ),
                                     );
                                     // );
@@ -525,20 +525,61 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
             Positioned(
               top: 8,
               left: 8,
-              child: GestureDetector(
-                onTap:
-                    () => _showRemoveParticipantDialog(
+              child: PopupMenuButton<String>(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (value) {
+                  if (value == 'remove') {
+                    _showRemoveParticipantDialog(
                       context,
                       user,
                       meetingController,
-                    ),
+                    );
+                  } else if (value == 'mute') {
+                    // TODO: implement mute logic
+                    meetingController.muteParticipant(user);
+                  }
+                },
+                itemBuilder:
+                    (context) => [
+                      PopupMenuItem(
+                        value: 'remove',
+                        child: Row(
+                          children: const [
+                            Icon(Icons.close, color: Colors.red, size: 18),
+                            SizedBox(width: 8),
+                            Text("Remove"),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'mute',
+                        child: Row(
+                          children: const [
+                            Icon(
+                              Icons.volume_off,
+                              color: Colors.blue,
+                              size: 18,
+                            ),
+                            SizedBox(width: 8),
+                            Text("Mute"),
+                          ],
+                        ),
+                      ),
+                    ],
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.8),
+                    color: Colors.black.withOpacity(0.6),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.close, color: Colors.white, size: 14),
+                  child: const Icon(
+                    Icons.more_vert,
+                    color: Colors.white,
+                    size: 16,
+                  ),
                 ),
               ),
             ),
@@ -578,7 +619,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
       itemBuilder: (context, index) {
         final user = viewParticipants[index];
         return SizedBox(
-          height: 200, // Give a fixed height to the list items
+          height: 180, // Give a fixed height to the list items
           child: _buildParticipantTile(user, meetingController),
         );
       },

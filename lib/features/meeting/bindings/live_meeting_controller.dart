@@ -707,7 +707,7 @@ class MeetingController extends GetxController {
 
       // Navigate back to home page
       if (Get.context != null && Get.context!.mounted) {
-        Get.back();
+        Get.offAllNamed(AppRouter.homeRoute);
         AppLogger.print('Navigated back to home');
       }
 
@@ -1053,5 +1053,9 @@ class MeetingController extends GetxController {
     } finally {
       update();
     }
+  }
+
+  void muteParticipant(ParticipantModel user) {
+    //TODO: implement mute participant
   }
 }

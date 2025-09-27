@@ -35,7 +35,6 @@ void main() async {
 
   // Initialize AppLifecycleManager
   Get.put(AppLifecycleManager());
-
   // Initialize AppSoundService
   await AppSoundService().initialize();
 
