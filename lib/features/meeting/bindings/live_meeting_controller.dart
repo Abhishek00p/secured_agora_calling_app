@@ -719,7 +719,9 @@ class MeetingController extends GetxController {
 
       // Navigate back to home page
       if (Get.context != null && Get.context!.mounted) {
-        Get.offAllNamed(AppRouter.homeRoute);
+        WidgetsBinding.instance.addPostFrameCallback((s) {
+          Get.offAllNamed(AppRouter.homeRoute);
+        });
         AppLogger.print('Navigated back to home');
       }
 

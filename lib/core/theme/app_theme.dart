@@ -301,7 +301,7 @@ class AppTheme {
   //       foregroundColor: Colors.white,
   //     ),
   //     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-  //       backgroundColor: darkBackgroundColor,
+  //       backgroundColor: darkBackgroundColor,R
   //       selectedItemColor: primaryColor,
   //       unselectedItemColor: darkSecondaryTextColor,
   //       type: BottomNavigationBarType.fixed,

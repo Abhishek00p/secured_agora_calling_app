@@ -37,6 +37,5 @@ void main() async {
   Get.put(AppLifecycleManager());
   // Initialize AppSoundService
   await AppSoundService().initialize();
-
   runApp(const App());
 }

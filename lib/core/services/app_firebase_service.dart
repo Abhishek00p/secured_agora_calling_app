@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:secured_calling/core/constants.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/services/http_service.dart';
@@ -635,45 +636,72 @@ class AppFirebaseService {
         '';
   }
 
-  Stream<bool> isCurrentUserMutedByHost(String meetingId) async* {
+  Stream<bool> isCurrentUserMutedByHost(String meetingId)  {
+     if (meetingId.trim().isEmpty) {
+    debugPrint('[isCurrentUserMutedByHost] Meeting ID is empty. Listener setup failed.');
+    // Return a stream that emits false immediately and closes
+    return Stream.value(false);
+  }
     final userId = AppLocalStorage.getUserDetails().userId;
-    yield* meetingsCollection.doc(meetingId).snapshots().map((snapshot) {
+    return meetingsCollection.doc(meetingId).snapshots().map((snapshot) {
       final data = snapshot.data() as Map<String, dynamic>?;
       if (data != null && data['isParticipantsMuted'] != null) {
         final rawMap = data['isParticipantsMuted'] as Map<String, dynamic>;
-        final mutedMap = rawMap.map(
-          (key, value) => MapEntry(key, value as bool),
-        );
-        return mutedMap[userId.toString()] ?? false;
+   
+          final isMuted = rawMap[userId.toString()];
+      if (isMuted is bool) {
+        return isMuted;
+      } else {
+        debugPrint('[isCurrentUserMutedByHost] Mute status not found or not a bool for user $userId.');
+        return false;
+      }
       }
       return false;
     });
   }
 
-  void muteParticipants(String meetingId, int userId, bool isMute) async {
-    final meetingDoc = await meetingsCollection.doc(meetingId).get();
-    final data = meetingDoc.data() as Map<String, dynamic>?;
-
-    if (data != null) {
-      final Map<String, dynamic> mutedMap = data['isParticipantsMuted'] ?? {};
-      final Map<int, bool> isParticipantsMuted = {
-        for (var entry in mutedMap.entries)
-          int.parse(entry.key): entry.value as bool,
-      };
-
-      isParticipantsMuted[userId] = isMute;
-
-      // Convert keys back to String before uploading
-      final Map<String, bool> updatedMutedMap = {
-        for (var entry in isParticipantsMuted.entries)
-          entry.key.toString(): entry.value,
-      };
-
-      await meetingsCollection.doc(meetingId).update({
-        'isParticipantsMuted': updatedMutedMap,
-      });
+  Future<void> muteParticipants(String meetingId, int userId, bool isMute) async {
+  try {
+    if(meetingId.trim().isEmpty ){
+      print("meetingId cannot be empty");
+      return;
     }
+    final meetingDoc = await meetingsCollection.doc(meetingId).get();
+
+    if (!meetingDoc.exists) {
+      print('Meeting document not found for ID: $meetingId');
+      return;
+    }
+
+    final data = meetingDoc.data() as Map<String, dynamic>? ??{};
+
+
+    final mutedMap = Map<String, dynamic>.from(data['isParticipantsMuted'] ?? {});
+    
+    // Convert to Map<int, bool>
+    final isParticipantsMuted = mutedMap.map<int, bool>((key, value) {
+      return MapEntry(int.tryParse(key) ?? -1, value as bool);
+    })..removeWhere((key, _) => key == -1); // Remove invalid keys
+
+    isParticipantsMuted[userId] = isMute;
+
+    // Convert back to Map<String, bool> for Firestore
+    final updatedMutedMap = isParticipantsMuted.map((key, value) {
+      return MapEntry(key.toString(), value);
+    });
+
+    await meetingsCollection.doc(meetingId).update({
+      'isParticipantsMuted': updatedMutedMap,
+    });
+
+    print("Participant muted Successfully...");
+  } catch (e, stackTrace) {
+    // Logging or error reporting
+    print('Error in muteParticipants: $e');
+    // Optionally send to error reporting service
   }
+}
+
 
   Future<List<AppUser>> getAllUserOfMember(String memberCode) async {
     final QuerySnapshot querySnapshot =
