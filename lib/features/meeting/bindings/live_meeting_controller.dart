@@ -530,10 +530,7 @@ class MeetingController extends GetxController {
                   return ParticipantModel(
                     userId: data['userId'],
                     name: data['username'],
-                    isUserMuted:
-                        !pttUsers.contains(
-                          data['userId'],
-                        ), // Muted if not in PTT
+                    isUserMuted: data['isMuted'] as bool? ?? false,
                     isUserSpeaking: false, // This will be updated by Agora
                     color: WarmColorGenerator.getRandomWarmColorByIndex(
                       data['colorIndex'] ?? 0,
@@ -1011,15 +1008,27 @@ class MeetingController extends GetxController {
     super.onClose();
   }
 
-  void muteThisParticipantsForAllUser(ParticipantModel user) {
-    _firebaseService.muteParticipants(meetingId, user.userId, true);
-    update();
+  void muteThisParticipantsForAllUser(ParticipantModel user) async {
+    if (!isHost) return;
+    await _agoraService.muteRemoteAudioStream(userId: user.userId, mute: true);
+    await _firebaseService.muteParticipants(meetingId, user.userId, true);
+    final index = participants.indexWhere((p) => p.userId == user.userId);
+    if (index != -1) {
+      participants[index] = participants[index].copyWith(isUserMuted: true);
+      update();
+    }
   }
 
-  void unMuteThisParticipantsForAllUser(ParticipantModel user) {
-    _firebaseService.muteParticipants(meetingId, user.userId, false);
-
-    update();
+  void unMuteThisParticipantsForAllUser(ParticipantModel user) async {
+    if (!isHost) return;
+    await _agoraService.muteRemoteAudioStream(
+        userId: user.userId, mute: false);
+    await _firebaseService.muteParticipants(meetingId, user.userId, false);
+    final index = participants.indexWhere((p) => p.userId == user.userId);
+    if (index != -1) {
+      participants[index] = participants[index].copyWith(isUserMuted: false);
+      update();
+    }
   }
 
   /// Extend meeting by 30 minutes (convenience method)

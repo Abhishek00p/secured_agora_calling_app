@@ -480,12 +480,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  // user.isUserMuted
-                  !(meetingController.pttUsers.contains(user.userId))
+                  user.isUserMuted || !(meetingController.pttUsers.contains(user.userId))
                       ? Icons.mic_off
                       : Icons.mic,
                   color:
-                      !(meetingController.pttUsers.contains(user.userId))
+                      user.isUserMuted || !(meetingController.pttUsers.contains(user.userId))
                           ? Colors.red
                           : Colors.white,
                   size: 20,
@@ -541,36 +540,39 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                       meetingController,
                     );
                   } else if (value == 'mute') {
-                    meetingController.muteThisParticipantsForAllUser(user);
+                    if (user.isUserMuted) {
+                      meetingController.unMuteThisParticipantsForAllUser(user);
+                    } else {
+                      meetingController.muteThisParticipantsForAllUser(user);
+                    }
                   }
                 },
-                itemBuilder:
-                    (context) => [
-                      PopupMenuItem(
-                        value: 'remove',
-                        child: Row(
-                          children: const [
-                            Icon(Icons.close, color: Colors.red, size: 18),
-                            SizedBox(width: 8),
-                            Text("Remove"),
-                          ],
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'remove',
+                    child: Row(
+                      children: const [
+                        Icon(Icons.close, color: Colors.red, size: 18),
+                        SizedBox(width: 8),
+                        Text("Remove"),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'mute',
+                    child: Row(
+                      children: [
+                        Icon(
+                          user.isUserMuted ? Icons.volume_up : Icons.volume_off,
+                          color: Colors.blue,
+                          size: 18,
                         ),
-                      ),
-                      PopupMenuItem(
-                        value: 'mute',
-                        child: Row(
-                          children: const [
-                            Icon(
-                              Icons.volume_off,
-                              color: Colors.blue,
-                              size: 18,
-                            ),
-                            SizedBox(width: 8),
-                            Text("Mute"),
-                          ],
-                        ),
-                      ),
-                    ],
+                        SizedBox(width: 8),
+                        Text(user.isUserMuted ? "Unmute" : "Mute"),
+                      ],
+                    ),
+                  ),
+                ],
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(

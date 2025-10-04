@@ -115,6 +115,13 @@ class AgoraService {
     await _engine?.muteLocalVideoStream(mute);
   }
 
+  Future<void> muteRemoteAudioStream({
+    required int userId,
+    required bool mute,
+  }) async {
+    await _engine?.muteRemoteAudioStream(uid: userId, mute: mute);
+  }
+
   // Start/stop screen sharing
   Future<void> startScreenSharing() async {
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
