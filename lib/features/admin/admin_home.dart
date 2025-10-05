@@ -338,24 +338,24 @@ class _AdminScreenState extends State<AdminScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              OutlinedButton.icon(
-                                onPressed:
-                                    () => showReminderDialog(context, member),
-                                icon: const Icon(Icons.notifications, size: 18),
-                                label: const Text(
-                                  "Reminder",
-                                  style: TextStyle(fontSize: 13),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
+                              // OutlinedButton.icon(
+                              //   onPressed:
+                              //       () => showReminderDialog(context, member),
+                              //   icon: const Icon(Icons.notifications, size: 18),
+                              //   label: const Text(
+                              //     "Reminder",
+                              //     style: TextStyle(fontSize: 13),
+                              //   ),
+                              //   style: OutlinedButton.styleFrom(
+                              //     padding: const EdgeInsets.symmetric(
+                              //       horizontal: 12,
+                              //       vertical: 10,
+                              //     ),
+                              //     shape: RoundedRectangleBorder(
+                              //       borderRadius: BorderRadius.circular(10),
+                              //     ),
+                              //   ),
+                              // ),
                               ElevatedButton.icon(
                                 onPressed: () {
                                   Navigator.push(
@@ -382,22 +382,33 @@ class _AdminScreenState extends State<AdminScreen> {
                                   ),
                                 ),
                               ),
-                              IconButton(
-                                icon: Icon(
-                                  Icons.visibility,
-                                  color: Colors.blue[600],
-                                  size: 22,
-                                ),
-                                onPressed: () {
+                                OutlinedButton.icon(
+                                onPressed:
+                                  () {
                                   UserCredentialsBottomSheet.show(
                                     context,
                                     targetEmail: member.email,
                                     targetName: member.name,
                                     isMember: true,
+                                    userId: member.id
                                   );
                                 },
-                                tooltip: 'View Credentials',
+                                icon: const Icon(Icons.remove_red_eye, size: 18),
+                                label: const Text(
+                                  "view more",
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
                               ),
+                             
                             ],
                           ),
                         ],

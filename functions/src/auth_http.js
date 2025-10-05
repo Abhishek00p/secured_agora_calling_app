@@ -251,14 +251,15 @@ exports.createUser = functions.https.onRequest(async (req, res) => {
         });
       }
 
-      if (!isValidEmail(email)) {
+      if(email.length < 5){
         return res.status(400).json({
           success: false,
           data: null,
-          error_message: 'Invalid email format'
+          error_message: 'User ID must be 5 characters or more'
         });
       }
 
+     
       if (password.length < 6) {
         return res.status(400).json({
           success: false,
@@ -306,9 +307,10 @@ exports.createUser = functions.https.onRequest(async (req, res) => {
         return res.status(409).json({
           success: false,
           data: null,
-          error_message: 'User with this email already exists'
+          error_message: 'User with this UserId already exists'
         });
       }
+      const memberSubscription = currentUserData.subscription;
 
       // Hash password
       const hashedPassword = await hashPassword(password);
@@ -330,7 +332,7 @@ exports.createUser = functions.https.onRequest(async (req, res) => {
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         isMember: false,
         isActive: true,
-        subscription: null
+        subscription: memberSubscription
       };
 
       await db.collection('users').doc(String(userId)).set(userData);
@@ -405,11 +407,11 @@ exports.createMember = functions.https.onRequest(async (req, res) => {
         });
       }
 
-      if (!isValidEmail(email)) {
+      if(email.length < 5){
         return res.status(400).json({
           success: false,
           data: null,
-          error_message: 'Invalid email format'
+          error_message: 'User ID must be 5 characters or more'
         });
       }
 
@@ -451,7 +453,7 @@ exports.createMember = functions.https.onRequest(async (req, res) => {
         return res.status(409).json({
           success: false,
           data: null,
-          error_message: 'User with this email already exists'
+          error_message: 'User with this User Id already exists'
         });
       }
 

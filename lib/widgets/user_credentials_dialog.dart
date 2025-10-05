@@ -353,8 +353,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_password_reset_service.dart';
 import 'package:secured_calling/core/services/app_user_role_service.dart';
+import 'package:secured_calling/features/home/views/delete_confirmation_dialog.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/widgets/password_reset_dialog.dart';
@@ -363,12 +365,14 @@ class UserCredentialsBottomSheet extends StatefulWidget {
   final String targetEmail;
   final String targetName;
   final bool isMember;
+  final String userId;
 
   const UserCredentialsBottomSheet({
     super.key,
     required this.targetEmail,
     required this.targetName,
     required this.isMember,
+    required this.userId,
   });
 
   @override
@@ -381,6 +385,7 @@ class UserCredentialsBottomSheet extends StatefulWidget {
     required String targetEmail,
     required String targetName,
     required bool isMember,
+    required String userId,
   }) async {
     await showModalBottomSheet(
       context: context,
@@ -397,6 +402,7 @@ class UserCredentialsBottomSheet extends StatefulWidget {
               targetEmail: targetEmail,
               targetName: targetName,
               isMember: isMember,
+              userId: userId,
             ),
           ),
     );
@@ -625,6 +631,41 @@ class _UserCredentialsBottomSheetState
                 ),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder:
+                      (context) => DeleteConfirmationDialog(
+                        description: 'This action cannot be undone.',
+                        onCancel: () {
+                          Navigator.of(context).pop();
+                          // Add your cancellation logic here
+                        },
+                        onDelete: () {
+                          AppFirebaseService.instance.usersCollection
+                              .doc(widget.userId)
+                              .delete();
+                          Navigator.of(context).pop();
+                          // Add your deletion logic here
+                        },
+                      ),
+                );
+              },
+              icon: const Icon(Icons.delete_outline_rounded),
+              label: const Text('Delete User'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

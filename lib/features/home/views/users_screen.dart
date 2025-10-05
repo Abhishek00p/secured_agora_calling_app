@@ -183,72 +183,34 @@ class _UsersScreenState extends State<UsersScreen> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(user.email),
-                                if (user.createdAt != null)
-                                  Text(
-                                    'Joined: ${_formatDate(user.createdAt)}',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
+                            subtitle: SizedBox(
+                              width: MediaQuery.sizeOf(context).width * 0.5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(user.email),
+                                  if (user.createdAt != null)
+                                    Text(
+                                      'Joined: ${_formatDate(user.createdAt)}',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.visibility,
-                                    color: Colors.blue[600],
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    UserCredentialsBottomSheet.show(
-                                      context,
-                                      targetEmail: user.email,
-                                      targetName: user.name,
-                                      isMember: false,
-                                    );
-                                  },
-                                  tooltip: 'View Credentials',
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.delete_outline_rounded,
-                                    color: Colors.redAccent,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder:
-                                          (context) => DeleteConfirmationDialog(
-                                            description:
-                                                'This action cannot be undone.',
-                                            onCancel: () {
-                                              Navigator.of(context).pop();
-                                              // Add your cancellation logic here
-                                            },
-                                            onDelete: () {
-                                              AppFirebaseService
-                                                  .instance
-                                                  .usersCollection
-                                                  .doc(user.firebaseUserId)
-                                                  .delete();
-                                              Navigator.of(context).pop();
-                                              _loadUsers();
-                                              // Add your deletion logic here
-                                            },
-                                          ),
-                                    );
-                                  },
-                                  tooltip: 'Delete User',
-                                ),
-                              ],
+                            trailing: ElevatedButton(
+                              child: Text('View more',style: TextStyle(fontSize:10 ),),
+                              onPressed: () {
+                                UserCredentialsBottomSheet.show(
+                                  context,
+                                  targetEmail: user.email,
+                                  targetName: user.name,
+                                  isMember: false,
+                                  userId: user.userId.toString(),
+                                );
+                              },
                             ),
                           ),
                         );

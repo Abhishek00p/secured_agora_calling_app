@@ -101,30 +101,27 @@ class Subscription {
   final DateTime startDate;
   final DateTime expiryDate;
 
-  Subscription({this.plan = '', DateTime? startDate, DateTime? expiryDate})
-    : startDate = startDate ?? DateTime.fromMillisecondsSinceEpoch(0),
-      expiryDate = expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+  Subscription({
+    this.plan = '',
+    DateTime? startDate,
+    DateTime? expiryDate,
+  })  : startDate = startDate ?? DateTime.fromMillisecondsSinceEpoch(0),
+        expiryDate = expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   factory Subscription.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Subscription.toEmpty();
-    print(
-      " we are inside usermodel parsing user data and subscription data re : $json",
-    );
     return Subscription(
       plan: json['plan'] as String? ?? '',
-      startDate:
-          json['startDate'] is String
-              ? DateTime.parse(json['startDate'])
-              : json['startDate'] is Timestamp
-              ? (json['startDate'] as Timestamp?)?.toDate()
-              : null,
-      expiryDate:
-          json['expiryDate'] is String
-              ? DateTime.parse(json['expiryDate'])
-              : json['expiryDate'] is Timestamp
-              ? (json['expiryDate'] as Timestamp?)?.toDate()
-              : null,
+      startDate: _parseDate(json['startDate']),
+      expiryDate: _parseDate(json['expiryDate']),
     );
+  }
+
+  static DateTime _parseDate(dynamic value) {
+    if (value == null) return DateTime.fromMillisecondsSinceEpoch(0);
+    if (value is Timestamp) return value.toDate();
+    if (value is String && value.isNotEmpty) return DateTime.parse(value);
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   Map<String, dynamic> toJson() {
@@ -135,7 +132,9 @@ class Subscription {
     };
   }
 
-  bool get isEmpty => plan.isEmpty;
+  bool get isEmpty =>
+      plan.isEmpty && startDate.millisecondsSinceEpoch == 0 && expiryDate.millisecondsSinceEpoch == 0;
+
   static Subscription toEmpty() => Subscription();
 
   Subscription copyWith({

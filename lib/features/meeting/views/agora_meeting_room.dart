@@ -300,9 +300,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                         if (meetingController.isHost) ...[JoinRequestWidget()],
                         Padding(
                           padding: const EdgeInsets.only(bottom: 30.0),
-                          child: Wrap(
-                            runSpacing: 24,
-                            alignment: WrapAlignment.spaceEvenly,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            // runSpacing: 24,
+                            // alignment: WrapAlignment.spaceEvenly,
                             children: [
                               if (meetingController.isHost) ...[
                                 GestureDetector(
@@ -352,7 +353,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                                           meetingController.currentUser.userId,
                                         );
                                     return CircleAvatar(
-                                      radius: 65,
+                                      radius: 75,
                                       backgroundColor:
                                           isPttActive
                                               ? Colors.green
@@ -362,16 +363,16 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                                       child: Icon(
                                         isPttActive ? Icons.mic : Icons.mic_off,
                                         color: Colors.white,
-                                        size: 55,
+                                        size: 65,
                                       ),
                                     );
                                     // );
                                   }),
                                 ),
                               ],
-                              Row(
+                              Column(
                                 mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                                    MainAxisAlignment.spaceAround,
                                 children: [
                                   Obx(
                                     () => OutlinedButton(
@@ -416,6 +417,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                                       ),
                                     ),
                                   ),
+                                  16.h,
                                   _buildEndCallButton(
                                     context: context,
                                     isHost: meetingController.isHost,
@@ -426,6 +428,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                                   ),
                                 ],
                               ),
+                            
                             ],
                           ),
                         ),
@@ -539,13 +542,14 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                       user,
                       meetingController,
                     );
-                  } else if (value == 'mute') {
-                    if (user.isUserMuted) {
-                      meetingController.unMuteThisParticipantsForAllUser(user);
-                    } else {
-                      meetingController.muteThisParticipantsForAllUser(user);
-                    }
-                  }
+                  } 
+                  // else if (value == 'mute') {
+                  //   if (user.isUserMuted) {
+                  //     meetingController.unMuteThisParticipantsForAllUser(user);
+                  //   } else {
+                  //     meetingController.muteThisParticipantsForAllUser(user);
+                  //   }
+                  // }
                 },
                 itemBuilder: (context) => [
                   PopupMenuItem(
@@ -558,20 +562,20 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                       ],
                     ),
                   ),
-                  PopupMenuItem(
-                    value: 'mute',
-                    child: Row(
-                      children: [
-                        Icon(
-                          user.isUserMuted ? Icons.volume_up : Icons.volume_off,
-                          color: Colors.blue,
-                          size: 18,
-                        ),
-                        SizedBox(width: 8),
-                        Text(user.isUserMuted ? "Unmute" : "Mute"),
-                      ],
-                    ),
-                  ),
+                  // PopupMenuItem(
+                  //   value: 'mute',
+                  //   child: Row(
+                  //     children: [
+                  //       Icon(
+                  //         user.isUserMuted ? Icons.volume_up : Icons.volume_off,
+                  //         color: Colors.blue,
+                  //         size: 18,
+                  //       ),
+                  //       SizedBox(width: 8),
+                  //       Text(user.isUserMuted ? "Unmute" : "Mute"),
+                  //     ],
+                  //   ),
+                  // ),
                 ],
                 child: Container(
                   padding: const EdgeInsets.all(4),
