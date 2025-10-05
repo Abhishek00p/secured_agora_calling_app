@@ -101,12 +101,9 @@ class Subscription {
   final DateTime startDate;
   final DateTime expiryDate;
 
-  Subscription({
-    this.plan = '',
-    DateTime? startDate,
-    DateTime? expiryDate,
-  })  : startDate = startDate ?? DateTime.fromMillisecondsSinceEpoch(0),
-        expiryDate = expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+  Subscription({this.plan = '', DateTime? startDate, DateTime? expiryDate})
+    : startDate = startDate ?? DateTime.fromMillisecondsSinceEpoch(0),
+      expiryDate = expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   factory Subscription.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Subscription.toEmpty();
@@ -133,7 +130,9 @@ class Subscription {
   }
 
   bool get isEmpty =>
-      plan.isEmpty && startDate.millisecondsSinceEpoch == 0 && expiryDate.millisecondsSinceEpoch == 0;
+      plan.isEmpty &&
+      startDate.millisecondsSinceEpoch == 0 &&
+      expiryDate.millisecondsSinceEpoch == 0;
 
   static Subscription toEmpty() => Subscription();
 

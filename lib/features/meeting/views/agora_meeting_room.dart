@@ -428,7 +428,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                                   ),
                                 ],
                               ),
-                            
                             ],
                           ),
                         ),
@@ -483,11 +482,15 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  user.isUserMuted || !(meetingController.pttUsers.contains(user.userId))
+                  user.isUserMuted ||
+                          !(meetingController.pttUsers.contains(user.userId))
                       ? Icons.mic_off
                       : Icons.mic,
                   color:
-                      user.isUserMuted || !(meetingController.pttUsers.contains(user.userId))
+                      user.isUserMuted ||
+                              !(meetingController.pttUsers.contains(
+                                user.userId,
+                              ))
                           ? Colors.red
                           : Colors.white,
                   size: 20,
@@ -542,7 +545,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                       user,
                       meetingController,
                     );
-                  } 
+                  }
                   // else if (value == 'mute') {
                   //   if (user.isUserMuted) {
                   //     meetingController.unMuteThisParticipantsForAllUser(user);
@@ -551,32 +554,33 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
                   //   }
                   // }
                 },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'remove',
-                    child: Row(
-                      children: const [
-                        Icon(Icons.close, color: Colors.red, size: 18),
-                        SizedBox(width: 8),
-                        Text("Remove"),
-                      ],
-                    ),
-                  ),
-                  // PopupMenuItem(
-                  //   value: 'mute',
-                  //   child: Row(
-                  //     children: [
-                  //       Icon(
-                  //         user.isUserMuted ? Icons.volume_up : Icons.volume_off,
-                  //         color: Colors.blue,
-                  //         size: 18,
-                  //       ),
-                  //       SizedBox(width: 8),
-                  //       Text(user.isUserMuted ? "Unmute" : "Mute"),
-                  //     ],
-                  //   ),
-                  // ),
-                ],
+                itemBuilder:
+                    (context) => [
+                      PopupMenuItem(
+                        value: 'remove',
+                        child: Row(
+                          children: const [
+                            Icon(Icons.close, color: Colors.red, size: 18),
+                            SizedBox(width: 8),
+                            Text("Remove"),
+                          ],
+                        ),
+                      ),
+                      // PopupMenuItem(
+                      //   value: 'mute',
+                      //   child: Row(
+                      //     children: [
+                      //       Icon(
+                      //         user.isUserMuted ? Icons.volume_up : Icons.volume_off,
+                      //         color: Colors.blue,
+                      //         size: 18,
+                      //       ),
+                      //       SizedBox(width: 8),
+                      //       Text(user.isUserMuted ? "Unmute" : "Mute"),
+                      //     ],
+                      //   ),
+                      // ),
+                    ],
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(

@@ -161,7 +161,7 @@ class _UserCreationFormState extends State<UserCreationForm> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter the user\'s Id';
                   }
-                
+
                   return null;
                 },
               ),

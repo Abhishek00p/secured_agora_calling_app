@@ -382,18 +382,20 @@ class _AdminScreenState extends State<AdminScreen> {
                                   ),
                                 ),
                               ),
-                                OutlinedButton.icon(
-                                onPressed:
-                                  () {
+                              OutlinedButton.icon(
+                                onPressed: () {
                                   UserCredentialsBottomSheet.show(
                                     context,
                                     targetEmail: member.email,
                                     targetName: member.name,
                                     isMember: true,
-                                    userId: member.id
+                                    userId: member.id,
                                   );
                                 },
-                                icon: const Icon(Icons.remove_red_eye, size: 18),
+                                icon: const Icon(
+                                  Icons.remove_red_eye,
+                                  size: 18,
+                                ),
                                 label: const Text(
                                   "view more",
                                   style: TextStyle(fontSize: 13),
@@ -408,7 +410,6 @@ class _AdminScreenState extends State<AdminScreen> {
                                   ),
                                 ),
                               ),
-                             
                             ],
                           ),
                         ],

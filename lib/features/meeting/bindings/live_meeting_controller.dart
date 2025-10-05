@@ -1021,8 +1021,7 @@ class MeetingController extends GetxController {
 
   void unMuteThisParticipantsForAllUser(ParticipantModel user) async {
     if (!isHost) return;
-    await _agoraService.muteRemoteAudioStream(
-        userId: user.userId, mute: false);
+    await _agoraService.muteRemoteAudioStream(userId: user.userId, mute: false);
     await _firebaseService.muteParticipants(meetingId, user.userId, false);
     final index = participants.indexWhere((p) => p.userId == user.userId);
     if (index != -1) {

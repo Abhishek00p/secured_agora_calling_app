@@ -201,7 +201,10 @@ class _UsersScreenState extends State<UsersScreen> {
                               ),
                             ),
                             trailing: ElevatedButton(
-                              child: Text('View more',style: TextStyle(fontSize:10 ),),
+                              child: Text(
+                                'View more',
+                                style: TextStyle(fontSize: 10),
+                              ),
                               onPressed: () {
                                 UserCredentialsBottomSheet.show(
                                   context,

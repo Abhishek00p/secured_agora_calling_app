@@ -40,4 +40,3 @@ void main() async {
   await AppSoundService().initialize();
   runApp(const App());
 }
-

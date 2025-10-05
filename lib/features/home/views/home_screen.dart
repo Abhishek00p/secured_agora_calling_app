@@ -85,14 +85,14 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-   AppUser user = AppUser.toEmpty();
+  AppUser user = AppUser.toEmpty();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-    loadUserData();
+      loadUserData();
     });
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
@@ -104,12 +104,14 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> loadUserData() async {
-    try{
-    final data = await AppFirebaseService.instance.getUserData(AppLocalStorage.getUserDetails().userId.toString());
-    setState(() {
-      user = AppUser.fromJson(data.data() as Map<String, dynamic>);
-    });
-    }catch(e){
+    try {
+      final data = await AppFirebaseService.instance.getUserData(
+        AppLocalStorage.getUserDetails().userId.toString(),
+      );
+      setState(() {
+        user = AppUser.fromJson(data.data() as Map<String, dynamic>);
+      });
+    } catch (e) {
       AppLogger.print("error while fetching user data in home screen : $e");
     }
   }
@@ -122,7 +124,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {

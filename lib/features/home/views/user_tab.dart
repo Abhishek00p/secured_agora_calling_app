@@ -79,9 +79,9 @@ class _UserTabState extends State<UserTab> {
                 children: [
                   Text(
                     'Recent Meetings',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   IconButton(
                     onPressed: () {
