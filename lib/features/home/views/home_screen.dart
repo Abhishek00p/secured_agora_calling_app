@@ -2,7 +2,10 @@ import 'package:flutter/services.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/app_color_extension.dart';
+import 'package:secured_calling/core/extensions/date_time_extension.dart';
+import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/app_user_role_service.dart';
@@ -14,6 +17,7 @@ import 'package:secured_calling/features/home/views/membar_tab_view_widget.dart'
 import 'package:secured_calling/features/home/views/user_tab.dart';
 import 'package:secured_calling/features/home/views/users_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 
 enum UserType { user, member }
@@ -81,11 +85,15 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  AppUser user = AppUser.toEmpty();
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadUserData();
+    });
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         setState(() {
@@ -93,10 +101,19 @@ class _HomeScreenState extends State<HomeScreen>
         });
       }
     });
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // _showNotificationPermissionSheet(context);
-    });
+  Future<void> loadUserData() async {
+    try {
+      final data = await AppFirebaseService.instance.getUserData(
+        AppLocalStorage.getUserDetails().userId.toString(),
+      );
+      setState(() {
+        user = AppUser.fromJson(data.data() as Map<String, dynamic>);
+      });
+    } catch (e) {
+      AppLogger.print("error while fetching user data in home screen : $e");
+    }
   }
 
   @override
@@ -107,8 +124,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final user = AppLocalStorage.getUserDetails();
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -302,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                           8.w,
                           Text(
-                            'Expires: ${user.planExpiryDate ?? 'N/A'}',
+                            'Expires: ${user.subscription.expiryDate.formatDate ?? 'N/A'}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,

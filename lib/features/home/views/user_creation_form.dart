@@ -155,17 +155,13 @@ class _UserCreationFormState extends State<UserCreationForm> {
               // Email Field
               AppTextFormField(
                 controller: _emailController,
-                labelText: 'Email',
-                type: AppTextFormFieldType.email,
+                labelText: 'User Id',
+                type: AppTextFormFieldType.text,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter the user\'s email';
+                    return 'Please enter the user\'s Id';
                   }
-                  if (!RegExp(
-                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                  ).hasMatch(value)) {
-                    return 'Please enter a valid email';
-                  }
+
                   return null;
                 },
               ),

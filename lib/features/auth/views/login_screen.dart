@@ -166,8 +166,8 @@ class _LoginFormState extends State<LoginForm> {
         children: [
           AppTextFormField(
             controller: loginRegisterController.loginEmailController,
-            labelText: 'Email',
-            type: AppTextFormFieldType.email,
+            labelText: 'User Id',
+            type: AppTextFormFieldType.text,
           ),
 
           const SizedBox(height: 16),
