@@ -51,7 +51,7 @@ class AppHttpService {
   }
 
   /// Generic GET request
-  Future<Map<String, dynamic>> get(
+  Future<Map<String, dynamic>?> get(
     String endpoint, {
     Map<String, String>? queryParams,
     bool includeAuth = true,
@@ -86,7 +86,7 @@ class AppHttpService {
   }
 
   /// Generic POST request
-  Future<Map<String, dynamic>> post(
+  Future<Map<String, dynamic>?> post(
     String endpoint, {
     Map<String, dynamic>? body,
     bool includeAuth = true,
@@ -121,7 +121,7 @@ class AppHttpService {
   }
 
   /// Generic PUT request
-  Future<Map<String, dynamic>> put(
+  Future<Map<String, dynamic>?> put(
     String endpoint, {
     Map<String, dynamic>? body,
     bool includeAuth = true,
@@ -156,7 +156,7 @@ class AppHttpService {
   }
 
   /// Generic DELETE request
-  Future<Map<String, dynamic>> delete(
+  Future<Map<String, dynamic>?> delete(
     String endpoint, {
     Map<String, dynamic>? body,
     bool includeAuth = true,
@@ -191,12 +191,12 @@ class AppHttpService {
   }
 
   /// Handle HTTP response and return standardized format
-  Map<String, dynamic> _handleResponse(http.Response response) {
+  Map<String, dynamic>? _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       try {
         return jsonDecode(response.body);
       } catch (e) {
-        throw Exception('Invalid JSON response: $e');
+        AppToastUtil.showErrorToast('Invalid JSON response: $e');
       }
     } else {
       try {
@@ -205,9 +205,9 @@ class AppHttpService {
             errorData['error_message'] ??
             errorData['message'] ??
             'Request failed with status ${response.statusCode}';
-        throw Exception(errorMessage);
+        AppToastUtil.showErrorToast(errorMessage);
       } catch (e) {
-        throw Exception(
+        AppToastUtil.showErrorToast(
           'Request failed with status ${response.statusCode}: ${response.reasonPhrase}',
         );
       }
@@ -236,6 +236,10 @@ class AppHttpService {
         'generateToken',
         body: {'channelName': channelName, 'uid': uid, 'userRole': userRole},
       );
+      if (response == null) {
+        AppToastUtil.showErrorToast('Something went wrong, please try again');
+        return null;
+      }
 
       if (response['success'] == true && response['token'] != null) {
         print('token generated successfully from Agora');
@@ -250,7 +254,7 @@ class AppHttpService {
         );
         return response['token'];
       } else {
-        throw Exception(
+        AppToastUtil.showErrorToast(
           response['error_message'] ?? "Token not found in response",
         );
       }
@@ -276,12 +280,16 @@ class AppHttpService {
         'verifyToken',
         body: {'channelName': channelName, 'uid': uid, 'userRole': userRole},
       );
+      if (response == null) {
+        AppToastUtil.showErrorToast('Something went wrong, please try again');
+        return null;
+      }
 
       if (response['success'] == true) {
         print('Token verified successfully');
         return response['token'];
       } else {
-        throw Exception(
+        AppToastUtil.showErrorToast(
           response['error_message'] ?? "Token not found in response",
         );
       }

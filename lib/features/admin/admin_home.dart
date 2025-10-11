@@ -271,8 +271,8 @@ class _AdminScreenState extends State<AdminScreen> {
                                       theme: theme,
                                     ),
                                     _buildDetailRow(
-                                      icon: Icons.email,
-                                      label: "Email",
+                                      icon: Icons.numbers,
+                                      label: "User Id",
                                       value: member.email,
                                       theme: theme,
                                     ),

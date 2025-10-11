@@ -5,7 +5,7 @@ class AppPasswordResetService {
   /// Reset password for a user by admin or member
   /// Only admins can reset member passwords
   /// Only members can reset user passwords under their member code
-  static Future<bool> resetPassword({
+  static Future<bool?> resetPassword({
     required String targetEmail,
     required String newPassword,
     required String currentUserEmail,
@@ -16,6 +16,10 @@ class AppPasswordResetService {
         targetEmail: targetEmail,
         newPassword: newPassword,
       );
+      if (success == null) {
+        AppToastUtil.showErrorToast('Something went wrong, please try again');
+        return null;
+      }
 
       if (success) {
         AppToastUtil.showSuccessToast('Password reset successfully');
@@ -31,7 +35,7 @@ class AppPasswordResetService {
   }
 
   /// Get users that current user can reset passwords for
-  static Future<List<Map<String, dynamic>>> getUsersForPasswordReset() async {
+  static Future<List<Map<String, dynamic>>?> getUsersForPasswordReset() async {
     try {
       final users = await AppAuthService.instance.getUsersForPasswordReset();
       return users;

@@ -107,7 +107,7 @@ class _MemberFormState extends State<MemberForm> {
                   : int.parse(maxParticipantsAllowed.text),
         );
 
-        if (success && mounted) {
+        if ((success ?? false) && mounted) {
           AppToastUtil.showSuccessToast('Member created successfully.');
           Navigator.pop(context);
         }

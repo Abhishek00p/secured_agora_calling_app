@@ -4,6 +4,7 @@ import 'package:secured_calling/models/participant_detail.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_logger.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 
 class MeetingDetailService {
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
@@ -15,7 +16,7 @@ class MeetingDetailService {
           await _firestore.collection('meetings').doc(meetingId).get();
 
       if (!meetingDoc.exists) {
-        throw Exception('Meeting not found');
+        AppToastUtil.showErrorToast('Meeting not found');
       }
 
       final meetingData = meetingDoc.data() as Map<String, dynamic>;
@@ -98,14 +99,16 @@ class MeetingDetailService {
           await _firestore.collection('meetings').doc(meetingId).get();
 
       if (!meetingDoc.exists) {
-        throw Exception('Meeting not found');
+        AppToastUtil.showErrorToast('Meeting not found');
       }
 
       final meetingData = meetingDoc.data() as Map<String, dynamic>;
       final hostUserId = meetingData['hostUserId'] as int?;
 
       if (hostUserId != currentUser.userId) {
-        throw Exception('Only the meeting host can extend the meeting');
+        AppToastUtil.showErrorToast(
+          'Only the meeting host can extend the meeting',
+        );
       }
 
       // Extend the meeting
