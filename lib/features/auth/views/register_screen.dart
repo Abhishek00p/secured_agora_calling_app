@@ -37,15 +37,13 @@ class RegisterForm extends StatelessWidget {
                 const SizedBox(height: 16),
                 AppTextFormField(
                   controller: loginRegisterController.registerEmailController,
-                  labelText: 'Email',
-                  type: AppTextFormFieldType.email,
+                  labelText: 'UserId',
+                  type: AppTextFormFieldType.text,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
+                      return 'Please enter your userId';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                      return 'Please enter a valid email';
-                    }
+
                     return null;
                   },
                 ),

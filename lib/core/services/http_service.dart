@@ -51,7 +51,11 @@ class AppHttpService {
   }
 
   /// Generic GET request
-  Future<Map<String, dynamic>> get(String endpoint, {Map<String, String>? queryParams, bool includeAuth = true}) async {
+  Future<Map<String, dynamic>?> get(
+    String endpoint, {
+    Map<String, String>? queryParams,
+    bool includeAuth = true,
+  }) async {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final finalUri = queryParams != null ? uri.replace(queryParameters: queryParams) : uri;
@@ -77,7 +81,7 @@ class AppHttpService {
   }
 
   /// Generic POST request
-  Future<Map<String, dynamic>> post(String endpoint, {Map<String, dynamic>? body, bool includeAuth = true}) async {
+  Future<Map<String, dynamic>?> post(String endpoint, {Map<String, dynamic>? body, bool includeAuth = true}) async {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
@@ -103,7 +107,7 @@ class AppHttpService {
   }
 
   /// Generic PUT request
-  Future<Map<String, dynamic>> put(String endpoint, {Map<String, dynamic>? body, bool includeAuth = true}) async {
+  Future<Map<String, dynamic>?> put(String endpoint, {Map<String, dynamic>? body, bool includeAuth = true}) async {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
@@ -129,7 +133,7 @@ class AppHttpService {
   }
 
   /// Generic DELETE request
-  Future<Map<String, dynamic>> delete(String endpoint, {Map<String, dynamic>? body, bool includeAuth = true}) async {
+  Future<Map<String, dynamic>?> delete(String endpoint, {Map<String, dynamic>? body, bool includeAuth = true}) async {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
@@ -155,21 +159,21 @@ class AppHttpService {
   }
 
   /// Handle HTTP response and return standardized format
-  Map<String, dynamic> _handleResponse(http.Response response) {
+  Map<String, dynamic>? _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       try {
         return jsonDecode(response.body);
       } catch (e) {
-        throw Exception('Invalid JSON response: $e');
+        AppToastUtil.showErrorToast('Invalid JSON response: $e');
       }
     } else {
       try {
         final errorData = jsonDecode(response.body);
         final errorMessage =
             errorData['error_message'] ?? errorData['message'] ?? 'Request failed with status ${response.statusCode}';
-        throw Exception(errorMessage);
+        return {'success': false, 'error_message': errorMessage};
       } catch (e) {
-        throw Exception('Request failed with status ${response.statusCode}: ${response.reasonPhrase}');
+        AppToastUtil.showErrorToast('Request failed with status ${response.statusCode}: ${response.reasonPhrase}');
       }
     }
   }
@@ -193,6 +197,10 @@ class AppHttpService {
         'generateToken',
         body: {'channelName': channelName, 'uid': uid, 'userRole': userRole},
       );
+      if (response == null) {
+        AppToastUtil.showErrorToast('Something went wrong, please try again');
+        return null;
+      }
 
       if (response['success'] == true && response['token'] != null) {
         print('token generated successfully from Agora');
@@ -205,7 +213,7 @@ class AppHttpService {
         );
         return response['token'];
       } else {
-        throw Exception(response['error_message'] ?? "Token not found in response");
+        AppToastUtil.showErrorToast(response['error_message'] ?? "Token not found in response");
       }
     } on SocketException {
       AppToastUtil.showErrorToast('No Internet connection');
@@ -222,12 +230,16 @@ class AppHttpService {
     try {
       // Use the new CRUD function
       final response = await post('verifyToken', body: {'channelName': channelName, 'uid': uid, 'userRole': userRole});
+      if (response == null) {
+        AppToastUtil.showErrorToast('Something went wrong, please try again');
+        return null;
+      }
 
       if (response['success'] == true) {
         print('Token verified successfully');
         return response['token'];
       } else {
-        throw Exception(response['error_message'] ?? "Token not found in response");
+        AppToastUtil.showErrorToast(response['error_message'] ?? "Token not found in response");
       }
     } on SocketException {
       AppToastUtil.showErrorToast('No Internet connection');

@@ -114,11 +114,11 @@ exports.login = functions.https.onRequest(async (req, res) => {
         });
       }
 
-      if (!isValidEmail(email)) {
+      if (email.isEmpty) {
         return res.status(400).json({
           success: false,
           data: null,
-          error_message: 'Invalid email format'
+          error_message: 'Invalid userId'
         });
       }
 
@@ -580,11 +580,11 @@ exports.resetPassword = functions.https.onRequest(async (req, res) => {
         });
       }
 
-      if (!isValidEmail(targetEmail)) {
+      if (targetEmail.isEmpty) {
         return res.status(400).json({
           success: false,
           data: null,
-          error_message: 'Invalid email format'
+          error_message: 'userId cannot be empty'
         });
       }
 

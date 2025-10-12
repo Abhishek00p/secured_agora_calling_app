@@ -43,7 +43,7 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
         currentUserEmail: currentUser.email,
       );
 
-      if (success && mounted) {
+      if ((success ?? false) && mounted) {
         Navigator.pop(context, true);
       }
     } finally {

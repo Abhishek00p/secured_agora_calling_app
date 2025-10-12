@@ -33,7 +33,7 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                     Text("Member Info", style: theme.textTheme.titleLarge),
                     const SizedBox(height: 12),
                     _infoRow("Name", member.name, theme),
-                    _infoRow("Email", member.email, theme),
+                    _infoRow("userId", member.email, theme),
                     _infoRow("Code", member.memberCode, theme),
                     _infoRow("Plan Days", member.planDays.toString(), theme),
                   ],

@@ -974,7 +974,6 @@ class MeetingController extends GetxController {
     } catch (e) {
       AppLogger.print('Error extending meeting: $e');
       AppToastUtil.showErrorToast('Failed to extend meeting: $e');
-      rethrow;
     } finally {
       update();
     }

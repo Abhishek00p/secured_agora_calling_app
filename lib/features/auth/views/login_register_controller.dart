@@ -55,9 +55,15 @@ class LoginRegisterController extends GetxController {
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
-              throw Exception('Login request timed out. Please check your internet connection and try again.');
+              AppToastUtil.showErrorToast(
+                'Login request timed out. Please check your internet connection and try again.',
+              );
             },
           );
+      if (result == null) {
+        AppToastUtil.showErrorToast('Failed to login. Please try again.');
+        return null;
+      }
 
       AppLogger.print("login successful: ${result['user']}");
       AppToastUtil.showSuccessToast('Login successful');

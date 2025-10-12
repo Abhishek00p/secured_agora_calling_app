@@ -11,6 +11,7 @@ import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/utils/warm_color_generator.dart';
 
 class AppFirebaseService {
@@ -24,6 +25,7 @@ class AppFirebaseService {
 
   // Firestore references
   CollectionReference get usersCollection => _firestore.collection('users');
+  CollectionReference get membersCollection => _firestore.collection('members');
   CollectionReference get meetingsCollection => _firestore.collection('meetings');
   CollectionReference get callLogsCollection => _firestore.collection('call_logs');
 
@@ -202,12 +204,12 @@ class AppFirebaseService {
     try {
       // Validate input
       if (additionalMinutes <= 0) {
-        throw ArgumentError('Additional minutes must be greater than 0');
+        AppToastUtil.showErrorToast('Additional minutes must be greater than 0');
       }
 
       final meetingDoc = await meetingsCollection.doc(meetingId).get();
       if (!meetingDoc.exists) {
-        throw Exception('Meeting not found');
+        AppToastUtil.showErrorToast('Meeting not found');
       }
 
       final meetingData = meetingDoc.data() as Map<String, dynamic>;
@@ -215,7 +217,7 @@ class AppFirebaseService {
       // Check if meeting is still active
       final status = meetingData['status'] as String?;
       if (status == 'ended' || status == 'cancelled') {
-        throw Exception('Cannot extend a meeting that has ended or been cancelled');
+        AppToastUtil.showErrorToast('Cannot extend a meeting that has ended or been cancelled');
       }
 
       // Parse current end time
@@ -248,7 +250,7 @@ class AppFirebaseService {
       AppLogger.print('Meeting $meetingId extended by $additionalMinutes minutes. New end time: $newEndTime');
     } catch (e) {
       AppLogger.print('Error extending meeting: $e');
-      rethrow;
+      AppToastUtil.showErrorToast(e.toString());
     }
   }
 

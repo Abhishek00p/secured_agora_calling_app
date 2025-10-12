@@ -51,7 +51,7 @@ class _UserCreationFormState extends State<UserCreationForm> {
         memberCode: _currentUserMemberCode,
       );
 
-      if (success && mounted) {
+      if ((success ?? false) && mounted) {
         // Clear form
         _formKey.currentState!.reset();
         _nameController.clear();

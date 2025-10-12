@@ -540,10 +540,10 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
 
                     // Email
                     _buildCredentialTile(
-                      label: 'Email',
+                      label: 'UserId',
                       value: _credentials!['email'],
-                      icon: Icons.email,
-                      onCopy: () => _copyToClipboard(_credentials!['email'], 'Email'),
+                      icon: Icons.perm_contact_cal_sharp,
+                      onCopy: () => _copyToClipboard(_credentials!['email'], 'userId'),
                     ),
                     const SizedBox(height: 8),
 
@@ -598,9 +598,14 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
                           Navigator.of(context).pop();
                           // Add your cancellation logic here
                         },
-                        onDelete: () {
+                        onDelete: () async {
                           AppFirebaseService.instance.usersCollection.doc(widget.userId).delete();
-                          Navigator.of(context).pop();
+                          AppFirebaseService.instance.membersCollection.doc(widget.userId).delete();
+                          await Future.delayed(const Duration(milliseconds: 500));
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).pop();
+                          }
                           // Add your deletion logic here
                         },
                       ),
