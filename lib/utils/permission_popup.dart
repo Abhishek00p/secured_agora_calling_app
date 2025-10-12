@@ -5,12 +5,7 @@ class PermissionPopup extends StatelessWidget {
   final String title;
   final String description;
 
-  const PermissionPopup({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
+  const PermissionPopup({super.key, required this.icon, required this.title, required this.description});
 
   @override
   Widget build(BuildContext context) {
@@ -29,14 +24,8 @@ class PermissionPopup extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextButton(
-                child: const Text('Later'),
-                onPressed: () => Navigator.pop(context, false),
-              ),
-              ElevatedButton(
-                child: const Text('Allow'),
-                onPressed: () => Navigator.pop(context, true),
-              ),
+              TextButton(child: const Text('Later'), onPressed: () => Navigator.pop(context, false)),
+              ElevatedButton(child: const Text('Allow'), onPressed: () => Navigator.pop(context, true)),
             ],
           ),
         ],

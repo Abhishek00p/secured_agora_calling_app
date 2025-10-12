@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class PushNotificationSender {
-  final String serverKey =
-      'YOUR_FIREBASE_SERVER_KEY'; // ⚠️ DON'T EXPOSE IN PRODUCTION
+  final String serverKey = 'YOUR_FIREBASE_SERVER_KEY'; // ⚠️ DON'T EXPOSE IN PRODUCTION
 
   Future<void> sendNotification({
     required String fcmToken,
@@ -15,10 +14,7 @@ class PushNotificationSender {
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'key=$serverKey',
-      },
+      headers: {'Content-Type': 'application/json', 'Authorization': 'key=$serverKey'},
       body: jsonEncode({
         'to': fcmToken,
         'notification': {'title': title, 'body': body},
@@ -29,9 +25,7 @@ class PushNotificationSender {
     if (response.statusCode == 200) {
       print('✅ Notification sent: ${response.body}');
     } else {
-      print(
-        '❌ Failed to send notification: ${response.statusCode} - ${response.body}',
-      );
+      print('❌ Failed to send notification: ${response.statusCode} - ${response.body}');
     }
   }
 }

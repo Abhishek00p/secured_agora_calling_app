@@ -21,17 +21,11 @@ class MembarTabViewWidget extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.workspace_premium,
-                size: 72,
-                color: AppTheme.secondaryColor,
-              ),
+              const Icon(Icons.workspace_premium, size: 72, color: AppTheme.secondaryColor),
               const SizedBox(height: 24),
               Text(
                 'Premium Features',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Text(
@@ -46,12 +40,7 @@ class MembarTabViewWidget extends StatelessWidget {
                   // For demo, we'll just set the user as a member
                   // _simulateUpgrade();
                 },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
-                  ),
-                ),
+                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12)),
                 child: const Text('Upgrade Now'),
               ),
             ],
@@ -72,11 +61,10 @@ class MembarTabViewWidget extends StatelessWidget {
             description: 'Set up a new instant or scheduled meeting',
             buttonText: 'Create Meeting',
             onPressed: () async {
-              final permissionStatus =
-                  await PermissionService.requestPermission(
-                    context: context,
-                    type: AppPermissionType.microphone,
-                  );
+              final permissionStatus = await PermissionService.requestPermission(
+                context: context,
+                type: AppPermissionType.microphone,
+              );
               // await PermissionService.requestPermission(
               //   context: context,
               //   type: AppPermissionType.camera,
@@ -100,19 +88,12 @@ class MembarTabViewWidget extends StatelessWidget {
           //       ),
           // ),
           const SizedBox(height: 24),
-          Text(
-            'Your Meetings',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
+          Text('Your Meetings', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
 
           // Meetings list
           StreamBuilder<QuerySnapshot>(
-            stream: AppFirebaseService.instance.getHostMeetingsStream(
-              AppLocalStorage.getUserDetails().userId,
-            ),
+            stream: AppFirebaseService.instance.getHostMeetingsStream(AppLocalStorage.getUserDetails().userId),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -130,16 +111,9 @@ class MembarTabViewWidget extends StatelessWidget {
                     padding: const EdgeInsets.all(32.0),
                     child: Column(
                       children: [
-                        const Icon(
-                          Icons.event_busy,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
+                        const Icon(Icons.event_busy, size: 64, color: Colors.grey),
                         const SizedBox(height: 16),
-                        Text(
-                          'No meetings yet',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
+                        Text('No meetings yet', style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 8),
                         Text(
                           'Your scheduled and recent meetings will appear here',
@@ -154,9 +128,7 @@ class MembarTabViewWidget extends StatelessWidget {
 
               return Column(
                 children: List.generate(meetings.length, (index) {
-                  final meeting = MeetingModel.fromJson(
-                    meetings[index].data() as Map<String, dynamic>,
-                  );
+                  final meeting = MeetingModel.fromJson(meetings[index].data() as Map<String, dynamic>);
 
                   return MeetingTileWidget(model: meeting);
                 }),

@@ -34,15 +34,10 @@ class _UsersScreenState extends State<UsersScreen> {
 
     try {
       final currentUser = AppLocalStorage.getUserDetails();
-      final users = await AppFirebaseService.instance.getUsersByMemberCodeData(
-        currentUser.memberCode,
-      );
+      final users = await AppFirebaseService.instance.getUsersByMemberCodeData(currentUser.memberCode);
       print('Total users fetched: ${users.length}');
       // Filter users based on member code
-      final filteredUsers =
-          users
-              .where((user) => user.memberCode == currentUser.memberCode)
-              .toList();
+      final filteredUsers = users.where((user) => user.memberCode == currentUser.memberCode).toList();
 
       setState(() {
         _users = filteredUsers;
@@ -89,9 +84,7 @@ class _UsersScreenState extends State<UsersScreen> {
               decoration: InputDecoration(
                 hintText: 'Search users...',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
                 fillColor: Colors.grey[100],
               ),
@@ -108,22 +101,11 @@ class _UsersScreenState extends State<UsersScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
+                          Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
                           const SizedBox(height: 16),
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
+                          Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600])),
                           const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _loadUsers,
-                            child: const Text('Retry'),
-                          ),
+                          ElevatedButton(onPressed: _loadUsers, child: const Text('Retry')),
                         ],
                       ),
                     )
@@ -132,16 +114,10 @@ class _UsersScreenState extends State<UsersScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.people_outline,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
+                          Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
                           const SizedBox(height: 16),
                           Text(
-                            _searchController.text.isEmpty
-                                ? 'No users found'
-                                : 'No users match your search',
+                            _searchController.text.isEmpty ? 'No users found' : 'No users match your search',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                           if (_searchController.text.isNotEmpty) ...[
@@ -168,21 +144,11 @@ class _UsersScreenState extends State<UsersScreen> {
                             leading: CircleAvatar(
                               backgroundColor: Colors.blue[100],
                               child: Text(
-                                user.name.isNotEmpty
-                                    ? user.name[0].toUpperCase()
-                                    : 'U',
-                                style: TextStyle(
-                                  color: Colors.blue[700],
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                                style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold),
                               ),
                             ),
-                            title: Text(
-                              user.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                             subtitle: SizedBox(
                               width: MediaQuery.sizeOf(context).width * 0.5,
                               child: Column(
@@ -192,19 +158,13 @@ class _UsersScreenState extends State<UsersScreen> {
                                   if (user.createdAt != null)
                                     Text(
                                       'Joined: ${_formatDate(user.createdAt)}',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
+                                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
                                     ),
                                 ],
                               ),
                             ),
                             trailing: ElevatedButton(
-                              child: Text(
-                                'View more',
-                                style: TextStyle(fontSize: 10),
-                              ),
+                              child: Text('View more', style: TextStyle(fontSize: 10)),
                               onPressed: () {
                                 UserCredentialsBottomSheet.show(
                                   context,

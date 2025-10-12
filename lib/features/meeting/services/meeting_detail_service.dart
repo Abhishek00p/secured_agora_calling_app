@@ -11,8 +11,7 @@ class MeetingDetailService {
 
   Future<MeetingDetail> fetchMeetingDetail(String meetingId) async {
     try {
-      final meetingDoc =
-          await _firestore.collection('meetings').doc(meetingId).get();
+      final meetingDoc = await _firestore.collection('meetings').doc(meetingId).get();
 
       if (!meetingDoc.exists) {
         throw Exception('Meeting not found');
@@ -22,11 +21,7 @@ class MeetingDetailService {
 
       // Fetch participants
       final participantsSnapshot =
-          await _firestore
-              .collection('meetings')
-              .doc(meetingId)
-              .collection('participants')
-              .get();
+          await _firestore.collection('meetings').doc(meetingId).collection('participants').get();
 
       final participants =
           participantsSnapshot.docs.map((doc) {
@@ -40,16 +35,10 @@ class MeetingDetailService {
           }).toList();
 
       // Parse meeting data
-      final scheduledStartTime = _parseDateTime(
-        meetingData['scheduledStartTime'],
-      );
+      final scheduledStartTime = _parseDateTime(meetingData['scheduledStartTime']);
       final scheduledEndTime = _parseDateTime(meetingData['scheduledEndTime']);
-      final actualStartTime = _parseNullableDateTime(
-        meetingData['actualStartTime'],
-      );
-      final actualEndTime = _parseNullableDateTime(
-        meetingData['actualEndTime'],
-      );
+      final actualStartTime = _parseNullableDateTime(meetingData['actualStartTime']);
+      final actualEndTime = _parseNullableDateTime(meetingData['actualEndTime']);
 
       // Calculate duration
       final duration = Duration(minutes: meetingData['duration'] ?? 60);
@@ -86,16 +75,11 @@ class MeetingDetailService {
   }
 
   /// Extend meeting duration
-  Future<bool> extendMeeting(
-    String meetingId,
-    int additionalMinutes, {
-    String? reason,
-  }) async {
+  Future<bool> extendMeeting(String meetingId, int additionalMinutes, {String? reason}) async {
     try {
       // Check if current user is the host
       final currentUser = AppLocalStorage.getUserDetails();
-      final meetingDoc =
-          await _firestore.collection('meetings').doc(meetingId).get();
+      final meetingDoc = await _firestore.collection('meetings').doc(meetingId).get();
 
       if (!meetingDoc.exists) {
         throw Exception('Meeting not found');
@@ -131,8 +115,7 @@ class MeetingDetailService {
   Future<bool> canExtendMeeting(String meetingId) async {
     try {
       final currentUser = AppLocalStorage.getUserDetails();
-      final meetingDoc =
-          await _firestore.collection('meetings').doc(meetingId).get();
+      final meetingDoc = await _firestore.collection('meetings').doc(meetingId).get();
 
       if (!meetingDoc.exists) return false;
 
@@ -141,8 +124,7 @@ class MeetingDetailService {
       final status = meetingData['status'] as String?;
 
       // Only host can extend, and meeting must be active
-      return hostUserId == currentUser.userId &&
-          (status == 'scheduled' || status == 'live');
+      return hostUserId == currentUser.userId && (status == 'scheduled' || status == 'live');
     } catch (e) {
       AppLogger.print('Error checking extend permission: $e');
       return false;

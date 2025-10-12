@@ -108,9 +108,7 @@ class MeetingModel {
       memberCode: json['memberCode'],
       requiresApproval: json['requiresApproval'] ?? false,
       status: json['status'] ?? '',
-      isParticipantsMuted: Map<String, bool>.from(
-        json['isParticipantsMuted'] ?? {},
-      ),
+      isParticipantsMuted: Map<String, bool>.from(json['isParticipantsMuted'] ?? {}),
       maxParticipants: json['maxParticipants'] ?? 0,
       duration: json['duration'] ?? 0,
       participants: List<int>.from(json['participants'] ?? []),
@@ -155,15 +153,13 @@ class MeetingModel {
     'totalParticipantsCount': totalParticipantsCount,
     'actualDuration': actualDuration.inSeconds,
     'totalExtensions': totalExtensions,
-    'participantHistory':
-        participantHistory.map((log) => log.toJson()).toList(),
+    'participantHistory': participantHistory.map((log) => log.toJson()).toList(),
   };
 
   static DateTime _toDateTime(dynamic value) {
     if (value == null) return DateTime.fromMillisecondsSinceEpoch(0);
     if (value is Timestamp) return value.toDate();
-    if (value is String)
-      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 

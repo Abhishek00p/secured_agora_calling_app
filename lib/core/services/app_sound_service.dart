@@ -75,10 +75,7 @@ class AppSoundService {
   }
 
   /// Play a custom notification sound
-  Future<void> playNotificationSound(
-    String assetPath, {
-    double volume = 0.7,
-  }) async {
+  Future<void> playNotificationSound(String assetPath, {double volume = 0.7}) async {
     if (!_isInitialized) {
       await initialize();
     }

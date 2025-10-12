@@ -34,17 +34,12 @@ class _AdminScreenState extends State<AdminScreen> {
           const SizedBox(width: 8),
           Text(
             "$label: ",
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500, color: Colors.grey[700]),
           ),
           Expanded(
             child: Text(
               value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w400,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w400),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -77,9 +72,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       decoration: InputDecoration(
                         hintText: 'Search by name or email...',
                         prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         filled: true,
                         fillColor: theme.colorScheme.surface,
                       ),
@@ -90,32 +83,21 @@ class _AdminScreenState extends State<AdminScreen> {
                     children: [
                       FilterChip(
                         label: const Text("All"),
-                        labelStyle: TextStyle(
-                          color: _filter == 'All' ? Colors.white : Colors.black,
-                          fontSize: 12,
-                        ),
+                        labelStyle: TextStyle(color: _filter == 'All' ? Colors.white : Colors.black, fontSize: 12),
                         selected: _filter == 'All',
                         onSelected: (_) => setState(() => _filter = 'All'),
                       ),
                       const SizedBox(width: 8),
                       FilterChip(
                         label: const Text("Close Expiry"),
-                        labelStyle: TextStyle(
-                          color:
-                              _filter == 'Close' ? Colors.white : Colors.black,
-                          fontSize: 12,
-                        ),
+                        labelStyle: TextStyle(color: _filter == 'Close' ? Colors.white : Colors.black, fontSize: 12),
                         selected: _filter == 'Close',
                         onSelected: (_) => setState(() => _filter = 'Close'),
                       ),
                       const SizedBox(width: 8),
                       FilterChip(
                         label: const Text("Long Expiry"),
-                        labelStyle: TextStyle(
-                          color:
-                              _filter == 'Long' ? Colors.white : Colors.black,
-                          fontSize: 12,
-                        ),
+                        labelStyle: TextStyle(color: _filter == 'Long' ? Colors.white : Colors.black, fontSize: 12),
                         selected: _filter == 'Long',
                         onSelected: (_) => setState(() => _filter = 'Long'),
                       ),
@@ -125,8 +107,7 @@ class _AdminScreenState extends State<AdminScreen> {
               ),
             ),
             StreamBuilder<QuerySnapshot>(
-              stream:
-                  FirebaseFirestore.instance.collection('members').snapshots(),
+              stream: FirebaseFirestore.instance.collection('members').snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -134,40 +115,27 @@ class _AdminScreenState extends State<AdminScreen> {
 
                 var members =
                     snapshot.data!.docs
-                        .map(
-                          (doc) => Member.fromMap(
-                            doc.id,
-                            doc.data() as Map<String, dynamic>,
-                          ),
-                        )
+                        .map((doc) => Member.fromMap(doc.id, doc.data() as Map<String, dynamic>))
                         .toList();
 
                 final now = DateTime.now();
-                print(
-                  "Number of members found before filtering: ${members.length}",
-                );
+                print("Number of members found before filtering: ${members.length}");
 
                 members =
                     members.where((m) {
                       final matchQuery =
-                          m.name.toLowerCase().contains(_searchQuery) ||
-                          m.email.toLowerCase().contains(_searchQuery);
+                          m.name.toLowerCase().contains(_searchQuery) || m.email.toLowerCase().contains(_searchQuery);
 
                       if (_filter == 'Close') {
-                        return matchQuery &&
-                            m.expiryDate.difference(now).inDays <= 60;
+                        return matchQuery && m.expiryDate.difference(now).inDays <= 60;
                       } else if (_filter == 'Long') {
-                        return matchQuery &&
-                            m.expiryDate.difference(now).inDays > 60;
+                        return matchQuery && m.expiryDate.difference(now).inDays > 60;
                       } else {
                         return matchQuery;
                       }
                     }).toList();
                 if (members.isEmpty) {
-                  return SizedBox(
-                    height: Get.height - 300,
-                    child: Center(child: Text("No members found.")),
-                  );
+                  return SizedBox(height: Get.height - 300, child: Center(child: Text("No members found.")));
                 }
                 print("Number of members found: ${members.length}");
                 return ListView.builder(
@@ -177,48 +145,28 @@ class _AdminScreenState extends State<AdminScreen> {
                   itemCount: members.length,
                   itemBuilder: (context, index) {
                     final member = members[index];
-                    final isExpiringSoon =
-                        member.expiryDate.difference(now).inDays <= 60;
+                    final isExpiringSoon = member.expiryDate.difference(now).inDays <= 60;
                     return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          color: Colors.black.withAppOpacity(0.2),
-                        ),
+                        side: BorderSide(color: Colors.black.withAppOpacity(0.2)),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      color:
-                          isExpiringSoon ? Colors.red.shade50 : theme.cardColor,
+                      color: isExpiringSoon ? Colors.red.shade50 : theme.cardColor,
                       elevation: 2,
                       shadowColor: Colors.black.withAppOpacity(0.08),
                       child: ExpansionTile(
-                        tilePadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        childrenPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        collapsedShape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
 
                         // Title Section
                         title: Text(
                           member.name.sentenceCase,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color:
-                                isExpiringSoon
-                                    ? Colors.red.shade700
-                                    : theme.colorScheme.onSurface,
+                            color: isExpiringSoon ? Colors.red.shade700 : theme.colorScheme.onSurface,
                           ),
                         ),
                         subtitle: Padding(
@@ -226,26 +174,16 @@ class _AdminScreenState extends State<AdminScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                member.email,
-                                style: theme.textTheme.bodyMedium,
-                              ),
+                              Text(member.email, style: theme.textTheme.bodyMedium),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(
-                                    Icons.lock_clock,
-                                    size: 14,
-                                    color: Colors.grey,
-                                  ),
+                                  const Icon(Icons.lock_clock, size: 14, color: Colors.grey),
                                   const SizedBox(width: 4),
                                   Text(
                                     "Expires: ${DateFormat.yMMMd().format(member.expiryDate)}",
                                     style: theme.textTheme.bodySmall?.copyWith(
-                                      color:
-                                          isExpiringSoon
-                                              ? Colors.red.shade700
-                                              : Colors.grey[700],
+                                      color: isExpiringSoon ? Colors.red.shade700 : Colors.grey[700],
                                     ),
                                   ),
                                 ],
@@ -279,17 +217,13 @@ class _AdminScreenState extends State<AdminScreen> {
                                     _buildDetailRow(
                                       icon: Icons.calendar_today,
                                       label: "Purchase",
-                                      value: DateFormat.yMMMd().format(
-                                        member.purchaseDate,
-                                      ),
+                                      value: DateFormat.yMMMd().format(member.purchaseDate),
                                       theme: theme,
                                     ),
                                     _buildDetailRow(
                                       icon: Icons.lock_clock,
                                       label: "Expires",
-                                      value: DateFormat.yMMMd().format(
-                                        member.expiryDate,
-                                      ),
+                                      value: DateFormat.yMMMd().format(member.expiryDate),
                                       theme: theme,
                                     ),
                                     _buildDetailRow(
@@ -308,10 +242,9 @@ class _AdminScreenState extends State<AdminScreen> {
                                   Switch(
                                     value: member.isActive,
                                     onChanged: (val) {
-                                      FirebaseFirestore.instance
-                                          .collection('members')
-                                          .doc(member.id)
-                                          .update({'isActive': val});
+                                      FirebaseFirestore.instance.collection('members').doc(member.id).update({
+                                        'isActive': val,
+                                      });
                                     },
                                     activeColor: theme.colorScheme.primary,
                                   ),
@@ -319,10 +252,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                     member.isActive ? "Active" : "Inactive",
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color:
-                                          member.isActive
-                                              ? Colors.green
-                                              : Colors.red,
+                                      color: member.isActive ? Colors.green : Colors.red,
                                     ),
                                   ),
                                 ],
@@ -360,26 +290,15 @@ class _AdminScreenState extends State<AdminScreen> {
                                 onPressed: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => MemberForm(member: member),
-                                    ),
+                                    MaterialPageRoute(builder: (_) => MemberForm(member: member)),
                                   );
                                 },
                                 icon: const Icon(Icons.edit, size: 18),
-                                label: const Text(
-                                  "Edit",
-                                  style: TextStyle(fontSize: 13),
-                                ),
+                                label: const Text("Edit", style: TextStyle(fontSize: 13)),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: theme.colorScheme.primary,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 ),
                               ),
                               OutlinedButton.icon(
@@ -392,22 +311,11 @@ class _AdminScreenState extends State<AdminScreen> {
                                     userId: member.id,
                                   );
                                 },
-                                icon: const Icon(
-                                  Icons.remove_red_eye,
-                                  size: 18,
-                                ),
-                                label: const Text(
-                                  "view more",
-                                  style: TextStyle(fontSize: 13),
-                                ),
+                                icon: const Icon(Icons.remove_red_eye, size: 18),
+                                label: const Text("view more", style: TextStyle(fontSize: 13)),
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 ),
                               ),
                             ],
@@ -615,10 +523,7 @@ class _AdminScreenState extends State<AdminScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const MemberForm()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const MemberForm()));
         },
         child: const Icon(Icons.add),
       ),

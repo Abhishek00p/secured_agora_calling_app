@@ -103,28 +103,18 @@ class _UserCreationFormState extends State<UserCreationForm> {
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.blue[700],
-                          size: 20,
-                        ),
+                        Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
                         const SizedBox(width: 8),
                         Text(
                           'Creating User Under Member Code',
-                          style: TextStyle(
-                            color: Colors.blue[700],
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Member Code: $_currentUserMemberCode',
-                      style: TextStyle(
-                        color: Colors.blue[700],
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -195,9 +185,7 @@ class _UserCreationFormState extends State<UserCreationForm> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child:
                       _isLoading
@@ -206,18 +194,12 @@ class _UserCreationFormState extends State<UserCreationForm> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                           : const Text(
                             'Create User',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                 ),
               ),
@@ -234,19 +216,12 @@ class _UserCreationFormState extends State<UserCreationForm> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.warning_amber_outlined,
-                      color: Colors.orange[700],
-                      size: 20,
-                    ),
+                    Icon(Icons.warning_amber_outlined, color: Colors.orange[700], size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'User will be created immediately and can log in with the provided credentials.',
-                        style: TextStyle(
-                          color: Colors.orange[700],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.orange[700], fontSize: 14),
                       ),
                     ),
                   ],

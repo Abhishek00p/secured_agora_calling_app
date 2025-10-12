@@ -44,8 +44,7 @@ class AppUser {
               : null,
       subscription: Subscription.fromJson(json['subscription']),
       planExpiryDate:
-          json['planExpiryDate'] == null ||
-                  json['planExpiryDate'].toString().trim().isEmpty
+          json['planExpiryDate'] == null || json['planExpiryDate'].toString().trim().isEmpty
               ? null
               : json['planExpiryDate'].toString().toDateTime.formatDate,
     );
@@ -122,25 +121,14 @@ class Subscription {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'plan': plan,
-      'startDate': startDate.toIso8601String(),
-      'expiryDate': expiryDate.toIso8601String(),
-    };
+    return {'plan': plan, 'startDate': startDate.toIso8601String(), 'expiryDate': expiryDate.toIso8601String()};
   }
 
-  bool get isEmpty =>
-      plan.isEmpty &&
-      startDate.millisecondsSinceEpoch == 0 &&
-      expiryDate.millisecondsSinceEpoch == 0;
+  bool get isEmpty => plan.isEmpty && startDate.millisecondsSinceEpoch == 0 && expiryDate.millisecondsSinceEpoch == 0;
 
   static Subscription toEmpty() => Subscription();
 
-  Subscription copyWith({
-    String? plan,
-    DateTime? startDate,
-    DateTime? expiryDate,
-  }) {
+  Subscription copyWith({String? plan, DateTime? startDate, DateTime? expiryDate}) {
     return Subscription(
       plan: plan ?? this.plan,
       startDate: startDate ?? this.startDate,

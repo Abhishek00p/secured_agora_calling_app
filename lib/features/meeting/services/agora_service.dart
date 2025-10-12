@@ -25,9 +25,7 @@ class AgoraService {
   RtcEngine? get engine => _engine;
   bool get isInitialized => _isInitialized;
 
-  Future<bool> initialize({
-    required RtcEngineEventHandler rtcEngineEventHandler,
-  }) async {
+  Future<bool> initialize({required RtcEngineEventHandler rtcEngineEventHandler}) async {
     try {
       if (_isInitialized) {
         AppLogger.print('already initi  agora returnning...');
@@ -39,11 +37,7 @@ class AgoraService {
       await _engine!.initialize(const RtcEngineContext(appId: agoraAppId));
       await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
 
-      await _engine!.enableAudioVolumeIndication(
-        interval: 200,
-        smooth: 3,
-        reportVad: true,
-      );
+      await _engine!.enableAudioVolumeIndication(interval: 200, smooth: 3, reportVad: true);
       _engine!.registerEventHandler(rtcEngineEventHandler);
 
       _isInitialized = true;
@@ -61,11 +55,7 @@ class AgoraService {
     }
   }
 
-  Future<void> joinChannel({
-    required String channelName,
-    required String token,
-    required int userId,
-  }) async {
+  Future<void> joinChannel({required String channelName, required String token, required int userId}) async {
     if (!_isInitialized) {
       throw Exception('Agora Not Initialize , ........');
     }
@@ -115,19 +105,14 @@ class AgoraService {
     await _engine?.muteLocalVideoStream(mute);
   }
 
-  Future<void> muteRemoteAudioStream({
-    required int userId,
-    required bool mute,
-  }) async {
+  Future<void> muteRemoteAudioStream({required int userId, required bool mute}) async {
     await _engine?.muteRemoteAudioStream(uid: userId, mute: mute);
   }
 
   // Start/stop screen sharing
   Future<void> startScreenSharing() async {
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      await _engine!.startScreenCapture(
-        const ScreenCaptureParameters2(captureAudio: true, captureVideo: true),
-      );
+      await _engine!.startScreenCapture(const ScreenCaptureParameters2(captureAudio: true, captureVideo: true));
     }
   }
 

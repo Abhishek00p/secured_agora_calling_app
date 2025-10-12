@@ -37,9 +37,7 @@ class MemberRemindersPage extends StatelessWidget {
                   title: Text(data['title']),
                   subtitle: Text(data['description']),
                   trailing: Text(
-                    DateFormat.yMMMd().format(
-                      (data['timestamp'] as Timestamp).toDate(),
-                    ),
+                    DateFormat.yMMMd().format((data['timestamp'] as Timestamp).toDate()),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),

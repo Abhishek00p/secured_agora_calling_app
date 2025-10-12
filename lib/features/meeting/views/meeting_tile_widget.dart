@@ -33,10 +33,8 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
         widget.model.scheduledStartTime.isToday &&
         (widget.model.participants.isNotEmpty ||
             (DateTime.now().isAfter(widget.model.scheduledStartTime) ||
-                widget.model.hostId ==
-                    AppLocalStorage.getUserDetails().firebaseUserId));
-    isCurrentUserHost =
-        widget.model.hostId == AppLocalStorage.getUserDetails().firebaseUserId;
+                widget.model.hostId == AppLocalStorage.getUserDetails().firebaseUserId));
+    isCurrentUserHost = widget.model.hostId == AppLocalStorage.getUserDetails().firebaseUserId;
 
     if (widget.model.scheduledStartTime.isToday) {
       meetingDate = 'Today';
@@ -56,10 +54,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
     super.dispose();
   }
 
-  void requuestMeetingApproval(
-    BuildContext context,
-    MeetingModel meeting,
-  ) async {
+  void requuestMeetingApproval(BuildContext context, MeetingModel meeting) async {
     if (!context.mounted) return;
 
     // Use centralized join request service
@@ -80,20 +75,13 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        Navigator.pushNamed(
-          context,
-          AppRouter.meetingDetailRoute,
-          arguments: {'meetingId': widget.model.meetId},
-        );
+        Navigator.pushNamed(context, AppRouter.meetingDetailRoute, arguments: {'meetingId': widget.model.meetId});
       },
       child: Card(
         elevation: 2,
         margin: const EdgeInsets.only(bottom: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color:
-            widget.model.scheduledStartTime.isToday
-                ? theCardColor
-                : Colors.grey.shade50,
+        color: widget.model.scheduledStartTime.isToday ? theCardColor : Colors.grey.shade50,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -104,46 +92,25 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD8F1F0),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: const Color(0xFFD8F1F0), borderRadius: BorderRadius.circular(20)),
                     child: Text(
                       widget.model.scheduledStartTime.formatDate,
-                      style: TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD8F1F0),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: const Color(0xFFD8F1F0), borderRadius: BorderRadius.circular(20)),
                     child: Text(
                       widget.model.scheduledStartTime.formatTime,
-                      style: TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
-                widget.model.meetingName.sentenceCase,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              Text(widget.model.meetingName.sentenceCase, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -153,18 +120,12 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                       Icon(Icons.schedule, color: Colors.black54, size: 16),
                       const SizedBox(width: 4),
                       Text(
-                        AppHelper.timeDifference(
-                          widget.model.scheduledStartTime,
-                          widget.model.scheduledEndTime,
-                        ),
+                        AppHelper.timeDifference(widget.model.scheduledStartTime, widget.model.scheduledEndTime),
                         style: TextStyle(color: Colors.black54, fontSize: 12),
                       ),
                     ],
                   ),
-                  Text(
-                    widget.model.hostName.titleCase,
-                    style: TextStyle(color: Colors.black54, fontSize: 12),
-                  ),
+                  Text(widget.model.hostName.titleCase, style: TextStyle(color: Colors.black54, fontSize: 12)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -181,23 +142,15 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Joined',
-                        style: TextStyle(color: Colors.black54, fontSize: 12),
-                      ),
+                      const Text('Joined', style: TextStyle(color: Colors.black54, fontSize: 12)),
                     ],
                   ),
 
                   const Spacer(),
-                  if (!widget.model.scheduledEndTime.isAfter(
-                    DateTime.now(),
-                  )) ...[
+                  if (!widget.model.scheduledEndTime.isAfter(DateTime.now())) ...[
                     Icon(Icons.lock_clock, color: Colors.red, size: 16),
                     const SizedBox(width: 4),
-                    Text(
-                      'Ended',
-                      style: TextStyle(color: Colors.red, fontSize: 12),
-                    ),
+                    Text('Ended', style: TextStyle(color: Colors.red, fontSize: 12)),
                   ],
                   if (widget.model.scheduledEndTime.isAfter(DateTime.now()))
                     ElevatedButton(
@@ -206,22 +159,16 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                               ? null // Disable button while waiting
                               : isButtonEnabled
                               ? () {
-                                if (widget.model.requiresApproval &&
-                                    !isCurrentUserHost) {
+                                if (widget.model.requiresApproval && !isCurrentUserHost) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(
-                                        'Meeting Requires approval from the host.',
-                                      ),
+                                      content: Text('Meeting Requires approval from the host.'),
                                       behavior: SnackBarBehavior.floating,
 
                                       action: SnackBarAction(
                                         label: 'Send Request',
                                         onPressed: () {
-                                          requuestMeetingApproval(
-                                            context,
-                                            widget.model,
-                                          );
+                                          requuestMeetingApproval(context, widget.model);
                                         },
                                       ),
                                     ),
@@ -232,27 +179,18 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                                     AppRouter.meetingRoomRoute,
                                     arguments: {
                                       'channelName': widget.model.channelName,
-                                      'isHost':
-                                          widget.model.hostId ==
-                                          AppLocalStorage.getUserDetails()
-                                              .firebaseUserId,
+                                      'isHost': widget.model.hostId == AppLocalStorage.getUserDetails().firebaseUserId,
                                       'meetingId': widget.model.meetId,
                                     },
                                   );
                                 }
                               }
                               : () {
-                                if (widget
-                                        .model
-                                        .scheduledStartTime
-                                        .differenceInMinutes <
-                                    0) {
+                                if (widget.model.scheduledStartTime.differenceInMinutes < 0) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       behavior: SnackBarBehavior.floating,
-                                      content: Text(
-                                        'Meeting will start soon...',
-                                      ),
+                                      content: Text('Meeting will start soon...'),
                                     ),
                                   );
                                   return;
@@ -276,13 +214,8 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                                 ? const Color(0xFF4C5FE2)
                                 : Colors.grey,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       ),
                       child:
                           _isWaitingForApproval
@@ -294,19 +227,11 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                                     height: 12,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(
-                                    'Waiting for Approval',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                    ),
-                                  ),
+                                  Text('Waiting for Approval', style: TextStyle(color: Colors.white, fontSize: 12)),
                                 ],
                               )
                               : Text(
@@ -315,10 +240,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
                                     : (isCurrentUserHost && widget.model.scheduledStartTime.isToday)
                                     ? 'Start'
                                     : 'Join'} Now',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(color: Colors.white, fontSize: 12),
                               ),
                     ),
                 ],

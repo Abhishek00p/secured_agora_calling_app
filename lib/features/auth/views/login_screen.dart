@@ -54,19 +54,16 @@ class _LoginScreenState extends State<LoginScreen> {
               // Welcome Text
               Text(
                 'Welcome Back',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
               ),
 
               const SizedBox(height: 8),
 
               Text(
                 'Sign in to continue to SecuredCalling',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
               ),
 
               const SizedBox(height: 40),
@@ -125,11 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Widget _buildDebugButton(
-    String label,
-    IconData icon,
-    VoidCallback onPressed,
-  ) {
+  Widget _buildDebugButton(String label, IconData icon, VoidCallback onPressed) {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 16),
@@ -155,8 +148,7 @@ class LoginForm extends StatefulWidget {
 }
 
 class _LoginFormState extends State<LoginForm> {
-  final LoginRegisterController loginRegisterController =
-      Get.find<LoginRegisterController>();
+  final LoginRegisterController loginRegisterController = Get.find<LoginRegisterController>();
 
   @override
   Widget build(BuildContext context) {
@@ -185,16 +177,11 @@ class _LoginFormState extends State<LoginForm> {
             () => SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed:
-                    loginRegisterController.isLoading.value
-                        ? null
-                        : widget.onSubmit,
+                onPressed: loginRegisterController.isLoading.value ? null : widget.onSubmit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child:
                     loginRegisterController.isLoading.value
@@ -203,18 +190,12 @@ class _LoginFormState extends State<LoginForm> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                         : const Text(
                           'Login',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                         ),
               ),
             ),

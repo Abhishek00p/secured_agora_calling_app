@@ -82,10 +82,7 @@ Widget buildStatusChip(String status) {
 
   return Chip(
     avatar: Icon(iconData, color: Colors.white, size: 16),
-    label: Text(
-      chipLabel,
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-    ),
+    label: Text(chipLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
     backgroundColor: chipColor,
     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
   );

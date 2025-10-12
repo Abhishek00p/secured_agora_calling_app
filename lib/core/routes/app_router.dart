@@ -37,42 +37,18 @@ class AppRouter {
 
   // GetPages
   static final List<GetPage> routes = [
-    GetPage(
-      name: welcomeRoute,
-      page: () => const WelcomeScreen(),
-      middlewares: [WelcomeMiddleware()],
-    ),
+    GetPage(name: welcomeRoute, page: () => const WelcomeScreen(), middlewares: [WelcomeMiddleware()]),
     GetPage(
       name: loginRoute,
       page: () => const LoginScreen(),
       binding: AuthBinding(),
       middlewares: [LoginMiddleware()],
     ),
-    GetPage(
-      name: homeRoute,
-      page: () => const HomeScreen(),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
-      name: adminRoute,
-      page: () => const AdminScreen(),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
-      name: usersRoute,
-      page: () => const UsersScreen(),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
-      name: userCreationRoute,
-      page: () => const UserCreationForm(),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
-      name: memberFormRoute,
-      page: () => const MemberForm(),
-      middlewares: [AuthMiddleware()],
-    ),
+    GetPage(name: homeRoute, page: () => const HomeScreen(), middlewares: [AuthMiddleware()]),
+    GetPage(name: adminRoute, page: () => const AdminScreen(), middlewares: [AuthMiddleware()]),
+    GetPage(name: usersRoute, page: () => const UsersScreen(), middlewares: [AuthMiddleware()]),
+    GetPage(name: userCreationRoute, page: () => const UserCreationForm(), middlewares: [AuthMiddleware()]),
+    GetPage(name: memberFormRoute, page: () => const MemberForm(), middlewares: [AuthMiddleware()]),
 
     // Meeting routes
     GetPage(

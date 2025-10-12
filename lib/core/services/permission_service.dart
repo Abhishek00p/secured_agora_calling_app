@@ -3,10 +3,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:secured_calling/utils/permission_popup.dart';
 
 class PermissionService {
-  static Future<bool> requestPermission({
-    required BuildContext context,
-    required AppPermissionType type,
-  }) async {
+  static Future<bool> requestPermission({required BuildContext context, required AppPermissionType type}) async {
     final permission = type.permission;
     final status = await permission.status;
 
@@ -14,12 +11,7 @@ class PermissionService {
 
     final shouldRequest = await showDialog<bool>(
       context: context,
-      builder:
-          (_) => PermissionPopup(
-            icon: type.icon,
-            title: type.title,
-            description: type.description,
-          ),
+      builder: (_) => PermissionPopup(icon: type.icon, title: type.title, description: type.description),
     );
 
     if (shouldRequest == true) {
@@ -31,15 +23,7 @@ class PermissionService {
   }
 }
 
-enum AppPermissionType {
-  microphone,
-  camera,
-  storage,
-  photos,
-  notification,
-  location,
-  bluetooth,
-}
+enum AppPermissionType { microphone, camera, storage, photos, notification, location, bluetooth }
 
 extension AppPermissionTypeExtension on AppPermissionType {
   /// Get corresponding system permission

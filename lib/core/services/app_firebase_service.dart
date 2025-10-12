@@ -24,10 +24,8 @@ class AppFirebaseService {
 
   // Firestore references
   CollectionReference get usersCollection => _firestore.collection('users');
-  CollectionReference get meetingsCollection =>
-      _firestore.collection('meetings');
-  CollectionReference get callLogsCollection =>
-      _firestore.collection('call_logs');
+  CollectionReference get meetingsCollection => _firestore.collection('meetings');
+  CollectionReference get callLogsCollection => _firestore.collection('call_logs');
 
   // Firestore methods
   Future<DocumentSnapshot> getUserData(String uid) async {
@@ -37,9 +35,7 @@ class AppFirebaseService {
   // Firestore methods
   Future<QueryDocumentSnapshot?> getUserDataWhereUserId(int uid) async {
     try {
-      return (await usersCollection.where('userId', isEqualTo: uid).get())
-          .docs
-          .firstOrNull;
+      return (await usersCollection.where('userId', isEqualTo: uid).get()).docs.firstOrNull;
     } catch (e) {
       AppLogger.print('error caught in getting user DAta from id:$e');
       return null;
@@ -50,12 +46,7 @@ class AppFirebaseService {
     final currentUser = AppLocalStorage.getUserDetails();
     if (currentUser.userId > 0) {
       AppLogger.print('current user ID : ${currentUser.userId}');
-      final res =
-          (await usersCollection
-                  .where('userId', isEqualTo: currentUser.userId)
-                  .get())
-              .docs
-              .firstOrNull;
+      final res = (await usersCollection.where('userId', isEqualTo: currentUser.userId).get()).docs.firstOrNull;
       if (res != null) {
         final data = res.data() as Map<String, dynamic>;
         AppLogger.print('user data : $data');
@@ -94,14 +85,12 @@ class AppFirebaseService {
       'duration': duration,
       'isParticipantsMuted': {},
       'scheduledStartTime': scheduledStartTime.toIso8601String(),
-      'scheduledEndTime':
-          scheduledStartTime.add(Duration(minutes: duration)).toIso8601String(),
+      'scheduledEndTime': scheduledStartTime.add(Duration(minutes: duration)).toIso8601String(),
       'actualStartTime': null,
       'actualEndTime': null,
       'createdAt': DateTime.now().toIso8601String(),
       'requiresApproval': requiresApproval,
-      'status':
-          MeetingStatus.scheduled.name, // scheduled, live, ended, cancelled
+      'status': MeetingStatus.scheduled.name, // scheduled, live, ended, cancelled
       'pendingApprovals': [],
       'speakRequests': [],
       'approvedSpeakers': [],
@@ -125,26 +114,18 @@ class AppFirebaseService {
   }
 
   Future<void> endMeeting(String meetingId) async {
-    await removeParticipants(
-      meetingId,
-      AppLocalStorage.getUserDetails().userId,
-    );
+    await removeParticipants(meetingId, AppLocalStorage.getUserDetails().userId);
   }
 
   Future<bool> addParticipants(String meetId, int userId) async {
     try {
-      final participantDoc = meetingsCollection
-          .doc(meetId)
-          .collection('participants')
-          .doc('$userId');
+      final participantDoc = meetingsCollection.doc(meetId).collection('participants').doc('$userId');
 
       final participantSnapshot = await participantDoc.get();
 
       if (!participantSnapshot.exists) {
         final userData = await getUserDataWhereUserId(userId);
-        final userName =
-            (userData?.data() as Map<String, dynamic>?)?['name'] ??
-            'Unknown User';
+        final userName = (userData?.data() as Map<String, dynamic>?)?['name'] ?? 'Unknown User';
 
         await participantDoc.set({
           'userId': userId,
@@ -160,11 +141,7 @@ class AppFirebaseService {
           'allParticipants': FieldValue.arrayUnion([userId]),
         });
       } else {
-        await participantDoc.update({
-          'joinTime': FieldValue.serverTimestamp(),
-          'leaveTime': null,
-          'isActive': true,
-        });
+        await participantDoc.update({'joinTime': FieldValue.serverTimestamp(), 'leaveTime': null, 'isActive': true});
       }
       return true;
     } catch (e) {
@@ -175,19 +152,12 @@ class AppFirebaseService {
 
   Future<bool> removeParticipants(String meetId, int userId) async {
     try {
-      final participantDoc = meetingsCollection
-          .doc(meetId)
-          .collection('participants')
-          .doc('$userId');
+      final participantDoc = meetingsCollection.doc(meetId).collection('participants').doc('$userId');
 
-      await participantDoc.update({
-        'leaveTime': FieldValue.serverTimestamp(),
-        'isActive': false,
-      });
+      await participantDoc.update({'leaveTime': FieldValue.serverTimestamp(), 'isActive': false});
 
       // Check if this was the last participant
-      final participantsSnapshot =
-          await meetingsCollection.doc(meetId).collection('participants').get();
+      final participantsSnapshot = await meetingsCollection.doc(meetId).collection('participants').get();
 
       final activeParticipants =
           participantsSnapshot.docs.where((doc) {
@@ -222,9 +192,7 @@ class AppFirebaseService {
 
   Future<void> addInvitedUsers(String meetingId, List<int> userIds) async {
     try {
-      await meetingsCollection.doc(meetingId).update({
-        'invitedUsers': FieldValue.arrayUnion(userIds),
-      });
+      await meetingsCollection.doc(meetingId).update({'invitedUsers': FieldValue.arrayUnion(userIds)});
     } catch (e) {
       AppLogger.print('Error adding invited users: $e');
     }
@@ -247,9 +215,7 @@ class AppFirebaseService {
       // Check if meeting is still active
       final status = meetingData['status'] as String?;
       if (status == 'ended' || status == 'cancelled') {
-        throw Exception(
-          'Cannot extend a meeting that has ended or been cancelled',
-        );
+        throw Exception('Cannot extend a meeting that has ended or been cancelled');
       }
 
       // Parse current end time
@@ -279,9 +245,7 @@ class AppFirebaseService {
         'totalExtensions': FieldValue.increment(1),
       });
 
-      AppLogger.print(
-        'Meeting $meetingId extended by $additionalMinutes minutes. New end time: $newEndTime',
-      );
+      AppLogger.print('Meeting $meetingId extended by $additionalMinutes minutes. New end time: $newEndTime');
     } catch (e) {
       AppLogger.print('Error extending meeting: $e');
       rethrow;
@@ -316,9 +280,7 @@ class AppFirebaseService {
             'lastExtensionMinutes': additionalMinutes,
             'lastExtensionReason': reason,
           });
-          AppLogger.print(
-            'Meeting extension notification sent to participants',
-          );
+          AppLogger.print('Meeting extension notification sent to participants');
         } catch (e) {
           AppLogger.print('Error sending extension notification: $e');
           // Don't rethrow as this is not critical
@@ -341,12 +303,7 @@ class AppFirebaseService {
 
   /// Request to join a meeting using sub-collection approach
   /// Creates a document in /meetings/{meetingId}/joinRequests/{userId}
-  Future<void> requestToJoinMeeting(
-    String meetingId,
-    int userId, {
-    String? userName,
-    String? userEmail,
-  }) async {
+  Future<void> requestToJoinMeeting(String meetingId, int userId, {String? userName, String? userEmail}) async {
     try {
       final requestData = {
         'userId': userId,
@@ -356,20 +313,12 @@ class AppFirebaseService {
         if (userEmail != null) 'userEmail': userEmail,
       };
 
-      AppLogger.print(
-        'Creating join request for user $userId in meeting $meetingId',
-      );
+      AppLogger.print('Creating join request for user $userId in meeting $meetingId');
       AppLogger.print('Request data: $requestData');
 
-      await meetingsCollection
-          .doc(meetingId)
-          .collection('joinRequests')
-          .doc(userId.toString())
-          .set(requestData);
+      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).set(requestData);
 
-      AppLogger.print(
-        'Join request created successfully for user $userId in meeting $meetingId',
-      );
+      AppLogger.print('Join request created successfully for user $userId in meeting $meetingId');
     } catch (e) {
       AppLogger.print('Error creating join request: $e');
       rethrow;
@@ -380,18 +329,14 @@ class AppFirebaseService {
   Future<void> approveMeetingJoinRequest(String meetingId, int userId) async {
     try {
       // Update the join request status to accepted
-      await meetingsCollection
-          .doc(meetingId)
-          .collection('joinRequests')
-          .doc(userId.toString())
-          .update({'status': 'accepted'});
+      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).update({
+        'status': 'accepted',
+      });
 
       // Add user to participants
       await addParticipants(meetingId, userId);
 
-      AppLogger.print(
-        'Join request approved for user $userId in meeting $meetingId',
-      );
+      AppLogger.print('Join request approved for user $userId in meeting $meetingId');
     } catch (e) {
       AppLogger.print('Error approving join request: $e');
       rethrow;
@@ -401,15 +346,11 @@ class AppFirebaseService {
   /// Reject a join request
   Future<void> rejectMeetingJoinRequest(String meetingId, int userId) async {
     try {
-      await meetingsCollection
-          .doc(meetingId)
-          .collection('joinRequests')
-          .doc(userId.toString())
-          .update({'status': 'rejected'});
+      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).update({
+        'status': 'rejected',
+      });
 
-      AppLogger.print(
-        'Join request rejected for user $userId in meeting $meetingId',
-      );
+      AppLogger.print('Join request rejected for user $userId in meeting $meetingId');
     } catch (e) {
       AppLogger.print('Error rejecting join request: $e');
       rethrow;
@@ -419,15 +360,11 @@ class AppFirebaseService {
   /// Mark join request as joined (when user successfully joins the meeting)
   Future<void> markJoinRequestAsJoined(String meetingId, int userId) async {
     try {
-      await meetingsCollection
-          .doc(meetingId)
-          .collection('joinRequests')
-          .doc(userId.toString())
-          .update({'status': 'joined'});
+      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).update({
+        'status': 'joined',
+      });
 
-      AppLogger.print(
-        'Join request marked as joined for user $userId in meeting $meetingId',
-      );
+      AppLogger.print('Join request marked as joined for user $userId in meeting $meetingId');
     } catch (e) {
       AppLogger.print('Error marking join request as joined: $e');
       rethrow;
@@ -436,9 +373,7 @@ class AppFirebaseService {
 
   /// Get stream of pending join requests for a meeting
   Stream<QuerySnapshot> getPendingJoinRequestsStream(String meetingId) {
-    AppLogger.print(
-      'Setting up pending join requests stream for meeting: $meetingId',
-    );
+    AppLogger.print('Setting up pending join requests stream for meeting: $meetingId');
 
     return meetingsCollection
         .doc(meetingId)
@@ -446,9 +381,7 @@ class AppFirebaseService {
         .where('status', isEqualTo: 'pending')
         .snapshots()
         .map((snapshot) {
-          AppLogger.print(
-            'Firebase query result: ${snapshot.docs.length} pending requests found',
-          );
+          AppLogger.print('Firebase query result: ${snapshot.docs.length} pending requests found');
           for (final doc in snapshot.docs) {
             AppLogger.print('Pending request doc: ${doc.id} - ${doc.data()}');
           }
@@ -467,25 +400,15 @@ class AppFirebaseService {
 
   /// Get a specific join request document
   Stream<DocumentSnapshot> getJoinRequestStream(String meetingId, int userId) {
-    return meetingsCollection
-        .doc(meetingId)
-        .collection('joinRequests')
-        .doc(userId.toString())
-        .snapshots();
+    return meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).snapshots();
   }
 
   /// Cancel a join request (remove the document)
   Future<void> cancelJoinRequest(String meetingId, int userId) async {
     try {
-      await meetingsCollection
-          .doc(meetingId)
-          .collection('joinRequests')
-          .doc(userId.toString())
-          .delete();
+      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).delete();
 
-      AppLogger.print(
-        'Join request cancelled for user $userId in meeting $meetingId',
-      );
+      AppLogger.print('Join request cancelled for user $userId in meeting $meetingId');
     } catch (e) {
       AppLogger.print('Error cancelling join request: $e');
       rethrow;
@@ -500,10 +423,7 @@ class AppFirebaseService {
   }
 
   Stream<QuerySnapshot> getParticipantsStream(String meetingId) {
-    return meetingsCollection
-        .doc(meetingId)
-        .collection('participants')
-        .snapshots();
+    return meetingsCollection.doc(meetingId).collection('participants').snapshots();
   }
 
   Stream<QuerySnapshot> getParticipatedMeetingsStream(int userId) {
@@ -525,10 +445,7 @@ class AppFirebaseService {
         .snapshots();
   }
 
-  Stream<QuerySnapshot> getUpcomingMeetingsForUserStream(
-    String memberCode,
-    int userId,
-  ) {
+  Stream<QuerySnapshot> getUpcomingMeetingsForUserStream(String memberCode, int userId) {
     final now = DateTime.now();
     return meetingsCollection
         .where('memberCode', isEqualTo: memberCode.toUpperCase())
@@ -541,9 +458,7 @@ class AppFirebaseService {
 
   Future<QuerySnapshot?> getAllMeetingsFromCodeStream(String memberCode) async {
     try {
-      return meetingsCollection
-          .where('memberCode', isEqualTo: memberCode.toUpperCase())
-          .get();
+      return meetingsCollection.where('memberCode', isEqualTo: memberCode.toUpperCase()).get();
     } catch (e) {
       AppLogger.print('error caught in getting all meetings from code : $e');
       return null;
@@ -551,21 +466,14 @@ class AppFirebaseService {
   }
 
   Future<QuerySnapshot> searchMeetingByChannelName(String channelName) {
-    return meetingsCollection
-        .where('channelName', isEqualTo: channelName)
-        .where('status', isEqualTo: 'live')
-        .get();
+    return meetingsCollection.where('channelName', isEqualTo: channelName).where('status', isEqualTo: 'live').get();
   }
 
   Future<Map<String, dynamic>?> getMeetingData(String meetindID) async {
-    return (await meetingsCollection.doc(meetindID).get()).data()
-        as Map<String, dynamic>?;
+    return (await meetingsCollection.doc(meetindID).get()).data() as Map<String, dynamic>?;
   }
 
-  Future<DocumentSnapshot<Object?>?> searchMeetingByMeetId(
-    String meetId,
-    String channelName,
-  ) async {
+  Future<DocumentSnapshot<Object?>?> searchMeetingByMeetId(String meetId, String channelName) async {
     try {
       return await meetingsCollection.doc(meetId).get();
     } catch (e) {
@@ -580,12 +488,7 @@ class AppFirebaseService {
     required String userId,
     required DateTime joinTime,
   }) async {
-    await callLogsCollection.add({
-      'meetingId': meetingId,
-      'userId': userId,
-      'joinTime': joinTime,
-      'leaveTime': null,
-    });
+    await callLogsCollection.add({'meetingId': meetingId, 'userId': userId, 'joinTime': joinTime, 'leaveTime': null});
   }
 
   Future<void> updateCallLogOnLeave({
@@ -601,9 +504,7 @@ class AppFirebaseService {
             .get();
 
     if (logs.docs.isNotEmpty) {
-      await callLogsCollection.doc(logs.docs.first.id).update({
-        'leaveTime': leaveTime,
-      });
+      await callLogsCollection.doc(logs.docs.first.id).update({'leaveTime': leaveTime});
     }
   }
 
@@ -611,37 +512,18 @@ class AppFirebaseService {
     return (await meetingsCollection.get()).docs.map((e) => e.id).toList();
   }
 
-  Future<String> getAgoraToken({
-    required String channelName,
-    required int uid,
-    required bool isHost,
-  }) async {
-    return await AppHttpService().fetchAgoraToken(
-          channelName: channelName,
-          uid: uid,
-          userRole: isHost ? 1 : 0,
-        ) ??
-        '';
+  Future<String> getAgoraToken({required String channelName, required int uid, required bool isHost}) async {
+    return await AppHttpService().fetchAgoraToken(channelName: channelName, uid: uid, userRole: isHost ? 1 : 0) ?? '';
   }
 
-  Future<String> verifyAgoraToken({
-    required String channelName,
-    required int uid,
-    required bool isHost,
-  }) async {
-    return await AppHttpService().verifyAgoraToken(
-          channelName: channelName,
-          uid: uid,
-          userRole: isHost ? '1' : '0',
-        ) ??
+  Future<String> verifyAgoraToken({required String channelName, required int uid, required bool isHost}) async {
+    return await AppHttpService().verifyAgoraToken(channelName: channelName, uid: uid, userRole: isHost ? '1' : '0') ??
         '';
   }
 
   Stream<bool> isCurrentUserMutedByHost(String meetingId) {
     if (meetingId.trim().isEmpty) {
-      debugPrint(
-        '[isCurrentUserMutedByHost] Meeting ID is empty. Listener setup failed.',
-      );
+      debugPrint('[isCurrentUserMutedByHost] Meeting ID is empty. Listener setup failed.');
       // Return a stream that emits false immediately and closes
       return Stream.value(false);
     }
@@ -655,9 +537,7 @@ class AppFirebaseService {
         if (isMuted is bool) {
           return isMuted;
         } else {
-          debugPrint(
-            '[isCurrentUserMutedByHost] Mute status not found or not a bool for user $userId.',
-          );
+          debugPrint('[isCurrentUserMutedByHost] Mute status not found or not a bool for user $userId.');
           return false;
         }
       }
@@ -665,11 +545,7 @@ class AppFirebaseService {
     });
   }
 
-  Future<void> muteParticipants(
-    String meetingId,
-    int userId,
-    bool isMute,
-  ) async {
+  Future<void> muteParticipants(String meetingId, int userId, bool isMute) async {
     try {
       if (meetingId.trim().isEmpty) {
         print("meetingId cannot be empty");
@@ -684,9 +560,7 @@ class AppFirebaseService {
 
       final data = meetingDoc.data() as Map<String, dynamic>? ?? {};
 
-      final mutedMap = Map<String, dynamic>.from(
-        data['isParticipantsMuted'] ?? {},
-      );
+      final mutedMap = Map<String, dynamic>.from(data['isParticipantsMuted'] ?? {});
 
       // Convert to Map<int, bool>
       final isParticipantsMuted = mutedMap.map<int, bool>((key, value) {
@@ -700,9 +574,7 @@ class AppFirebaseService {
         return MapEntry(key.toString(), value);
       });
 
-      await meetingsCollection.doc(meetingId).update({
-        'isParticipantsMuted': updatedMutedMap,
-      });
+      await meetingsCollection.doc(meetingId).update({'isParticipantsMuted': updatedMutedMap});
 
       print("Participant muted Successfully...");
     } catch (e, stackTrace) {
@@ -713,28 +585,19 @@ class AppFirebaseService {
   }
 
   Future<List<AppUser>> getAllUserOfMember(String memberCode) async {
-    final QuerySnapshot querySnapshot =
-        await usersCollection.where('memberCode', isEqualTo: memberCode).get();
+    final QuerySnapshot querySnapshot = await usersCollection.where('memberCode', isEqualTo: memberCode).get();
 
-    return querySnapshot.docs
-        .map((doc) => AppUser.fromJson(doc.data() as Map<String, dynamic>))
-        .toList();
+    return querySnapshot.docs.map((doc) => AppUser.fromJson(doc.data() as Map<String, dynamic>)).toList();
   }
 
   Stream<QuerySnapshot> getUsersByMemberCodeStream(String memberCode) {
-    return usersCollection
-        .where('memberCode', isEqualTo: memberCode)
-        .snapshots();
+    return usersCollection.where('memberCode', isEqualTo: memberCode).snapshots();
   }
 
   Future<List<AppUser>> getUsersByMemberCodeData(String memberCode) async {
     final QuerySnapshot querySnapshot =
-        await usersCollection
-            .where('memberCode', isEqualTo: memberCode.toUpperCase())
-            .get();
-    print(
-      'Fetched ${querySnapshot.docs.length} users for member code $memberCode',
-    );
+        await usersCollection.where('memberCode', isEqualTo: memberCode.toUpperCase()).get();
+    print('Fetched ${querySnapshot.docs.length} users for member code $memberCode');
     return querySnapshot.docs
         .map((doc) => AppUser.fromJson(doc.data() as Map<String, dynamic>))
         .toList()
@@ -758,11 +621,7 @@ class AppFirebaseService {
 
   Future<Member> getMemberData(String memberCode) async {
     try {
-      final snapshot =
-          await _firestore
-              .collection('members')
-              .where('memberCode', isEqualTo: memberCode)
-              .get();
+      final snapshot = await _firestore.collection('members').where('memberCode', isEqualTo: memberCode).get();
       if (snapshot.docs.isNotEmpty) {
         final data = snapshot.docs.first.data();
         return Member.fromMap(snapshot.docs.first.id, data);
@@ -792,11 +651,7 @@ class AppFirebaseService {
   Future<void> removeAllParticipants(String meetingId) async {
     try {
       // Get all participants for this meeting
-      final participantsSnapshot =
-          await meetingsCollection
-              .doc(meetingId)
-              .collection('participants')
-              .get();
+      final participantsSnapshot = await meetingsCollection.doc(meetingId).collection('participants').get();
 
       // Mark all participants as left with current timestamp
       final batch = _firestore.batch();
@@ -824,28 +679,15 @@ class AppFirebaseService {
   }
 
   /// Remove a specific participant from meeting (for app termination cleanup)
-  Future<void> removeParticipantFromMeeting(
-    String meetingId,
-    int userId,
-  ) async {
+  Future<void> removeParticipantFromMeeting(String meetingId, int userId) async {
     try {
-      final participantDoc = meetingsCollection
-          .doc(meetingId)
-          .collection('participants')
-          .doc('$userId');
+      final participantDoc = meetingsCollection.doc(meetingId).collection('participants').doc('$userId');
 
       // Mark participant as left with current timestamp
-      await participantDoc.update({
-        'leaveTime': FieldValue.serverTimestamp(),
-        'isActive': false,
-      });
+      await participantDoc.update({'leaveTime': FieldValue.serverTimestamp(), 'isActive': false});
 
       // Check if this was the last participant
-      final participantsSnapshot =
-          await meetingsCollection
-              .doc(meetingId)
-              .collection('participants')
-              .get();
+      final participantsSnapshot = await meetingsCollection.doc(meetingId).collection('participants').get();
 
       final activeParticipants =
           participantsSnapshot.docs.where((doc) {
@@ -882,14 +724,10 @@ class AppFirebaseService {
   /// Send heartbeat to indicate participant is still active
   Future<void> sendParticipantHeartbeat(String meetingId, int userId) async {
     try {
-      await meetingsCollection
-          .doc(meetingId)
-          .collection('participants')
-          .doc('$userId')
-          .update({
-            'lastHeartbeat': FieldValue.serverTimestamp(),
-            'isActive': true,
-          });
+      await meetingsCollection.doc(meetingId).collection('participants').doc('$userId').update({
+        'lastHeartbeat': FieldValue.serverTimestamp(),
+        'isActive': true,
+      });
     } catch (e) {
       AppLogger.print('Error sending heartbeat: $e');
       rethrow;
@@ -902,11 +740,7 @@ class AppFirebaseService {
       final twoMinutesAgo = DateTime.now().subtract(const Duration(minutes: 2));
 
       // Get all participants
-      final participantsSnapshot =
-          await meetingsCollection
-              .doc(meetingId)
-              .collection('participants')
-              .get();
+      final participantsSnapshot = await meetingsCollection.doc(meetingId).collection('participants').get();
 
       final batch = _firestore.batch();
       final now = FieldValue.serverTimestamp();
@@ -916,17 +750,10 @@ class AppFirebaseService {
         final lastHeartbeat = data['lastHeartbeat'] as Timestamp?;
 
         // If no heartbeat in last 2 minutes, mark as inactive
-        if (lastHeartbeat == null ||
-            lastHeartbeat.toDate().isBefore(twoMinutesAgo)) {
-          batch.update(doc.reference, {
-            'isActive': false,
-            'leaveTime': now,
-            'reason': 'timeout',
-          });
+        if (lastHeartbeat == null || lastHeartbeat.toDate().isBefore(twoMinutesAgo)) {
+          batch.update(doc.reference, {'isActive': false, 'leaveTime': now, 'reason': 'timeout'});
 
-          AppLogger.print(
-            'Marked participant ${data['userId']} as inactive due to timeout',
-          );
+          AppLogger.print('Marked participant ${data['userId']} as inactive due to timeout');
         }
       }
 
@@ -934,11 +761,7 @@ class AppFirebaseService {
 
       // Check if meeting should be ended (no active participants)
       final activeParticipants =
-          await meetingsCollection
-              .doc(meetingId)
-              .collection('participants')
-              .where('isActive', isEqualTo: true)
-              .get();
+          await meetingsCollection.doc(meetingId).collection('participants').where('isActive', isEqualTo: true).get();
 
       if (activeParticipants.docs.isEmpty) {
         await meetingsCollection.doc(meetingId).update({
@@ -947,9 +770,7 @@ class AppFirebaseService {
           'endReason': 'all_participants_timeout',
         });
 
-        AppLogger.print(
-          'Meeting $meetingId ended due to all participants timing out',
-        );
+        AppLogger.print('Meeting $meetingId ended due to all participants timing out');
       }
     } catch (e) {
       AppLogger.print('Error cleaning up inactive participants: $e');
