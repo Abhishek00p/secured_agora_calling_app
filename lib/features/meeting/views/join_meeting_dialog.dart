@@ -65,10 +65,7 @@ class JoinMeetingController extends GetxController {
     isWaitingForApproval.value = false;
 
     if (meetingId.value != null) {
-      firebaseService.cancelJoinRequest(
-        meetingId.value!,
-        AppLocalStorage.getUserDetails().userId,
-      );
+      firebaseService.cancelJoinRequest(meetingId.value!, AppLocalStorage.getUserDetails().userId);
     }
     clearState();
     Get.back();
@@ -102,19 +99,14 @@ class JoinMeetingController extends GetxController {
     final passwordText = passwordController.text;
 
     try {
-      final docSnapshot = await firebaseService.searchMeetingByMeetId(
-        meetingIdText,
-        meetingIdText,
-      );
+      final docSnapshot = await firebaseService.searchMeetingByMeetId(meetingIdText, meetingIdText);
       if (docSnapshot == null || !docSnapshot.exists) {
         errorMessage.value = 'No active meeting found with this ID';
         isLoading.value = false;
         return;
       }
 
-      final data = MeetingModel.fromJson(
-        docSnapshot.data() as Map<String, dynamic>,
-      );
+      final data = MeetingModel.fromJson(docSnapshot.data() as Map<String, dynamic>);
       if (data.password?.isNotEmpty == true && data.password != passwordText) {
         errorMessage.value = 'Incorrect password for this meeting';
         isLoading.value = false;
@@ -159,11 +151,7 @@ class JoinMeetingController extends GetxController {
     Get.back();
     Get.toNamed(
       AppRouter.meetingRoomRoute,
-      arguments: {
-        'channelName': meetingData.value!.channelName,
-        'isHost': false,
-        'meetingId': meetingId.value,
-      },
+      arguments: {'channelName': meetingData.value!.channelName, 'isHost': false, 'meetingId': meetingId.value},
     );
   }
 
@@ -370,8 +358,7 @@ class JoinMeetingDialog extends StatelessWidget {
                   const SizedBox(height: 8),
                   Obx(
                     () =>
-                        controller.meetingFound.value &&
-                                controller.meetingData.value != null
+                        controller.meetingFound.value && controller.meetingData.value != null
                             ? _buildMeetingInfo(controller.meetingData.value!)
                             : const SizedBox.shrink(),
                   ),
@@ -398,12 +385,7 @@ class JoinMeetingDialog extends StatelessWidget {
           child: const Icon(Icons.login_rounded, color: AppTheme.primaryColor),
         ),
         const SizedBox(width: 16),
-        Text(
-          'Join Meeting',
-          style: Get.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text('Join Meeting', style: Get.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -420,12 +402,7 @@ class JoinMeetingDialog extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 16),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(color: AppTheme.errorColor, fontSize: 12),
-            ),
-          ),
+          Expanded(child: Text(message, style: const TextStyle(color: AppTheme.errorColor, fontSize: 12))),
         ],
       ),
     );
@@ -444,25 +421,14 @@ class JoinMeetingDialog extends StatelessWidget {
         children: [
           Text(
             'Meeting Name - ${data.meetingName}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-              color: AppTheme.successColor,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.successColor),
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(
-                Icons.person,
-                color: AppTheme.darkSecondaryTextColor,
-                size: 16,
-              ),
+              Icon(Icons.person, color: AppTheme.darkSecondaryTextColor, size: 16),
               const SizedBox(width: 12),
-              Text(
-                '${data.hostName}\'s Meeting',
-                style: const TextStyle(fontSize: 12),
-              ),
+              Text('${data.hostName}\'s Meeting', style: const TextStyle(fontSize: 12)),
             ],
           ),
           if (data.requiresApproval)
@@ -502,23 +468,17 @@ class JoinMeetingDialog extends StatelessWidget {
               isLoading || isWaitingForApproval
                   ? null
                   : meetingFound && meetingData != null
-                  ? (meetingData.requiresApproval
-                      ? controller.requestToJoin
-                      : controller.joinMeeting)
+                  ? (meetingData.requiresApproval ? controller.requestToJoin : controller.joinMeeting)
                   : controller.searchMeeting,
           style: ElevatedButton.styleFrom(
-            backgroundColor:
-                isWaitingForApproval ? Colors.orange : AppTheme.successColor,
+            backgroundColor: isWaitingForApproval ? Colors.orange : AppTheme.successColor,
           ),
           child:
               isLoading
                   ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                   )
                   : isWaitingForApproval
                   ? Row(
@@ -529,27 +489,19 @@ class JoinMeetingDialog extends StatelessWidget {
                         height: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       ),
                       const SizedBox(width: 8),
                       const Text(
                         'Waiting for Approval',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ],
                   )
                   : Text(
                     meetingFound && meetingData != null
-                        ? (meetingData.requiresApproval
-                            ? 'Request to Join'
-                            : 'Join Now')
+                        ? (meetingData.requiresApproval ? 'Request to Join' : 'Join Now')
                         : 'Search',
                     style: TextStyle(
                       fontSize: meetingFound && meetingData != null ? 12 : 14,

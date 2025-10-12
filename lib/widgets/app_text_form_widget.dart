@@ -63,8 +63,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
   }
 
   String? _defaultValidator(String? value) {
-    if (!widget.isPasswordRequired &&
-        widget.type == AppTextFormFieldType.password) {
+    if (!widget.isPasswordRequired && widget.type == AppTextFormFieldType.password) {
       return null;
     }
     if (value == null || value.isEmpty) {
@@ -118,9 +117,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
           suffixIcon:
               widget.type == AppTextFormFieldType.password
                   ? IconButton(
-                    icon: Icon(
-                      _obscureText ? Icons.visibility : Icons.visibility_off,
-                    ),
+                    icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
                     onPressed: () {
                       setState(() {
                         _obscureText = !_obscureText;
@@ -140,10 +137,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Theme.of(context).primaryColor,
-              width: 2,
-            ),
+            borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -151,19 +145,12 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
           ),
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.error,
-              width: 2,
-            ),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
 
-        obscureText:
-            widget.type == AppTextFormFieldType.password ? _obscureText : false,
+        obscureText: widget.type == AppTextFormFieldType.password ? _obscureText : false,
         keyboardType: _keyboardType,
         validator: widget.validator ?? _defaultValidator,
       );
@@ -175,12 +162,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
           border: Border.all(color: Colors.grey.shade400),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Center(
-          child: Text(
-            widget.labelText,
-            style: TextStyle(color: Colors.grey[600], fontSize: 16),
-          ),
-        ),
+        child: Center(child: Text(widget.labelText, style: TextStyle(color: Colors.grey[600], fontSize: 16))),
       );
     }
   }

@@ -12,27 +12,21 @@ extension AppDateTimeExtension on DateTime? {
     final date = this;
     if (date == null) return false;
     final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    return date.year == now.year && date.month == now.month && date.day == now.day;
   }
 
   bool get isTomorrow {
     final date = this;
     if (date == null) return false;
     final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day + 1;
+    return date.year == now.year && date.month == now.month && date.day == now.day + 1;
   }
 
   bool get isYesterday {
     final date = this;
     if (date == null) return false;
     final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day - 1;
+    return date.year == now.year && date.month == now.month && date.day == now.day - 1;
   }
 
   String get meetStartTime {

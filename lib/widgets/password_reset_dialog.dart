@@ -10,12 +10,7 @@ class PasswordResetDialog extends StatefulWidget {
   final String targetName;
   final bool isMember;
 
-  const PasswordResetDialog({
-    super.key,
-    required this.targetEmail,
-    required this.targetName,
-    required this.isMember,
-  });
+  const PasswordResetDialog({super.key, required this.targetEmail, required this.targetName, required this.isMember});
 
   @override
   State<PasswordResetDialog> createState() => _PasswordResetDialogState();
@@ -82,10 +77,7 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Reset password for:',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-            ),
+            Text('Reset password for:', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -97,17 +89,8 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.targetName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    widget.targetEmail,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
+                  Text(widget.targetName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(widget.targetEmail, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
                   Text(
                     'Role: ${widget.isMember ? 'Member' : 'User'}',
                     style: TextStyle(color: Colors.grey[600], fontSize: 12),
@@ -138,10 +121,7 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
                 ),
               ),
             ] else ...[
-              Text(
-                'Enter new temporary password:',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
+              Text('Enter new temporary password:', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _passwordController,
@@ -151,9 +131,7 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
                   hintText: 'Enter temporary password',
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _showPassword ? Icons.visibility : Icons.visibility_off,
-                    ),
+                    icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off),
                     onPressed: () {
                       setState(() {
                         _showPassword = !_showPassword;
@@ -181,19 +159,12 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.orange[600],
-                      size: 16,
-                    ),
+                    Icon(Icons.info_outline, color: Colors.orange[600], size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'A password reset email will be sent to the user.',
-                        style: TextStyle(
-                          color: Colors.orange[700],
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.orange[700], fontSize: 12),
                       ),
                     ),
                   ],
@@ -204,17 +175,11 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
         if (canResetPassword)
           ElevatedButton(
             onPressed: _isLoading ? null : _resetPassword,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
             child:
                 _isLoading
                     ? const SizedBox(

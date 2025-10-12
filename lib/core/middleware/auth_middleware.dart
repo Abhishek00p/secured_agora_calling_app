@@ -34,9 +34,7 @@ class AuthMiddleware extends GetMiddleware {
 
     // If user is not authenticated, redirect to login
     if (!isLoggedIn || token == null || userDetails.isEmpty) {
-      AppLogger.print(
-        'AuthMiddleware: User not authenticated, redirecting to login',
-      );
+      AppLogger.print('AuthMiddleware: User not authenticated, redirecting to login');
       return const RouteSettings(name: AppRouter.loginRoute);
     }
 
@@ -72,16 +70,12 @@ class WelcomeMiddleware extends GetMiddleware {
 
     // If user is authenticated, redirect to home
     if (isLoggedIn && token != null && !userDetails.isEmpty) {
-      AppLogger.print(
-        'WelcomeMiddleware: User is authenticated, redirecting to home',
-      );
+      AppLogger.print('WelcomeMiddleware: User is authenticated, redirecting to home');
       return const RouteSettings(name: AppRouter.homeRoute);
     }
 
     // User is not authenticated, show welcome screen
-    AppLogger.print(
-      'WelcomeMiddleware: User not authenticated, showing welcome screen',
-    );
+    AppLogger.print('WelcomeMiddleware: User not authenticated, showing welcome screen');
     return null;
   }
 }
@@ -99,9 +93,7 @@ class LoginMiddleware extends GetMiddleware {
       return null;
     }
 
-    AppLogger.print(
-      'LoginMiddleware: Checking if user is already authenticated...',
-    );
+    AppLogger.print('LoginMiddleware: Checking if user is already authenticated...');
 
     // Check if user is already logged in
     final isLoggedIn = AppLocalStorage.getLoggedInStatus();
@@ -114,16 +106,12 @@ class LoginMiddleware extends GetMiddleware {
 
     // If user is authenticated, redirect to home
     if (isLoggedIn && token != null && !userDetails.isEmpty) {
-      AppLogger.print(
-        'LoginMiddleware: User is already authenticated, redirecting to home',
-      );
+      AppLogger.print('LoginMiddleware: User is already authenticated, redirecting to home');
       return const RouteSettings(name: AppRouter.homeRoute);
     }
 
     // User is not authenticated, show login screen
-    AppLogger.print(
-      'LoginMiddleware: User not authenticated, showing login screen',
-    );
+    AppLogger.print('LoginMiddleware: User not authenticated, showing login screen');
     return null;
   }
 }

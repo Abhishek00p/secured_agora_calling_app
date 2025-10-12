@@ -55,10 +55,7 @@ class FirebaseFunctionLogger {
       requestLog.duration = duration;
       requestLog.statusCode = response.statusCode;
       requestLog.responseBody = response.body;
-      requestLog.status =
-          response.statusCode >= 200 && response.statusCode < 300
-              ? 'success'
-              : 'error';
+      requestLog.status = response.statusCode >= 200 && response.statusCode < 300 ? 'success' : 'error';
 
       // Log response details
       _logResponse(requestLog);
@@ -208,8 +205,7 @@ class FirebaseFunctionLogger {
     final errorStats = <String, int>{};
 
     for (final log in _logs) {
-      functionStats[log.functionName] =
-          (functionStats[log.functionName] ?? 0) + 1;
+      functionStats[log.functionName] = (functionStats[log.functionName] ?? 0) + 1;
       if (log.status == 'error') {
         errorStats[log.functionName] = (errorStats[log.functionName] ?? 0) + 1;
       }
@@ -218,26 +214,16 @@ class FirebaseFunctionLogger {
     AppLogger.print('Function call counts:');
     functionStats.forEach((function, count) {
       final errorCount = errorStats[function] ?? 0;
-      final successRate = ((count - errorCount) / count * 100).toStringAsFixed(
-        1,
-      );
+      final successRate = ((count - errorCount) / count * 100).toStringAsFixed(1);
       AppLogger.print('  $function: $count calls (${successRate}% success)');
     });
 
     // Average response time
-    final successfulLogs =
-        _logs
-            .where((log) => log.duration != null && log.status == 'success')
-            .toList();
+    final successfulLogs = _logs.where((log) => log.duration != null && log.status == 'success').toList();
     if (successfulLogs.isNotEmpty) {
       final avgDuration =
-          successfulLogs
-              .map((log) => log.duration!.inMilliseconds)
-              .reduce((a, b) => a + b) /
-          successfulLogs.length;
-      AppLogger.print(
-        'Average response time: ${avgDuration.toStringAsFixed(0)}ms',
-      );
+          successfulLogs.map((log) => log.duration!.inMilliseconds).reduce((a, b) => a + b) / successfulLogs.length;
+      AppLogger.print('Average response time: ${avgDuration.toStringAsFixed(0)}ms');
     }
 
     AppLogger.print('---');

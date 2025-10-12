@@ -66,17 +66,13 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
     _checkMeetingStatus();
 
     if (_isInMeeting) {
-      AppLogger.print(
-        'User is in meeting during pause - setting up delayed cleanup',
-      );
+      AppLogger.print('User is in meeting during pause - setting up delayed cleanup');
 
       // Set up a delayed cleanup timer (30 seconds)
       // This gives the app a chance to resume if it was just minimized
       _cleanupTimer?.cancel();
       _cleanupTimer = Timer(const Duration(seconds: 30), () {
-        AppLogger.print(
-          'Delayed cleanup triggered - app was not resumed in time',
-        );
+        AppLogger.print('Delayed cleanup triggered - app was not resumed in time');
         _performMeetingCleanup();
       });
     }
@@ -122,9 +118,7 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
         _currentMeetingId = meetingController.meetingId;
         _isHost = meetingController.isHost;
 
-        AppLogger.print(
-          'Meeting status - InMeeting: $_isInMeeting, MeetingId: $_currentMeetingId, IsHost: $_isHost',
-        );
+        AppLogger.print('Meeting status - InMeeting: $_isInMeeting, MeetingId: $_currentMeetingId, IsHost: $_isHost');
       } else {
         _isInMeeting = false;
         _currentMeetingId = '';
@@ -146,23 +140,16 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
     }
 
     try {
-      AppLogger.print(
-        'Performing meeting cleanup for meeting: $_currentMeetingId',
-      );
+      AppLogger.print('Performing meeting cleanup for meeting: $_currentMeetingId');
 
       final currentUser = AppLocalStorage.getUserDetails();
 
       // Remove user from meeting participants
-      await _firebaseService.removeParticipantFromMeeting(
-        _currentMeetingId,
-        currentUser.userId,
-      );
+      await _firebaseService.removeParticipantFromMeeting(_currentMeetingId, currentUser.userId);
 
       // If user was host, end the meeting for everyone
       if (_isHost) {
-        AppLogger.print(
-          'Host terminated app - ending meeting for all participants',
-        );
+        AppLogger.print('Host terminated app - ending meeting for all participants');
         await _firebaseService.removeAllParticipants(_currentMeetingId);
         await _firebaseService.endMeeting(_currentMeetingId);
       }
@@ -179,18 +166,12 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
   }
 
   /// Manually set meeting status (called by MeetingController)
-  void setMeetingStatus({
-    required bool isInMeeting,
-    required String meetingId,
-    required bool isHost,
-  }) {
+  void setMeetingStatus({required bool isInMeeting, required String meetingId, required bool isHost}) {
     _isInMeeting = isInMeeting;
     _currentMeetingId = meetingId;
     _isHost = isHost;
 
-    AppLogger.print(
-      'Meeting status updated - InMeeting: $isInMeeting, MeetingId: $meetingId, IsHost: $isHost',
-    );
+    AppLogger.print('Meeting status updated - InMeeting: $isInMeeting, MeetingId: $meetingId, IsHost: $isHost');
   }
 
   /// Clear meeting status (called when meeting ends normally)

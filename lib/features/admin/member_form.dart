@@ -52,19 +52,14 @@ class _MemberFormState extends State<MemberForm> {
     password = TextEditingController();
     purchaseDate = widget.member?.purchaseDate ?? DateTime.now();
     isActive = widget.member?.isActive ?? true;
-    maxParticipantsAllowed = TextEditingController(
-      text: widget.member?.maxParticipantsAllowed.toString() ?? '',
-    );
+    maxParticipantsAllowed = TextEditingController(text: widget.member?.maxParticipantsAllowed.toString() ?? '');
 
     // Set initial subscription plan if editing existing member
     if (widget.member != null) {
       final days = widget.member!.planDays;
       selectedPlan =
           subscriptionPlans.entries
-              .firstWhere(
-                (entry) => entry.value == days,
-                orElse: () => subscriptionPlans.entries.first,
-              )
+              .firstWhere((entry) => entry.value == days, orElse: () => subscriptionPlans.entries.first)
               .key;
     }
   }
@@ -102,9 +97,7 @@ class _MemberFormState extends State<MemberForm> {
           purchaseDate: purchaseDate,
           planDays: planDays,
           maxParticipantsAllowed:
-              int.parse(maxParticipantsAllowed.text) <= 0
-                  ? 45
-                  : int.parse(maxParticipantsAllowed.text),
+              int.parse(maxParticipantsAllowed.text) <= 0 ? 45 : int.parse(maxParticipantsAllowed.text),
         );
 
         if ((success ?? false) && mounted) {
@@ -120,7 +113,7 @@ class _MemberFormState extends State<MemberForm> {
       if (e.toString().contains('weak-password')) {
         message = 'The password provided is too weak.';
       } else if (e.toString().contains('already-exists')) {
-        message = 'An account already exists for that email.';
+        message = 'An account already exists for that userId.';
       } else {
         message = e.toString();
       }
@@ -136,11 +129,7 @@ class _MemberFormState extends State<MemberForm> {
 
   List<DropdownModel<String>> get subscriptionPlanItems {
     return subscriptionPlans.entries.map((entry) {
-      return DropdownModel<String>(
-        label: entry.key,
-        value: entry.key,
-        description: '${entry.value} days',
-      );
+      return DropdownModel<String>(label: entry.key, value: entry.key, description: '${entry.value} days');
     }).toList();
   }
 
@@ -155,21 +144,11 @@ class _MemberFormState extends State<MemberForm> {
             onPressed: _isLoading ? null : _saveMember,
             child:
                 _isLoading
-                    ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                    : Text(
-                      widget.member == null
-                          ? "Save & Register Member"
-                          : "Update Member Details",
-                    ),
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text(widget.member == null ? "Save & Register Member" : "Update Member Details"),
           ),
         ),
-        appBar: AppBar(
-          title: Text(widget.member == null ? "Add Member" : "Edit Member"),
-        ),
+        appBar: AppBar(title: Text(widget.member == null ? "Add Member" : "Edit Member")),
         body: Form(
           key: _formKey,
           child: Padding(
@@ -177,17 +156,9 @@ class _MemberFormState extends State<MemberForm> {
             child: ListView(
               children: [
                 24.h,
-                AppTextFormField(
-                  controller: name,
-                  labelText: "Name",
-                  type: AppTextFormFieldType.name,
-                ),
+                AppTextFormField(controller: name, labelText: "Name", type: AppTextFormFieldType.name),
                 const SizedBox(height: 12),
-                AppTextFormField(
-                  controller: email,
-                  labelText: "Email",
-                  type: AppTextFormFieldType.email,
-                ),
+                AppTextFormField(controller: email, labelText: "userId", type: AppTextFormFieldType.text),
                 const SizedBox(height: 12),
                 if (widget.member == null) ...[
                   AppTextFormField(
@@ -206,9 +177,7 @@ class _MemberFormState extends State<MemberForm> {
                       () => showDatePicker(
                         context: context,
                         initialDate: purchaseDate,
-                        firstDate: DateTime.now().subtract(
-                          const Duration(days: 60),
-                        ),
+                        firstDate: DateTime.now().subtract(const Duration(days: 60)),
                         lastDate: DateTime(2100),
                       ).then((value) {
                         if (value != null) {
@@ -244,8 +213,7 @@ class _MemberFormState extends State<MemberForm> {
                     }
                     return null;
                   },
-                  helperText:
-                      "Max number of participants allowed in a Meeting in Multple of 5, eg: 5, 10, 15...",
+                  helperText: "Max number of participants allowed in a Meeting in Multple of 5, eg: 5, 10, 15...",
                   prefixIcon: Icons.group,
                 ),
                 const SizedBox(height: 8),
@@ -253,34 +221,10 @@ class _MemberFormState extends State<MemberForm> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text("Active"),
-                    Switch(
-                      value: isActive,
-                      onChanged: (v) => setState(() => isActive = v),
-                    ),
+                    Switch(value: isActive, onChanged: (v) => setState(() => isActive = v)),
                   ],
                 ),
                 const SizedBox(height: 24),
-                if (widget.member == null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'A verification email will be sent to the provided email address. The member must verify their email to complete the registration process.',
-                            style: TextStyle(color: Colors.blue, fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
               ],
             ),
           ),

@@ -41,10 +41,7 @@ class AppAuthService {
   bool get isUserLoggedIn => AppLocalStorage.getLoggedInStatus();
 
   /// Login user using Firebase Functions (HTTP)
-  Future<Map<String, dynamic>?> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<Map<String, dynamic>?> login({required String email, required String password}) async {
     try {
       AppLogger.print('Attempting login for: $email');
 
@@ -64,10 +61,7 @@ class AppAuthService {
 
         if (response['success'] == true) {
           // Extract token + user
-          final data =
-              response['data'] != null
-                  ? Map<String, dynamic>.from(response['data'])
-                  : {};
+          final data = response['data'] != null ? Map<String, dynamic>.from(response['data']) : {};
           print("the token received from api is : ${data['token']}");
           _currentToken = data['token'];
           _currentUser = AppUser.fromJson(data['user']);
@@ -78,11 +72,7 @@ class AppAuthService {
           AppLocalStorage.storeToken(_currentToken!);
 
           AppLogger.print('Login successful for user: ${_currentUser!.name}');
-          return {
-            'success': true,
-            'user': _currentUser,
-            'token': _currentToken,
-          };
+          return {'success': true, 'user': _currentUser, 'token': _currentToken};
         } else {
           final errorMessage = response['error_message'] ?? 'Login failed';
           AppToastUtil.showErrorToast(errorMessage);
@@ -130,8 +120,7 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('User created successfully');
         return true;
       } else {
-        final errorMessage =
-            response['error_message'] ?? 'Failed to create user';
+        final errorMessage = response['error_message'] ?? 'Failed to create user';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {
@@ -181,8 +170,7 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('Member created successfully');
         return true;
       } else {
-        final errorMessage =
-            response['error_message'] ?? 'Failed to create member';
+        final errorMessage = response['error_message'] ?? 'Failed to create member';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {
@@ -193,10 +181,7 @@ class AppAuthService {
   }
 
   /// Reset user password
-  Future<bool?> resetPassword({
-    required String targetEmail,
-    required String newPassword,
-  }) async {
+  Future<bool?> resetPassword({required String targetEmail, required String newPassword}) async {
     try {
       if (!isUserLoggedIn) AppToastUtil.showErrorToast('User not logged in');
 
@@ -205,10 +190,7 @@ class AppAuthService {
       // Use the new CRUD function (auth token will be added automatically)
       final response = await _httpService.post(
         'resetPassword',
-        body: {
-          'targetEmail': targetEmail.trim().toLowerCase(),
-          'newPassword': newPassword,
-        },
+        body: {'targetEmail': targetEmail.trim().toLowerCase(), 'newPassword': newPassword},
       );
 
       if (response == null) {
@@ -220,8 +202,7 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('Password reset successfully');
         return true;
       } else {
-        final errorMessage =
-            response['error_message'] ?? 'Failed to reset password';
+        final errorMessage = response['error_message'] ?? 'Failed to reset password';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {
@@ -253,8 +234,7 @@ class AppAuthService {
         final data = Map<String, dynamic>.from(response['data']);
         return data['credentials'] as Map<String, dynamic>?;
       } else {
-        final errorMessage =
-            response['error_message'] ?? 'Failed to get credentials';
+        final errorMessage = response['error_message'] ?? 'Failed to get credentials';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {

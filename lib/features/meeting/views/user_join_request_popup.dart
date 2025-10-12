@@ -5,12 +5,7 @@ class JoinRequestPopup extends StatelessWidget {
   final VoidCallback onAdmit;
   final VoidCallback onDeny;
 
-  const JoinRequestPopup({
-    super.key,
-    required this.userName,
-    required this.onAdmit,
-    required this.onDeny,
-  });
+  const JoinRequestPopup({super.key, required this.userName, required this.onAdmit, required this.onDeny});
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +15,7 @@ class JoinRequestPopup extends StatelessWidget {
       child: Align(
         alignment: Alignment.bottomCenter,
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 12 : 24,
-            vertical: isMobile ? 10 : 20,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24, vertical: isMobile ? 10 : 20),
           child: Material(
             elevation: 12,
             borderRadius: BorderRadius.circular(20),
@@ -31,9 +23,7 @@ class JoinRequestPopup extends StatelessWidget {
             child: Container(
               width: isMobile ? double.infinity : 500,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-              ),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
               child: Row(
                 children: [
                   const Icon(Icons.person, size: 32, color: Colors.grey),
@@ -46,18 +36,12 @@ class JoinRequestPopup extends StatelessWidget {
                             text: userName,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize:
-                                  isMobile
-                                      ? 10
-                                      : 14, // slightly larger than rest
+                              fontSize: isMobile ? 10 : 14, // slightly larger than rest
                             ),
                           ),
                           TextSpan(
                             text: ' wants to join the meeting',
-                            style: TextStyle(
-                              fontSize: isMobile ? 8 : 12,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: TextStyle(fontSize: isMobile ? 8 : 12, fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
@@ -65,27 +49,13 @@ class JoinRequestPopup extends StatelessWidget {
                   ),
                   TextButton(
                     onPressed: onDeny,
-                    child: Text(
-                      'Deny',
-                      style: TextStyle(
-                        fontSize: isMobile ? 12 : 14,
-                        color: Colors.red,
-                      ),
-                    ),
+                    child: Text('Deny', style: TextStyle(fontSize: isMobile ? 12 : 14, color: Colors.red)),
                   ),
                   const SizedBox(width: 4),
                   ElevatedButton(
                     onPressed: onAdmit,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
-                    child: Text(
-                      'Admit',
-                      style: TextStyle(fontSize: isMobile ? 12 : 14),
-                    ),
+                    style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
+                    child: Text('Admit', style: TextStyle(fontSize: isMobile ? 12 : 14)),
                   ),
                 ],
               ),

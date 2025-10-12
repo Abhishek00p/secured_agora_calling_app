@@ -7,12 +7,7 @@ class ExtendMeetingDialog extends StatefulWidget {
   final String meetingTitle;
   final Function(int minutes, String? reason) onExtend;
 
-  const ExtendMeetingDialog({
-    super.key,
-    required this.meetingId,
-    required this.meetingTitle,
-    required this.onExtend,
-  });
+  const ExtendMeetingDialog({super.key, required this.meetingId, required this.meetingTitle, required this.onExtend});
 
   @override
   State<ExtendMeetingDialog> createState() => _ExtendMeetingDialogState();
@@ -24,14 +19,7 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
   int _selectedMinutes = 30;
   bool _isLoading = false;
 
-  final List<int> _extensionOptions = [
-    30,
-    60,
-    120,
-    180,
-    240,
-    300,
-  ]; // in minutes
+  final List<int> _extensionOptions = [30, 60, 120, 180, 240, 300]; // in minutes
 
   @override
   void dispose() {
@@ -49,16 +37,12 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
     try {
       await widget.onExtend(
         _selectedMinutes,
-        _reasonController.text.trim().isEmpty
-            ? null
-            : _reasonController.text.trim(),
+        _reasonController.text.trim().isEmpty ? null : _reasonController.text.trim(),
       );
 
       if (mounted) {
         Navigator.of(context).pop(true);
-        AppToastUtil.showSuccessToast(
-          'Meeting extended successfully by $_selectedMinutes minutes',
-        );
+        AppToastUtil.showSuccessToast('Meeting extended successfully by $_selectedMinutes minutes');
       }
     } catch (e) {
       if (mounted) {
@@ -91,18 +75,14 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
           children: [
             Text(
               'Extend "${widget.meetingTitle}"',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
 
             // Duration selection
             Text(
               'Additional Duration:',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -118,31 +98,17 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color:
-                              isSelected
-                                  ? AppTheme.primaryColor
-                                  : Colors.grey[200],
+                          color: isSelected ? AppTheme.primaryColor : Colors.grey[200],
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color:
-                                isSelected
-                                    ? AppTheme.primaryColor
-                                    : Colors.grey[400]!,
-                          ),
+                          border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey[400]!),
                         ),
                         child: Text(
                           minutes < 60 ? '${minutes}m' : '${minutes ~/ 60}h ',
                           style: TextStyle(
                             color: isSelected ? Colors.white : Colors.grey[700],
-                            fontWeight:
-                                isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -168,25 +134,18 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
             const SizedBox(height: 8),
             Text(
               'The meeting will be extended by $_selectedMinutes minutes',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-                fontStyle: FontStyle.italic,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey[600], fontStyle: FontStyle.italic),
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
+        TextButton(onPressed: _isLoading ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
         ElevatedButton(
           onPressed: _isLoading ? null : _handleExtend,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-          ),
+          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
           child:
               _isLoading
                   ? const SizedBox(

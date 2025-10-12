@@ -37,19 +37,13 @@ class _ViewAllMeetingListState extends State<ViewAllMeetingList> {
               : Center(
                 child: Text(
                   'No meetings available',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20, fontWeight: FontWeight.w600),
                 ),
               ),
     );
   }
 
-  void requuestMeetingApproval(
-    BuildContext context,
-    MeetingModel meeting,
-  ) async {
+  void requuestMeetingApproval(BuildContext context, MeetingModel meeting) async {
     if (!context.mounted) return;
 
     // Use centralized join request service
@@ -63,38 +57,28 @@ class _ViewAllMeetingListState extends State<ViewAllMeetingList> {
     );
   }
 
-  void listenForParticipantAddition(
-    MeetingModel meeting,
-    int userId,
-    BuildContext context,
-  ) {
-    listener = FirebaseFirestore.instance
-        .collection('meetings')
-        .doc(meeting.meetId)
-        .snapshots()
-        .listen((snapshot) {
-          if (snapshot.exists) {
-            final data = snapshot.data() as Map<String, dynamic>;
-            final List<dynamic> participants = data['participants'] ?? [];
+  void listenForParticipantAddition(MeetingModel meeting, int userId, BuildContext context) {
+    listener = FirebaseFirestore.instance.collection('meetings').doc(meeting.meetId).snapshots().listen((snapshot) {
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final List<dynamic> participants = data['participants'] ?? [];
 
-            if (participants.contains(userId)) {
-              // User has been added to the participants list, stop listening
-              listener?.cancel(); // Stop listening to prevent further triggers
+        if (participants.contains(userId)) {
+          // User has been added to the participants list, stop listening
+          listener?.cancel(); // Stop listening to prevent further triggers
 
-              Navigator.pushNamed(
-                context,
-                AppRouter.meetingRoomRoute,
-                arguments: {
-                  'channelName': meeting.channelName,
-                  'isHost':
-                      meeting.hostId ==
-                      AppLocalStorage.getUserDetails().firebaseUserId,
-                  'meetingId': meeting.meetId,
-                },
-              );
-            }
-          }
-        });
+          Navigator.pushNamed(
+            context,
+            AppRouter.meetingRoomRoute,
+            arguments: {
+              'channelName': meeting.channelName,
+              'isHost': meeting.hostId == AppLocalStorage.getUserDetails().firebaseUserId,
+              'meetingId': meeting.meetId,
+            },
+          );
+        }
+      }
+    });
   }
 
   @override

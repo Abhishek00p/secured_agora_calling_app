@@ -29,8 +29,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final List<Widget> _pages = [MembarTabViewWidget(), UserTab()];
   int _selectedIndex = 0;
@@ -38,28 +37,20 @@ class _HomeScreenState extends State<HomeScreen>
   int poppedTimes = 0;
 
   void _showNotificationPermissionSheet(BuildContext context) async {
-    final result = await PermissionService.requestPermission(
-      context: context,
-      type: AppPermissionType.notification,
-    );
+    final result = await PermissionService.requestPermission(context: context, type: AppPermissionType.notification);
     if (result) {
       return; // Permission granted, no need to show the sheet
     }
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder:
           (_) => Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  "Enable Notifications",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                Text("Enable Notifications", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
                 Text(
                   "We use notifications to remind you of meetings, alerts, and important messages. You can enable them now or later.",
@@ -75,10 +66,7 @@ class _HomeScreenState extends State<HomeScreen>
                     //     .requestPermissionAndInitialize();
                   },
                 ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text("Maybe later"),
-                ),
+                TextButton(onPressed: () => Navigator.pop(context), child: Text("Maybe later")),
               ],
             ),
           ),
@@ -105,9 +93,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> loadUserData() async {
     try {
-      final data = await AppFirebaseService.instance.getUserData(
-        AppLocalStorage.getUserDetails().userId.toString(),
-      );
+      final data = await AppFirebaseService.instance.getUserData(AppLocalStorage.getUserDetails().userId.toString());
       setState(() {
         user = AppUser.fromJson(data.data() as Map<String, dynamic>);
       });
@@ -131,10 +117,7 @@ class _HomeScreenState extends State<HomeScreen>
           setState(() {
             poppedTimes++;
           });
-          AppToastUtil.showInfoToast(
-            title: 'Exit Confirmation',
-            'Press back again to exit the app',
-          );
+          AppToastUtil.showInfoToast(title: 'Exit Confirmation', 'Press back again to exit the app');
 
           // Reset after a short delay (to avoid double count after timeout)
           Future.delayed(const Duration(seconds: 2), () {
@@ -152,16 +135,11 @@ class _HomeScreenState extends State<HomeScreen>
           actions: [
             PopupMenuButton<String>(
               offset: Offset(0, 50),
-              icon: const Icon(
-                Icons.logout_rounded,
-              ), // You can use Icons.exit_to_app if preferred
+              icon: const Icon(Icons.logout_rounded), // You can use Icons.exit_to_app if preferred
               onSelected: (value) async {
                 if (value == 'sign_out') {
                   if (await AppLocalStorage.signOut(context)) {
-                    Navigator.pushReplacementNamed(
-                      context,
-                      AppRouter.welcomeRoute,
-                    );
+                    Navigator.pushReplacementNamed(context, AppRouter.welcomeRoute);
                   }
                 }
               },
@@ -172,12 +150,7 @@ class _HomeScreenState extends State<HomeScreen>
                       padding: EdgeInsets.zero,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: [
-                          8.w,
-                          Text('Sign Out'),
-                          10.w,
-                          const Icon(Icons.logout_rounded, color: Colors.red),
-                        ],
+                        children: [8.w, Text('Sign Out'), 10.w, const Icon(Icons.logout_rounded, color: Colors.red)],
                       ),
                     ),
                   ],
@@ -191,26 +164,13 @@ class _HomeScreenState extends State<HomeScreen>
                     onPressed: () {
                       if (AppUserRoleService.isAdmin()) {
                         // Admin navigation
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AdminScreen(),
-                          ),
-                        );
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminScreen()));
                       } else if (AppUserRoleService.isMember()) {
                         // Member navigation
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const UsersScreen(),
-                          ),
-                        );
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const UsersScreen()));
                       }
                     },
-                    tooltip:
-                        AppUserRoleService.isAdmin()
-                            ? 'Admin Section'
-                            : 'View Associated Users',
+                    tooltip: AppUserRoleService.isAdmin() ? 'Admin Section' : 'View Associated Users',
                   ),
         ),
 
@@ -226,11 +186,7 @@ class _HomeScreenState extends State<HomeScreen>
                   gradient: AppTheme.primaryGradient,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
+                    BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Column(
@@ -239,11 +195,7 @@ class _HomeScreenState extends State<HomeScreen>
                   children: [
                     Text(
                       user.name.titleCase,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                     const SizedBox(height: 4),
                     if (user.memberCode.isNotEmpty) ...[
@@ -252,29 +204,17 @@ class _HomeScreenState extends State<HomeScreen>
                         children: [
                           Text(
                             'Code: ${user.memberCode}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
                           ),
                           4.w,
                           IconButton(
-                            icon: const Icon(
-                              Icons.copy,
-                              color: Colors.white,
-                              size: 14,
-                            ),
+                            icon: const Icon(Icons.copy, color: Colors.white, size: 14),
                             padding: EdgeInsets.zero,
 
                             onPressed: () {
                               // Copy member code to clipboard
-                              Clipboard.setData(
-                                ClipboardData(text: user.memberCode),
-                              );
-                              AppToastUtil.showSuccessToast(
-                                'Member code copied to clipboard',
-                              );
+                              Clipboard.setData(ClipboardData(text: user.memberCode));
+                              AppToastUtil.showSuccessToast('Member code copied to clipboard');
                             },
                           ),
                         ],
@@ -283,21 +223,14 @@ class _HomeScreenState extends State<HomeScreen>
 
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.white.withAppOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         'Role : ${AppUserRoleService.getCurrentUserRoleDisplayName()}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                        ),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 12),
                       ),
                     ),
 
@@ -309,19 +242,12 @@ class _HomeScreenState extends State<HomeScreen>
                         children: [
                           Text(
                             'Plan: ${user.subscription.plan}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
                           ),
                           8.w,
                           Text(
                             'Expires: ${user.subscription.expiryDate.formatDate ?? 'N/A'}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
                           ),
                         ],
                       ),
@@ -347,15 +273,11 @@ class _HomeScreenState extends State<HomeScreen>
                   },
                   controller: _tabController,
                   indicatorSize: TabBarIndicatorSize.tab,
-                  indicator: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: AppTheme.primaryColor,
-                  ),
+                  indicator: BoxDecoration(borderRadius: BorderRadius.circular(12), color: AppTheme.primaryColor),
                   labelColor: Colors.white,
                   indicatorPadding: EdgeInsets.all(8),
                   dividerColor: Colors.transparent,
-                  unselectedLabelColor:
-                      Theme.of(context).textTheme.bodyLarge?.color,
+                  unselectedLabelColor: Theme.of(context).textTheme.bodyLarge?.color,
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold),
                   tabs: const [
                     Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'),

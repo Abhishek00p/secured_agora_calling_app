@@ -5,12 +5,8 @@ class DeleteConfirmationDialog extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onCancel;
 
-  const DeleteConfirmationDialog({
-    Key? key,
-    this.description,
-    required this.onDelete,
-    required this.onCancel,
-  }) : super(key: key);
+  const DeleteConfirmationDialog({Key? key, this.description, required this.onDelete, required this.onCancel})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -19,10 +15,7 @@ class DeleteConfirmationDialog extends StatelessWidget {
         'Are you sure you want to delete?',
         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
       ),
-      content:
-          description != null
-              ? Text(description!, style: TextStyle(fontSize: 12))
-              : null,
+      content: description != null ? Text(description!, style: TextStyle(fontSize: 12)) : null,
       actions: [
         TextButton(onPressed: onCancel, child: const Text('Cancel')),
         ElevatedButton(

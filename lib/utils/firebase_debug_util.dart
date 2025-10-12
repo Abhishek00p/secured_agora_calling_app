@@ -32,9 +32,7 @@ class FirebaseDebugUtil {
     AppLogger.print('🔍 LOGS FOR FUNCTION: $functionName');
     AppLogger.print('================================');
 
-    final logs = FirebaseFunctionLogger.instance.getLogsForFunction(
-      functionName,
-    );
+    final logs = FirebaseFunctionLogger.instance.getLogsForFunction(functionName);
     if (logs.isEmpty) {
       AppLogger.print('No logs found for function: $functionName');
       return;
@@ -93,14 +91,7 @@ class FirebaseDebugUtil {
     AppLogger.print('================================');
 
     final logs = FirebaseFunctionLogger.instance.getAllLogs();
-    final slowLogs =
-        logs
-            .where(
-              (log) =>
-                  log.duration != null &&
-                  log.duration!.inMilliseconds > thresholdMs,
-            )
-            .toList();
+    final slowLogs = logs.where((log) => log.duration != null && log.duration!.inMilliseconds > thresholdMs).toList();
 
     if (slowLogs.isEmpty) {
       AppLogger.print('No slow requests found');
@@ -162,18 +153,10 @@ class FirebaseDebugUtil {
     AppLogger.print('==========================================');
     AppLogger.print('Available commands:');
     AppLogger.print('1. FirebaseDebugUtil.printSummary() - Show summary');
-    AppLogger.print(
-      '2. FirebaseDebugUtil.printRecentLogs(5) - Show last 5 calls',
-    );
-    AppLogger.print(
-      '3. FirebaseDebugUtil.printFailedRequests() - Show failed calls',
-    );
-    AppLogger.print(
-      '4. FirebaseDebugUtil.printSlowRequests(1000) - Show slow calls',
-    );
-    AppLogger.print(
-      '5. FirebaseDebugUtil.printLogsForFunction("login") - Show login calls',
-    );
+    AppLogger.print('2. FirebaseDebugUtil.printRecentLogs(5) - Show last 5 calls');
+    AppLogger.print('3. FirebaseDebugUtil.printFailedRequests() - Show failed calls');
+    AppLogger.print('4. FirebaseDebugUtil.printSlowRequests(1000) - Show slow calls');
+    AppLogger.print('5. FirebaseDebugUtil.printLogsForFunction("login") - Show login calls');
     AppLogger.print('6. FirebaseDebugUtil.printAllLogs() - Show all calls');
     AppLogger.print('7. FirebaseDebugUtil.clearLogs() - Clear all logs');
     AppLogger.print('==========================================');

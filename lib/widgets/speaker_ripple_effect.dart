@@ -8,17 +8,13 @@ class WaterRipple extends StatefulWidget {
   State<WaterRipple> createState() => _WaterRippleState();
 }
 
-class _WaterRippleState extends State<WaterRipple>
-    with SingleTickerProviderStateMixin {
+class _WaterRippleState extends State<WaterRipple> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: 2),
-    )..repeat();
+    _controller = AnimationController(vsync: this, duration: Duration(seconds: 2))..repeat();
   }
 
   @override
@@ -40,8 +36,7 @@ class RipplePainter extends CustomPainter {
   final Animation<double> animation;
   final Color color;
 
-  RipplePainter({required this.animation, required this.color})
-    : super(repaint: animation);
+  RipplePainter({required this.animation, required this.color}) : super(repaint: animation);
 
   @override
   void paint(Canvas canvas, Size size) {

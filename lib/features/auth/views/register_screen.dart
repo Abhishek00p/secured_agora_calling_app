@@ -7,11 +7,7 @@ class RegisterForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final VoidCallback onSubmit;
 
-  const RegisterForm({
-    super.key,
-    required this.formKey,
-    required this.onSubmit,
-  });
+  const RegisterForm({super.key, required this.formKey, required this.onSubmit});
 
   @override
   Widget build(BuildContext context) {
@@ -27,48 +23,33 @@ class RegisterForm extends StatelessWidget {
                   controller: loginRegisterController.registerNameController,
                   labelText: 'Full Name',
                   type: AppTextFormFieldType.text,
-                  validator:
-                      (value) =>
-                          value == null || value.isEmpty
-                              ? 'Please enter your name'
-                              : null,
+                  validator: (value) => value == null || value.isEmpty ? 'Please enter your name' : null,
                 ),
 
                 const SizedBox(height: 16),
                 AppTextFormField(
-                  controller:
-                      loginRegisterController.registerMemberCodeController,
+                  controller: loginRegisterController.registerMemberCodeController,
                   labelText: 'Member Code',
                   type: AppTextFormFieldType.text,
-                  helperText:
-                      'Enter the member code provided by your organization',
-                  validator:
-                      (value) =>
-                          value == null || value.isEmpty
-                              ? 'Please enter MemberCode'
-                              : null,
+                  helperText: 'Enter the member code provided by your organization',
+                  validator: (value) => value == null || value.isEmpty ? 'Please enter MemberCode' : null,
                 ),
                 const SizedBox(height: 16),
                 AppTextFormField(
                   controller: loginRegisterController.registerEmailController,
-                  labelText: 'Email',
-                  type: AppTextFormFieldType.email,
+                  labelText: 'UserId',
+                  type: AppTextFormFieldType.text,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
+                      return 'Please enter your userId';
                     }
-                    if (!RegExp(
-                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                    ).hasMatch(value)) {
-                      return 'Please enter a valid email';
-                    }
+
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
                 AppTextFormField(
-                  controller:
-                      loginRegisterController.registerPasswordController,
+                  controller: loginRegisterController.registerPasswordController,
                   labelText: 'Password',
                   type: AppTextFormFieldType.password,
                 ),
@@ -76,10 +57,7 @@ class RegisterForm extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed:
-                        loginRegisterController.isLoading.value
-                            ? null
-                            : onSubmit,
+                    onPressed: loginRegisterController.isLoading.value ? null : onSubmit,
                     child:
                         loginRegisterController.isLoading.value
                             ? const SizedBox(
@@ -87,9 +65,7 @@ class RegisterForm extends StatelessWidget {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                             : const Text('Create Account'),

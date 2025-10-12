@@ -33,7 +33,7 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                     Text("Member Info", style: theme.textTheme.titleLarge),
                     const SizedBox(height: 12),
                     _infoRow("Name", member.name, theme),
-                    _infoRow("Email", member.email, theme),
+                    _infoRow("userId", member.email, theme),
                     _infoRow("Code", member.memberCode, theme),
                     _infoRow("Plan Days", member.planDays.toString(), theme),
                   ],
@@ -42,23 +42,16 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
             ),
             const SizedBox(height: 24),
             FutureBuilder<List<AppUser>>(
-              future: AppFirebaseService.instance.getAllUserOfMember(
-                member.memberCode,
-              ),
+              future: AppFirebaseService.instance.getAllUserOfMember(member.memberCode),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
+                  return const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()));
                 }
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
                       'Error: ${snapshot.error}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.error,
-                      ),
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
                     ),
                   );
                 }
@@ -66,19 +59,13 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                 if (users.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text(
-                      "No users found.",
-                      style: theme.textTheme.bodyMedium,
-                    ),
+                    child: Text("No users found.", style: theme.textTheme.bodyMedium),
                   );
                 }
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Users under this Member (${users.length})",
-                      style: theme.textTheme.titleMedium,
-                    ),
+                    Text("Users under this Member (${users.length})", style: theme.textTheme.titleMedium),
                     const SizedBox(height: 12),
                     ListView.separated(
                       shrinkWrap: true,
@@ -91,23 +78,14 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
                           tileColor: Colors.white54,
                           contentPadding: EdgeInsets.symmetric(horizontal: 16),
                           leading: CircleAvatar(
-                            backgroundColor: theme.colorScheme.primary
-                                .withOpacity(0.1),
+                            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                             child: Text(
                               user.name[0].capitalizeAll,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: theme.colorScheme.primary,
-                              ),
+                              style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary),
                             ),
                           ),
-                          title: Text(
-                            user.name,
-                            style: theme.textTheme.bodyLarge,
-                          ),
-                          subtitle: Text(
-                            user.email,
-                            style: theme.textTheme.bodyMedium,
-                          ),
+                          title: Text(user.name, style: theme.textTheme.bodyLarge),
+                          subtitle: Text(user.email, style: theme.textTheme.bodyMedium),
                         );
                       },
                     ),
@@ -128,17 +106,9 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
         children: [
           Expanded(
             flex: 2,
-            child: Text(
-              "$title:",
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: Text("$title:", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
           ),
-          Expanded(
-            flex: 3,
-            child: Text(value, style: theme.textTheme.bodyMedium),
-          ),
+          Expanded(flex: 3, child: Text(value, style: theme.textTheme.bodyMedium)),
         ],
       ),
     );

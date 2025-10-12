@@ -20,8 +20,7 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
 
     return Scaffold(
       body: Obx(() {
-        if (controller.isLoading.value &&
-            controller.meetingDetail.value == null) {
+        if (controller.isLoading.value && controller.meetingDetail.value == null) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -32,16 +31,11 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
               children: [
                 Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
                 const SizedBox(height: 16),
-                Text(
-                  'Failed to load meeting details',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
+                Text('Failed to load meeting details', style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 8),
                 Text(
                   controller.errorMessage.value ?? 'Unknown error occurred',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -49,12 +43,7 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                   onPressed: controller.refreshMeetingDetails,
                   icon: const Icon(Icons.refresh),
                   label: const Text('Try Again'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
+                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
                 ),
               ],
             ),
@@ -91,9 +80,7 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                   // ),
                 ],
               ),
-              SliverToBoxAdapter(
-                child: MeetingInfoCard(meeting: meetingDetail),
-              ),
+              SliverToBoxAdapter(child: MeetingInfoCard(meeting: meetingDetail)),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
@@ -102,8 +89,7 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                     children: [
                       Text(
                         'Participants (${meetingDetail.participants.length})',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       // Quick refresh button for participants
                       // IconButton(
@@ -127,10 +113,7 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
     if (meetingDetail.participants.isEmpty) {
       return const SliverFillRemaining(
         child: Center(
-          child: Text(
-            'No participants have joined yet.',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
+          child: Text('No participants have joined yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
         ),
       );
     }

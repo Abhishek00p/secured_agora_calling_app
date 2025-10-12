@@ -25,10 +25,7 @@ class ParticipantModel {
       name: json['name'] ?? '',
       isUserMuted: json['isUserMuted'] ?? false,
       isUserSpeaking: json['isUserSpeaking'] ?? false,
-      color:
-          json['color'] == null
-              ? WarmColorGenerator.getRandomWarmColor()
-              : Color(json['color']),
+      color: json['color'] == null ? WarmColorGenerator.getRandomWarmColor() : Color(json['color']),
     );
   }
 

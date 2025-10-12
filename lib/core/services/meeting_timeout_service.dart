@@ -8,8 +8,7 @@ import 'package:secured_calling/utils/app_logger.dart';
 /// This works by having the server detect inactive participants
 class MeetingTimeoutService {
   static MeetingTimeoutService? _instance;
-  static MeetingTimeoutService get instance =>
-      _instance ??= MeetingTimeoutService._();
+  static MeetingTimeoutService get instance => _instance ??= MeetingTimeoutService._();
 
   MeetingTimeoutService._();
 
@@ -50,10 +49,7 @@ class MeetingTimeoutService {
     if (_currentMeetingId == null || _currentUserId == null) return;
 
     try {
-      await _firebaseService.sendParticipantHeartbeat(
-        _currentMeetingId!,
-        _currentUserId!,
-      );
+      await _firebaseService.sendParticipantHeartbeat(_currentMeetingId!, _currentUserId!);
       AppLogger.print('Heartbeat sent for user $_currentUserId');
     } catch (e) {
       AppLogger.print('Failed to send heartbeat: $e');

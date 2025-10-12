@@ -5,11 +5,7 @@ class DropdownModel<T> {
   final T value;
   final String? description;
 
-  const DropdownModel({
-    required this.label,
-    required this.value,
-    this.description,
-  });
+  const DropdownModel({required this.label, required this.value, this.description});
 }
 
 class AppDropdownField<T> extends StatefulWidget {
@@ -122,9 +118,7 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                 elevation: 8,
                 borderRadius: BorderRadius.circular(widget.borderRadius),
                 child: Container(
-                  constraints: BoxConstraints(
-                    maxHeight: widget.menuMaxHeight ?? 300,
-                  ),
+                  constraints: BoxConstraints(maxHeight: widget.menuMaxHeight ?? 300),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -156,21 +150,12 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                           item.label,
                           style: TextStyle(
                             color: isSelected ? Colors.blue : Colors.black,
-                            fontWeight:
-                                isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                         trailing:
                             item.description != null
-                                ? Text(
-                                  item.description!,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                )
+                                ? Text(item.description!, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))
                                 : null,
                         onTap: () {
                           setState(() {
@@ -222,13 +207,7 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
         if (widget.label != null) ...[
           Text(
             widget.label!,
-            style:
-                widget.labelStyle ??
-                const TextStyle(
-                  fontSize: 12,
-                  color: Colors.black,
-                  fontWeight: FontWeight.w500,
-                ),
+            style: widget.labelStyle ?? const TextStyle(fontSize: 12, color: Colors.black, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
         ],
@@ -238,24 +217,16 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
             onTap: _toggleDropdown,
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(
-                  color: widget.borderColor ?? Colors.grey.shade400,
-                ),
+                border: Border.all(color: widget.borderColor ?? Colors.grey.shade400),
                 borderRadius: BorderRadius.circular(widget.borderRadius),
                 color: widget.fillColor ?? Colors.grey.shade50,
               ),
               child: Padding(
-                padding:
-                    widget.contentPadding ??
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: widget.contentPadding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
                   children: [
                     if (widget.prefixIcon != null) ...[
-                      Icon(
-                        widget.prefixIcon,
-                        color: widget.prefixIconColor ?? Colors.black,
-                        size: 20,
-                      ),
+                      Icon(widget.prefixIcon, color: widget.prefixIconColor ?? Colors.black, size: 20),
                       const SizedBox(width: 12),
                     ],
                     Expanded(
@@ -265,21 +236,13 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                         children: [
                           Text(
                             selectedItem.label,
-                            style:
-                                widget.style ??
-                                const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black,
-                                ),
+                            style: widget.style ?? const TextStyle(fontSize: 12, color: Colors.black),
                           ),
                           if (selectedItem.description != null) ...[
                             const SizedBox(height: 4),
                             Text(
                               selectedItem.description!,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey.shade600,
-                              ),
+                              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                             ),
                           ],
                         ],
@@ -297,21 +260,11 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
         ),
         if (widget.helperText != null) ...[
           const SizedBox(height: 4),
-          Text(
-            widget.helperText!,
-            style:
-                widget.helperStyle ??
-                TextStyle(fontSize: 10, color: Colors.grey.shade600),
-          ),
+          Text(widget.helperText!, style: widget.helperStyle ?? TextStyle(fontSize: 10, color: Colors.grey.shade600)),
         ],
         if (widget.errorText != null) ...[
           const SizedBox(height: 4),
-          Text(
-            widget.errorText!,
-            style:
-                widget.errorStyle ??
-                TextStyle(fontSize: 10, color: theme.colorScheme.error),
-          ),
+          Text(widget.errorText!, style: widget.errorStyle ?? TextStyle(fontSize: 10, color: theme.colorScheme.error)),
         ],
       ],
     );

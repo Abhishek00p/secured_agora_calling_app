@@ -6,8 +6,7 @@ import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 
 class MeetingListenerService {
-  static final MeetingListenerService _instance =
-      MeetingListenerService._internal();
+  static final MeetingListenerService _instance = MeetingListenerService._internal();
   factory MeetingListenerService() => _instance;
   MeetingListenerService._internal();
 
@@ -72,9 +71,7 @@ class MeetingListenerService {
                 AppLogger.print('Join request rejected');
                 _stopListening();
                 _onRejectionReceived?.call();
-                AppToastUtil.showErrorToast(
-                  'Your request to join the meeting has been rejected by the host.',
-                );
+                AppToastUtil.showErrorToast('Your request to join the meeting has been rejected by the host.');
                 break;
               case 'joined':
                 AppLogger.print('User has joined the meeting');
@@ -89,9 +86,7 @@ class MeetingListenerService {
           },
           onError: (error) {
             AppLogger.print('Join request listener error: $error');
-            AppToastUtil.showErrorToast(
-              'Error listening for join request updates',
-            );
+            AppToastUtil.showErrorToast('Error listening for join request updates');
           },
         );
   }
@@ -113,9 +108,7 @@ class MeetingListenerService {
     _stopListening();
 
     // Show timeout message to user
-    AppToastUtil.showErrorToast(
-      'Your join request timed out. The host did not respond within 1 minute.',
-    );
+    AppToastUtil.showErrorToast('Your join request timed out. The host did not respond within 1 minute.');
 
     // Call timeout callback
     _onTimeoutReached?.call();
@@ -142,8 +135,7 @@ class MeetingListenerService {
   }
 
   /// Check if currently listening
-  bool get isListening =>
-      _joinRequestListener != null || _participantsListener != null;
+  bool get isListening => _joinRequestListener != null || _participantsListener != null;
 
   /// Dispose all resources
   void dispose() {

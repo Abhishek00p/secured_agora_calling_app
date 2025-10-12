@@ -18,10 +18,7 @@ class WelcomeScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.surface,
-            ],
+            colors: [Theme.of(context).colorScheme.surface, Theme.of(context).colorScheme.surface],
           ),
         ),
         child: SafeArea(
@@ -78,10 +75,7 @@ class WelcomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
-                      width: 1.5,
-                    ),
+                    border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3), width: 1.5),
                   ),
                   child: Column(
                     children: [
@@ -89,10 +83,7 @@ class WelcomeScreen extends StatelessWidget {
                         'About Our Company',
                         style: Theme.of(
                           context,
-                        ).textTheme.titleMedium?.copyWith(
-                          color: AppTheme.primaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        ).textTheme.titleMedium?.copyWith(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -111,13 +102,8 @@ class WelcomeScreen extends StatelessWidget {
                     Navigator.pushNamed(context, AppRouter.loginRoute);
                   },
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 48,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -126,10 +112,7 @@ class WelcomeScreen extends StatelessWidget {
                         'Get Started',
                         style: Theme.of(
                           context,
-                        ).textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        ).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 8),
                       Icon(forwardArrow, color: Colors.white),
@@ -145,11 +128,7 @@ class WelcomeScreen extends StatelessWidget {
                     color: Theme.of(context).cardTheme.color,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
+                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
                     ],
                   ),
                   child: Column(
@@ -195,12 +174,7 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureItem(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String description,
-  ) {
+  Widget _buildFeatureItem(BuildContext context, IconData icon, String title, String description) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -217,12 +191,7 @@ class WelcomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
+              Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               Text(description, style: Theme.of(context).textTheme.bodyMedium),
             ],

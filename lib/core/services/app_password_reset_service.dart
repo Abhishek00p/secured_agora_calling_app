@@ -12,10 +12,7 @@ class AppPasswordResetService {
   }) async {
     try {
       // Use the new auth service to reset password
-      final success = await AppAuthService.instance.resetPassword(
-        targetEmail: targetEmail,
-        newPassword: newPassword,
-      );
+      final success = await AppAuthService.instance.resetPassword(targetEmail: targetEmail, newPassword: newPassword);
       if (success == null) {
         AppToastUtil.showErrorToast('Something went wrong, please try again');
         return null;
@@ -48,9 +45,7 @@ class AppPasswordResetService {
   /// Get user credentials (email + password) for display
   static Future<Map<String, dynamic>?> getUserCredentials(String email) async {
     try {
-      final credentials = await AppAuthService.instance.getUserCredentials(
-        email,
-      );
+      final credentials = await AppAuthService.instance.getUserCredentials(email);
       return credentials;
     } catch (e) {
       AppToastUtil.showErrorToast('Failed to get credentials: $e');

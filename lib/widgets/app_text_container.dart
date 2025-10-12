@@ -21,14 +21,7 @@ class AppTextContainer extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey.shade800,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Text(label, style: TextStyle(color: Colors.grey.shade800, fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         InkWell(
           onTap: onPressed,
@@ -42,20 +35,9 @@ class AppTextContainer extends StatelessWidget {
             ),
             child: Row(
               children: [
-                if (prefixIcon != null) ...[
-                  Icon(prefixIcon, color: Colors.black, size: 20),
-                  const SizedBox(width: 12),
-                ],
-                Expanded(
-                  child: Text(
-                    text,
-                    style: const TextStyle(fontSize: 16, color: Colors.black87),
-                  ),
-                ),
-                if (suffixIcon != null) ...[
-                  const SizedBox(width: 12),
-                  Icon(suffixIcon, color: Colors.grey.shade600),
-                ],
+                if (prefixIcon != null) ...[Icon(prefixIcon, color: Colors.black, size: 20), const SizedBox(width: 12)],
+                Expanded(child: Text(text, style: const TextStyle(fontSize: 16, color: Colors.black87))),
+                if (suffixIcon != null) ...[const SizedBox(width: 12), Icon(suffixIcon, color: Colors.grey.shade600)],
               ],
             ),
           ),
