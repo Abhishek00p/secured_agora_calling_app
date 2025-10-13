@@ -257,15 +257,15 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                       ? _buildHostView(meetingController)
                                       : _buildParticipantView(meetingController),
                             ),
-                        if (meetingController.isHost) ...[JoinRequestWidget()],
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 30.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            // runSpacing: 24,
-                            // alignment: WrapAlignment.spaceEvenly,
-                            children: [
-                              if (meetingController.isHost) ...[
+                        if (meetingController.isHost) ...[
+                          JoinRequestWidget(),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 30.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              // runSpacing: 24,
+                              // alignment: WrapAlignment.spaceEvenly,
+                              children: [
                                 GestureDetector(
                                   onTap: () {
                                     if (meetingController.isMuted.value) {
@@ -290,8 +290,61 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                     // );
                                   }),
                                 ),
+
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    Obx(
+                                      () => SizedBox(
+                                        height: 50,
+
+                                        child: OutlinedButton(
+                                          style: OutlinedButton.styleFrom(
+                                            side: BorderSide(
+                                              color: meetingController.isOnSpeaker.value ? Colors.green : Colors.white,
+                                            ),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          ),
+                                          onPressed: meetingController.toggleSpeaker,
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                meetingController.isOnSpeaker.value
+                                                    ? Icons.volume_up
+                                                    : Icons.volume_off,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                meetingController.isOnSpeaker.value ? 'Speaker On' : 'Speaker Off',
+                                                style: const TextStyle(fontSize: 12),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    16.h,
+                                    _buildEndCallButton(
+                                      context: context,
+                                      isHost: meetingController.isHost,
+                                      onEndCallForAll: meetingController.endMeetForAll,
+                                      onLeaveMeeting: meetingController.endMeeting,
+                                    ),
+                                  ],
+                                ),
                               ],
-                              if (!meetingController.isHost) ...[
+                            ),
+                          ),
+                        ],
+                        if (!meetingController.isHost) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 30.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              // runSpacing: 24,
+                              // alignment: WrapAlignment.spaceEvenly,
+                              children: [
                                 GestureDetector(
                                   onLongPressStart: (_) {
                                     meetingController.startPtt();
@@ -315,46 +368,52 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                     // );
                                   }),
                                 ),
-                              ],
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  Obx(
-                                    () => OutlinedButton(
-                                      style: OutlinedButton.styleFrom(
-                                        side: BorderSide(
-                                          color: meetingController.isOnSpeaker.value ? Colors.green : Colors.white,
+                                16.h,
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    Obx(
+                                      () => SizedBox(
+                                        height: 50,
+                                        child: OutlinedButton(
+                                          style: OutlinedButton.styleFrom(
+                                            side: BorderSide(
+                                              color: meetingController.isOnSpeaker.value ? Colors.green : Colors.white,
+                                            ),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          ),
+                                          onPressed: meetingController.toggleSpeaker,
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                meetingController.isOnSpeaker.value
+                                                    ? Icons.volume_up
+                                                    : Icons.volume_off,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                meetingController.isOnSpeaker.value ? 'Speaker On' : 'Speaker Off',
+                                                style: const TextStyle(fontSize: 12),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      ),
-                                      onPressed: meetingController.toggleSpeaker,
-                                      child: Column(
-                                        children: [
-                                          Icon(
-                                            meetingController.isOnSpeaker.value ? Icons.volume_up : Icons.volume_off,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            meetingController.isOnSpeaker.value ? 'Speaker On' : 'Speaker Off',
-                                            style: const TextStyle(fontSize: 12),
-                                          ),
-                                        ],
                                       ),
                                     ),
-                                  ),
-                                  16.h,
-                                  _buildEndCallButton(
-                                    context: context,
-                                    isHost: meetingController.isHost,
-                                    onEndCallForAll: meetingController.endMeetForAll,
-                                    onLeaveMeeting: meetingController.endMeeting,
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    16.h,
+                                    _buildEndCallButton(
+                                      context: context,
+                                      isHost: meetingController.isHost,
+                                      onEndCallForAll: meetingController.endMeetForAll,
+                                      onLeaveMeeting: meetingController.endMeeting,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                         40.h,
                       ],
                     ),

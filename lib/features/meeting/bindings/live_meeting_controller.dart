@@ -505,8 +505,15 @@ class MeetingController extends GetxController {
         // Only check for removal if user was previously in the meeting and is now removed
         final wasUserInMeeting = participants.any((p) => p.userId == currentUserId);
         final isUserStillInMeeting = newParticipants.any((p) => p.userId == currentUserId);
-
-        if (wasUserInMeeting && !isUserStillInMeeting) {
+        final removedByHost =
+            (snapshot.docs
+                            .firstWhereOrNull((doc) => (doc.data() as Map<String, dynamic>)['userId'] == currentUserId)
+                            ?.data()
+                        as Map<String, dynamic>? ??
+                    <String, dynamic>{})['removedByHost']
+                as bool? ??
+            false;
+        if (wasUserInMeeting && !isUserStillInMeeting && removedByHost) {
           AppLogger.print('User was forcefully removed from meeting');
           _handleForceRemoval();
           return;
@@ -766,7 +773,7 @@ class MeetingController extends GetxController {
 
     try {
       // Remove participant from Firebase
-      await _firebaseService.removeParticipants(meetingId, userId);
+      await _firebaseService.removeParticipants(meetingId, userId, isRemovedByHost: true);
 
       // Show success message
       AppToastUtil.showSuccessToast('Participant removed from meeting');

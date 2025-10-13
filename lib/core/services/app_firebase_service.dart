@@ -116,7 +116,7 @@ class AppFirebaseService {
   }
 
   Future<void> endMeeting(String meetingId) async {
-    await removeParticipants(meetingId, AppLocalStorage.getUserDetails().userId);
+    await removeParticipants(meetingId, AppLocalStorage.getUserDetails().userId, isRemovedByHost: false);
   }
 
   Future<bool> addParticipants(String meetId, int userId) async {
@@ -152,11 +152,15 @@ class AppFirebaseService {
     }
   }
 
-  Future<bool> removeParticipants(String meetId, int userId) async {
+  Future<bool> removeParticipants(String meetId, int userId, {bool isRemovedByHost = false}) async {
     try {
       final participantDoc = meetingsCollection.doc(meetId).collection('participants').doc('$userId');
 
-      await participantDoc.update({'leaveTime': FieldValue.serverTimestamp(), 'isActive': false});
+      await participantDoc.update({
+        'leaveTime': FieldValue.serverTimestamp(),
+        'isActive': false,
+        'removedByHost': isRemovedByHost,
+      });
 
       // Check if this was the last participant
       final participantsSnapshot = await meetingsCollection.doc(meetId).collection('participants').get();

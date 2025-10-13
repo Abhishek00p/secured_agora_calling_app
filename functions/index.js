@@ -15,3 +15,6 @@ exports.getUsersForPasswordReset = authHttp.getUsersForPasswordReset;
 exports.generateToken = agora.generateToken;
 exports.verifyToken = agora.verifyToken;
 exports.sendNotification = agora.sendNotification;
+exports.acquireRecordingResource = agora.acquireRecordingResource;
+exports.startDualCloudRecording = agora.sendNotification;
+exports.stopDualCloudRecording = agora.stopDualCloudRecording;

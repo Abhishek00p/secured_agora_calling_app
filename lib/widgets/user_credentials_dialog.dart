@@ -353,6 +353,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_password_reset_service.dart';
 import 'package:secured_calling/core/services/app_user_role_service.dart';
@@ -391,6 +392,11 @@ class UserCredentialsBottomSheet extends StatefulWidget {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.white,
+      transitionAnimationController: AnimationController(
+        duration: const Duration(milliseconds: 400),
+        reverseDuration: const Duration(milliseconds: 300),
+        vsync: Navigator.of(context),
+      ),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder:
           (_) => FractionallySizedBox(
@@ -429,20 +435,30 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
     }
   }
 
-  void _showPasswordResetDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => PasswordResetDialog(
-            targetEmail: widget.targetEmail,
-            targetName: widget.targetName,
-            isMember: widget.isMember,
-          ),
-    ).then((result) {
-      if (result == true) {
-        _loadCredentials();
-      }
-    });
+  void _showPasswordResetDialog() async {
+    Get.back();
+    await Future.delayed(Duration(milliseconds: 200));
+    if (context.mounted) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        transitionAnimationController: AnimationController(
+          duration: const Duration(milliseconds: 400),
+          reverseDuration: const Duration(milliseconds: 300),
+          vsync: Navigator.of(context),
+        ),
+        builder:
+            (context) => PasswordResetBottomSheet(
+              targetEmail: widget.targetEmail,
+              targetName: widget.targetName,
+              isMember: widget.isMember,
+            ),
+      ).then((result) {
+        if (result == true) {
+          _loadCredentials();
+        }
+      });
+    }
   }
 
   void _copyToClipboard(String text, String label) {

@@ -163,9 +163,8 @@ class _UsersScreenState extends State<UsersScreen> {
                                 ],
                               ),
                             ),
-                            trailing: ElevatedButton(
-                              child: Text('View more', style: TextStyle(fontSize: 10)),
-                              onPressed: () {
+                            trailing: InkWell(
+                              onTap: () {
                                 UserCredentialsBottomSheet.show(
                                   context,
                                   targetEmail: user.email,
@@ -174,6 +173,14 @@ class _UsersScreenState extends State<UsersScreen> {
                                   userId: user.userId.toString(),
                                 );
                               },
+                              child: Card(
+                                color: Colors.blue,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                  child: Text('View more', style: TextStyle(fontSize: 12, color: Colors.white)),
+                                ),
+                              ),
                             ),
                           ),
                         );
