@@ -51,6 +51,9 @@ class MeetingController extends GetxController {
 
   RxInt activeSpeakerUid = 0.obs;
 
+  RxBool isRecordingOn = false.obs;
+  RxMap<String,dynamic> payloadOfRecording = RxMap();
+
   @override
   void onInit() {
     super.onInit();
@@ -984,5 +987,22 @@ class MeetingController extends GetxController {
     } finally {
       update();
     }
+  }
+
+
+
+  Future<void> toggleRecordingButton()async{
+    if(isRecordingOn.value){
+       isRecordingOn.value = !(await _firebaseService.stopRecording(meetingId:meetingId,payload: payloadOfRecording.value));
+
+    }else{
+     final res=  await _firebaseService.startRecording(meetingId);
+     if(res!=null){
+      payloadOfRecording.value =res;
+      isRecordingOn.value=true;
+
+     }
+    }
+    update();
   }
 }

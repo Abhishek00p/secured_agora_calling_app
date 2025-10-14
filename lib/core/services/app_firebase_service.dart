@@ -783,4 +783,60 @@ class AppFirebaseService {
       rethrow;
     }
   }
+
+  Future<bool> stopRecording({required Map<String,dynamic> payload,required String meetingId}) async {
+    final body ={
+      'cname': meetingId,
+      'uid': AppLocalStorage.getUserDetails().userId.toString(),
+      ...payload,
+    };
+    body['individualSid']='';
+    body['resourceId']=body['mixResourceId'];
+    print("stop recording body : $body");
+    final response = await AppHttpService().post('stopDualCloudRecording', body: body);
+
+    if (response == null) {
+      print("response is null");
+      return false;
+    }
+
+    if (response['success'] == true) {
+      print("recording stopped successfully");
+      return true;
+    } else {
+      AppToastUtil.showErrorToast(response['error_message'] ?? "Failed to stop recording");
+      return false;
+    }
+  }
+
+  Future<Map<String,dynamic>?> startRecording(String meetingId) async {
+
+   final response =await  AppHttpService().post('startDualCloudRecording',body: {
+      'cname':meetingId,
+      'uid':AppLocalStorage.getUserDetails().userId.toString(),
+    });
+
+    if(response == null){
+      print("response is null");
+      return null;
+    }
+
+    if(response['success'] == true){
+      print("recording started successfully");
+       response.remove('success');
+       return response;
+    }else{
+      AppToastUtil.showErrorToast(response['error_message'] ?? "Failed to start recording");
+    }
+  }
+
+  Future<String?> accurieCredForRecording(String cname)async{
+    final response = await  AppHttpService().post('acquireRecordingResource',body: {
+      'cname':cname,
+      'uid':AppLocalStorage.getUserDetails().userId.toString(),
+     });
+
+     print("response for accurie recording : $response");
+     return response?['resourceId'] as String?;
+  }
 }

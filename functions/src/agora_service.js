@@ -2,6 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { RtcTokenBuilder, RtcRole } = require("agora-token");
 const cors = require('cors')({ origin: true });
+const axios = require("axios");
 
 // Initialize Firebase Admin (if not already initialized)
 if (!admin.apps.length) {
@@ -30,7 +31,7 @@ exports.verifyToken = functions.https.onRequest(async (req, res) => {
 
       const { channelName, uid, userRole } = req.body;
 
-      if (!channelName || !uid ) {
+      if (!channelName || !uid) {
         return res.status(400).json({
           success: false,
           error_message: 'channelName and uid are required'
@@ -69,9 +70,9 @@ exports.verifyToken = functions.https.onRequest(async (req, res) => {
           error_message: 'Token not found for the given uid'
         });
       }
-      
-      const  token  = tokens[uid]['token'];
-      const  expireTime  = tokens[uid]['expiry_time'];
+
+      const token = tokens[uid]['token'];
+      const expireTime = tokens[uid]['expiry_time'];
 
       const userId = Number(uid) || 0;
       const role = userRole === "0" ? RtcRole.SUBSCRIBER : RtcRole.PUBLISHER;
@@ -93,7 +94,7 @@ exports.verifyToken = functions.https.onRequest(async (req, res) => {
         return res.status(401).json({
           success: false,
           valid: false,
-          error_message: "{msg : 'Invalid token',\n fetchedToken: '" + token + "',\n ExpectedExpiryTime: '" + expireTime +"',currExpiryTime: '" + privilegeTs + "',\n expectedToken: '" + expectedToken + "'}"
+          error_message: "{msg : 'Invalid token',\n fetchedToken: '" + token + "',\n ExpectedExpiryTime: '" + expireTime + "',currExpiryTime: '" + privilegeTs + "',\n expectedToken: '" + expectedToken + "'}"
         });
       }
 
@@ -252,8 +253,8 @@ exports.sendNotification = functions.https.onRequest(async (req, res) => {
 });
 
 
-const GCloudAccessKey ="agora-recording@secure-calling-2025.iam.gserviceaccount.com";
-const GCloudSecretKey ="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCK0J3OOjM8rW1U\nmlnpFH9QNMO2kvapNzjNT08XJKodMUtedM8/oGtvwCirJbCIxzQppJVkuc1OiS4H\nBvaQzFQ3DlUV1GMGOSfoRjsbxK8HqNiVAH/j9V90Yoqg1cGkmo79+hRU+6Q0eue9\nxmy5AwL64nDYdeBhJytBxUlKc2JZTn25huDxFT2oKdm/BX2zbO9jTzPaGTGj1GXO\nN2hG7PqdPKOMIVuoeKOd3fxWl6j3n6VcWM00LdXkHPxMVhx0HzH7/opGu/HqnOcX\npHWdXpZXrC3Xigq62lofqJKJ1feBFPtD82ZtqFXBZBSlSHmREtDu3sjdTZ7pClAi\nPbgHKjG3AgMBAAECggEAAwax1TIxaSdSUYlWrQoC2oGqXWHbAB/39e9xxtkVEkzZ\nGuAkbBUrTATeF7Kn8UHMEjchzWlvH3RGU7Kw3MHV+VtJIVz/cAr+VgYN7NJYit8a\nvAJsrbbTYJfZwNBxuvMzODf9VuFWsfdjjO1B9BvFZijzxjkPoRHEoIrt+/8DvygH\nXr1fEzpjMyZDMd28WOCbrTuoAxQ7R9pQQTJHNvErdvh71NItojKwe+FNXY3zVHXy\njMScTdeVGIuYUkbaSLAaR1h1BE/aYOgVAiv56dJCKz/vwR/wJU6ppWyL4+89ps3A\nw1jIEGIQ4aYhMUoaA4BQOuPrOGnctYE7mE6vKdeKQQKBgQDA85bnVwJ0b1KxAiNk\n9Sei1fOwR/emNAXsFutPMFooBeAX9xr2PiDV8ePqvJkRyVfB+9rgArgQprC7U89M\nvFHsJeOxn/YYD1kxYC8+CfNQF/Va7XUDEQwrIHICGLj+wjATsWaR+9Jjfas643QA\nvr2pDi1u8Qu8NpGdUtQUJazB9wKBgQC4LH6spHkF+gZ92FQlEZll8/zzVuKRmn07\nbg8Ve6LSkOuNMaXcKjDn5FCSEPOpwphpWZUeMMgUqsxfveJmOaQRBbCPqFG5QJUF\nUYFHYVwwWeRV+fWNeD3b+8GXJZBMASM7DeRuUPM7Ob1SoZPygT9A/6WhdxeYF0XY\nnF3tQH4eQQKBgQCZVDjzp1oFCr3MeaWEwaf4p0paKCZtBeQ640+kgwjxyxF0GeJs\nEZzoRqtWSv7ceoJpXWlmH+MDIGNKyWPvV6tGHCnfaf0Wy4OWUBfale+rEw7fbdlR\nUYe48bSHY/wGPmwUCiI3GcTrWN7sEfmJ6gkvQVvrUFOCAl8ehMaRKAsrqwKBgGBN\nA7+KEK4LWjGbWAQ5+5fPyEgE+ltgCHN2zPRSvYSUulYNy8gfV4spWufFbWMqmT8c\n1FgA8d28oTi+tQ72vM8ZxoSXYoQXPNSXFZ4ZTncJydca6EacxNut/D/oKFdVkPJk\nBTmZolUpj9ERI6b95fE6u4R+HRwtrxvgR0yzGD8BAoGAZu6Jp2QE0U34WrbrpmlX\nm/T4tuiql7KIWqT7/XvDxyNE5IDW2c1Fl2S7db+IhxhizH3rlo0Wia9sx5bUdIzA\nFsYABH/N0nVrzuFyFdcWYO8S6/SWbn125QBvMr7LRX+Nj8ociCI/vTLZ9PB1yPiC\nTD7KyWcagzOB8bnndi0XBaQ=\n-----END PRIVATE KEY-----\n";
+const GCloudAccessKey = "agora-recording@secure-calling-2025.iam.gserviceaccount.com";
+const GCloudSecretKey = "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCK0J3OOjM8rW1U\nmlnpFH9QNMO2kvapNzjNT08XJKodMUtedM8/oGtvwCirJbCIxzQppJVkuc1OiS4H\nBvaQzFQ3DlUV1GMGOSfoRjsbxK8HqNiVAH/j9V90Yoqg1cGkmo79+hRU+6Q0eue9\nxmy5AwL64nDYdeBhJytBxUlKc2JZTn25huDxFT2oKdm/BX2zbO9jTzPaGTGj1GXO\nN2hG7PqdPKOMIVuoeKOd3fxWl6j3n6VcWM00LdXkHPxMVhx0HzH7/opGu/HqnOcX\npHWdXpZXrC3Xigq62lofqJKJ1feBFPtD82ZtqFXBZBSlSHmREtDu3sjdTZ7pClAi\nPbgHKjG3AgMBAAECggEAAwax1TIxaSdSUYlWrQoC2oGqXWHbAB/39e9xxtkVEkzZ\nGuAkbBUrTATeF7Kn8UHMEjchzWlvH3RGU7Kw3MHV+VtJIVz/cAr+VgYN7NJYit8a\nvAJsrbbTYJfZwNBxuvMzODf9VuFWsfdjjO1B9BvFZijzxjkPoRHEoIrt+/8DvygH\nXr1fEzpjMyZDMd28WOCbrTuoAxQ7R9pQQTJHNvErdvh71NItojKwe+FNXY3zVHXy\njMScTdeVGIuYUkbaSLAaR1h1BE/aYOgVAiv56dJCKz/vwR/wJU6ppWyL4+89ps3A\nw1jIEGIQ4aYhMUoaA4BQOuPrOGnctYE7mE6vKdeKQQKBgQDA85bnVwJ0b1KxAiNk\n9Sei1fOwR/emNAXsFutPMFooBeAX9xr2PiDV8ePqvJkRyVfB+9rgArgQprC7U89M\nvFHsJeOxn/YYD1kxYC8+CfNQF/Va7XUDEQwrIHICGLj+wjATsWaR+9Jjfas643QA\nvr2pDi1u8Qu8NpGdUtQUJazB9wKBgQC4LH6spHkF+gZ92FQlEZll8/zzVuKRmn07\nbg8Ve6LSkOuNMaXcKjDn5FCSEPOpwphpWZUeMMgUqsxfveJmOaQRBbCPqFG5QJUF\nUYFHYVwwWeRV+fWNeD3b+8GXJZBMASM7DeRuUPM7Ob1SoZPygT9A/6WhdxeYF0XY\nnF3tQH4eQQKBgQCZVDjzp1oFCr3MeaWEwaf4p0paKCZtBeQ640+kgwjxyxF0GeJs\nEZzoRqtWSv7ceoJpXWlmH+MDIGNKyWPvV6tGHCnfaf0Wy4OWUBfale+rEw7fbdlR\nUYe48bSHY/wGPmwUCiI3GcTrWN7sEfmJ6gkvQVvrUFOCAl8ehMaRKAsrqwKBgGBN\nA7+KEK4LWjGbWAQ5+5fPyEgE+ltgCHN2zPRSvYSUulYNy8gfV4spWufFbWMqmT8c\n1FgA8d28oTi+tQ72vM8ZxoSXYoQXPNSXFZ4ZTncJydca6EacxNut/D/oKFdVkPJk\nBTmZolUpj9ERI6b95fE6u4R+HRwtrxvgR0yzGD8BAoGAZu6Jp2QE0U34WrbrpmlX\nm/T4tuiql7KIWqT7/XvDxyNE5IDW2c1Fl2S7db+IhxhizH3rlo0Wia9sx5bUdIzA\nFsYABH/N0nVrzuFyFdcWYO8S6/SWbn125QBvMr7LRX+Nj8ociCI/vTLZ9PB1yPiC\nTD7KyWcagzOB8bnndi0XBaQ=\n-----END PRIVATE KEY-----\n";
 const bucketName = "agora-recording-demo";
 // RECORDING 
 
@@ -297,21 +298,36 @@ exports.startDualCloudRecording = functions.https.onRequest(async (req, res) => 
       if (req.method !== "POST")
         return res.status(405).json({ success: false, error_message: "Method not allowed" });
 
-      const { cname, uid, resourceId,   } = req.body;
-      if (!cname || !uid || !resourceId)
+      const { cname, uid } = req.body;
+      if (!cname || !uid)
         return res.status(400).json({ success: false, error_message: "Missing parameters" });
 
       // Common storage config
       const storageConfig = {
         vendor: 6, // google cloud
         region: 0,
-        bucketName,
-        GCloudAccessKey,
-        GCloudSecretKey,
+        bucket: bucketName,
+        accessKey: GCloudAccessKey,
+        secretKey: GCloudSecretKey,
         fileNamePrefix: ["agora", "recordings"],
       };
+      // Acquire MIX resource
+      const mixAcquire = await axios.post(
+        `${BASE_URL}/acquire`,
+        { cname, uid, clientRequest: {} },
+        { headers: { Authorization: AUTH_HEADER } }
+      );
+      const resourceIdMix = mixAcquire.data.resourceId;
 
-      // Mixed audio config
+      // Acquire INDIVIDUAL resource
+      const individualAcquire = await axios.post(
+        `${BASE_URL}/acquire`,
+        { cname, uid, clientRequest: {} },
+        { headers: { Authorization: AUTH_HEADER } }
+      );
+      const resourceIdIndividual = individualAcquire.data.resourceId;      // Mixed audio config
+
+
       const mixBody = {
         cname,
         uid,
@@ -343,14 +359,14 @@ exports.startDualCloudRecording = functions.https.onRequest(async (req, res) => 
 
       // Start MIX recording
       const mixResp = await axios.post(
-        `${BASE_URL}/resourceid/${resourceId}/mode/mix/start`,
+        `${BASE_URL}/resourceid/${resourceIdMix}/mode/mix/start`,
         mixBody,
         { headers: { Authorization: AUTH_HEADER } }
       );
 
       // Start INDIVIDUAL recording
       const indivResp = await axios.post(
-        `${BASE_URL}/resourceid/${resourceId}/mode/individual/start`,
+        `${BASE_URL}/resourceid/${resourceIdIndividual}/mode/individual/start`,
         individualBody,
         { headers: { Authorization: AUTH_HEADER } }
       );
@@ -359,14 +375,20 @@ exports.startDualCloudRecording = functions.https.onRequest(async (req, res) => 
         success: true,
         mixSid: mixResp.data.sid,
         individualSid: indivResp.data.sid,
+        mixResourceId: resourceIdMix,
+        individualResourceId: resourceIdIndividual,
         mixResponse: mixResp.data,
         individualResponse: indivResp.data,
       });
     } catch (error) {
+      const errMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message;
       console.error("Start Dual Recording Error:", error);
       return res.status(500).json({
         success: false,
-        error_message: "Failed to start dual recording: " + error.message,
+        error_message: "Failed to start dual recording: " + error,
       });
     }
   });
@@ -390,12 +412,12 @@ exports.stopDualCloudRecording = functions.https.onRequest(async (req, res) => {
         { headers: { Authorization: AUTH_HEADER } }
       );
 
-      // Stop INDIVIDUAL recording
-      const stopIndiv = await axios.post(
-        `${BASE_URL}/resourceid/${resourceId}/sid/${individualSid}/mode/individual/stop`,
-        { cname, uid, clientRequest: {} },
-        { headers: { Authorization: AUTH_HEADER } }
-      );
+      // // Stop INDIVIDUAL recording
+      // const stopIndiv = await axios.post(
+      //   `${BASE_URL}/resourceid/${resourceId}/sid/${individualSid}/mode/individual/stop`,
+      //   { cname, uid, clientRequest: {} },
+      //   { headers: { Authorization: AUTH_HEADER } }
+      // );
 
       return res.status(200).json({
         success: true,
