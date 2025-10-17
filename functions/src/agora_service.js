@@ -8,6 +8,7 @@ const axios = require("axios");
 if (!admin.apps.length) {
   admin.initializeApp();
 }
+const db = admin.firestore();
 
 
 const AGORA_APP_ID = "225a62f4b5aa4e94ab46f91d0a0257e1";
@@ -291,144 +292,228 @@ exports.acquireRecordingResource = functions.https.onRequest(async (req, res) =>
   });
 });
 
-// ========== Start Both Recordings (Mix + Individual) ==========
-exports.startDualCloudRecording = functions.https.onRequest(async (req, res) => {
+const getDocId = (cname, type) => `${cname}_${type}`;
+
+// ====== Start Recording ======
+exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
   return cors(req, res, async () => {
     try {
       if (req.method !== "POST")
         return res.status(405).json({ success: false, error_message: "Method not allowed" });
 
-      const { cname, uid } = req.body;
-      if (!cname || !uid)
+      const { cname, uid, type } = req.body;
+
+      if (!cname || !uid || !type)
         return res.status(400).json({ success: false, error_message: "Missing parameters" });
 
-      // Common storage config
+      if (!["mix", "individual"].includes(type))
+        return res.status(400).json({ success: false, error_message: "Invalid type" });
+
+      // 1️⃣ Acquire Resource
+      const acquireRes = await axios.post(
+        `${BASE_URL}/acquire`,
+        { cname, uid, clientRequest: {} },
+        { headers: { Authorization: AUTH_HEADER } }
+      );
+
+      const resourceId = acquireRes.data.resourceId;
+
+      // 2️⃣ Prepare Common Storage Config
       const storageConfig = {
-        vendor: 6, // google cloud
+        vendor: 6, // Google Cloud
         region: 0,
         bucket: bucketName,
         accessKey: GCloudAccessKey,
         secretKey: GCloudSecretKey,
-        fileNamePrefix: ["agora", "recordings"],
+        fileNamePrefix: ["agora", "recordings", type],
       };
-      // Acquire MIX resource
-      const mixAcquire = await axios.post(
-        `${BASE_URL}/acquire`,
-        { cname, uid, clientRequest: {} },
-        { headers: { Authorization: AUTH_HEADER } }
-      );
-      const resourceIdMix = mixAcquire.data.resourceId;
 
-      // Acquire INDIVIDUAL resource
-      const individualAcquire = await axios.post(
-        `${BASE_URL}/acquire`,
-        { cname, uid, clientRequest: {} },
-        { headers: { Authorization: AUTH_HEADER } }
-      );
-      const resourceIdIndividual = individualAcquire.data.resourceId;      // Mixed audio config
-
-
-      const mixBody = {
+      // 3️⃣ Build Start Body
+      const startBody = {
         cname,
         uid,
         clientRequest: {
-          recordingConfig: {
-            channelType: 1,
-            streamTypes: 1,
-            audioProfile: 1,
-            maxIdleTime: 60,
-          },
+          recordingConfig: type === "mix"
+            ? {
+              channelType: 1,
+              streamTypes: 0,
+              audioProfile: 1, // ✅ valid in mix
+              maxIdleTime: 160,
+            }
+            : {
+              channelType: 1,
+              streamTypes: 0,
+              subscribeUidGroup: 0,
+              maxIdleTime: 160, // ✅ simpler config for individual
+            },
           storageConfig,
         },
       };
 
-      // Individual audio config
-      const individualBody = {
-        cname,
-        uid,
-        clientRequest: {
-          recordingConfig: {
-            channelType: 1,
-            streamTypes: 1,
-            audioProfile: 1,
-            maxIdleTime: 60,
-          },
-          storageConfig,
-        },
-      };
-
-      // Start MIX recording
-      const mixResp = await axios.post(
-        `${BASE_URL}/resourceid/${resourceIdMix}/mode/mix/start`,
-        mixBody,
+      // 4️⃣ Start Recording
+      const startRes = await axios.post(
+        `${BASE_URL}/resourceid/${resourceId}/mode/${type}/start`,
+        startBody,
         { headers: { Authorization: AUTH_HEADER } }
       );
+      const sid = startRes.data.sid;
 
-      // Start INDIVIDUAL recording
-      const indivResp = await axios.post(
-        `${BASE_URL}/resourceid/${resourceIdIndividual}/mode/individual/start`,
-        individualBody,
-        { headers: { Authorization: AUTH_HEADER } }
-      );
+      const startedAt = new Date().toISOString();
 
+      // 🔹 Step 5: Store Recording Info in Firestore
+      await db.collection("recordings").doc(getDocId(cname, type)).set({
+        'channelName': cname,
+        'uid': uid,
+        'recordingType': type,
+        'resourceId': resourceId,
+        'sid': sid,
+        'startedAt': startedAt,
+        'status': "active",
+      });
+
+      // 5️⃣ Return
       return res.status(200).json({
         success: true,
-        mixSid: mixResp.data.sid,
-        individualSid: indivResp.data.sid,
-        mixResourceId: resourceIdMix,
-        individualResourceId: resourceIdIndividual,
-        mixResponse: mixResp.data,
-        individualResponse: indivResp.data,
+        type,
+        resourceId,
+        sid: startRes.data.sid,
+        response: startRes.data,
       });
     } catch (error) {
-      const errMsg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message;
-      console.error("Start Dual Recording Error:", error);
+      console.error("Start Recording Error:", error);
+      const errMsg = error.response?.data?.message || error.message;
       return res.status(500).json({
         success: false,
-        error_message: "Failed to start dual recording: " + error,
+        error_message: "Failed to start recording: " + errMsg,
       });
     }
   });
 });
 
-// ========== Stop Both Recordings ==========
-exports.stopDualCloudRecording = functions.https.onRequest(async (req, res) => {
+// ====== Stop Recording ======
+exports.stopCloudRecording = functions.https.onRequest(async (req, res) => {
   return cors(req, res, async () => {
     try {
       if (req.method !== "POST")
         return res.status(405).json({ success: false, error_message: "Method not allowed" });
 
-      const { cname, uid, resourceId, mixSid, individualSid } = req.body;
-      if (!cname || !uid || !resourceId)
+      const { cname, type } = req.body;
+      if (!cname || !type)
         return res.status(400).json({ success: false, error_message: "Missing parameters" });
 
-      // Stop MIX recording
-      const stopMix = await axios.post(
-        `${BASE_URL}/resourceid/${resourceId}/sid/${mixSid}/mode/mix/stop`,
+      const docRef = db.collection("recordings").doc(getDocId(cname, type));
+      const docSnap = await docRef.get();
+
+      if (!docSnap.exists)
+        return res.status(404).json({ success: false, error_message: "No active recording found" });
+
+      const data = docSnap.data();
+      if (data.status === "stopped")
+        return res.status(400).json({ success: false, error_message: "Recording already stopped" });
+
+      const { uid, resourceId, sid } = data;
+
+      // Stop the recording
+      const stopRes = await axios.post(
+        `${BASE_URL}/resourceid/${resourceId}/sid/${sid}/mode/${type}/stop`,
         { cname, uid, clientRequest: {} },
         { headers: { Authorization: AUTH_HEADER } }
       );
+      // 🔹 Update Firestore
+      await docRef.update({
+        status: "stopped",
+        stoppedAt: new Date().toISOString(),
+        stopResponse: stopRes.data,
+      });
+      return res.status(200).json({
+        success: true,
+        type,
+        result: stopRes.data,
+      });
+    } catch (error) {
+      console.error("Stop Recording Error:", error);
+      const errMsg = error.response?.data?.message || error.message;
+     if(errMsg.includes('404')){
+           return res.status(200).json({
+        success: true,
+        error_message: 'Recording already stopped or not found',
+      });
+     }
+      return res.status(500).json({
+        success: false,
+        error_message: "Failed to stop recording: " + errMsg,
+      });
+    }
+  });
+});
 
-      // // Stop INDIVIDUAL recording
-      // const stopIndiv = await axios.post(
-      //   `${BASE_URL}/resourceid/${resourceId}/sid/${individualSid}/mode/individual/stop`,
-      //   { cname, uid, clientRequest: {} },
-      //   { headers: { Authorization: AUTH_HEADER } }
-      // );
+
+
+/**
+ * Cloud Function: queryCloudRecordingStatus
+ * -----------------------------------------
+ * Request body: { cname: string, type: "mix" | "individual" }
+ * Uses Firestore data (sid, resourceId, etc.)
+ * Queries Agora REST API to get current recording status
+ * Updates Firestore document with latest info
+ */
+exports.queryCloudRecordingStatus = functions.https.onRequest(async (req, res) => {
+  return cors(req, res, async () => {
+    try {
+      if (req.method !== "POST") {
+        return res.status(405).json({ success: false, error_message: "Method not allowed" });
+      }
+
+      const { cname, type } = req.body;
+      if (!cname || !type) {
+        return res.status(400).json({ success: false, error_message: "Missing cname or type" });
+      }
+
+      // 🔹 Fetch recording info from Firestore
+      const docRef = db.collection("recordings").doc(getDocId(cname, type));
+      const docSnap = await docRef.get();
+
+      if (!docSnap.exists) {
+        return res.status(404).json({ success: false, error_message: "Recording not found in Firestore" });
+      }
+
+      const data = docSnap.data();
+      const recordInfo = data;
+      if (!recordInfo || !recordInfo.resourceId || !recordInfo.sid) {
+        return res.status(400).json({ success: false, error_message: `Missing ${type} recording details` });
+      }
+
+      const { resourceId, sid } = recordInfo;
+      const mode = type; // mode same as type ("mix" or "individual")
+
+      // 🔹 Agora Query API
+      const url = `${BASE_URL}/resourceid/${resourceId}/sid/${sid}/mode/${mode}/query`;
+      const response = await axios.get(url, {
+        headers: { Authorization: AUTH_HEADER },
+      });
+
+      const agoraData = response.data;
+      const currentStatus = agoraData?.serverResponse?.status || "unknown";
+
+      // 🔹 Update Firestore with current status + timestamp
+      await docRef.update({
+        [`lastQueriedAt`]: admin.firestore.Timestamp.now(),
+        [`status`]: currentStatus,
+        [`agoraResponse`]: agoraData,
+      });
 
       return res.status(200).json({
         success: true,
-        mixResult: stopMix.data,
-        individualResult: stopIndiv.data,
+        cname,
+        type,
+        currentStatus,
+        agoraResponse: agoraData,
       });
     } catch (error) {
-      console.error("Stop Dual Recording Error:", error);
+      console.error("Query Recording Status Error:", error.response?.data || error.message);
       return res.status(500).json({
         success: false,
-        error_message: "Failed to stop dual recording: " + error.message,
+        error_message: error.response?.data || error.message,
       });
     }
   });
