@@ -2,19 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AppToastUtil {
-  static void showSuccessToast(String message, {bool isTop=false}) {
-    _showToast(message, title: 'Success', bgColor: Colors.green, icon: Icons.check_circle_outline,isTop: isTop);
+  static void showSuccessToast(String message, {bool isTop = false}) {
+    _showToast(message, title: 'Success', bgColor: Colors.green, icon: Icons.check_circle_outline, isTop: isTop);
   }
 
-  static void showErrorToast(String message, {bool isTop=false}) {
+  static void showErrorToast(String message, {bool isTop = false}) {
     _showToast(message, title: 'Error', bgColor: Colors.red, icon: Icons.error_outline, isTop: isTop);
   }
 
-  static void showInfoToast(String message, {String? title,bool isTop=false}) {
-    _showToast(message, title: title, bgColor: Colors.blueGrey, icon: Icons.info_outline,isTop: isTop);
+  static void showInfoToast(String message, {String? title, bool isTop = false}) {
+    _showToast(message, title: title, bgColor: Colors.blueGrey, icon: Icons.info_outline, isTop: isTop);
   }
 
-  static void _showToast(String message, {String? title, required Color bgColor, required IconData icon,bool isTop=false}) {
+  static void _showToast(
+    String message, {
+    String? title,
+    required Color bgColor,
+    required IconData icon,
+    bool isTop = false,
+  }) {
     // Close any existing snackbar
     if (Get.isSnackbarOpen) {
       Get.closeCurrentSnackbar();
@@ -26,7 +32,7 @@ class AppToastUtil {
       backgroundColor: bgColor,
 
       colorText: Colors.white,
-      snackPosition:isTop?SnackPosition.TOP: SnackPosition.BOTTOM,
+      snackPosition: isTop ? SnackPosition.TOP : SnackPosition.BOTTOM,
       duration: const Duration(seconds: 3),
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 40),
       borderRadius: 8,

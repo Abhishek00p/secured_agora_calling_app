@@ -254,43 +254,14 @@ exports.sendNotification = functions.https.onRequest(async (req, res) => {
 });
 
 
-const GCloudAccessKey = "GOOG1EXNBQ3V4QM63QPGH3WZZLEI4TB7LUOVRQLVH7A5H2T6XXMJXJX2D53IV";
-const GCloudSecretKey = "1wokdU7u/n0UycF5QemfYpM+iRUiupVmLAwK8SZl";
-const bucketName = "agora-recording-demo";
+// const GCloudAccessKey = "GOOG1EXNBQ3V4QM63QPGH3WZZLEI4TB7LUOVRQLVH7A5H2T6XXMJXJX2D53IV";
+const cloudFlareAccessKey = "1fa31c6dcfbcb2eff80fba7a9125248a";
+const cloudFlareSecretKey = "0671ce592aa98f67f8d0fbb1567d76da1c7dc2cad96023d34a8315e5d8df31f3";
+// const GCloudSecretKey = "1wokdU7u/n0UycF5QemfYpM+iRUiupVmLAwK8SZl";
+const bucketName = "agora-recordings";
 // RECORDING 
 
 
-// ========== Acquire Resource ==========
-exports.acquireRecordingResource = functions.https.onRequest(async (req, res) => {
-  return cors(req, res, async () => {
-    try {
-      if (req.method !== "POST")
-        return res.status(405).json({ success: false, error_message: "Method not allowed" });
-
-      const { cname, uid } = req.body;
-      if (!cname || !uid)
-        return res.status(400).json({ success: false, error_message: "Missing cname or uid" });
-
-      const response = await axios.post(
-        `${BASE_URL}/acquire`,
-        { cname, uid, clientRequest: {} },
-        { headers: { Authorization: AUTH_HEADER } }
-      );
-
-      return res.status(200).json({
-        success: true,
-        resourceId: response.data.resourceId,
-        data: response.data,
-      });
-    } catch (error) {
-      console.error("Acquire Recording Error:", error);
-      return res.status(500).json({
-        success: false,
-        error_message: "Failed to acquire recording resource: " + error.message,
-      });
-    }
-  });
-});
 
 const getDocId = (cname, type) => `${cname}_${type}`;
 
@@ -301,24 +272,46 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
       if (req.method !== "POST")
         return res.status(405).json({ success: false, error_message: "Method not allowed" });
 
-      const { cname, uid, type } = req.body;
+      const { cname, type, token, userId } = req.body;
 
-      if (!cname || !uid || !type)
-        return res.status(400).json({ success: false, error_message: "Missing parameters" });
+      if (!cname || !type || !token || !userId) {
+        return res.status(400).json({
+          success: false,
+          error_message: "Missing parameters",
+          error: {
+            code: "MISSING_PARAMETERS",
+            message: "One or more required parameters are missing.",
+            missing_fields: [
+              !cname ? "cname" : null,
+              !type ? "type" : null,
+              !token ? "token" : null,
+              !userId ? "userId" : null,
+            ].filter(Boolean),
+            hint: "Please ensure cname, type, and token are provided in the request body.",
+          },
+        });
+      }
+
+      console.log("token of user for joining channel  is :", token);
 
       if (!["mix", "individual"].includes(type))
         return res.status(400).json({ success: false, error_message: "Invalid type" });
 
       // 1️⃣ Acquire Resource
-      console.log('Acquiring recording resource for:', { cname, uid, type });
+      console.log('Acquiring recording resource for:', { cname, type });
       const acquireRes = await axios.post(
         `${BASE_URL}/acquire`,
-        { cname, uid, clientRequest: {} },
+        {
+          cname, uid: userId.toString(), clientRequest: {
+
+
+          }
+        },
         { headers: { Authorization: AUTH_HEADER } }
       );
 
       console.log('Acquire response:', acquireRes.data);
-      
+
       // Validate acquire response
       if (!acquireRes.data || !acquireRes.data.resourceId) {
         console.error('Failed to acquire recording resource:', acquireRes.data);
@@ -332,23 +325,26 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
 
       // 2️⃣ Prepare Common Storage Config
       const storageConfig = {
-        vendor: 6, // Google Cloud
+        vendor: 11,
         region: 0,
         bucket: bucketName,
-        accessKey: GCloudAccessKey,
-        secretKey: GCloudSecretKey,
+        accessKey: cloudFlareAccessKey,
+        secretKey: cloudFlareSecretKey,
         fileNamePrefix: ["agora", "recordings", type],
+        extensionParams: {
+          "endpoint": "https://684d7d3ceda1fe3533f104f1cf8197c7.r2.cloudflarestorage.com"
+        }
       };
-      
+
       console.log('Storage config:', {
         vendor: storageConfig.vendor,
         region: storageConfig.region,
         bucket: storageConfig.bucket,
         fileNamePrefix: storageConfig.fileNamePrefix
       });
-      
+
       // Validate storage configuration
-      if (!GCloudAccessKey || !GCloudSecretKey || !bucketName) {
+      if (!cloudFlareAccessKey || !cloudFlareSecretKey || !bucketName) {
         console.error('Invalid Google Cloud Storage configuration');
         return res.status(500).json({
           success: false,
@@ -359,8 +355,9 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
       // 3️⃣ Build Start Body
       const startBody = {
         cname,
-        uid,
+        uid: userId.toString(),
         clientRequest: {
+          token: token,
           recordingConfig: type === "mix"
             ? {
               channelType: 1,
@@ -385,9 +382,9 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
         startBody,
         { headers: { Authorization: AUTH_HEADER } }
       );
-      
+
       console.log('Start recording response:', startRes.data);
-      
+
       // Validate start response
       if (!startRes.data || !startRes.data.sid) {
         console.error('Failed to start recording:', startRes.data);
@@ -396,7 +393,7 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
           error_message: 'Failed to start recording - no session ID returned'
         });
       }
-      
+
       const sid = startRes.data.sid;
 
       const startedAt = new Date().toISOString();
@@ -404,7 +401,7 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
       // 🔹 Step 5: Store Recording Info in Firestore
       const recordingData = {
         'channelName': cname,
-        'uid': uid,
+        'uid': userId,
         'recordingType': type,
         'resourceId': resourceId,
         'sid': sid,
@@ -413,7 +410,7 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
         'acquireResponse': acquireRes.data,
         'startResponse': startRes.data
       };
-      
+
       console.log('Storing recording data in Firestore:', recordingData);
       await db.collection("recordings").doc(getDocId(cname, type)).set(recordingData);
 
@@ -446,7 +443,7 @@ exports.stopCloudRecording = functions.https.onRequest(async (req, res) => {
       const { cname, type } = req.body;
       if (!cname || !type)
         return res.status(400).json({ success: false, error_message: "Missing parameters" });
-
+      query
       const docRef = db.collection("recordings").doc(getDocId(cname, type));
       const docSnap = await docRef.get();
 
@@ -458,7 +455,7 @@ exports.stopCloudRecording = functions.https.onRequest(async (req, res) => {
         return res.status(400).json({ success: false, error_message: "Recording already stopped" });
 
       const { uid, resourceId, sid } = data;
-      
+
       // Validate that we have the required data
       if (!uid || !resourceId || !sid) {
         console.error('Missing required recording data:', { uid, resourceId, sid });
@@ -472,10 +469,10 @@ exports.stopCloudRecording = functions.https.onRequest(async (req, res) => {
       console.log('Stopping recording:', { cname, type, resourceId, sid, uid });
       const stopRes = await axios.post(
         `${BASE_URL}/resourceid/${resourceId}/sid/${sid}/mode/${type}/stop`,
-        { cname, uid, clientRequest: {} },
+        { cname, uid: uid, clientRequest: {} },
         { headers: { Authorization: AUTH_HEADER } }
       );
-      
+
       console.log('Stop recording response:', stopRes.data);
       // 🔹 Update Firestore
       await docRef.update({
@@ -491,19 +488,19 @@ exports.stopCloudRecording = functions.https.onRequest(async (req, res) => {
     } catch (error) {
       console.error("Stop Recording Error:", error);
       const errMsg = error.response?.data?.message || error.message;
-      
+
       // Check if it's a 404 error (recording not found)
       if (error.response?.status === 404) {
         console.log('Recording not found (404) - may have already stopped or never started');
-       
-        
+
+
         return res.status(200).json({
           success: true,
           message: 'Recording was not active or already stopped',
-          
+
         });
       }
-      
+
       return res.status(500).json({
         success: false,
         error_message: "Failed to stop recording: " + errMsg,
@@ -550,20 +547,22 @@ exports.queryCloudRecordingStatus = functions.https.onRequest(async (req, res) =
 
       const { resourceId, sid } = recordInfo;
       const mode = type; // mode same as type ("mix" or "individual")
-
+      if (!resourceId || !sid) {
+        return res.status(400).json({ success: false, error_message: `Missing ${cname} ${type} recording details` });
+      }
       // 🔹 Agora Query API
       const url = `${BASE_URL}/resourceid/${resourceId}/sid/${sid}/mode/${mode}/query`;
       const response = await axios.get(url, {
         headers: { Authorization: AUTH_HEADER },
       });
-
+      console.log('\n\n ------------------------------\n Agora query response:', response.data);
       const agoraData = response.data;
       console.log('Queried Agora recording status:', agoraData);
       const currentStatus = agoraData?.serverResponse?.status || "unknown";
 
       // 🔹 Update Firestore with current status + timestamp
       await docRef.update({
-        [`lastQueriedAt`]: admin.firestore.Timestamp.now(),
+        [`lastQueriedAt`]: Date.now(),
         [`status`]: currentStatus,
         [`agoraResponse`]: agoraData,
       });
@@ -576,7 +575,7 @@ exports.queryCloudRecordingStatus = functions.https.onRequest(async (req, res) =
         agoraResponse: agoraData,
       });
     } catch (error) {
-      console.error("Query Recording Status Error:", error.response?.data || error.message);
+      console.error("Query Recording Status Error:", error.response || error.response?.data || error.message);
       return res.status(500).json({
         success: false,
         error_message: error.response?.data || error.message,
@@ -584,3 +583,35 @@ exports.queryCloudRecordingStatus = functions.https.onRequest(async (req, res) =
     }
   });
 });
+exports.agoraWebhook = functions.https.onRequest(async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const { eventType, errorCode, ...rest } = req.body;
+    const timestamp = Date.now();
+
+    const docId = `${timestamp}_${eventType}`;
+    const data = {
+      eventType: eventType || null,
+      errorCode: errorCode || null,
+      eventData: rest || {},
+      receivedAt: admin.firestore.Timestamp.fromMillis(timestamp),
+      readableTime: new Date(timestamp).toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+      }),
+    };
+
+    // ✅ Immediately respond to Agora to avoid timeout
+    res.status(200).send("OK");
+
+    // Then save to Firestore (async, no need to await)
+    db.collection('agora_webhook_error').doc(docId).set(data)
+      .then(() => console.log("Webhook event stored:", docId))
+      .catch((err) => console.error("Firestore write error:", err));
+
+  } catch (e) {
+    console.error("Webhook processing error:", e);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+

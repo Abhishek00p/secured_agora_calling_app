@@ -392,13 +392,13 @@ class MeetingUtil {
                             final password = controller.passwordController.text.trim();
 
                             if (title.isEmpty) {
-                              AppToastUtil.showErrorToast( 'Meeting title is required',isTop: true);
+                              AppToastUtil.showErrorToast('Meeting title is required', isTop: true);
                               return;
                             }
 
                             if (controller.isScheduled.value) {
                               if (controller.selectedDate.value == null || controller.selectedTime.value == null) {
-                                AppToastUtil.showErrorToast( 'Please select date and time for scheduling',isTop: true);
+                                AppToastUtil.showErrorToast('Please select date and time for scheduling', isTop: true);
                                 return;
                               }
                             }

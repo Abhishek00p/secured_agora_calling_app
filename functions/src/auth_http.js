@@ -170,7 +170,7 @@ exports.login = functions.https.onRequest(async (req, res) => {
 
       // Update last login
       await userDoc.ref.update({
-        lastLoginAt: admin.firestore.FieldValue.serverTimestamp()
+        lastLoginAt: Date.now(),
        
       });
 
