@@ -357,6 +357,13 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
         uid: userId.toString(),
         clientRequest: {
           token: token,
+          streamSubscribe: {
+            audioUidList: {
+              subscribeAudioUids: [
+                "#allstream#"
+              ]
+            },
+          },
           recordingConfig: type === "mix"
             ? {
               channelType: 1,
@@ -442,7 +449,7 @@ exports.stopCloudRecording = functions.https.onRequest(async (req, res) => {
       const { cname, type } = req.body;
       if (!cname || !type)
         return res.status(400).json({ success: false, error_message: "Missing parameters" });
-      query
+
       const docRef = db.collection("recordings").doc(getDocId(cname, type));
       const docSnap = await docRef.get();
 
@@ -468,7 +475,7 @@ exports.stopCloudRecording = functions.https.onRequest(async (req, res) => {
       console.log('Stopping recording:', { cname, type, resourceId, sid, uid });
       const stopRes = await axios.post(
         `${BASE_URL}/resourceid/${resourceId}/sid/${sid}/mode/${type}/stop`,
-        { cname, uid: uid, clientRequest: {} },
+        { cname, uid: uid.toString(), clientRequest: {} },
         { headers: { Authorization: AUTH_HEADER } }
       );
 
@@ -485,7 +492,7 @@ exports.stopCloudRecording = functions.https.onRequest(async (req, res) => {
         result: stopRes.data,
       });
     } catch (error) {
-      console.error("Stop Recording Error:", error);
+      console.log("Stop Recording Error:", error);
       const errMsg = error.response?.data?.message || error.message;
 
       // Check if it's a 404 error (recording not found)
@@ -614,3 +621,66 @@ exports.agoraWebhook = functions.https.onRequest(async (req, res) => {
 });
 
 
+
+
+exports.updateRecording = functions.https.onRequest(async (req, res) => {
+  try {
+    const { cname, type, uid, audioSubscribeUids = [] } = req.body;
+
+    if (!cname || !type || !audioSubscribeUids) {
+      return res.status(400).send({ error: "Missing required parameters." });
+    }
+
+
+    const docRef = db.collection("recordings").doc(getDocId(cname, type));
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists)
+      return res.status(404).json({ success: false, error_message: "No active recording found" });
+
+    const data = docSnap.data();
+    if (data.status === "stopped")
+      return res.status(400).json({ success: false, error_message: "Recording already stopped" });
+
+    const { resourceId, sid } = data;
+
+    // Prepare update request body
+    const updateBody = {
+      cname: cname,
+      uid: uid.toString(),
+      clientRequest: {
+        streamSubscribe: {
+          audioUidList: {
+            subscribeAudioUids: audioSubscribeUids.length > 0 ? audioSubscribeUids : ["#allstream#"]
+          },
+
+        }
+      }
+    };
+
+    // Call Agora update API
+    const url = `https://api.agora.io/v1/apps/${AGORA_APP_ID}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/${type}/update`;
+
+    const response = await axios.post(url, updateBody, {
+      headers: {
+        Authorization: AUTH_HEADER,
+        "Content-Type": "application/json"
+      }
+    });
+
+    // Log response to Firestore (optional)
+    const db = admin.firestore();
+    const timestamp = Date.now();
+    const docId = `updateRecording_${timestamp}`;
+    await db.collection("agora_recording_updates").doc(docId).set({
+      request: updateBody,
+      response: response.data,
+      createdAt: admin.firestore.Timestamp.fromMillis(timestamp),
+    });
+
+    res.status(200).send({ success: true, data: response.data });
+  } catch (error) {
+    console.error("Agora update error:", error.response?.data || error.message || error);
+    res.status(500).send({ success: false, error: error.response?.data || error.message || error });
+  }
+});

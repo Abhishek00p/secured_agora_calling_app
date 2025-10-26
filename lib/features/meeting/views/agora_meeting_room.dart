@@ -183,21 +183,22 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
               backgroundColor: Colors.black,
               iconTheme: const IconThemeData(color: Colors.white),
               actions: [
-                IconButton(
-                  onPressed: () async {
-                    // await fetchPendingRequests();
-                    meetingController.toggleRecordingButton();
-                  },
-                  icon: Obx(
-                    () => Icon(
-                      meetingController.isRecordingOn.value
-                          ? Icons.stop_circle_rounded
-                          : Icons.fiber_manual_record_rounded,
-                      size: 24,
-                      color: Colors.red,
+                if (meetingController.isHost)
+                  IconButton(
+                    onPressed: () async {
+                      // await fetchPendingRequests();
+                      meetingController.toggleRecordingButton();
+                    },
+                    icon: Obx(
+                      () => Icon(
+                        meetingController.isRecordingOn.value
+                            ? Icons.stop_circle_rounded
+                            : Icons.fiber_manual_record_rounded,
+                        size: 24,
+                        color: Colors.red,
+                      ),
                     ),
                   ),
-                ),
                 IconButton(
                   onPressed: () async {
                     // await fetchPendingRequests();

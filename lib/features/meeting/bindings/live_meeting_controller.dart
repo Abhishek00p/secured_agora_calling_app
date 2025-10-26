@@ -994,22 +994,33 @@ class MeetingController extends GetxController {
   Future<void> toggleRecordingButton() async {
     if (isRecordingOn.value) {
       isRecordingOn.value = !(await _firebaseService.stopRecording(meetingId: meetingId) ?? false);
-
+      if (!isRecordingOn.value) {
+        AppToastUtil.showSuccessToast('Recording stopped');
+      }
       await Future.delayed(Duration(seconds: 6), () {});
       await _firebaseService.queryAgoraRecordingStatus(meetingId, 'individual');
-      await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix');
+      // await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix');
     } else {
       final token = await _firebaseService.getAgoraToken(
         channelName: meetingId.isNotEmpty ? meetingId : meetingModel.value.meetId,
         uid: currentUser.userId,
         isHost: isHost,
       );
-      await _firebaseService.startRecording(meetingId, token: agoraMeetingToken, userId: currentUser.userId) ?? false;
-
+      final result =
+          await _firebaseService.startRecording(meetingId, token: agoraMeetingToken, userId: currentUser.userId) ??
+          false;
+      if (!result) {
+        AppToastUtil.showErrorToast('Failed to start recording');
+        return;
+      }
       await Future.delayed(Duration(seconds: 6), () {});
       final v1 = await _firebaseService.queryAgoraRecordingStatus(meetingId, 'individual');
-      final v2 = await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix');
-      isRecordingOn.value = v1 || v2;
+      // final v2 = await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix');
+      isRecordingOn.value = v1;
+
+      if (isRecordingOn.value) {
+        AppToastUtil.showSuccessToast('Recording started');
+      }
     }
     update();
   }

@@ -789,22 +789,26 @@ class AppFirebaseService {
       'stopCloudRecording',
       body: {'cname': meetingId, 'type': 'individual'},
     );
-    final mixRecording = await AppHttpService().post('stopCloudRecording', body: {'cname': meetingId, 'type': 'mix'});
+    // final mixRecording = await AppHttpService().post('stopCloudRecording', body: {'cname': meetingId, 'type': 'mix'});
 
     if (singleRecording == null) {
       debugPrint("singleRecording response is null while stopping recording");
     }
-    if (mixRecording == null) {
-      debugPrint("mixRecording response is null while stopping recording");
-    }
+    // if (mixRecording == null) {
+    //   debugPrint("mixRecording response is null while stopping recording");
+    // }
 
-    if (singleRecording?['success'] == true || mixRecording?['success'] == true) {
+    if (singleRecording?['success'] == true
+    // || mixRecording?['success'] == true
+    ) {
       debugPrint("recording stopped successfully");
 
       return true;
     } else {
       AppToastUtil.showErrorToast(
-        singleRecording?['error_message'] ?? mixRecording?['error_message'] ?? "Failed to stop recording",
+        singleRecording?['error_message'] ??
+            // mixRecording?['error_message'] ??
+            "Failed to stop recording",
       );
     }
     return null;
@@ -820,25 +824,29 @@ class AppFirebaseService {
       'startCloudRecording',
       body: {'cname': meetingId, 'userId': userId, 'type': 'individual', "token": token},
     );
-    final mixRecording = await AppHttpService().post(
-      'startCloudRecording',
-      body: {'cname': meetingId, 'userId': userId, 'type': 'mix', "token": token},
-    );
+    // final mixRecording = await AppHttpService().post(
+    //   'startCloudRecording',
+    //   body: {'cname': meetingId, 'userId': userId, 'type': 'mix', "token": token},
+    // );
 
     if (singleRecording == null) {
       debugPrint("singleRecording response is null while starting recording");
     }
-    if (mixRecording == null) {
-      debugPrint("mixRecording response is null while starting recording");
-    }
+    // if (mixRecording == null) {
+    //   debugPrint("mixRecording response is null while starting recording");
+    // }
 
-    if (singleRecording?['success'] == true || mixRecording?['success'] == true) {
+    if (singleRecording?['success'] == true
+    // || mixRecording?['success'] == true
+    ) {
       debugPrint("recording started successfully");
 
       return true;
     } else {
       AppToastUtil.showErrorToast(
-        singleRecording?['error_message'] ?? mixRecording?['error_message'] ?? "Failed to start recording",
+        singleRecording?['error_message'] ??
+            // mixRecording?['error_message'] ??
+            "Failed to start recording",
       );
     }
     return null;

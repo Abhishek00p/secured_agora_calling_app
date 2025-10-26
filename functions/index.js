@@ -20,3 +20,4 @@ exports.startCloudRecording = agora.startCloudRecording;
 exports.stopCloudRecording = agora.stopCloudRecording;
 exports.queryCloudRecordingStatus = agora.queryCloudRecordingStatus;
 exports.agoraWebhook = agora.agoraWebhook;
+exports.updateRecording = agora.updateRecording;

@@ -171,7 +171,7 @@ exports.login = functions.https.onRequest(async (req, res) => {
       // Update last login
       await userDoc.ref.update({
         lastLoginAt: Date.now(),
-       
+
       });
 
       return res.status(200).json({
@@ -251,7 +251,7 @@ exports.createUser = functions.https.onRequest(async (req, res) => {
         });
       }
 
-      if(email.length < 5){
+      if (email.length < 5) {
         return res.status(400).json({
           success: false,
           data: null,
@@ -259,7 +259,7 @@ exports.createUser = functions.https.onRequest(async (req, res) => {
         });
       }
 
-     
+
       if (password.length < 6) {
         return res.status(400).json({
           success: false,
@@ -407,7 +407,7 @@ exports.createMember = functions.https.onRequest(async (req, res) => {
         });
       }
 
-      if(email.length < 5){
+      if (email.length < 5) {
         return res.status(400).json({
           success: false,
           data: null,

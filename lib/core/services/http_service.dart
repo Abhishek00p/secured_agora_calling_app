@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/firebase_function_logger.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:flutter/foundation.dart';
 
@@ -30,6 +31,7 @@ class AppHttpService {
     // } else {
     // Use production URL in release mode
     return 'https://us-central1-secure-calling-2025.cloudfunctions.net/';
+
     // }
   }
 
@@ -267,7 +269,7 @@ class AppHttpService {
       final tokens = meetingData['tokens'] ?? {};
       tokens['$uid'] = {'token': token, 'expiry_time': expiryTime};
       await AppFirebaseService.instance.meetingsCollection.doc(channelName).update({'tokens': tokens});
-      AppToastUtil.showSuccessToast('Token stored successfully');
+      AppLogger.print('Token stored successfully');
     } on SocketException {
       AppToastUtil.showErrorToast('No Internet connection');
     } catch (e) {
