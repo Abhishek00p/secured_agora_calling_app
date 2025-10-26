@@ -9,11 +9,17 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
+require('dotenv').config();
 
+const AGORA_APP_ID = process.env.AGORA_APP_ID;
+const AGORA_APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE;
+const AGORA_CUSTOMER_ID = process.env.AGORA_CUSTOMER_ID;
+const AGORA_CUSTOMER_CERT = process.env.AGORA_CUSTOMER_CERT;
 
-const AGORA_APP_ID = "225a62f4b5aa4e94ab46f91d0a0257e1";
-const AGORA_CUSTOMER_ID = "e50e9e7e7a03423d882afc7cdee41ede";
-const AGORA_CUSTOMER_CERT = "c6b70edc1d724e289608a59d9c64ea2c";
+const cloudFlareAccessKey = process.env.CLOUDFLARE_ACCESS_KEY;
+const cloudFlareSecretKey = process.env.CLOUDFLARE_SECRET_KEY;
+const bucketName = process.env.BUCKET_NAME;
+const CLOUDFLARE_ENDPOINT = process.env.CLOUDFLARE_ENDPOINT;
 
 const BASE_URL = `https://api.agora.io/v1/apps/${AGORA_APP_ID}/cloud_recording`;
 const AUTH_HEADER =
@@ -39,10 +45,8 @@ exports.verifyToken = functions.https.onRequest(async (req, res) => {
         });
       }
 
-      const appId = '225a62f4b5aa4e94ab46f91d0a0257e1';
-      const appCertificate = '64ba1b2a26694545aac2f5f9ed86ac09';
 
-      if (!appId || !appCertificate) {
+      if (!AGORA_APP_ID || !AGORA_APP_CERTIFICATE) {
         return res.status(500).json({
           success: false,
           error_message: 'Agora credentials not configured.'
@@ -82,8 +86,8 @@ exports.verifyToken = functions.https.onRequest(async (req, res) => {
 
       // Recreate expected token
       const expectedToken = RtcTokenBuilder.buildTokenWithUid(
-        appId,
-        appCertificate,
+        AGORA_APP_ID,
+        AGORA_APP_CERTIFICATE,
         channelName,
         userId,
         role,
@@ -151,10 +155,10 @@ exports.generateToken = functions.https.onRequest(async (req, res) => {
       }
 
       // Get Agora credentials from environment variables
-      const appId = '225a62f4b5aa4e94ab46f91d0a0257e1';
-      const appCertificate = '64ba1b2a26694545aac2f5f9ed86ac09';
+      const AGORA_APP_ID = '225a62f4b5aa4e94ab46f91d0a0257e1';
+      const AGORA_APP_CERTIFICATE = '64ba1b2a26694545aac2f5f9ed86ac09';
 
-      if (!appId || !appCertificate) {
+      if (!AGORA_APP_ID || !AGORA_APP_CERTIFICATE) {
         return res.status(500).json({
           success: false,
           error_message: 'Agora credentials not configured. Please set AGORA_APP_ID and AGORA_APP_CERTIFICATE environment variables.'
@@ -168,8 +172,8 @@ exports.generateToken = functions.https.onRequest(async (req, res) => {
 
       // Generate Agora token
       const token = RtcTokenBuilder.buildTokenWithUid(
-        appId,
-        appCertificate,
+        AGORA_APP_ID,
+        AGORA_APP_CERTIFICATE,
         channelName,
         userId,
         role,
@@ -179,7 +183,7 @@ exports.generateToken = functions.https.onRequest(async (req, res) => {
       return res.status(200).json({
         success: true,
         token: token,
-        appId: appId,
+        AGORA_APP_ID: AGORA_APP_ID,
         channelName: channelName,
         uid: userId,
         role: userRole,
@@ -254,11 +258,6 @@ exports.sendNotification = functions.https.onRequest(async (req, res) => {
 });
 
 
-// const GCloudAccessKey = "GOOG1EXNBQ3V4QM63QPGH3WZZLEI4TB7LUOVRQLVH7A5H2T6XXMJXJX2D53IV";
-const cloudFlareAccessKey = "1fa31c6dcfbcb2eff80fba7a9125248a";
-const cloudFlareSecretKey = "0671ce592aa98f67f8d0fbb1567d76da1c7dc2cad96023d34a8315e5d8df31f3";
-// const GCloudSecretKey = "1wokdU7u/n0UycF5QemfYpM+iRUiupVmLAwK8SZl";
-const bucketName = "agora-recordings";
 // RECORDING 
 
 
