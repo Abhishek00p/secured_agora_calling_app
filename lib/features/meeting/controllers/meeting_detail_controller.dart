@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/utils/app_logger.dart';
@@ -37,6 +38,35 @@ class MeetingDetailController extends GetxController {
   void onClose() {
     _meetingStreamSubscription?.cancel();
     super.onClose();
+  }
+
+  fetchRecordings() async {
+    try {
+      final docName = '${meetingId}_individual';
+      final docName2 = '${meetingId}_mix';
+      final result1 =
+          (await AppFirebaseService.instance.recordingsCollection
+                  .doc(docName)
+                  .get())
+              .data();
+      final result2 =
+          (await AppFirebaseService.instance.recordingsCollection
+                  .doc(docName2)
+                  .get())
+              .data();
+      String recording1Url = '';
+      String recording2Url = '';
+      if (result1 != null && result1 is Map<String, dynamic>) {
+        recording1Url = result1['m3u8Path'] ?? '';
+      }
+      if (result2 != null && result2 is Map<String, dynamic>) {
+        recording2Url = result2['m3u8Path'] ?? '';
+      }
+      AppLogger.print('Fetched 1st recording URL: $recording1Url');
+      AppLogger.print('Fetched 2nd recording URL: $recording2Url');
+    } catch (e) {
+      AppLogger.print('Error fetching recordings: $e');
+    }
   }
 
   /// Load meeting details

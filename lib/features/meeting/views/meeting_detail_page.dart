@@ -84,20 +84,14 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Participants (${meetingDetail.participants.length})',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      // Quick refresh button for participants
-                      // IconButton(
-                      //   icon: const Icon(Icons.refresh, size: 20),
-                      //   tooltip: 'Refresh Participants',
-                      //   onPressed: controller.refreshParticipants,
-                      // ),
-                    ],
+                  child: TabBar(tabs: ['Participants', 'Recordings']
+                      .map((tabTitle) => Tab(
+                            text: tabTitle +
+                                (tabTitle == 'Participants'
+                                    ? ' (${meetingDetail.participants.length})':'0'),
+                                    // : ' (${meetingDetail.recordings.length})'),
+                          ))
+                      .toList(),
                   ),
                 ),
               ),
@@ -109,6 +103,32 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
     );
   }
 
+  // Widget _buildRecordingsList(MeetingDetail meetingDetail) {
+  //   if (meetingDetail.recordings.isEmpty) {
+  //     return const SliverFillRemaining(
+  //       child: Center(
+  //         child: Text('No recordings available.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+  //       ),
+  //     );
+  //   }
+
+  //   return SliverList(
+  //     delegate: SliverChildBuilderDelegate((context, index) {
+  //       final recording = meetingDetail.recordings[index];
+  //       return ListTile(
+  //         leading: const Icon(Icons.audio_file),
+  //         title: Text('Recording ${index + 1}'),
+  //         subtitle: Text('Duration: ${recording.duration.inMinutes} mins'),
+  //         trailing: IconButton(
+  //           icon: const Icon(Icons.download),
+  //           onPressed: () {
+  //             // Implement download logic
+  //           },
+  //         ),
+  //       );
+  //     }, childCount: meetingDetail.recordings.length),
+  //   );
+  // }
   Widget _buildParticipantsList(MeetingDetail meetingDetail) {
     if (meetingDetail.participants.isEmpty) {
       return const SliverFillRemaining(
