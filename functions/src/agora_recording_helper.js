@@ -1,21 +1,24 @@
+
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const { RtcTokenBuilder, RtcRole } = require("agora-token");
 const cors = require('cors')({ origin: true });
 const axios = require("axios");
+const { tokenGenerateHelper } = require('./token_helper');
 
 // Initialize Firebase Admin (if not already initialized)
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
+
+
+
 require('dotenv').config();
 
 const AGORA_APP_ID = process.env.AGORA_APP_ID;
 const AGORA_APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE;
 const AGORA_CUSTOMER_ID = process.env.AGORA_CUSTOMER_ID;
 const AGORA_CUSTOMER_CERT = process.env.AGORA_CUSTOMER_CERT;
-
 const cloudFlareAccessKey = process.env.CLOUDFLARE_ACCESS_KEY;
 const cloudFlareSecretKey = process.env.CLOUDFLARE_SECRET_KEY;
 const bucketName = process.env.BUCKET_NAME;
@@ -25,242 +28,34 @@ const BASE_URL = `https://api.agora.io/v1/apps/${AGORA_APP_ID}/cloud_recording`;
 const AUTH_HEADER =
   "Basic " + Buffer.from(`${AGORA_CUSTOMER_ID}:${AGORA_CUSTOMER_CERT}`).toString("base64");
 
-// ========== Verify Agora Token ==========
-exports.verifyToken = functions.https.onRequest(async (req, res) => {
-  return cors(req, res, async () => {
-    try {
-      if (req.method !== 'POST') {
-        return res.status(405).json({
-          success: false,
-          error_message: 'Method not allowed'
-        });
-      }
-
-      const { channelName, uid, userRole } = req.body;
-
-      if (!channelName || !uid) {
-        return res.status(400).json({
-          success: false,
-          error_message: 'channelName and uid are required'
-        });
-      }
-
-
-      if (!AGORA_APP_ID || !AGORA_APP_CERTIFICATE) {
-        return res.status(500).json({
-          success: false,
-          error_message: 'Agora credentials not configured.'
-        });
-      }
-
-      // Fetch token and expiry from Firestore
-      const meetingDoc = await admin.firestore()
-        .collection('meetings')
-        .doc(channelName)
-        .get();
-
-      if (!meetingDoc.exists) {
-        return res.status(404).json({
-          success: false,
-          valid: false,
-          error_message: 'Meeting not found'
-        });
-      }
-
-      const { tokens } = meetingDoc.data();
-      if (!tokens || !tokens[uid]) {
-        return res.status(404).json({
-          success: false,
-          valid: false,
-          error_message: 'Token not found for the given uid'
-        });
-      }
-
-      const token = tokens[uid]['token'];
-      const expireTime = tokens[uid]['expiry_time'];
-
-      const userId = Number(uid) || 0;
-      const role = userRole === "0" ? RtcRole.SUBSCRIBER : RtcRole.PUBLISHER;
-      const privilegeTs =
-        expireTime || Math.floor(Date.now() / 1000) + 60; // fallback to small window
-
-      // Recreate expected token
-      const expectedToken = RtcTokenBuilder.buildTokenWithUid(
-        AGORA_APP_ID,
-        AGORA_APP_CERTIFICATE,
-        channelName,
-        userId,
-        role,
-        privilegeTs
-      );
-
-      if (token !== expectedToken) {
-        console.warn('Token mismatch detected');
-        return res.status(401).json({
-          success: false,
-          valid: false,
-          error_message: "{msg : 'Invalid token',\n fetchedToken: '" + token + "',\n ExpectedExpiryTime: '" + expireTime + "',currExpiryTime: '" + privilegeTs + "',\n expectedToken: '" + expectedToken + "'}"
-        });
-      }
-
-      // Optionally check if token expired
-      const now = Math.floor(Date.now() / 1000);
-      if (privilegeTs < now) {
-        return res.status(401).json({
-          success: false,
-          valid: false,
-          error_message: 'Token expired'
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        valid: true,
-        channelName,
-        uid: userId,
-        role: userRole
-      });
-    } catch (error) {
-      console.error('Verify Agora token error:', error);
-      return res.status(500).json({
-        success: false,
-        error_message: 'Failed to verify Agora token: ' + error.message
-      });
-    }
-  });
-});
-
-
-// ========== Agora Token Generation ==========
-exports.generateToken = functions.https.onRequest(async (req, res) => {
-  return cors(req, res, async () => {
-    try {
-      if (req.method !== 'POST') {
-        return res.status(405).json({
-          success: false,
-          error_message: 'Method not allowed'
-        });
-      }
-
-
-
-      const { channelName, uid, userRole } = req.body;
-
-      // Validate input
-      if (!channelName) {
-        return res.status(400).json({
-          success: false,
-          error_message: 'channelName is required'
-        });
-      }
-
-      // Get Agora credentials from environment variables
-      const AGORA_APP_ID = '225a62f4b5aa4e94ab46f91d0a0257e1';
-      const AGORA_APP_CERTIFICATE = '64ba1b2a26694545aac2f5f9ed86ac09';
-
-      if (!AGORA_APP_ID || !AGORA_APP_CERTIFICATE) {
-        return res.status(500).json({
-          success: false,
-          error_message: 'Agora credentials not configured. Please set AGORA_APP_ID and AGORA_APP_CERTIFICATE environment variables.'
-        });
-      }
-
-      const userId = Number(uid) || 0;
-      const role = userRole === "0" ? RtcRole.SUBSCRIBER : RtcRole.PUBLISHER;
-      const expireSec = 144000; // 40 hours
-      const privilegeTs = Math.floor(Date.now() / 1000) + expireSec;
-
-      // Generate Agora token
-      const token = RtcTokenBuilder.buildTokenWithUid(
-        AGORA_APP_ID,
-        AGORA_APP_CERTIFICATE,
-        channelName,
-        userId,
-        role,
-        privilegeTs
-      );
-
-      return res.status(200).json({
-        success: true,
-        token: token,
-        AGORA_APP_ID: AGORA_APP_ID,
-        channelName: channelName,
-        uid: userId,
-        role: userRole,
-        expireTime: privilegeTs
-      });
-
-    } catch (error) {
-      console.error('Generate Agora token error:', error);
-      return res.status(500).json({
-        success: false,
-        error_message: 'Failed to generate Agora token: ' + error.message
-      });
-    }
-  });
-});
-
-// ========== FCM Push Notification ==========
-exports.sendNotification = functions.https.onRequest(async (req, res) => {
-  return cors(req, res, async () => {
-    try {
-      if (req.method !== 'POST') {
-        return res.status(405).json({
-          success: false,
-          error_message: 'Method not allowed'
-        });
-      }
-
-      // Verify authentication via JWT token
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({
-          success: false,
-          error_message: 'Authentication required'
-        });
-      }
-
-      const { fcmToken, title, body, data: customData } = req.body;
-
-      // Validate input
-      if (!fcmToken || !title || !body) {
-        return res.status(400).json({
-          success: false,
-          error_message: 'fcmToken, title, and body are required'
-        });
-      }
-
-      const message = {
-        token: fcmToken,
-        notification: {
-          title,
-          body,
-        },
-        data: customData || {}, // Optional custom payload
-      };
-
-      const response = await admin.messaging().send(message);
-
-      return res.status(200).json({
-        success: true,
-        messageId: response,
-        response: response
-      });
-
-    } catch (error) {
-      console.error('Error sending notification:', error);
-      return res.status(500).json({
-        success: false,
-        error_message: 'Failed to send notification: ' + error.message
-      });
-    }
-  });
-});
 
 
 // RECORDING 
 
+async function generateUniqueUserId() {
+  const MAX_32BIT = 0x7fffffff; // 2^31 - 1
 
+  // Fetch all existing user doc IDs
+  const snapshot = await db.collection("users").get();
+  const existingIds = snapshot.docs.map(doc => doc.id); // array of strings
+
+  let userId;
+  let tries = 0;
+
+  do {
+    // Safety: prevent infinite loop
+    if (tries > 100) throw new Error("Unable to generate unique ID after 100 tries");
+
+    // Generate 32-bit integer
+    const timestampPart = Date.now() % 10000000; // last 7 digits of timestamp
+    const randomPart = Math.floor(Math.random() * 1000); // 0-999
+    userId = (timestampPart * 1000 + randomPart) % MAX_32BIT;
+
+    tries++;
+  } while (existingIds.includes(userId.toString())); // convert to string for comparison
+
+  return userId;
+}
 
 const getDocId = (cname, type) => `${cname}_${type}`;
 
@@ -271,9 +66,9 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
       if (req.method !== "POST")
         return res.status(405).json({ success: false, error_message: "Method not allowed" });
 
-      const { cname, type, token, userId } = req.body;
+      const { cname, type } = req.body;
 
-      if (!cname || !type || !token || !userId) {
+      if (!cname || !type) {
         return res.status(400).json({
           success: false,
           error_message: "Missing parameters",
@@ -283,15 +78,17 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
             missing_fields: [
               !cname ? "cname" : null,
               !type ? "type" : null,
-              !token ? "token" : null,
-              !userId ? "userId" : null,
             ].filter(Boolean),
             hint: "Please ensure cname, type, and token are provided in the request body.",
           },
         });
       }
 
-      console.log("token of user for joining channel  is :", token);
+      const newUid = await generateUniqueUserId();
+      const { token, expireyTime } = await tokenGenerateHelper(cname, newUid, "0");
+      const resultToken = token;
+
+      console.log(`token of recorder user for joining channel , id :${newUid}`, resultToken);
 
       if (!["mix", "individual"].includes(type))
         return res.status(400).json({ success: false, error_message: "Invalid type" });
@@ -301,9 +98,7 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
       const acquireRes = await axios.post(
         `${BASE_URL}/acquire`,
         {
-          cname, uid: userId.toString(), clientRequest: {
-
-
+          cname, uid: newUid.toString(), clientRequest: {
           }
         },
         { headers: { Authorization: AUTH_HEADER } }
@@ -354,9 +149,9 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
       // 3️⃣ Build Start Body
       const startBody = {
         cname,
-        uid: userId.toString(),
+        uid: newUid.toString(),
         clientRequest: {
-          token: token,
+          token: resultToken,
           streamSubscribe: {
             audioUidList: {
               subscribeAudioUids: [
@@ -377,6 +172,9 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
               subscribeUidGroup: 0,
               maxIdleTime: 160, // ✅ simpler config for individual
             },
+          recordingFileConfig: {
+            avFileType: [ "mp3"], // ✅ Include MP3 explicitly
+          },
           storageConfig,
         },
       };
@@ -407,14 +205,15 @@ exports.startCloudRecording = functions.https.onRequest(async (req, res) => {
       // 🔹 Step 5: Store Recording Info in Firestore
       const recordingData = {
         'channelName': cname,
-        'uid': userId,
         'recordingType': type,
         'resourceId': resourceId,
         'sid': sid,
         'startedAt': startedAt,
         'status': "active",
         'acquireResponse': acquireRes.data,
-        'startResponse': startRes.data
+        'startResponse': startRes.data,
+        "recorderUid": newUid,
+        "m3u8Path": `${type}/${resourceId}_uid_${newUid}_e_audio.m3u8`,
       };
 
       console.log('Storing recording data in Firestore:', recordingData);
@@ -460,22 +259,22 @@ exports.stopCloudRecording = functions.https.onRequest(async (req, res) => {
       if (data.status === "stopped")
         return res.status(400).json({ success: false, error_message: "Recording already stopped" });
 
-      const { uid, resourceId, sid } = data;
+      const { resourceId, sid, recorderUid } = data;
 
       // Validate that we have the required data
-      if (!uid || !resourceId || !sid) {
-        console.error('Missing required recording data:', { uid, resourceId, sid });
+      if (!recorderUid || !resourceId || !sid) {
+        console.error('Missing required recording data:', { recorderUid, resourceId, sid });
         return res.status(400).json({
           success: false,
-          error_message: 'Incomplete recording data - missing uid, resourceId, or sid'
+          error_message: 'Incomplete recording data - missing recorderUid, resourceId, or sid'
         });
       }
 
       // Stop the recording
-      console.log('Stopping recording:', { cname, type, resourceId, sid, uid });
+      console.log('Stopping recording:', { cname, type, resourceId, sid, recorderUid });
       const stopRes = await axios.post(
         `${BASE_URL}/resourceid/${resourceId}/sid/${sid}/mode/${type}/stop`,
-        { cname, uid: uid.toString(), clientRequest: {} },
+        { cname, uid: recorderUid.toString(), clientRequest: {} },
         { headers: { Authorization: AUTH_HEADER } }
       );
 

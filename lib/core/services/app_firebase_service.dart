@@ -28,6 +28,7 @@ class AppFirebaseService {
   CollectionReference get membersCollection => _firestore.collection('members');
   CollectionReference get meetingsCollection => _firestore.collection('meetings');
   CollectionReference get callLogsCollection => _firestore.collection('call_logs');
+  CollectionReference get recordingsCollection => _firestore.collection('recordings');
 
   // Firestore methods
   Future<DocumentSnapshot> getUserData(String uid) async {
