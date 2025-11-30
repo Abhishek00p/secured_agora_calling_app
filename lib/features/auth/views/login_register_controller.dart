@@ -66,8 +66,7 @@ class LoginRegisterController extends GetxController {
       }
 
       AppLogger.print("login successful: ${result['user']}");
-      AppToastUtil.showSuccessToast('Login successful');
-
+    
       return null;
     } on Exception catch (e) {
       AppLogger.print("error while logging in: $e");

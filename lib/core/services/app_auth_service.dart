@@ -47,7 +47,7 @@ class AppAuthService {
 
       // Use the new CRUD function with includeAuth: false for login
       final response = await _httpService.post(
-        'login',
+        'api/auth/login',
         body: {'email': email.trim().toLowerCase(), 'password': password},
         includeAuth: false, // Don't include auth token for login
       );

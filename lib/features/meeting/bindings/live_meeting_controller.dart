@@ -74,9 +74,12 @@ class MeetingController extends GetxController {
         AppToastUtil.showErrorToast('Meeting data not found');
         return;
       }
+      print("\n <-------- meeting model data in start timer: ${result.entries.join("\n")} \n ----> ");
       meetingModel.value = MeetingModel.fromJson(result);
-      remainingSeconds = meetingModel.value.scheduledEndTime.difference(DateTime.now()).inSeconds;
-
+      final thisMeetingScheduledEndTime = meetingModel.value.scheduledEndTime;
+      final currentTime = DateTime.now();
+      remainingSeconds = thisMeetingScheduledEndTime.difference(currentTime).inSeconds;
+      print("\n <------------------------------------------------\n meeting end time which was scheduled : $thisMeetingScheduledEndTime , current time : $currentTime, difference in sec : $remainingSeconds\n ---------------------------------------->\n");
       isHost = meetingModel.value.hostId == currentUser.firebaseUserId;
 
       // Initialize last known meeting data for change detection
@@ -86,6 +89,7 @@ class MeetingController extends GetxController {
         // Check if meeting time has ended
         if (remainingSeconds <= 0) {
           timer.cancel();
+          print("forcing end meeting becoz remaining second < = 0, we are in start timer func");
           _forceEndMeeting();
           return;
         }
@@ -218,6 +222,7 @@ class MeetingController extends GetxController {
         // Check if meeting time has ended
         if (remainingSeconds <= 0) {
           timer.cancel();
+          print("meeting time is less then 0, we are inside refreshtimerWithNewData");
           _forceEndMeeting();
           return;
         }
@@ -496,8 +501,8 @@ class MeetingController extends GetxController {
                 .map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   return ParticipantModel(
-                    userId: data['userId'],
-                    name: data['username'],
+                    userId: data['userId']??-1,
+                    name: data['username']??'',
                     isUserMuted: data['isMuted'] as bool? ?? false,
                     isUserSpeaking: false, // This will be updated by Agora
                     color: WarmColorGenerator.getRandomWarmColorByIndex(data['colorIndex'] ?? 0),

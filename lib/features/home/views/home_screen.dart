@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
@@ -93,9 +94,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Future<void> loadUserData() async {
     try {
-      final data = await AppFirebaseService.instance.getUserData(AppLocalStorage.getUserDetails().userId.toString());
+      final userId = AppLocalStorage.getUserDetails().userId.toString();
+      AppLogger.print("app firebase : ${Firebase.apps.map((e)=>e.name)} --- > userId :$userId");
+      final data = await AppFirebaseService.instance.getUserData(userId);
+      final userData = data.data() as Map<String, dynamic>? ??{};
+      AppLogger.print("User data fetched in home screen : $userData");
       setState(() {
-        user = AppUser.fromJson(data.data() as Map<String, dynamic>);
+        user = AppUser.fromJson(userData);
       });
     } catch (e) {
       AppLogger.print("error while fetching user data in home screen : $e");

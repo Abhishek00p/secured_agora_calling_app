@@ -82,6 +82,7 @@ class MeetingUtil {
         hostName: AppLocalStorage.getUserDetails().name,
         meetingName: meetingName,
         scheduledStartTime: result['scheduledStart'] ?? now,
+        
         requiresApproval: result['isApprovalRequired'] ?? false,
         maxParticipants: result['maxParticipants'] ?? 45,
         password: result['password']?.isEmpty ?? true ? null : result['password'],

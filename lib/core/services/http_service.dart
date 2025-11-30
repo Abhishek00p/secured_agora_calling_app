@@ -22,7 +22,8 @@ class AppHttpService {
     // if (kDebugMode) {
     //   // Use local emulator in debug mode
     //   if (Platform.isAndroid) {
-    return 'http://192.168.31.126:5001/secure-calling-2025/us-central1/';
+    // return 'http://192.168.31.126:3000/';
+    return 'https://secured-agora-calling-app.onrender.com/';
     //   } else if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
     //     return 'http://127.0.0.1:5001/secure-calling-2025/us-central1/';
     //   } else {
@@ -196,7 +197,7 @@ class AppHttpService {
 
       // Use the new CRUD function
       final response = await post(
-        'generateToken',
+        'api/agora/token',
         body: {'channelName': channelName, 'uid': uid, 'userRole': userRole},
       );
       if (response == null) {
@@ -204,16 +205,16 @@ class AppHttpService {
         return null;
       }
 
-      if (response['success'] == true && response['token'] != null) {
+      if (response['success'] == true && response['data']['token'] != null) {
         print('token generated successfully from Agora');
         // Store the token in Firebase
         await storeTokenInFirebase(
           channelName: channelName,
           uid: uid,
-          token: response['token'],
+          token: response['data']['token'],
           expiryTime: response['expireTime'] ?? DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
         );
-        return response['token'];
+        return response['data']['token'];
       } else {
         AppToastUtil.showErrorToast(response['error_message'] ?? "Token not found in response");
       }

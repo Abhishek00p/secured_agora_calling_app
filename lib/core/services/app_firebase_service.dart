@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/constants.dart';
@@ -76,7 +77,7 @@ class AppFirebaseService {
     required int hostUserId,
   }) async {
     final meetingDocId = await AppMeetingIdGenrator.generateMeetingId();
-    await meetingsCollection.doc(meetingDocId).set({
+    final data = {
       'hostId': hostId,
       'hostUserId': hostUserId,
       'hostName': hostName,
@@ -104,7 +105,9 @@ class AppFirebaseService {
       // New tracking fields
       'totalParticipantsCount': 0,
       'actualDuration': 0, // in seconds
-    });
+    };
+    AppLogger.print("\ndata to be stored in firebase firestore before creating a meeting...... $data\n");
+    await meetingsCollection.doc(meetingDocId).set(data);
     return meetingsCollection.doc(meetingDocId);
   }
 
@@ -731,10 +734,11 @@ class AppFirebaseService {
   /// Send heartbeat to indicate participant is still active
   Future<void> sendParticipantHeartbeat(String meetingId, int userId) async {
     try {
-      await meetingsCollection.doc(meetingId).collection('participants').doc('$userId').update({
+      AppLogger.print("app firebase id : ${Firebase.app().options.projectId}");
+      await meetingsCollection.doc(meetingId).collection('participants').doc('$userId').set({
         'lastHeartbeat': FieldValue.serverTimestamp(),
         'isActive': true,
-      });
+      },SetOptions(merge: true));
     } catch (e) {
       AppLogger.print('Error sending heartbeat: $e');
       rethrow;
