@@ -377,7 +377,8 @@ class UserCredentialsBottomSheet extends StatefulWidget {
   });
 
   @override
-  State<UserCredentialsBottomSheet> createState() => _UserCredentialsBottomSheetState();
+  State<UserCredentialsBottomSheet> createState() =>
+      _UserCredentialsBottomSheetState();
 
   /// Call this from outside to show bottomsheet
   static Future<void> show(
@@ -397,7 +398,9 @@ class UserCredentialsBottomSheet extends StatefulWidget {
         reverseDuration: const Duration(milliseconds: 300),
         vsync: Navigator.of(context),
       ),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder:
           (_) => FractionallySizedBox(
             heightFactor: 0.85,
@@ -412,7 +415,8 @@ class UserCredentialsBottomSheet extends StatefulWidget {
   }
 }
 
-class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet> {
+class _UserCredentialsBottomSheetState
+    extends State<UserCredentialsBottomSheet> {
   Map<String, dynamic>? _credentials;
   bool _isLoading = true;
   bool _showPassword = false;
@@ -425,7 +429,9 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
 
   Future<void> _loadCredentials() async {
     try {
-      final credentials = await AppPasswordResetService.getUserCredentials(widget.targetEmail);
+      final credentials = await AppPasswordResetService.getUserCredentials(
+        widget.userId,
+      );
       setState(() {
         _credentials = credentials;
         _isLoading = false;
@@ -484,7 +490,10 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
             child: Container(
               height: 5,
               width: 50,
-              decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(3)),
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
           ),
 
@@ -495,9 +504,15 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
               children: [
                 Icon(Icons.account_circle, color: AppTheme.primaryColor),
                 const SizedBox(width: 8),
-                const Text('User Credentials', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  'User Credentials',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 const Spacer(),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ],
             ),
           ),
@@ -522,11 +537,26 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(widget.targetName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text(widget.targetEmail, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                        Text(
+                          widget.targetName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          widget.targetEmail,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
                         Text(
                           'Role: ${widget.isMember ? 'Member' : 'User'}',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -550,7 +580,11 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
                   ] else ...[
                     Text(
                       'Login Credentials:',
-                      style: TextStyle(color: Colors.grey[700], fontSize: 14, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 8),
 
@@ -559,18 +593,30 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
                       label: 'UserId',
                       value: _credentials!['email'],
                       icon: Icons.perm_contact_cal_sharp,
-                      onCopy: () => _copyToClipboard(_credentials!['email'], 'userId'),
+                      onCopy:
+                          () => _copyToClipboard(
+                            _credentials!['email'],
+                            'userId',
+                          ),
                     ),
                     const SizedBox(height: 8),
 
                     // Password
                     _buildCredentialTile(
                       label: 'Password',
-                      value: _showPassword ? _credentials!['password'] : '••••••••',
+                      value:
+                          _showPassword
+                              ? _credentials!['password']
+                              : '••••••••',
                       icon: Icons.lock,
                       isPassword: true,
-                      onToggle: () => setState(() => _showPassword = !_showPassword),
-                      onCopy: () => _copyToClipboard(_credentials!['password'], 'Password'),
+                      onToggle:
+                          () => setState(() => _showPassword = !_showPassword),
+                      onCopy:
+                          () => _copyToClipboard(
+                            _credentials!['password'],
+                            'Password',
+                          ),
                     ),
                     const SizedBox(height: 16),
 
@@ -597,7 +643,9 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),
@@ -615,9 +663,13 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
                           // Add your cancellation logic here
                         },
                         onDelete: () async {
-                          AppFirebaseService.instance.usersCollection.doc(widget.userId).delete();
-                          AppFirebaseService.instance.membersCollection.doc(widget.userId).delete();
-                          await Future.delayed(const Duration(milliseconds: 500));
+                          AppFirebaseService.instance.usersCollection
+                              .doc(widget.userId)
+                              .delete();
+                          // AppFirebaseService.instance.membersCollection.doc(widget.userId).delete();
+                          await Future.delayed(
+                            const Duration(milliseconds: 500),
+                          );
                           if (context.mounted) {
                             Navigator.of(context).pop();
                             Navigator.of(context).pop();
@@ -633,7 +685,9 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
                 minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ),
@@ -665,23 +719,47 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w500)),
-                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
           if (isPassword && onToggle != null)
             IconButton(
-              icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off, size: 18),
+              icon: Icon(
+                _showPassword ? Icons.visibility : Icons.visibility_off,
+                size: 18,
+              ),
               onPressed: onToggle,
             ),
-          if (onCopy != null) IconButton(icon: const Icon(Icons.copy, size: 18), onPressed: onCopy),
+          if (onCopy != null)
+            IconButton(
+              icon: const Icon(Icons.copy, size: 18),
+              onPressed: onCopy,
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildMessageBox({required Color color, required IconData icon, required String text}) {
+  Widget _buildMessageBox({
+    required Color color,
+    required IconData icon,
+    required String text,
+  }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -693,7 +771,9 @@ class _UserCredentialsBottomSheetState extends State<UserCredentialsBottomSheet>
         children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: TextStyle(color: color, fontSize: 14))),
+          Expanded(
+            child: Text(text, style: TextStyle(color: color, fontSize: 14)),
+          ),
         ],
       ),
     );

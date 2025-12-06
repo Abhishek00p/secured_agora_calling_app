@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
+import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/services/app_auth_service.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
@@ -9,7 +11,7 @@ import 'package:secured_calling/widgets/app_text_form_widget.dart';
 import 'package:secured_calling/widgets/app_dropdown_field.dart';
 
 class MemberForm extends StatefulWidget {
-  final Member? member;
+  final AppUser? member;
   const MemberForm({super.key, this.member});
 
   @override
@@ -50,16 +52,21 @@ class _MemberFormState extends State<MemberForm> {
     name = TextEditingController(text: widget.member?.name ?? '');
     email = TextEditingController(text: widget.member?.email ?? '');
     password = TextEditingController();
-    purchaseDate = widget.member?.purchaseDate ?? DateTime.now();
+    purchaseDate = widget.member?.purchaseDate.toDateTime ?? DateTime.now();
     isActive = widget.member?.isActive ?? true;
-    maxParticipantsAllowed = TextEditingController(text: widget.member?.maxParticipantsAllowed.toString() ?? '');
+    maxParticipantsAllowed = TextEditingController(
+      text: widget.member?.maximumParticipantsAllowed.toString() ?? '',
+    );
 
     // Set initial subscription plan if editing existing member
     if (widget.member != null) {
       final days = widget.member!.planDays;
       selectedPlan =
           subscriptionPlans.entries
-              .firstWhere((entry) => entry.value == days, orElse: () => subscriptionPlans.entries.first)
+              .firstWhere(
+                (entry) => entry.value == days,
+                orElse: () => subscriptionPlans.entries.first,
+              )
               .key;
     }
   }
@@ -97,7 +104,9 @@ class _MemberFormState extends State<MemberForm> {
           purchaseDate: purchaseDate,
           planDays: planDays,
           maxParticipantsAllowed:
-              int.parse(maxParticipantsAllowed.text) <= 0 ? 45 : int.parse(maxParticipantsAllowed.text),
+              int.parse(maxParticipantsAllowed.text) <= 0
+                  ? 45
+                  : int.parse(maxParticipantsAllowed.text),
         );
 
         if ((success ?? false) && mounted) {
@@ -129,7 +138,11 @@ class _MemberFormState extends State<MemberForm> {
 
   List<DropdownModel<String>> get subscriptionPlanItems {
     return subscriptionPlans.entries.map((entry) {
-      return DropdownModel<String>(label: entry.key, value: entry.key, description: '${entry.value} days');
+      return DropdownModel<String>(
+        label: entry.key,
+        value: entry.key,
+        description: '${entry.value} days',
+      );
     }).toList();
   }
 
@@ -144,11 +157,21 @@ class _MemberFormState extends State<MemberForm> {
             onPressed: _isLoading ? null : _saveMember,
             child:
                 _isLoading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Text(widget.member == null ? "Save & Register Member" : "Update Member Details"),
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : Text(
+                      widget.member == null
+                          ? "Save & Register Member"
+                          : "Update Member Details",
+                    ),
           ),
         ),
-        appBar: AppBar(title: Text(widget.member == null ? "Add Member" : "Edit Member")),
+        appBar: AppBar(
+          title: Text(widget.member == null ? "Add Member" : "Edit Member"),
+        ),
         body: Form(
           key: _formKey,
           child: Padding(
@@ -156,9 +179,17 @@ class _MemberFormState extends State<MemberForm> {
             child: ListView(
               children: [
                 24.h,
-                AppTextFormField(controller: name, labelText: "Name", type: AppTextFormFieldType.name),
+                AppTextFormField(
+                  controller: name,
+                  labelText: "Name",
+                  type: AppTextFormFieldType.name,
+                ),
                 const SizedBox(height: 12),
-                AppTextFormField(controller: email, labelText: "userId", type: AppTextFormFieldType.text),
+                AppTextFormField(
+                  controller: email,
+                  labelText: "userId",
+                  type: AppTextFormFieldType.text,
+                ),
                 const SizedBox(height: 12),
                 if (widget.member == null) ...[
                   AppTextFormField(
@@ -177,7 +208,9 @@ class _MemberFormState extends State<MemberForm> {
                       () => showDatePicker(
                         context: context,
                         initialDate: purchaseDate,
-                        firstDate: DateTime.now().subtract(const Duration(days: 60)),
+                        firstDate: DateTime.now().subtract(
+                          const Duration(days: 60),
+                        ),
                         lastDate: DateTime(2100),
                       ).then((value) {
                         if (value != null) {
@@ -213,7 +246,8 @@ class _MemberFormState extends State<MemberForm> {
                     }
                     return null;
                   },
-                  helperText: "Max number of participants allowed in a Meeting in Multple of 5, eg: 5, 10, 15...",
+                  helperText:
+                      "Max number of participants allowed in a Meeting in Multple of 5, eg: 5, 10, 15...",
                   prefixIcon: Icons.group,
                 ),
                 const SizedBox(height: 8),
@@ -221,7 +255,10 @@ class _MemberFormState extends State<MemberForm> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text("Active"),
-                    Switch(value: isActive, onChanged: (v) => setState(() => isActive = v)),
+                    Switch(
+                      value: isActive,
+                      onChanged: (v) => setState(() => isActive = v),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),

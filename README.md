@@ -1,5 +1,6 @@
 App Documentation
 
+ipconfig getifaddr en0
 
 App Architecture Overview
 

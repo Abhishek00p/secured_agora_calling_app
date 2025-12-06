@@ -12,7 +12,11 @@ class AppUser {
   final Subscription subscription;
   final String memberCode;
   final String? planExpiryDate;
-
+  final int? totalUsers;
+  final bool isActive;
+  final int planDays;
+  final String purchaseDate;
+  final int maximumParticipantsAllowed;
   AppUser({
     this.name = '',
     this.email = '',
@@ -21,6 +25,11 @@ class AppUser {
     this.isMember = false,
     this.memberCode = '',
     this.planExpiryDate,
+    this.totalUsers = 0,
+    this.isActive = false,
+    this.maximumParticipantsAllowed = 0,
+    this.planDays = 0,
+    this.purchaseDate = '',
     DateTime? createdAt,
     Subscription? subscription,
   }) : createdAt = createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
@@ -44,9 +53,15 @@ class AppUser {
               : null,
       subscription: Subscription.fromJson(json['subscription']),
       planExpiryDate:
-          json['planExpiryDate'] == null || json['planExpiryDate'].toString().trim().isEmpty
+          json['planExpiryDate'] == null ||
+                  json['planExpiryDate'].toString().trim().isEmpty
               ? null
               : json['planExpiryDate'].toString().toDateTime.formatDate,
+      totalUsers: json['totalUsers'] ?? 0,
+      isActive: json['isActive'] ?? false,
+      maximumParticipantsAllowed: json['maxParticipantsAllowed'] ?? 0,
+      planDays: json['planDays'] ?? 0,
+      purchaseDate: json['purchaseDate'] ?? '',
     );
   }
 
@@ -61,6 +76,7 @@ class AppUser {
       'firebaseUserId': firebaseUserId,
       'memberCode': memberCode,
       'planExpiryDate': planExpiryDate,
+      'totalUsers': totalUsers,
     };
   }
 
@@ -121,14 +137,25 @@ class Subscription {
   }
 
   Map<String, dynamic> toJson() {
-    return {'plan': plan, 'startDate': startDate.toIso8601String(), 'expiryDate': expiryDate.toIso8601String()};
+    return {
+      'plan': plan,
+      'startDate': startDate.toIso8601String(),
+      'expiryDate': expiryDate.toIso8601String(),
+    };
   }
 
-  bool get isEmpty => plan.isEmpty && startDate.millisecondsSinceEpoch == 0 && expiryDate.millisecondsSinceEpoch == 0;
+  bool get isEmpty =>
+      plan.isEmpty &&
+      startDate.millisecondsSinceEpoch == 0 &&
+      expiryDate.millisecondsSinceEpoch == 0;
 
   static Subscription toEmpty() => Subscription();
 
-  Subscription copyWith({String? plan, DateTime? startDate, DateTime? expiryDate}) {
+  Subscription copyWith({
+    String? plan,
+    DateTime? startDate,
+    DateTime? expiryDate,
+  }) {
     return Subscription(
       plan: plan ?? this.plan,
       startDate: startDate ?? this.startDate,

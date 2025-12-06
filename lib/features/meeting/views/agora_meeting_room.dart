@@ -17,13 +17,19 @@ class AgoraMeetingRoom extends StatefulWidget {
   final String meetingId;
   final String channelName;
   final bool isHost;
-  const AgoraMeetingRoom({super.key, required this.meetingId, required this.channelName, required this.isHost});
+  const AgoraMeetingRoom({
+    super.key,
+    required this.meetingId,
+    required this.channelName,
+    required this.isHost,
+  });
 
   @override
   State<AgoraMeetingRoom> createState() => _AgoraMeetingRoomState();
 }
 
-class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBindingObserver {
+class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
+    with WidgetsBindingObserver {
   Widget _buildEndCallButton({
     required BuildContext context,
     required bool isHost,
@@ -76,7 +82,12 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                 // Show error message
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error leaving meeting: $e'), backgroundColor: Colors.red),
+                                    SnackBar(
+                                      content: Text(
+                                        'Error leaving meeting: $e',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
                                   );
                                 }
                               });
@@ -84,7 +95,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                           return const AlertDialog(
                             content: Row(
                               mainAxisSize: MainAxisSize.min,
-                              children: [CircularProgressIndicator(), SizedBox(width: 16), Text('Leaving meeting...')],
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(width: 16),
+                                Text('Leaving meeting...'),
+                              ],
                             ),
                           );
                         },
@@ -104,7 +119,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                   //       style: TextStyle(color: Colors.red),
                   //     ),
                   //   ),
-                  TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Cancel')),
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('Cancel'),
+                  ),
                 ],
               ),
         );
@@ -112,11 +130,21 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         height: 50,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Colors.red),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.red,
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Text('End Call', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(
+              'End Call',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             SizedBox(width: 10),
             Icon(Icons.call_end, color: Colors.white),
           ],
@@ -143,7 +171,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     WidgetsBinding.instance.addObserver(this);
     WakelockPlus.enable();
     AppLogger.print('meeting id before init  :${widget.meetingId}');
-    meetingController.initializeMeeting(meetingId: widget.meetingId, isUserHost: widget.isHost, context: context);
+    meetingController.initializeMeeting(
+      meetingId: widget.meetingId,
+      isUserHost: widget.isHost,
+      context: context,
+    );
   }
 
   @override
@@ -215,7 +247,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                   children: [
                     Text(
                       meetingController.meetingModel.value.meetingName,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (meetingController.remainingSeconds >= 0) ...[
@@ -266,12 +302,16 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                         meetingController.isLoading.value
                             ? const Center(child: CircularProgressIndicator())
                             : !meetingController.agoraInitialized
-                            ? Center(child: Text('Agora not intialized yet...!'))
+                            ? Center(
+                              child: Text('Agora not intialized yet...!'),
+                            )
                             : Expanded(
                               child:
                                   meetingController.isHost
                                       ? _buildHostView(meetingController)
-                                      : _buildParticipantView(meetingController),
+                                      : _buildParticipantView(
+                                        meetingController,
+                                      ),
                             ),
                         if (meetingController.isHost) ...[
                           JoinRequestWidget(),
@@ -291,12 +331,19 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                     }
                                   },
                                   child: Obx(() {
-                                    final isPttActive = meetingController.pttUsers.contains(
-                                      meetingController.currentUser.userId,
-                                    );
+                                    final isPttActive = meetingController
+                                        .pttUsers
+                                        .contains(
+                                          meetingController.currentUser.userId,
+                                        );
                                     return CircleAvatar(
                                       radius: 60,
-                                      backgroundColor: isPttActive ? Colors.green : Colors.white.withAppOpacity(0.2),
+                                      backgroundColor:
+                                          isPttActive
+                                              ? Colors.green
+                                              : Colors.white.withAppOpacity(
+                                                0.2,
+                                              ),
                                       child: Icon(
                                         isPttActive ? Icons.mic : Icons.mic_off,
                                         color: Colors.white,
@@ -308,7 +355,8 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                 ),
 
                                 Column(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
                                   children: [
                                     Obx(
                                       () => SizedBox(
@@ -317,23 +365,43 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                         child: OutlinedButton(
                                           style: OutlinedButton.styleFrom(
                                             side: BorderSide(
-                                              color: meetingController.isOnSpeaker.value ? Colors.green : Colors.white,
+                                              color:
+                                                  meetingController
+                                                          .isOnSpeaker
+                                                          .value
+                                                      ? Colors.green
+                                                      : Colors.white,
                                             ),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
                                           ),
-                                          onPressed: meetingController.toggleSpeaker,
+                                          onPressed:
+                                              meetingController.toggleSpeaker,
                                           child: Row(
                                             children: [
                                               Icon(
-                                                meetingController.isOnSpeaker.value
+                                                meetingController
+                                                        .isOnSpeaker
+                                                        .value
                                                     ? Icons.volume_up
                                                     : Icons.volume_off,
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
-                                                meetingController.isOnSpeaker.value ? 'Speaker On' : 'Speaker Off',
-                                                style: const TextStyle(fontSize: 12),
+                                                meetingController
+                                                        .isOnSpeaker
+                                                        .value
+                                                    ? 'Speaker On'
+                                                    : 'Speaker Off',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -344,8 +412,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                     _buildEndCallButton(
                                       context: context,
                                       isHost: meetingController.isHost,
-                                      onEndCallForAll: meetingController.endMeetForAll,
-                                      onLeaveMeeting: meetingController.endMeeting,
+                                      onEndCallForAll:
+                                          meetingController.endMeetForAll,
+                                      onLeaveMeeting:
+                                          meetingController.endMeeting,
                                     ),
                                   ],
                                 ),
@@ -369,12 +439,19 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                     meetingController.stopPtt();
                                   },
                                   child: Obx(() {
-                                    final isPttActive = meetingController.pttUsers.contains(
-                                      meetingController.currentUser.userId,
-                                    );
+                                    final isPttActive = meetingController
+                                        .pttUsers
+                                        .contains(
+                                          meetingController.currentUser.userId,
+                                        );
                                     return CircleAvatar(
                                       radius: 75,
-                                      backgroundColor: isPttActive ? Colors.green : Colors.white.withAppOpacity(0.2),
+                                      backgroundColor:
+                                          isPttActive
+                                              ? Colors.green
+                                              : Colors.white.withAppOpacity(
+                                                0.2,
+                                              ),
                                       child: Icon(
                                         isPttActive ? Icons.mic : Icons.mic_off,
                                         color: Colors.white,
@@ -386,7 +463,8 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                 ),
                                 16.h,
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
                                   children: [
                                     Obx(
                                       () => SizedBox(
@@ -394,23 +472,43 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                         child: OutlinedButton(
                                           style: OutlinedButton.styleFrom(
                                             side: BorderSide(
-                                              color: meetingController.isOnSpeaker.value ? Colors.green : Colors.white,
+                                              color:
+                                                  meetingController
+                                                          .isOnSpeaker
+                                                          .value
+                                                      ? Colors.green
+                                                      : Colors.white,
                                             ),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
                                           ),
-                                          onPressed: meetingController.toggleSpeaker,
+                                          onPressed:
+                                              meetingController.toggleSpeaker,
                                           child: Row(
                                             children: [
                                               Icon(
-                                                meetingController.isOnSpeaker.value
+                                                meetingController
+                                                        .isOnSpeaker
+                                                        .value
                                                     ? Icons.volume_up
                                                     : Icons.volume_off,
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
-                                                meetingController.isOnSpeaker.value ? 'Speaker On' : 'Speaker Off',
-                                                style: const TextStyle(fontSize: 12),
+                                                meetingController
+                                                        .isOnSpeaker
+                                                        .value
+                                                    ? 'Speaker On'
+                                                    : 'Speaker Off',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -421,8 +519,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                     _buildEndCallButton(
                                       context: context,
                                       isHost: meetingController.isHost,
-                                      onEndCallForAll: meetingController.endMeetForAll,
-                                      onLeaveMeeting: meetingController.endMeeting,
+                                      onEndCallForAll:
+                                          meetingController.endMeetForAll,
+                                      onLeaveMeeting:
+                                          meetingController.endMeeting,
                                     ),
                                   ],
                                 ),
@@ -443,10 +543,19 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     );
   }
 
-  Widget _buildParticipantTile(ParticipantModel user, MeetingController meetingController) {
+  Widget _buildParticipantTile(
+    ParticipantModel user,
+    MeetingController meetingController,
+  ) {
+    print(
+      " <<<<<<<<<<<<<<<<<<<<<<<<<< userID of participant : ${user.userId} \n >>>>>>>>>>>>>>>>>>>>>>>",
+    );
     return Container(
       margin: EdgeInsets.all(8),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: user.color)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: user.color),
+      ),
       child: Stack(
         children: [
           Obx(
@@ -459,7 +568,9 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
             padding: const EdgeInsets.all(8.0),
             child: Center(
               child: Text(
-                user.userId == meetingController.currentUser.userId ? 'You' : user.name,
+                user.userId == meetingController.currentUser.userId
+                    ? 'You'
+                    : user.name,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 style: TextStyle(fontSize: 20, color: user.color),
@@ -473,9 +584,15 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  user.isUserMuted || !(meetingController.pttUsers.contains(user.userId)) ? Icons.mic_off : Icons.mic,
+                  user.isUserMuted ||
+                          !(meetingController.pttUsers.contains(user.userId))
+                      ? Icons.mic_off
+                      : Icons.mic,
                   color:
-                      user.isUserMuted || !(meetingController.pttUsers.contains(user.userId))
+                      user.isUserMuted ||
+                              !(meetingController.pttUsers.contains(
+                                user.userId,
+                              ))
                           ? Colors.red
                           : Colors.white,
                   size: 20,
@@ -486,7 +603,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ],
               ],
@@ -499,7 +619,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                 right: 8,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(color: Colors.green.withOpacity(0.8), shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.8),
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(Icons.mic, color: Colors.white, size: 14),
                 ),
               );
@@ -507,16 +630,23 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
             return SizedBox.shrink();
           }),
           // Host-only remove button
-          if (meetingController.isHost && user.userId != meetingController.currentUser.userId)
+          if (meetingController.isHost &&
+              user.userId != meetingController.currentUser.userId)
             Positioned(
               top: 8,
               left: 8,
               child: PopupMenuButton<String>(
                 color: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 onSelected: (value) {
                   if (value == 'remove') {
-                    _showRemoveParticipantDialog(context, user, meetingController);
+                    _showRemoveParticipantDialog(
+                      context,
+                      user,
+                      meetingController,
+                    );
                   }
                   // else if (value == 'mute') {
                   //   if (user.isUserMuted) {
@@ -555,8 +685,15 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                     ],
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), shape: BoxShape.circle),
-                  child: const Icon(Icons.more_vert, color: Colors.white, size: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.more_vert,
+                    color: Colors.white,
+                    size: 16,
+                  ),
                 ),
               ),
             ),
@@ -568,7 +705,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
   Widget _buildHostView(MeetingController meetingController) {
     return GridView.builder(
       itemCount: meetingController.participants.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1.0),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.0,
+      ),
       itemBuilder: (context, index) {
         final user = meetingController.participants[index];
         return _buildParticipantTile(user, meetingController);
@@ -600,11 +740,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     );
   }
 
-  Widget speakerRippleEffect({required int userId, required int activeSpeakerUid, required Color color}) {
+  Widget speakerRippleEffect({
+    required int userId,
+    required int activeSpeakerUid,
+    required Color color,
+  }) {
     return Obx(() {
       if (userId == activeSpeakerUid) {
         return Container(
-          decoration: BoxDecoration(shape: BoxShape.circle, color: color.withAppOpacity(0.5)),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withAppOpacity(0.5),
+          ),
           child: const CircularProgressIndicator(),
         );
       } else {
@@ -624,13 +771,20 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
       builder:
           (dialogContext) => AlertDialog(
             title: const Text('Remove Participant'),
-            content: Text('Are you sure you want to remove "${participant.name}" from the meeting?'),
+            content: Text(
+              'Are you sure you want to remove "${participant.name}" from the meeting?',
+            ),
             actions: [
-              TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
               TextButton(
                 onPressed: () async {
                   Navigator.of(dialogContext).pop();
-                  await meetingController.removeParticipantForcefully(participant.userId);
+                  await meetingController.removeParticipantForcefully(
+                    participant.userId,
+                  );
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
                 child: const Text('Remove'),
