@@ -547,9 +547,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom>
     ParticipantModel user,
     MeetingController meetingController,
   ) {
-    print(
-      " <<<<<<<<<<<<<<<<<<<<<<<<<< userID of participant : ${user.userId} \n >>>>>>>>>>>>>>>>>>>>>>>",
-    );
     return Container(
       margin: EdgeInsets.all(8),
       decoration: BoxDecoration(

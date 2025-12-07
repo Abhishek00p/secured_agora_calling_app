@@ -88,7 +88,7 @@ class MeetingController extends GetxController {
       print(
         "\n <------------------------------------------------\n meeting end time which was scheduled : $thisMeetingScheduledEndTime , current time : $currentTime, difference in sec : $remainingSeconds\n ---------------------------------------->\n",
       );
-      isHost = meetingModel.value.hostId == currentUser.firebaseUserId;
+      isHost = meetingModel.value.hostUserId == currentUser.userId;
 
       // Initialize last known meeting data for change detection
       _lastMeetingData = Map<String, dynamic>.from(result);
@@ -110,7 +110,9 @@ class MeetingController extends GetxController {
             isHost &&
             !_hasExtended &&
             !_timerWarningShown) {
-          _showTimerWarningDialog();
+          if (remainingSeconds % 60 == 0) {
+            _showTimerWarningDialog();
+          }
         }
 
         // Update existing dialog content if it's already shown
@@ -128,13 +130,16 @@ class MeetingController extends GetxController {
       });
 
       _leaveSubscription?.cancel();
-      _leaveSubscription = _firebaseService
-          .isInstructedToLeave(meetingId)
-          .listen((isInstructed) {
-            if (isInstructed) {
-              endMeeting();
-            }
-          });
+      _leaveSubscription = _firebaseService.isInstructedToLeave(meetingId).listen((
+        isInstructed,
+      ) {
+        if (isInstructed) {
+          print(
+            "<<<<<<< ----------- \n user got instruction to leave the meeting ...... \n --------- >>>>>>",
+          );
+          endMeeting();
+        }
+      });
     } catch (e) {
       AppLogger.print('Error starting timer: $e');
     }
@@ -285,8 +290,9 @@ class MeetingController extends GetxController {
 
   // Show persistent timer warning dialog
   void _showTimerWarningDialog() {
-    if (_timerWarningShown || _timerWarningDismissed)
+    if (_timerWarningShown || _timerWarningDismissed) {
       return; // Don't show if already shown or dismissed
+    }
 
     _timerWarningShown = true;
 
@@ -543,7 +549,6 @@ class MeetingController extends GetxController {
                 })
                 .map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  print(" \n <<<<------------ participants stream data :$data");
                   return ParticipantModel(
                     userId: data['userId'] ?? -1,
                     name: data['username'] ?? '',
@@ -988,6 +993,15 @@ class MeetingController extends GetxController {
         // The participant stream will handle adding the user to the list.
         // The PTT logic will handle muting/unmuting.
         AppLogger.print('User joined: $remoteUid');
+        if (isRecordingOn.value && remoteUid != currentUser.userId) {
+          final userList =
+              participants.map((e) => e.userId.toString()).toSet().toList();
+          AppFirebaseService.instance.updateRecordingUserStreamList(
+            meetingId,
+            'individual',
+            [...userList, remoteUid.toString()],
+          );
+        }
       },
       onUserOffline: (connection, remoteUid, reason) => removeUser(remoteUid),
       onJoinChannelSuccess: (connection, elapsed) {
@@ -1117,9 +1131,9 @@ class MeetingController extends GetxController {
       if (!isRecordingOn.value) {
         AppToastUtil.showSuccessToast('Recording stopped');
       }
-      await Future.delayed(Duration(seconds: 6), () {});
+      await Future.delayed(Duration(seconds: 2), () {});
       await _firebaseService.queryAgoraRecordingStatus(meetingId, 'individual');
-      // await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix');
+      await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix');
     } else {
       final token = await _firebaseService.getAgoraToken(
         channelName:
@@ -1138,13 +1152,16 @@ class MeetingController extends GetxController {
         AppToastUtil.showErrorToast('Failed to start recording');
         return;
       }
-      await Future.delayed(Duration(seconds: 6), () {});
+      await Future.delayed(Duration(seconds: 2), () {});
       final v1 = await _firebaseService.queryAgoraRecordingStatus(
         meetingId,
         'individual',
       );
-      // final v2 = await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix');
-      isRecordingOn.value = v1;
+      final v2 = await _firebaseService.queryAgoraRecordingStatus(
+        meetingId,
+        'mix',
+      );
+      isRecordingOn.value = v1 || v2;
 
       if (isRecordingOn.value) {
         AppToastUtil.showSuccessToast('Recording started');

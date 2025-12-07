@@ -21,7 +21,7 @@ class MeetingDetailController extends GetxController {
   final isRealTimeLoading = false.obs;
   final realTimeError = RxnString();
   final lastUpdated = Rxn<DateTime>();
-
+  RxInt currentTabIndex = 0.obs;
   // Stream subscriptions
   StreamSubscription<DocumentSnapshot>? _meetingStreamSubscription;
 

@@ -22,8 +22,8 @@ class AppHttpService {
     // if (kDebugMode) {
     //   // Use local emulator in debug mode
     //   if (Platform.isAndroid) {
-    return 'http://192.168.31.41:3000/';
-    // return 'https://secured-agora-calling-app.onrender.com/';
+    // return 'http://192.168.31.41:3000/';
+    return 'https://secured-agora-calling-app.onrender.com/';
     //   } else if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
     //     return 'http://127.0.0.1:5001/secure-calling-2025/us-central1/';
     //   } else {

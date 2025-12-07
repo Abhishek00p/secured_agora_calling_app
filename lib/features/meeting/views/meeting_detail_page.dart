@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/features/meeting/widgets/audio_player.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
 import 'package:secured_calling/widgets/meeting_info_card.dart';
@@ -8,19 +10,63 @@ import 'package:secured_calling/widgets/participant_list_item.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/features/meeting/controllers/meeting_detail_controller.dart';
 
-class MeetingDetailPage extends GetView<MeetingDetailController> {
+class MeetingDetailPage extends StatefulWidget {
   final String meetingId;
 
   const MeetingDetailPage({super.key, required this.meetingId});
 
   @override
-  Widget build(BuildContext context) {
-    // Initialize controller with meeting ID
-    Get.put(MeetingDetailController(meetingId: meetingId));
+  State<MeetingDetailPage> createState() => _MeetingDetailPageState();
+}
 
+class _MeetingDetailPageState extends State<MeetingDetailPage>
+    with SingleTickerProviderStateMixin {
+  late TabController tabBarController;
+  late MeetingDetailController controller;
+  @override
+  void initState() {
+    super.initState();
+    tabBarController = TabController(length: 2, vsync: this);
+    controller =
+        Get.isRegistered<MeetingDetailController>()
+            ? Get.find<MeetingDetailController>()
+            : Get.put(MeetingDetailController(meetingId: widget.meetingId));
+  }
+
+  Widget getRecordingListWidget() {
+    return SliverToBoxAdapter(
+      child: FutureBuilder(
+        future: AppFirebaseService.instance.getAllMixRecordings(
+          widget.meetingId,
+        ),
+        builder: (context, snapshot) {
+          print("List data : ${snapshot.data}");
+          if (snapshot.hasData && snapshot.data != null) {
+            return SizedBox(
+              height: 400,
+              child: ListView.builder(
+                itemCount: snapshot.data?.length ?? 0,
+                shrinkWrap: true,
+                itemBuilder: (context, index) {
+                  final item = snapshot.data?[index] ?? '';
+
+                  return AudioHLSPlayer(url: item);
+                },
+              ),
+            );
+          }
+          return SizedBox.shrink();
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Obx(() {
-        if (controller.isLoading.value && controller.meetingDetail.value == null) {
+        if (controller.isLoading.value &&
+            controller.meetingDetail.value == null) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -31,11 +77,16 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
               children: [
                 Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
                 const SizedBox(height: 16),
-                Text('Failed to load meeting details', style: Theme.of(context).textTheme.headlineSmall),
+                Text(
+                  'Failed to load meeting details',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   controller.errorMessage.value ?? 'Unknown error occurred',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -43,7 +94,12 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                   onPressed: controller.refreshMeetingDetails,
                   icon: const Icon(Icons.refresh),
                   label: const Text('Try Again'),
-                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -80,22 +136,39 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
                   // ),
                 ],
               ),
-              SliverToBoxAdapter(child: MeetingInfoCard(meeting: meetingDetail)),
+              SliverToBoxAdapter(
+                child: MeetingInfoCard(meeting: meetingDetail),
+              ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                  child: TabBar(tabs: ['Participants', 'Recordings']
-                      .map((tabTitle) => Tab(
-                            text: tabTitle +
-                                (tabTitle == 'Participants'
-                                    ? ' (${meetingDetail.participants.length})':'0'),
-                                    // : ' (${meetingDetail.recordings.length})'),
-                          ))
-                      .toList(),
+                  child: TabBar(
+                    onTap: (value) {
+                      controller.currentTabIndex.value = value;
+                    },
+                    tabs:
+                        ['Participants', 'Recordings']
+                            .map(
+                              (tabTitle) => Tab(
+                                text:
+                                    tabTitle +
+                                    (tabTitle == 'Participants'
+                                        ? ' (${meetingDetail.participants.length})'
+                                        : '0'),
+                                // : ' (${meetingDetail.recordings.length})'),
+                              ),
+                            )
+                            .toList(),
+                    controller: tabBarController,
                   ),
                 ),
               ),
-              _buildParticipantsList(meetingDetail),
+              Obx(
+                () =>
+                    controller.currentTabIndex == 0
+                        ? _buildParticipantsList(meetingDetail)
+                        : getRecordingListWidget(),
+              ),
             ],
           ),
         );
@@ -104,36 +177,14 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
   }
 
   // Widget _buildRecordingsList(MeetingDetail meetingDetail) {
-  //   if (meetingDetail.recordings.isEmpty) {
-  //     return const SliverFillRemaining(
-  //       child: Center(
-  //         child: Text('No recordings available.', style: TextStyle(fontSize: 16, color: Colors.grey)),
-  //       ),
-  //     );
-  //   }
-
-  //   return SliverList(
-  //     delegate: SliverChildBuilderDelegate((context, index) {
-  //       final recording = meetingDetail.recordings[index];
-  //       return ListTile(
-  //         leading: const Icon(Icons.audio_file),
-  //         title: Text('Recording ${index + 1}'),
-  //         subtitle: Text('Duration: ${recording.duration.inMinutes} mins'),
-  //         trailing: IconButton(
-  //           icon: const Icon(Icons.download),
-  //           onPressed: () {
-  //             // Implement download logic
-  //           },
-  //         ),
-  //       );
-  //     }, childCount: meetingDetail.recordings.length),
-  //   );
-  // }
   Widget _buildParticipantsList(MeetingDetail meetingDetail) {
     if (meetingDetail.participants.isEmpty) {
       return const SliverFillRemaining(
         child: Center(
-          child: Text('No participants have joined yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+          child: Text(
+            'No participants have joined yet.',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
         ),
       );
     }
@@ -145,4 +196,26 @@ class MeetingDetailPage extends GetView<MeetingDetailController> {
       }, childCount: meetingDetail.participants.length),
     );
   }
+} //     }, childCount: meetingDetail.recordings.length),
+
+//   );
+// }
+Widget _buildParticipantsList(MeetingDetail meetingDetail) {
+  if (meetingDetail.participants.isEmpty) {
+    return const SliverFillRemaining(
+      child: Center(
+        child: Text(
+          'No participants have joined yet.',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      ),
+    );
+  }
+
+  return SliverList(
+    delegate: SliverChildBuilderDelegate((context, index) {
+      final participant = meetingDetail.participants[index];
+      return ParticipantListItem(participant: participant, index: index);
+    }, childCount: meetingDetail.participants.length),
+  );
 }

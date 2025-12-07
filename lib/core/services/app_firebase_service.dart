@@ -976,30 +976,32 @@ class AppFirebaseService {
   }
 
   Future<bool?> stopRecording({required String meetingId}) async {
-    final singleRecording = await AppHttpService().post(
+    // final singleRecording = await AppHttpService().post(
+    //   'api/agora/recording/stop',
+    //   body: {'cname': meetingId, 'type': 'individual', 'uid': 0},
+    // );
+    final mixRecording = await AppHttpService().post(
       'api/agora/recording/stop',
-      body: {'cname': meetingId, 'type': 'individual', 'uid': 0},
+      body: {'cname': meetingId, 'type': 'mix'},
     );
-    // final mixRecording = await AppHttpService().post('stopCloudRecording', body: {'cname': meetingId, 'type': 'mix'});
 
-    if (singleRecording == null) {
-      debugPrint("singleRecording response is null while stopping recording");
-    }
-    // if (mixRecording == null) {
-    //   debugPrint("mixRecording response is null while stopping recording");
+    // if (singleRecording == null) {
+    //   debugPrint("singleRecording response is null while stopping recording");
     // }
+    if (mixRecording == null) {
+      debugPrint("mixRecording response is null while stopping recording");
+    }
 
-    if (singleRecording?['success'] == true
-    // || mixRecording?['success'] == true
-    ) {
+    if (
+    // singleRecording?['success'] == true
+    mixRecording?['success'] == true) {
       debugPrint("recording stopped successfully");
 
       return true;
     } else {
       AppToastUtil.showErrorToast(
-        singleRecording?['error_message'] ??
-            // mixRecording?['error_message'] ??
-            "Failed to stop recording",
+        // singleRecording?['error_message'] ??
+        mixRecording?['error_message'] ?? "Failed to stop recording",
       );
     }
     return null;
@@ -1024,29 +1026,29 @@ class AppFirebaseService {
         "token": token,
       },
     );
-    // final mixRecording = await AppHttpService().post(
-    //   'startCloudRecording',
-    //   body: {'cname': meetingId, 'userId': userId, 'type': 'mix', "token": token},
-    // );
+    final mixRecording = await AppHttpService().post(
+      'api/agora/recording/start',
+      body: {'cname': meetingId, 'uid': userId, 'type': 'mix', "token": token},
+    );
 
     if (singleRecording == null) {
       debugPrint("singleRecording response is null while starting recording");
     }
-    // if (mixRecording == null) {
-    //   debugPrint("mixRecording response is null while starting recording");
-    // }
+    if (mixRecording == null) {
+      debugPrint("mixRecording response is null while starting recording");
+    }
 
-    if (singleRecording?['success'] == true
-    // || mixRecording?['success'] == true
-    ) {
+    if (singleRecording?['success'] == true ||
+        mixRecording?['success'] == true) {
       debugPrint("recording started successfully");
 
       return true;
     } else {
+      final singleErrormessage = singleRecording?['error_message'] ?? '';
+      final mixError =
+          mixRecording?['error_message'] ?? "Failed to start recording";
       AppToastUtil.showErrorToast(
-        singleRecording?['error_message'] ??
-            // mixRecording?['error_message'] ??
-            "Failed to start recording",
+        "single : $singleErrormessage,\n mix: $mixError",
       );
     }
     return null;
@@ -1068,5 +1070,49 @@ class AppFirebaseService {
     }
 
     return response['success'] ?? false;
+  }
+
+  Future<bool> updateRecordingUserStreamList(
+    String meetingId,
+    String type,
+    List<String> userIds,
+  ) async {
+    final response = await AppHttpService().post(
+      'api/agora/recording/update',
+      body: {
+        'cname': meetingId,
+        'uid': AppLocalStorage.getUserDetails().userId.toString(),
+        'type': type,
+        'audioSubscribeUids': userIds,
+      },
+    );
+
+    if (response == null) {
+      debugPrint("response is null while querying recording status");
+      return false;
+    }
+
+    return response['success'] ?? false;
+  }
+
+  Future<List<String>?> getAllMixRecordings(String meetingId) async {
+    final response = await AppHttpService().post(
+      'api/agora/recording/list',
+      body: {'channelName': meetingId},
+    );
+
+    if (response == null) {
+      debugPrint("response is null while fetching recording list");
+      return null;
+    }
+    if (response['success'] == true) {
+      return [response['data']['recording']['url']];
+    } else {
+      AppLogger.print(
+        " failed to fetch list of recording : $response, message: ${response['error_message']}",
+      );
+    }
+
+    return [];
   }
 }

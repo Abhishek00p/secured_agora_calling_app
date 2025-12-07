@@ -14,7 +14,8 @@ class JoinRequestWidget extends StatefulWidget {
 
 class _JoinRequestWidgetState extends State<JoinRequestWidget> {
   final MeetingController meetingController = Get.find<MeetingController>();
-  final ValueNotifier<List<Map<String, dynamic>>> _requestsNotifier = ValueNotifier([]);
+  final ValueNotifier<List<Map<String, dynamic>>> _requestsNotifier =
+      ValueNotifier([]);
   List<Map<String, dynamic>> _previousRequests = [];
 
   @override
@@ -24,7 +25,9 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
 
     meetingController.fetchPendingRequests().listen(
       (newRequests) {
-        AppLogger.print('JoinRequestWidget: Received ${newRequests.length} requests');
+        AppLogger.print(
+          'JoinRequestWidget: Received ${newRequests.length} requests',
+        );
 
         if (!_areListsEqual(_previousRequests, newRequests)) {
           AppLogger.print(
@@ -46,7 +49,9 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
         }
       },
       onError: (error) {
-        AppLogger.print('JoinRequestWidget: Error listening to requests: $error');
+        AppLogger.print(
+          'JoinRequestWidget: Error listening to requests: $error',
+        );
       },
     );
   }
@@ -62,21 +67,26 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
     return ValueListenableBuilder<List<Map<String, dynamic>>>(
       valueListenable: _requestsNotifier,
       builder: (context, requests, _) {
-        AppLogger.print('JoinRequestWidget: Building with ${requests.length} requests');
-
         if (requests.isEmpty) {
-          AppLogger.print('JoinRequestWidget: No requests to display');
           return const SizedBox.shrink();
         }
 
-        AppLogger.print('JoinRequestWidget: Displaying ${requests.length} join requests');
+        AppLogger.print(
+          'JoinRequestWidget: Displaying ${requests.length} join requests',
+        );
         return Column(
           children: List.generate(
             requests.length,
             (i) => JoinRequestPopup(
               userName: requests[i]['name'],
-              onAdmit: () => meetingController.approveJoinRequest(requests[i]['userId']),
-              onDeny: () => meetingController.rejectJoinRequest(requests[i]['userId']),
+              onAdmit:
+                  () => meetingController.approveJoinRequest(
+                    requests[i]['userId'],
+                  ),
+              onDeny:
+                  () => meetingController.rejectJoinRequest(
+                    requests[i]['userId'],
+                  ),
             ),
           ),
         );
@@ -84,7 +94,10 @@ class _JoinRequestWidgetState extends State<JoinRequestWidget> {
     );
   }
 
-  bool _areListsEqual(List<Map<String, dynamic>> a, List<Map<String, dynamic>> b) {
+  bool _areListsEqual(
+    List<Map<String, dynamic>> a,
+    List<Map<String, dynamic>> b,
+  ) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
       if (a[i]['userId'] != b[i]['userId']) return false;
