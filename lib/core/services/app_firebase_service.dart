@@ -1097,7 +1097,7 @@ class AppFirebaseService {
 
   Future<List<String>?> getAllMixRecordings(String meetingId) async {
     final response = await AppHttpService().post(
-      'api/agora/recording/list',
+      'api/agora/recording/list/mix',
       body: {'channelName': meetingId},
     );
 
@@ -1106,7 +1106,11 @@ class AppFirebaseService {
       return null;
     }
     if (response['success'] == true) {
-      return [response['data']['recording']['url']];
+      if (response['data'] is List) {
+        return (response['data'] as List)
+            .map((e) => e['playableUrl'] as String)
+            .toList();
+      }
     } else {
       AppLogger.print(
         " failed to fetch list of recording : $response, message: ${response['error_message']}",
@@ -1114,5 +1118,28 @@ class AppFirebaseService {
     }
 
     return [];
+  }
+
+  Future<List<Map<String, dynamic>>?> getAllIndividualRecordings(
+    String meetingId,
+  ) async {
+    final response = await AppHttpService().post(
+      'api/agora/recording/list/individual',
+      body: {'channelName': meetingId},
+    );
+
+    if (response == null) {
+      debugPrint("response is null while fetching individual recording list");
+      return null;
+    }
+    AppLogger.print("data........ : ${response['success']}");
+    if (response['success'] == true) {
+      return List<Map<String, dynamic>>.from(response['data'] as List<dynamic>);
+    } else {
+      AppLogger.print(
+        " failed to fetch list of individual recording : $response, message: ${response['error_message']}",
+      );
+      return [];
+    }
   }
 }

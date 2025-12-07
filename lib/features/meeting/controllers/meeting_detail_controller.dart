@@ -22,6 +22,10 @@ class MeetingDetailController extends GetxController {
   final realTimeError = RxnString();
   final lastUpdated = Rxn<DateTime>();
   RxInt currentTabIndex = 0.obs;
+
+  RxList<String> mixRecordings = <String>[].obs;
+  RxList<Map<String, dynamic>> individualRecordings =
+      <Map<String, dynamic>>[].obs;
   // Stream subscriptions
   StreamSubscription<DocumentSnapshot>? _meetingStreamSubscription;
 
@@ -32,41 +36,14 @@ class MeetingDetailController extends GetxController {
     super.onInit();
     loadMeetingDetails();
     _initializeRealTimeUpdates();
+    fetchIndividualRecordings();
+    fetchMixRecordings();
   }
 
   @override
   void onClose() {
     _meetingStreamSubscription?.cancel();
     super.onClose();
-  }
-
-  fetchRecordings() async {
-    try {
-      final docName = '${meetingId}_individual';
-      final docName2 = '${meetingId}_mix';
-      final result1 =
-          (await AppFirebaseService.instance.recordingsCollection
-                  .doc(docName)
-                  .get())
-              .data();
-      final result2 =
-          (await AppFirebaseService.instance.recordingsCollection
-                  .doc(docName2)
-                  .get())
-              .data();
-      String recording1Url = '';
-      String recording2Url = '';
-      if (result1 != null && result1 is Map<String, dynamic>) {
-        recording1Url = result1['m3u8Path'] ?? '';
-      }
-      if (result2 != null && result2 is Map<String, dynamic>) {
-        recording2Url = result2['m3u8Path'] ?? '';
-      }
-      AppLogger.print('Fetched 1st recording URL: $recording1Url');
-      AppLogger.print('Fetched 2nd recording URL: $recording2Url');
-    } catch (e) {
-      AppLogger.print('Error fetching recordings: $e');
-    }
   }
 
   /// Load meeting details
@@ -174,5 +151,35 @@ class MeetingDetailController extends GetxController {
   /// Check if meeting is upcoming
   bool get isMeetingUpcoming {
     return meetingStatus == 'upcoming';
+  }
+
+  Future<void> fetchMixRecordings() async {
+    try {
+      mixRecordings.value =
+          await AppFirebaseService.instance.getAllMixRecordings(meetingId) ??
+          [];
+    } catch (e) {
+      AppLogger.print("Failed to fetch mix recording in controller : $e");
+      mixRecordings.clear();
+    }
+  }
+
+  Future<void> fetchIndividualRecordings() async {
+    try {
+      individualRecordings.value =
+          await AppFirebaseService.instance.getAllIndividualRecordings(
+            meetingId,
+          ) ??
+          [];
+
+      AppLogger.print(
+        "After Api call individual recording List : ${individualRecordings.length}",
+      );
+    } catch (e) {
+      AppLogger.print(
+        "Failed to fetch individual recording in controller : $e",
+      );
+      individualRecordings.clear();
+    }
   }
 }

@@ -19,24 +19,29 @@ class _AudioHLSPlayerState extends State<AudioHLSPlayer> {
     // Configuration for HLS audio/video
     BetterPlayerConfiguration betterPlayerConfiguration =
         BetterPlayerConfiguration(
-          autoPlay: true,
+          autoPlay: false,
           looping: false,
+          allowedScreenSleep: true,
           controlsConfiguration: BetterPlayerControlsConfiguration(
-            showControls: true,
+            enableMute: false,
             enableProgressText: true,
-            enablePlayPause: true,
+            enablePlayPause: false,
+            showControls: true,
+            enableSkips: false,
             enableProgressBar: true,
+            enableOverflowMenu: false,
+            enableFullscreen: false,
+            enablePip: false,
           ),
-          allowedScreenSleep: false,
-          aspectRatio: 16 / 9,
         );
+    ;
 
     // Data source - IMPORTANT: Use BetterPlayerDataSourceType.hls
     BetterPlayerDataSource dataSource = BetterPlayerDataSource(
       BetterPlayerDataSourceType
           .network, // ← Change this from 'network' to 'hls'
       widget.url,
-      // HLS specific config
+      videoFormat: BetterPlayerVideoFormat.hls,
       useAsmsSubtitles: true,
       useAsmsAudioTracks: true,
     );
@@ -60,13 +65,8 @@ class _AudioHLSPlayerState extends State<AudioHLSPlayer> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            "Audio Player",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          AspectRatio(
-            aspectRatio: 16 / 9,
+          SizedBox(
+            height: 60, // Compact audio control bar
             child: BetterPlayer(controller: _betterPlayerController),
           ),
         ],

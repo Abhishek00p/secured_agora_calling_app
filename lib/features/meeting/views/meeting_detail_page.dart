@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/features/meeting/widgets/audio_player.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
@@ -33,29 +34,64 @@ class _MeetingDetailPageState extends State<MeetingDetailPage>
             : Get.put(MeetingDetailController(meetingId: widget.meetingId));
   }
 
-  Widget getRecordingListWidget() {
-    return SliverToBoxAdapter(
-      child: FutureBuilder(
-        future: AppFirebaseService.instance.getAllMixRecordings(
-          widget.meetingId,
-        ),
-        builder: (context, snapshot) {
-          print("List data : ${snapshot.data}");
-          if (snapshot.hasData && snapshot.data != null) {
-            return SizedBox(
-              height: 400,
-              child: ListView.builder(
-                itemCount: snapshot.data?.length ?? 0,
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  final item = snapshot.data?[index] ?? '';
+  Widget getMixRecordingListWidget() {
+    return Obx(
+      () => ListView.builder(
+        physics: NeverScrollableScrollPhysics(),
+        itemCount: controller.mixRecordings.length,
+        shrinkWrap: true,
+        itemBuilder: (context, index) {
+          final item = controller.mixRecordings[index];
 
-                  return AudioHLSPlayer(url: item);
-                },
-              ),
-            );
-          }
-          return SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+              children: [
+                Text('Mix Rec. ${index + 1}'),
+                SizedBox(width: 10),
+                SizedBox(
+                  width: MediaQuery.sizeOf(context).width * .5,
+                  child: AudioHLSPlayer(url: item),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget getRecordingListByUserWidget() {
+    return Obx(
+      () => ListView.builder(
+        physics: NeverScrollableScrollPhysics(),
+        itemCount: controller.individualRecordings.length,
+        shrinkWrap: true,
+        itemBuilder: (context, index) {
+          final item = controller.individualRecordings[index];
+          final url = item['playableUrl'] as String;
+          final userId = item['userId'] as String;
+          final lastModifiedDateTime =
+              DateTime.parse(item['lastModified'] as String).toLocal();
+
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Name : ${controller.meetingDetail.value?.participants.where((e) => e.userId == userId).firstOrNull?.username ?? ''}\nTime : ${lastModifiedDateTime.formatTime}',
+                ),
+                SizedBox(width: 10),
+                SizedBox(
+                  width: MediaQuery.sizeOf(context).width * .5,
+                  child: AudioHLSPlayer(url: url),
+                ),
+              ],
+            ),
+          );
         },
       ),
     );
@@ -150,11 +186,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage>
                         ['Participants', 'Recordings']
                             .map(
                               (tabTitle) => Tab(
-                                text:
-                                    tabTitle +
-                                    (tabTitle == 'Participants'
-                                        ? ' (${meetingDetail.participants.length})'
-                                        : '0'),
+                                text: tabTitle,
                                 // : ' (${meetingDetail.recordings.length})'),
                               ),
                             )
@@ -167,7 +199,14 @@ class _MeetingDetailPageState extends State<MeetingDetailPage>
                 () =>
                     controller.currentTabIndex == 0
                         ? _buildParticipantsList(meetingDetail)
-                        : getRecordingListWidget(),
+                        : SliverToBoxAdapter(
+                          child: Column(
+                            children: [
+                              getMixRecordingListWidget(),
+                              getRecordingListByUserWidget(),
+                            ],
+                          ),
+                        ),
               ),
             ],
           ),
