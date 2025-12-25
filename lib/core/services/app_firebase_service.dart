@@ -76,7 +76,7 @@ class AppFirebaseService {
 
   // Meeting methods
   Future<DocumentReference> createMeeting({
-    required String hostId,
+    required int hostId,
     required String meetingName,
     required DateTime scheduledStartTime,
     required int duration, // in minutes
@@ -976,32 +976,33 @@ class AppFirebaseService {
   }
 
   Future<bool?> stopRecording({required String meetingId}) async {
-    // final singleRecording = await AppHttpService().post(
-    //   'api/agora/recording/stop',
-    //   body: {'cname': meetingId, 'type': 'individual', 'uid': 0},
-    // );
+    final singleRecording = await AppHttpService().post(
+      'api/agora/recording/stop',
+      body: {'cname': meetingId, 'type': 'individual', 'uid': 0},
+    );
     final mixRecording = await AppHttpService().post(
       'api/agora/recording/stop',
       body: {'cname': meetingId, 'type': 'mix'},
     );
 
-    // if (singleRecording == null) {
-    //   debugPrint("singleRecording response is null while stopping recording");
-    // }
+    if (singleRecording == null) {
+      debugPrint("singleRecording response is null while stopping recording");
+    }
     if (mixRecording == null) {
       debugPrint("mixRecording response is null while stopping recording");
     }
 
-    if (
-    // singleRecording?['success'] == true
-    mixRecording?['success'] == true) {
+    if (singleRecording?['success'] == true ||
+        mixRecording?['success'] == true) {
       debugPrint("recording stopped successfully");
 
       return true;
     } else {
       AppToastUtil.showErrorToast(
-        // singleRecording?['error_message'] ??
-        mixRecording?['error_message'] ?? "Failed to stop recording",
+        singleRecording?['error_message'] +
+                ', ' +
+                mixRecording?['error_message'] ??
+            "Failed to stop recording",
       );
     }
     return null;

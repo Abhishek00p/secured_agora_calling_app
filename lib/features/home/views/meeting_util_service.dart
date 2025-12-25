@@ -77,7 +77,7 @@ class MeetingUtil {
       meetingName = result['title'];
 
       final docRef = await firebaseService.createMeeting(
-        hostId: AppLocalStorage.getUserDetails().firebaseUserId,
+        hostId: AppLocalStorage.getUserDetails().userId,
         hostUserId: AppLocalStorage.getUserDetails().userId,
         hostName: AppLocalStorage.getUserDetails().name,
         meetingName: meetingName,

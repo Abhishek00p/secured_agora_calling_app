@@ -30,7 +30,9 @@ class _UserTabState extends State<UserTab> {
     final currentUser = AppLocalStorage.getUserDetails();
     if (currentUser.memberCode.isNotEmpty) {
       // Members see all upcoming meetings for their member code
-      firebaseService.getUpcomingMeetingsStream(currentUser.memberCode).listen((snapshot) {
+      firebaseService.getUpcomingMeetingsStream(currentUser.memberCode).listen((
+        snapshot,
+      ) {
         final meetings =
             snapshot.docs.map((doc) {
               return MeetingModel.fromJson(doc.data() as Map<String, dynamic>);
@@ -219,8 +221,7 @@ class _UserTabState extends State<UserTab> {
                 arguments: {
                   'channelName': meeting.channelName,
                   'isHost':
-                      meeting.hostId ==
-                      AppLocalStorage.getUserDetails().firebaseUserId,
+                      meeting.hostId == AppLocalStorage.getUserDetails().userId,
                   'meetingId': meeting.meetId,
                 },
               );

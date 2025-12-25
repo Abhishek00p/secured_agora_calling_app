@@ -13,10 +13,13 @@ void showMeetingInfo(BuildContext context) {
         (context) => GetBuilder<MeetingController>(
           builder: (controller) {
             final currentUser = AppLocalStorage.getUserDetails();
-            final isHost = controller.meetingModel.value.hostId == currentUser.firebaseUserId;
+            final isHost =
+                controller.meetingModel.value.hostId == currentUser.userId;
 
             return FutureBuilder(
-              future: AppFirebaseService.instance.getMeetingData(controller.meetingId),
+              future: AppFirebaseService.instance.getMeetingData(
+                controller.meetingId,
+              ),
               builder: (context, snapshot) {
                 final result = snapshot.data;
                 return AlertDialog(
@@ -26,7 +29,13 @@ void showMeetingInfo(BuildContext context) {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Meeting Info Section
-                      const Text('Meeting Information', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Meeting Information',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       SelectableText('Meeting Id: ${result?['meet_id']}'),
                       SelectableText('Password: ${result?['password']}'),
@@ -35,7 +44,13 @@ void showMeetingInfo(BuildContext context) {
 
                       // Host Controls Section
                       if (isHost) ...[
-                        const Text('Host Controls', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Host Controls',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         SizedBox(
                           width: double.infinity,
@@ -55,7 +70,12 @@ void showMeetingInfo(BuildContext context) {
                       ],
                     ],
                   ),
-                  actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
                 );
               },
             );
@@ -64,7 +84,10 @@ void showMeetingInfo(BuildContext context) {
   );
 }
 
-void _showExtendMeetingDialog(BuildContext context, MeetingController controller) {
+void _showExtendMeetingDialog(
+  BuildContext context,
+  MeetingController controller,
+) {
   showDialog(
     context: context,
     builder:
@@ -73,7 +96,10 @@ void _showExtendMeetingDialog(BuildContext context, MeetingController controller
           meetingTitle: controller.meetingModel.value.meetingName,
           onExtend: (additionalMinutes, reason) async {
             try {
-              await controller.extendMeetingWithOptions(additionalMinutes: additionalMinutes, reason: reason);
+              await controller.extendMeetingWithOptions(
+                additionalMinutes: additionalMinutes,
+                reason: reason,
+              );
               return true;
             } catch (e) {
               AppToastUtil.showErrorToast('Failed to extend meeting: $e');

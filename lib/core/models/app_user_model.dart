@@ -4,7 +4,6 @@ import 'package:secured_calling/core/extensions/date_time_extension.dart';
 
 class AppUser {
   final int userId;
-  final String firebaseUserId;
   final String name;
   final String email;
   final bool isMember;
@@ -21,7 +20,6 @@ class AppUser {
     this.name = '',
     this.email = '',
     this.userId = 0,
-    this.firebaseUserId = '',
     this.isMember = false,
     this.memberCode = '',
     this.planExpiryDate,
@@ -43,7 +41,6 @@ class AppUser {
       email: json['email'] as String? ?? '',
       isMember: json['isMember'] as bool? ?? false,
       userId: json['userId'] ?? 0,
-      firebaseUserId: json['firebaseUserId'] ?? '',
       memberCode: json['memberCode'] as String? ?? '',
       createdAt:
           json['createdAt'] is String
@@ -73,7 +70,6 @@ class AppUser {
       'createdAt': createdAt.toIso8601String(),
       'subscription': subscription.toJson(),
       'userId': userId,
-      'firebaseUserId': firebaseUserId,
       'memberCode': memberCode,
       'planExpiryDate': planExpiryDate,
       'totalUsers': totalUsers,
@@ -90,13 +86,11 @@ class AppUser {
     DateTime? createdAt,
     Subscription? subscription,
     int? userId,
-    String? firebaseUserId,
     String? memberCode,
   }) {
     return AppUser(
       name: name ?? this.name,
       userId: userId ?? this.userId,
-      firebaseUserId: firebaseUserId ?? this.firebaseUserId,
       email: email ?? this.email,
       isMember: isMember ?? this.isMember,
       createdAt: createdAt ?? this.createdAt,
@@ -107,7 +101,7 @@ class AppUser {
 
   @override
   String toString() {
-    return 'AppUser(userId: $userId, firebaseUserId: $firebaseUserId, name: $name, email: $email, isMember: $isMember, memberCode: $memberCode, createdAt: $createdAt, subscription: $subscription)';
+    return 'AppUser(userId: $userId, name: $name, email: $email, isMember: $isMember, memberCode: $memberCode, createdAt: $createdAt, subscription: $subscription)';
   }
 }
 

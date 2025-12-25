@@ -4,7 +4,7 @@ class MeetingModel {
   final String meetId;
   final String meetingName;
   final String channelName;
-  final String hostId;
+  final int hostId;
   final int hostUserId;
   final String hostName;
   final String? password;
@@ -71,7 +71,7 @@ class MeetingModel {
     meetId: '',
     meetingName: '',
     channelName: '',
-    hostId: '',
+    hostId: -1,
     hostUserId: 0,
     hostName: '',
     password: null,
@@ -102,13 +102,15 @@ class MeetingModel {
       meetId: json['meet_id'] ?? '',
       meetingName: json['meetingName'] ?? '',
       channelName: json['channelName'] ?? '',
-      hostId: json['hostId'] ?? '',
+      hostId: json['hostId'] ?? -1,
       hostName: json['hostName'] ?? '',
       password: json['password'],
       memberCode: json['memberCode'],
       requiresApproval: json['requiresApproval'] ?? false,
       status: json['status'] ?? '',
-      isParticipantsMuted: Map<String, bool>.from(json['isParticipantsMuted'] ?? {}),
+      isParticipantsMuted: Map<String, bool>.from(
+        json['isParticipantsMuted'] ?? {},
+      ),
       maxParticipants: json['maxParticipants'] ?? 0,
       duration: json['duration'] ?? 0,
       participants: List<int>.from(json['participants'] ?? []),
@@ -153,13 +155,15 @@ class MeetingModel {
     'totalParticipantsCount': totalParticipantsCount,
     'actualDuration': actualDuration.inSeconds,
     'totalExtensions': totalExtensions,
-    'participantHistory': participantHistory.map((log) => log.toJson()).toList(),
+    'participantHistory':
+        participantHistory.map((log) => log.toJson()).toList(),
   };
 
   static DateTime _toDateTime(dynamic value) {
     if (value == null) return DateTime.fromMillisecondsSinceEpoch(0);
     if (value is Timestamp) return value.toDate();
-    if (value is String) return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    if (value is String)
+      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
