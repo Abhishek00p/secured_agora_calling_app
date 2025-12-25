@@ -58,6 +58,7 @@ class MeetingController extends GetxController {
   String agoraMeetingToken = '';
 
   String speakingEventDocId = '';
+  int recordingStartTimeEpoch = 0;
 
   @override
   void onInit() {
@@ -559,7 +560,11 @@ class MeetingController extends GetxController {
         .doc(currentUser.userId.toString())
         .collection('speakingEvents')
         .doc(speakingEventDocId)
-        .set({'start': dateTimeEpoch});
+        .set({
+          'start': dateTimeEpoch,
+          'userId': currentUser.userId,
+          'userName': currentUser.name,
+        });
   }
 
   Future<void> stopPtt() async {
@@ -673,7 +678,11 @@ class MeetingController extends GetxController {
           .doc(currentUser.userId.toString())
           .collection('speakingEvents')
           .doc(speakingEventDocId)
-          .set({'start': dateTimeEpoch});
+          .set({
+            'start': dateTimeEpoch,
+            'userId': currentUser.userId,
+            'userName': currentUser.name,
+          });
     } else {
       await _firebaseService.meetingsCollection
           .doc(meetingId)
@@ -1090,10 +1099,17 @@ class MeetingController extends GetxController {
           !(await _firebaseService.stopRecording(meetingId: meetingId) ??
               false);
       if (!isRecordingOn.value) {
+        await _firebaseService.meetingsCollection
+            .doc(meetingId)
+            .collection('recordingTrack')
+            .doc(recordingStartTimeEpoch.toString())
+            .update({
+              'stopTime': DateTime.now().toUtc().millisecondsSinceEpoch,
+            });
         AppToastUtil.showSuccessToast('Recording stopped');
       }
       await Future.delayed(Duration(seconds: 2), () {});
-      await _firebaseService.queryAgoraRecordingStatus(meetingId, 'individual');
+      // await _firebaseService.queryAgoraRecordingStatus(meetingId, 'individual');
       await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix');
     } else {
       final token = await _firebaseService.getAgoraToken(
@@ -1114,17 +1130,26 @@ class MeetingController extends GetxController {
         return;
       }
       await Future.delayed(Duration(seconds: 2), () {});
-      final v1 = await _firebaseService.queryAgoraRecordingStatus(
-        meetingId,
-        'individual',
-      );
+      // final v1 = await _firebaseService.queryAgoraRecordingStatus(
+      //   meetingId,
+      //   'individual',
+      // );
       final v2 = await _firebaseService.queryAgoraRecordingStatus(
         meetingId,
         'mix',
       );
-      isRecordingOn.value = v1 || v2;
+      isRecordingOn.value =
+          // v1 ||
+          v2;
 
       if (isRecordingOn.value) {
+        final startTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+        recordingStartTimeEpoch = startTime;
+        await _firebaseService.meetingsCollection
+            .doc(meetingId)
+            .collection('recordingTrack')
+            .doc(startTime.toString())
+            .set({'startTime': startTime});
         AppToastUtil.showSuccessToast('Recording started');
       }
     }

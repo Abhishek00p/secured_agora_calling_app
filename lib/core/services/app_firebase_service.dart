@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/constants.dart';
 import 'package:secured_calling/core/models/member_model.dart';
+import 'package:secured_calling/core/models/recording_file_model.dart';
 import 'package:secured_calling/core/services/http_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
@@ -447,7 +448,6 @@ class AppFirebaseService {
       );
     } catch (e) {
       AppLogger.print('Error marking join request as joined: $e');
-      rethrow;
     }
   }
 
@@ -976,33 +976,33 @@ class AppFirebaseService {
   }
 
   Future<bool?> stopRecording({required String meetingId}) async {
-    final singleRecording = await AppHttpService().post(
-      'api/agora/recording/stop',
-      body: {'cname': meetingId, 'type': 'individual', 'uid': 0},
-    );
+    // final singleRecording = await AppHttpService().post(
+    //   'api/agora/recording/stop',
+    //   body: {'cname': meetingId, 'type': 'individual', 'uid': 0},
+    // );
     final mixRecording = await AppHttpService().post(
       'api/agora/recording/stop',
       body: {'cname': meetingId, 'type': 'mix'},
     );
 
-    if (singleRecording == null) {
-      debugPrint("singleRecording response is null while stopping recording");
-    }
+    // if (singleRecording == null) {
+    //   debugPrint("singleRecording response is null while stopping recording");
+    // }
     if (mixRecording == null) {
       debugPrint("mixRecording response is null while stopping recording");
     }
 
-    if (singleRecording?['success'] == true ||
-        mixRecording?['success'] == true) {
+    if (
+    // singleRecording?['success'] == true ||
+    mixRecording?['success'] == true) {
       debugPrint("recording stopped successfully");
 
       return true;
     } else {
       AppToastUtil.showErrorToast(
-        singleRecording?['error_message'] +
-                ', ' +
-                mixRecording?['error_message'] ??
-            "Failed to stop recording",
+        // singleRecording?['error_message'] +
+        //         ', ' +
+        mixRecording?['error_message'] ?? "Failed to stop recording",
       );
     }
     return null;
@@ -1018,39 +1018,38 @@ class AppFirebaseService {
       return false;
     }
 
-    final singleRecording = await AppHttpService().post(
-      'api/agora/recording/start',
-      body: {
-        'cname': meetingId,
-        'uid': userId,
-        'type': 'individual',
-        "token": token,
-      },
-    );
+    // final singleRecording = await AppHttpService().post(
+    //   'api/agora/recording/start',
+    //   body: {
+    //     'cname': meetingId,
+    //     'uid': userId,
+    //     'type': 'individual',
+    //     "token": token,
+    //   },
+    // );
     final mixRecording = await AppHttpService().post(
       'api/agora/recording/start',
       body: {'cname': meetingId, 'uid': userId, 'type': 'mix', "token": token},
     );
 
-    if (singleRecording == null) {
-      debugPrint("singleRecording response is null while starting recording");
-    }
+    // if (singleRecording == null) {
+    //   debugPrint("singleRecording response is null while starting recording");
+    // }
     if (mixRecording == null) {
       debugPrint("mixRecording response is null while starting recording");
     }
 
-    if (singleRecording?['success'] == true ||
-        mixRecording?['success'] == true) {
+    if (
+    // singleRecording?['success'] == true ||
+    mixRecording?['success'] == true) {
       debugPrint("recording started successfully");
 
       return true;
     } else {
-      final singleErrormessage = singleRecording?['error_message'] ?? '';
+      // final singleErrormessage = singleRecording?['error_message'] ?? '';
       final mixError =
           mixRecording?['error_message'] ?? "Failed to start recording";
-      AppToastUtil.showErrorToast(
-        "single : $singleErrormessage,\n mix: $mixError",
-      );
+      AppToastUtil.showErrorToast(" $mixError");
     }
     return null;
   }
@@ -1096,10 +1095,12 @@ class AppFirebaseService {
     return response['success'] ?? false;
   }
 
-  Future<List<String>?> getAllMixRecordings(String meetingId) async {
+  Future<List<RecordingFileModel>?> getAllMixRecordings(
+    String meetingId,
+  ) async {
     final response = await AppHttpService().post(
       'api/agora/recording/list/mix',
-      body: {'channelName': meetingId},
+      body: {'channelName': meetingId, 'meetingId': meetingId},
     );
 
     if (response == null) {
@@ -1109,7 +1110,7 @@ class AppFirebaseService {
     if (response['success'] == true) {
       if (response['data'] is List) {
         return (response['data'] as List)
-            .map((e) => e['playableUrl'] as String)
+            .map((e) => RecordingFileModel.fromJson(e))
             .toList();
       }
     } else {
@@ -1121,7 +1122,7 @@ class AppFirebaseService {
     return [];
   }
 
-  Future<List<Map<String, dynamic>>?> getAllIndividualRecordings(
+  Future<List<RecordingFileModel>?> getAllIndividualRecordings(
     String meetingId,
   ) async {
     final response = await AppHttpService().post(
@@ -1135,7 +1136,13 @@ class AppFirebaseService {
     }
     AppLogger.print("data........ : ${response['success']}");
     if (response['success'] == true) {
-      return List<Map<String, dynamic>>.from(response['data'] as List<dynamic>);
+      return (response['data'] as List<dynamic>)
+          .map(
+            (e) => RecordingFileModel.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList();
     } else {
       AppLogger.print(
         " failed to fetch list of individual recording : $response, message: ${response['error_message']}",

@@ -5,7 +5,7 @@ class MeetingDetail {
   String meetingId;
   String? meetingPass;
   String hostName;
-  String hostId;
+  int hostId;
   int maxParticipants;
   Duration duration;
   DateTime scheduledStartTime;

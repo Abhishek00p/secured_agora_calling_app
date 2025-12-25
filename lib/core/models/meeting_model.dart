@@ -96,13 +96,22 @@ class MeetingModel {
     participantHistory: [],
   );
 
+  static int getHostId(dynamic id) {
+    if (id is String) {
+      return id.isEmpty ? -1 : int.tryParse(id) ?? -1;
+    } else if (id == null) {
+      return -1;
+    }
+    return id;
+  }
+
   factory MeetingModel.fromJson(Map<String, dynamic> json) {
     return MeetingModel(
       hostUserId: json['hostUserId'] ?? 0,
       meetId: json['meet_id'] ?? '',
       meetingName: json['meetingName'] ?? '',
       channelName: json['channelName'] ?? '',
-      hostId: json['hostId'] ?? -1,
+      hostId: getHostId(json['hostId']),
       hostName: json['hostName'] ?? '',
       password: json['password'],
       memberCode: json['memberCode'],

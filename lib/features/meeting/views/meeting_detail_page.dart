@@ -4,6 +4,7 @@ import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/features/meeting/widgets/audio_player.dart';
+import 'package:secured_calling/features/meeting/widgets/recording_audio_row.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
 import 'package:secured_calling/widgets/meeting_info_card.dart';
@@ -37,7 +38,9 @@ class _MeetingDetailPageState extends State<MeetingDetailPage>
   Widget getMixRecordingListWidget() {
     return Obx(
       () =>
-          controller.mixRecordings.isEmpty
+          controller.isMixRecordingLoading.value
+              ? Center(child: CircularProgressIndicator.adaptive())
+              : controller.mixRecordings.isEmpty
               ? Text('No mix recordings available.')
               : ListView.builder(
                 physics: NeverScrollableScrollPhysics(),
@@ -46,30 +49,22 @@ class _MeetingDetailPageState extends State<MeetingDetailPage>
                 itemBuilder: (context, index) {
                   final item = controller.mixRecordings[index];
 
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                      children: [
-                        Text('Mix Rec. ${index + 1}'),
-                        SizedBox(width: 10),
-                        SizedBox(
-                          width: MediaQuery.sizeOf(context).width * .5,
-                          child: AudioHLSPlayer(url: item),
-                        ),
-                      ],
-                    ),
+                  return RecorderAudioTile(
+                    title:
+                        'Mix Rec. ${item.startTime?.toLocal().formatTime ?? ''} - ${item.stopTime?.toLocal().formatTime ?? ''}',
+                    url: item.playableUrl,
                   );
                 },
               ),
     );
   }
 
-  Widget getRecordingListByUserWidget() {
+  Widget getIndividualRecordingWidgets() {
     return Obx(
       () =>
-          controller.individualRecordings.isEmpty
+          controller.isIndividualRecordingLoading.value
+              ? Center(child: CircularProgressIndicator.adaptive())
+              : controller.individualRecordings.isEmpty
               ? Text('No individual recordings available.')
               : ListView.builder(
                 physics: NeverScrollableScrollPhysics(),
@@ -77,26 +72,11 @@ class _MeetingDetailPageState extends State<MeetingDetailPage>
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
                   final item = controller.individualRecordings[index];
-                  final url = item['playableUrl'] as String;
-                  final userId = item['userId'] as String;
-                  final lastModifiedDateTime =
-                      DateTime.parse(item['lastModified'] as String).toLocal();
 
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Name : ${controller.meetingDetail.value?.participants.where((e) => e.userId == userId).firstOrNull?.username ?? ''}\nTime : ${lastModifiedDateTime.formatTime}',
-                        ),
-                        SizedBox(width: 10),
-                        SizedBox(
-                          width: MediaQuery.sizeOf(context).width * .5,
-                          child: AudioHLSPlayer(url: url),
-                        ),
-                      ],
-                    ),
+                  return RecorderAudioTile(
+                    title:
+                        '${item.userName} ${item.startTime?.toLocal().formatTime ?? ''} - ${item.stopTime?.toLocal().formatTime ?? ''}',
+                    url: item.playableUrl,
                   );
                 },
               ),
@@ -209,7 +189,8 @@ class _MeetingDetailPageState extends State<MeetingDetailPage>
                           child: Column(
                             children: [
                               getMixRecordingListWidget(),
-                              getRecordingListByUserWidget(),
+                              getIndividualRecordingWidgets(),
+                              // getRecordingListByUserWidget(),
                             ],
                           ),
                         ),

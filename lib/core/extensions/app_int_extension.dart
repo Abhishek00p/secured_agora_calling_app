@@ -14,6 +14,17 @@ extension AppIntExtension on int {
       return '$seconds';
     }
   }
+
+  DateTime get toDateTime {
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(this);
+    return DateTime(
+      dateTime.year,
+      dateTime.month,
+      dateTime.day,
+      dateTime.hour,
+      dateTime.minute,
+    );
+  }
 }
 
 extension AppNumExtension on num {
