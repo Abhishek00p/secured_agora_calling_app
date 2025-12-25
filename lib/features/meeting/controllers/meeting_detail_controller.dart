@@ -36,8 +36,7 @@ class MeetingDetailController extends GetxController {
     super.onInit();
     loadMeetingDetails();
     _initializeRealTimeUpdates();
-    fetchIndividualRecordings();
-    fetchIndividualRecordingsByUserId();
+    fetchAllIndividualRecordings();
     fetchMixRecordings();
   }
 
@@ -45,6 +44,19 @@ class MeetingDetailController extends GetxController {
   void onClose() {
     _meetingStreamSubscription?.cancel();
     super.onClose();
+  }
+
+  void fetchAllIndividualRecordings() async {
+    final details = await _meetingService.fetchMeetingDetail(meetingId);
+
+    for (int i = 0; i < (details.participants.length ?? 0); i++) {
+      final participantUserId = details.participants[i].userId ?? '';
+      print("Participant User ID : $participantUserId \n");
+      individualRecordings.value +=
+          (await fetchIndividualRecordingsByUserId(participantUserId) ?? [])
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+    }
   }
 
   /// Load meeting details
@@ -184,22 +196,17 @@ class MeetingDetailController extends GetxController {
     }
   }
 
-  Future<void> fetchIndividualRecordingsByUserId() async {
+  Future<List<dynamic>?> fetchIndividualRecordingsByUserId(
+    String userId,
+  ) async {
     try {
-      individualRecordings.value =
-          await AppFirebaseService.instance.getAllIndividualRecordingsByUserId(
-            meetingId,
-          ) ??
+      return await AppFirebaseService.instance
+              .getAllIndividualRecordingsByUserId(meetingId, userId: userId) ??
           [];
-
-      AppLogger.print(
-        "After Api call individual recording List by userid: ${individualRecordings.length}",
-      );
     } catch (e) {
       AppLogger.print(
         "Failed to fetch individual b userid recording in controller : $e",
       );
-      individualRecordings.clear();
     }
   }
 }

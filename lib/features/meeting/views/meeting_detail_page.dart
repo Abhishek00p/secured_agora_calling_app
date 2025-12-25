@@ -36,64 +36,70 @@ class _MeetingDetailPageState extends State<MeetingDetailPage>
 
   Widget getMixRecordingListWidget() {
     return Obx(
-      () => ListView.builder(
-        physics: NeverScrollableScrollPhysics(),
-        itemCount: controller.mixRecordings.length,
-        shrinkWrap: true,
-        itemBuilder: (context, index) {
-          final item = controller.mixRecordings[index];
+      () =>
+          controller.mixRecordings.isEmpty
+              ? Text('No mix recordings available.')
+              : ListView.builder(
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: controller.mixRecordings.length,
+                shrinkWrap: true,
+                itemBuilder: (context, index) {
+                  final item = controller.mixRecordings[index];
 
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
-              children: [
-                Text('Mix Rec. ${index + 1}'),
-                SizedBox(width: 10),
-                SizedBox(
-                  width: MediaQuery.sizeOf(context).width * .5,
-                  child: AudioHLSPlayer(url: item),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+                      children: [
+                        Text('Mix Rec. ${index + 1}'),
+                        SizedBox(width: 10),
+                        SizedBox(
+                          width: MediaQuery.sizeOf(context).width * .5,
+                          child: AudioHLSPlayer(url: item),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
     );
   }
 
   Widget getRecordingListByUserWidget() {
     return Obx(
-      () => ListView.builder(
-        physics: NeverScrollableScrollPhysics(),
-        itemCount: controller.individualRecordings.length,
-        shrinkWrap: true,
-        itemBuilder: (context, index) {
-          final item = controller.individualRecordings[index];
-          final url = item['playableUrl'] as String;
-          final userId = item['userId'] as String;
-          final lastModifiedDateTime =
-              DateTime.parse(item['lastModified'] as String).toLocal();
+      () =>
+          controller.individualRecordings.isEmpty
+              ? Text('No individual recordings available.')
+              : ListView.builder(
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: controller.individualRecordings.length,
+                shrinkWrap: true,
+                itemBuilder: (context, index) {
+                  final item = controller.individualRecordings[index];
+                  final url = item['playableUrl'] as String;
+                  final userId = item['userId'] as String;
+                  final lastModifiedDateTime =
+                      DateTime.parse(item['lastModified'] as String).toLocal();
 
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Name : ${controller.meetingDetail.value?.participants.where((e) => e.userId == userId).firstOrNull?.username ?? ''}\nTime : ${lastModifiedDateTime.formatTime}',
-                ),
-                SizedBox(width: 10),
-                SizedBox(
-                  width: MediaQuery.sizeOf(context).width * .5,
-                  child: AudioHLSPlayer(url: url),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Name : ${controller.meetingDetail.value?.participants.where((e) => e.userId == userId).firstOrNull?.username ?? ''}\nTime : ${lastModifiedDateTime.formatTime}',
+                        ),
+                        SizedBox(width: 10),
+                        SizedBox(
+                          width: MediaQuery.sizeOf(context).width * .5,
+                          child: AudioHLSPlayer(url: url),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
     );
   }
 

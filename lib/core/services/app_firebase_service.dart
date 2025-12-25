@@ -1144,15 +1144,13 @@ class AppFirebaseService {
   }
 
   Future<List<Map<String, dynamic>>?> getAllIndividualRecordingsByUserId(
-    String meetingId,
-  ) async {
+    String meetingId, {
+    String? userId,
+  }) async {
     try {
       final response = await AppHttpService().post(
         'api/agora/recording/getRecordingsByUserId',
-        body: {
-          'meetingId': meetingId,
-          "userId": AppLocalStorage.getUserDetails().userId.toString(),
-        },
+        body: {'meetingId': meetingId, "userId": userId},
       );
 
       if (response == null) {
