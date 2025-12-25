@@ -57,6 +57,8 @@ class MeetingController extends GetxController {
 
   String agoraMeetingToken = '';
 
+  String speakingEventDocId = '';
+
   @override
   void onInit() {
     super.onInit();
@@ -439,85 +441,6 @@ class MeetingController extends GetxController {
     AppLogger.print('_clearMeetingState cleanup completed');
   }
 
-  // void startTimer() async {
-  //   try {
-  //     isHost =
-  //         meetingModel.hostId ==
-  //         currentUser.firebaseUserId;
-
-  //     remainingSeconds = meetingModel.duration * 60;
-
-  //     Timer.periodic(Duration(seconds: 1), (timer) {
-  //       if (remainingSeconds <= 0) {
-  //         if (!isHost) {
-  //           endMeeting().then((c) {
-  //             AppToastUtil.showInfoToast(
-
-  //               'Your Free Trial Time is over, please contact support',
-  //             );
-  //           });
-  //           Navigator.pop(Get.context!);
-  //         } else {
-  //           int remainingTime = 10; // Countdown timer in seconds
-  //           Timer? countdownTimer;
-
-  //           // Start the countdown timer
-  //           countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
-  //             if (remainingTime > 0) {
-  //               remainingTime--;
-  //             } else {
-  //               timer.cancel();
-  //               endMeeting(); // Automatically end the meeting after 10 seconds
-  //               Navigator.pop(Get.context!); // Close the dialog and meeting
-  //             }
-  //           });
-
-  //           // Show the dialog
-  //           showDialog(
-  //             context: Get.context!,
-  //             barrierDismissible:
-  //                 false, // Prevent dismissing the dialog by tapping outside
-  //             builder: (context) {
-  //               return StatefulBuilder(
-  //                 builder: (context, setState) {
-  //                   return AlertDialog(
-  //                     title: Text('Meeting Time Ended'),
-  //                     content: Column(
-  //                       mainAxisSize: MainAxisSize.min,
-  //                       children: [
-  //                         Text(
-  //                           'This meeting will close in $remainingTime seconds.',
-  //                           style: TextStyle(fontSize: 16),
-  //                         ),
-  //                         SizedBox(height: 16),
-  //                         ElevatedButton(
-  //                           onPressed: () {
-  //                             countdownTimer?.cancel(); // Stop the countdown
-  //                             Navigator.pop(context); // Close the dialog
-  //                             // Extend meeting logic here
-  //                             extendMeetingTime();
-  //                           },
-  //                           child: Text('Extend Meeting Time'),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                   );
-  //                 },
-  //               );
-  //             },
-  //           );
-  //         }
-  //         timer.cancel();
-  //       } else {
-  //         remainingSeconds--;
-  //       }
-  //       update();
-  //     });
-  //   } catch (e) {
-  //     AppLogger.print('Error starting timer: $e');
-  //   }
-  // }
-
   Future<void> initializeMeeting({
     required String meetingId,
     required bool isUserHost,
@@ -628,6 +551,15 @@ class MeetingController extends GetxController {
     });
     await _agoraService.muteLocalAudio(false);
     isMuted.value = false;
+    final dateTimeEpoch = DateTime.now().toUtc().millisecondsSinceEpoch;
+    speakingEventDocId = dateTimeEpoch.toString();
+    await _firebaseService.meetingsCollection
+        .doc(meetingId)
+        .collection('participants')
+        .doc(currentUser.userId.toString())
+        .collection('speakingEvents')
+        .doc(speakingEventDocId)
+        .set({'start': dateTimeEpoch});
   }
 
   Future<void> stopPtt() async {
@@ -636,6 +568,14 @@ class MeetingController extends GetxController {
     });
     await _agoraService.muteLocalAudio(true);
     isMuted.value = true;
+    await _firebaseService.meetingsCollection
+        .doc(meetingId)
+        .collection('participants')
+        .doc(currentUser.userId.toString())
+        .collection('speakingEvents')
+        .doc(speakingEventDocId)
+        .update({'stop': DateTime.now().toUtc().millisecondsSinceEpoch});
+    speakingEventDocId = '';
   }
 
   void updateMuteStatesForPTT() {
@@ -723,6 +663,27 @@ class MeetingController extends GetxController {
   Future<void> toggleSpeaker() async {
     isOnSpeaker.toggle();
     _agoraService.engine?.setEnableSpeakerphone(isOnSpeaker.value);
+    //store data in firestore
+    if (isOnSpeaker.value) {
+      final dateTimeEpoch = DateTime.now().toUtc().millisecondsSinceEpoch;
+      speakingEventDocId = dateTimeEpoch.toString();
+      await _firebaseService.meetingsCollection
+          .doc(meetingId)
+          .collection('participants')
+          .doc(currentUser.userId.toString())
+          .collection('speakingEvents')
+          .doc(speakingEventDocId)
+          .set({'start': dateTimeEpoch});
+    } else {
+      await _firebaseService.meetingsCollection
+          .doc(meetingId)
+          .collection('participants')
+          .doc(currentUser.userId.toString())
+          .collection('speakingEvents')
+          .doc(speakingEventDocId)
+          .update({'stop': DateTime.now().toUtc().millisecondsSinceEpoch});
+      speakingEventDocId = '';
+    }
     update();
   }
 

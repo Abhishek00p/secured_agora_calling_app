@@ -112,12 +112,13 @@ class AppAuthService {
 
       // Use the new CRUD function (auth token will be added automatically)
       final response = await _httpService.post(
-        'createUser',
+        'api/auth/create-user',
         body: {
           'name': name.trim(),
           'email': email.trim().toLowerCase(),
           'password': password,
           'memberCode': memberCode,
+          'memberUserId': AppLocalStorage.getUserDetails().userId,
         },
       );
 
@@ -160,7 +161,7 @@ class AppAuthService {
 
       // Use the new CRUD function (auth token will be added automatically)
       final response = await _httpService.post(
-        'api/auth/create-user',
+        'api/auth/create-member',
         body: {
           'name': name.trim(),
           'email': email.trim().toLowerCase(),

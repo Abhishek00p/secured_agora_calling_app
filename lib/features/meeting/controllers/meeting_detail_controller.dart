@@ -37,6 +37,7 @@ class MeetingDetailController extends GetxController {
     loadMeetingDetails();
     _initializeRealTimeUpdates();
     fetchIndividualRecordings();
+    fetchIndividualRecordingsByUserId();
     fetchMixRecordings();
   }
 
@@ -178,6 +179,25 @@ class MeetingDetailController extends GetxController {
     } catch (e) {
       AppLogger.print(
         "Failed to fetch individual recording in controller : $e",
+      );
+      individualRecordings.clear();
+    }
+  }
+
+  Future<void> fetchIndividualRecordingsByUserId() async {
+    try {
+      individualRecordings.value =
+          await AppFirebaseService.instance.getAllIndividualRecordingsByUserId(
+            meetingId,
+          ) ??
+          [];
+
+      AppLogger.print(
+        "After Api call individual recording List by userid: ${individualRecordings.length}",
+      );
+    } catch (e) {
+      AppLogger.print(
+        "Failed to fetch individual b userid recording in controller : $e",
       );
       individualRecordings.clear();
     }

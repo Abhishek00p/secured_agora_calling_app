@@ -1142,4 +1142,40 @@ class AppFirebaseService {
       return [];
     }
   }
+
+  Future<List<Map<String, dynamic>>?> getAllIndividualRecordingsByUserId(
+    String meetingId,
+  ) async {
+    try {
+      final response = await AppHttpService().post(
+        'api/agora/recording/getRecordingsByUserId',
+        body: {
+          'meetingId': meetingId,
+          "userId": AppLocalStorage.getUserDetails().userId.toString(),
+        },
+      );
+
+      if (response == null) {
+        debugPrint(
+          "response is null while fetching individual recording list by userid",
+        );
+        return null;
+      }
+      if (response['success'] == true) {
+        return List<Map<String, dynamic>>.from(
+          response['segments'] as List<dynamic>,
+        );
+      } else {
+        AppLogger.print(
+          " failed to fetch list of individual recording by user id : $response, message: ${response['error_message']}",
+        );
+        return [];
+      }
+    } catch (e) {
+      AppLogger.print(
+        "exception caught in getting individual recording by userid : $e",
+      );
+      return [];
+    }
+  }
 }
