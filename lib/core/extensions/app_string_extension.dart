@@ -7,11 +7,7 @@ extension AppStringExtension on String {
   String get initalTwoLetter => trim().isEmpty ? '' : trim().split(' ').map((e) => e.initalLetter).join('');
   String get sentenceCase => trim().isEmpty ? '' : substring(0, 1).capitalizeAll + substring(1);
   String get titleCase =>
-      trim().isEmpty
-          ? ''
-          : split(
-            ' ',
-          ).map((e) => e.trim().isEmpty ? '' : '${e.trim()[0].capitalizeAll}${e.trim().substring(1)}').join(' ');
+      trim().isEmpty ? '' : split(' ').map((e) => e.trim().isEmpty ? '' : '${e.trim()[0].capitalizeAll}${e.trim().substring(1)}').join(' ');
 
   DateTime get toDateTimeFromEpoch {
     final date = this;
@@ -49,4 +45,9 @@ extension AppStringExtension on String {
       return DateTime.fromMillisecondsSinceEpoch(0); // Fallback default
     }
   }
+}
+
+extension NullableStringExtension on String? {
+  String get orEmpty => this ?? '';
+  bool get isEmptyOrNull => this == null || this!.trim().isEmpty;
 }

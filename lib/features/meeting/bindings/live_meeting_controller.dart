@@ -39,8 +39,7 @@ class MeetingController extends GetxController {
 
   String meetingId = '';
   bool isHost = false;
-  int remainingSeconds =
-      AppLocalStorage.getUserDetails().isMember ? 25200 : 300;
+  int remainingSeconds = AppLocalStorage.getUserDetails().isMember ? 25200 : 300;
   String currentSpeaker = '';
 
   bool get agoraInitialized => _agoraService.isInitialized;
@@ -60,16 +59,17 @@ class MeetingController extends GetxController {
   String speakingEventDocId = '';
   int recordingStartTimeEpoch = 0;
 
+  int individualRecorderUid = 0;
+  int mixRecorderUid = 0;
+
   @override
   void onInit() {
     super.onInit();
-    _muteSubscription = AppFirebaseService.instance
-        .isCurrentUserMutedByHost(meetingId)
-        .listen((s) {
-          if (s) {
-            stopPtt();
-          }
-        });
+    _muteSubscription = AppFirebaseService.instance.isCurrentUserMutedByHost(meetingId).listen((s) {
+      if (s) {
+        stopPtt();
+      }
+    });
   }
 
   void startTimer() async {
@@ -80,14 +80,12 @@ class MeetingController extends GetxController {
         AppToastUtil.showErrorToast('Meeting data not found');
         return;
       }
-      print(
-        "\n <-------- meeting model data in start timer: ${result.entries.join("\n")} \n ----> ",
-      );
+      print("\n <-------- meeting model data in start timer: ${result.entries.join("\n")} \n ----> ");
       meetingModel.value = MeetingModel.fromJson(result);
+      isRecordingOn.value = meetingModel.value.isRecordingOn;
       final thisMeetingScheduledEndTime = meetingModel.value.scheduledEndTime;
       final currentTime = DateTime.now();
-      remainingSeconds =
-          thisMeetingScheduledEndTime.difference(currentTime).inSeconds;
+      remainingSeconds = thisMeetingScheduledEndTime.difference(currentTime).inSeconds;
       print(
         "\n <------------------------------------------------\n meeting end time which was scheduled : $thisMeetingScheduledEndTime , current time : $currentTime, difference in sec : $remainingSeconds\n ---------------------------------------->\n",
       );
@@ -100,19 +98,13 @@ class MeetingController extends GetxController {
         // Check if meeting time has ended
         if (remainingSeconds <= 0) {
           timer.cancel();
-          print(
-            "forcing end meeting becoz remaining second < = 0, we are in start timer func",
-          );
+          print("forcing end meeting becoz remaining second < = 0, we are in start timer func");
           _forceEndMeeting();
           return;
         }
 
         // Show persistent timer warning dialog at 5 minutes remaining
-        if (remainingSeconds <= 300 &&
-            remainingSeconds > 0 &&
-            isHost &&
-            !_hasExtended &&
-            !_timerWarningShown) {
+        if (remainingSeconds <= 300 && remainingSeconds > 0 && isHost && !_hasExtended && !_timerWarningShown) {
           if (remainingSeconds % 60 == 0) {
             _showTimerWarningDialog();
           }
@@ -133,13 +125,9 @@ class MeetingController extends GetxController {
       });
 
       _leaveSubscription?.cancel();
-      _leaveSubscription = _firebaseService.isInstructedToLeave(meetingId).listen((
-        isInstructed,
-      ) {
+      _leaveSubscription = _firebaseService.isInstructedToLeave(meetingId).listen((isInstructed) {
         if (isInstructed) {
-          print(
-            "<<<<<<< ----------- \n user got instruction to leave the meeting ...... \n --------- >>>>>>",
-          );
+          print("<<<<<<< ----------- \n user got instruction to leave the meeting ...... \n --------- >>>>>>");
           endMeeting();
         }
       });
@@ -158,8 +146,7 @@ class MeetingController extends GetxController {
   bool _timerWarningDismissed = false;
 
   // Global key for the timer warning dialog
-  final GlobalKey<TimerWarningDialogState> _timerWarningDialogKey =
-      GlobalKey<TimerWarningDialogState>();
+  final GlobalKey<TimerWarningDialogState> _timerWarningDialogKey = GlobalKey<TimerWarningDialogState>();
 
   // Track last known meeting data to detect changes
   Map<String, dynamic>? _lastMeetingData;
@@ -181,8 +168,7 @@ class MeetingController extends GetxController {
       final lastDuration = _lastMeetingData!['duration'] as int? ?? 0;
 
       // Check if meeting was extended
-      if (currentScheduledEndTime != lastScheduledEndTime ||
-          currentDuration != lastDuration) {
+      if (currentScheduledEndTime != lastScheduledEndTime || currentDuration != lastDuration) {
         AppLogger.print('Meeting time changed detected - refreshing timer');
 
         // Update local meeting model with new data
@@ -197,9 +183,7 @@ class MeetingController extends GetxController {
           if (additionalMinutes > 0) {
             final reason = data['lastExtensionReason'] as String?;
             final message =
-                reason != null
-                    ? 'Meeting extended by $additionalMinutes minutes: $reason'
-                    : 'Meeting extended by $additionalMinutes minutes';
+                reason != null ? 'Meeting extended by $additionalMinutes minutes: $reason' : 'Meeting extended by $additionalMinutes minutes';
             AppToastUtil.showInfoToast(message);
           }
         }
@@ -207,19 +191,14 @@ class MeetingController extends GetxController {
 
       // Check for extension notifications (for all participants)
       final lastNotification = data['lastExtensionNotification'];
-      final lastKnownNotification =
-          _lastMeetingData!['lastExtensionNotification'];
+      final lastKnownNotification = _lastMeetingData!['lastExtensionNotification'];
 
-      if (lastNotification != lastKnownNotification &&
-          lastNotification != null) {
+      if (lastNotification != lastKnownNotification && lastNotification != null) {
         final extensionMinutes = data['lastExtensionMinutes'] as int? ?? 0;
         final reason = data['lastExtensionReason'] as String?;
 
         if (extensionMinutes > 0) {
-          final message =
-              reason != null
-                  ? 'Meeting extended by $extensionMinutes minutes: $reason'
-                  : 'Meeting extended by $extensionMinutes minutes';
+          final message = reason != null ? 'Meeting extended by $extensionMinutes minutes: $reason' : 'Meeting extended by $extensionMinutes minutes';
           AppToastUtil.showInfoToast(message);
         }
       }
@@ -238,10 +217,7 @@ class MeetingController extends GetxController {
       _meetingTimer?.cancel();
 
       // Recalculate remaining seconds with updated data
-      remainingSeconds =
-          meetingModel.value.scheduledEndTime
-              .difference(DateTime.now())
-              .inSeconds;
+      remainingSeconds = meetingModel.value.scheduledEndTime.difference(DateTime.now()).inSeconds;
 
       // Reset extension flags for new timer period
       _hasExtended = false;
@@ -253,19 +229,13 @@ class MeetingController extends GetxController {
         // Check if meeting time has ended
         if (remainingSeconds <= 0) {
           timer.cancel();
-          print(
-            "meeting time is less then 0, we are inside refreshtimerWithNewData",
-          );
+          print("meeting time is less then 0, we are inside refreshtimerWithNewData");
           _forceEndMeeting();
           return;
         }
 
         // Show persistent timer warning dialog at 5 minutes remaining
-        if (remainingSeconds <= 300 &&
-            remainingSeconds > 0 &&
-            isHost &&
-            !_hasExtended &&
-            !_timerWarningShown) {
+        if (remainingSeconds <= 300 && remainingSeconds > 0 && isHost && !_hasExtended && !_timerWarningShown) {
           _showTimerWarningDialog();
         }
 
@@ -283,9 +253,7 @@ class MeetingController extends GetxController {
         update();
       });
 
-      AppLogger.print(
-        'Timer refreshed with new meeting data. Remaining: $remainingSeconds seconds',
-      );
+      AppLogger.print('Timer refreshed with new meeting data. Remaining: $remainingSeconds seconds');
     } catch (e) {
       AppLogger.print('Error refreshing timer: $e');
     }
@@ -312,8 +280,7 @@ class MeetingController extends GetxController {
             },
             onDismiss: () {
               _timerWarningShown = false;
-              _timerWarningDismissed =
-                  true; // Mark as dismissed to prevent re-showing
+              _timerWarningDismissed = true; // Mark as dismissed to prevent re-showing
               Navigator.pop(context);
             },
           ),
@@ -323,9 +290,7 @@ class MeetingController extends GetxController {
   // Update timer warning dialog content
   void _updateTimerWarningContent() {
     if (_timerWarningDialogKey.currentState != null) {
-      _timerWarningDialogKey.currentState!.updateRemainingTime(
-        remainingSeconds,
-      );
+      _timerWarningDialogKey.currentState!.updateRemainingTime(remainingSeconds);
     }
   }
 
@@ -339,10 +304,7 @@ class MeetingController extends GetxController {
             meetingTitle: meetingModel.value.meetingName,
             onExtend: (additionalMinutes, reason) async {
               try {
-                await extendMeetingWithOptions(
-                  additionalMinutes: additionalMinutes,
-                  reason: reason,
-                );
+                await extendMeetingWithOptions(additionalMinutes: additionalMinutes, reason: reason);
                 return true;
               } catch (e) {
                 AppToastUtil.showErrorToast('Failed to extend meeting: $e');
@@ -357,9 +319,7 @@ class MeetingController extends GetxController {
   void _showEndTimeToast(int secondsLeft) {
     if (secondsLeft % 10 == 0) {
       // Show every 10 seconds to avoid spam
-      AppToastUtil.showInfoToast(
-        'Meeting will end in ${secondsLeft ~/ 60}:${(secondsLeft % 60).toString().padLeft(2, '0')}',
-      );
+      AppToastUtil.showInfoToast('Meeting will end in ${secondsLeft ~/ 60}:${(secondsLeft % 60).toString().padLeft(2, '0')}');
     }
   }
 
@@ -369,9 +329,7 @@ class MeetingController extends GetxController {
       AppLogger.print('Meeting time expired. Force ending meeting...');
 
       // Show final warning
-      AppToastUtil.showErrorToast(
-        'Meeting time has expired. Ending meeting...',
-      );
+      AppToastUtil.showErrorToast('Meeting time has expired. Ending meeting...');
 
       // Force remove all participants including host
       await _firebaseService.removeAllParticipants(meetingId);
@@ -442,18 +400,12 @@ class MeetingController extends GetxController {
     AppLogger.print('_clearMeetingState cleanup completed');
   }
 
-  Future<void> initializeMeeting({
-    required String meetingId,
-    required bool isUserHost,
-    required BuildContext context,
-  }) async {
+  Future<void> initializeMeeting({required String meetingId, required bool isUserHost, required BuildContext context}) async {
     this.meetingId = meetingId;
     isHost = isUserHost;
 
     try {
-      await _agoraService.initialize(
-        rtcEngineEventHandler: _rtcEngineEventHandler(context),
-      );
+      await _agoraService.initialize(rtcEngineEventHandler: _rtcEngineEventHandler(context));
 
       await joinChannel(channelName: meetingId);
       await _agoraService.engine?.enableAudio();
@@ -468,8 +420,7 @@ class MeetingController extends GetxController {
         final newParticipants =
             snapshot.docs
                 .where((doc) {
-                  return (doc.data() as Map<String, dynamic>)['isActive'] ==
-                      true;
+                  return (doc.data() as Map<String, dynamic>)['isActive'] == true;
                 })
                 .map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
@@ -478,32 +429,18 @@ class MeetingController extends GetxController {
                     name: data['username'] ?? '',
                     isUserMuted: data['isMuted'] as bool? ?? false,
                     isUserSpeaking: false, // This will be updated by Agora
-                    color: WarmColorGenerator.getRandomWarmColorByIndex(
-                      data['colorIndex'] ?? 0,
-                    ),
-                    firebaseUid:
-                        '', // This might need to be fetched if required
+                    color: WarmColorGenerator.getRandomWarmColorByIndex(data['colorIndex'] ?? 0),
+                    firebaseUid: '', // This might need to be fetched if required
                   );
                 })
                 .toList();
 
         // Check if current user was forcefully removed
         // Only check for removal if user was previously in the meeting and is now removed
-        final wasUserInMeeting = participants.any(
-          (p) => p.userId == currentUserId,
-        );
-        final isUserStillInMeeting = newParticipants.any(
-          (p) => p.userId == currentUserId,
-        );
+        final wasUserInMeeting = participants.any((p) => p.userId == currentUserId);
+        final isUserStillInMeeting = newParticipants.any((p) => p.userId == currentUserId);
         final removedByHost =
-            (snapshot.docs
-                            .firstWhereOrNull(
-                              (doc) =>
-                                  (doc.data()
-                                      as Map<String, dynamic>)['userId'] ==
-                                  currentUserId,
-                            )
-                            ?.data()
+            (snapshot.docs.firstWhereOrNull((doc) => (doc.data() as Map<String, dynamic>)['userId'] == currentUserId)?.data()
                         as Map<String, dynamic>? ??
                     <String, dynamic>{})['removedByHost']
                 as bool? ??
@@ -526,19 +463,17 @@ class MeetingController extends GetxController {
       });
 
       _meetingSubscription?.cancel();
-      _meetingSubscription = _firebaseService
-          .getMeetingStream(meetingId)
-          .listen((doc) {
-            if (doc.exists) {
-              final data = doc.data() as Map<String, dynamic>;
-              pttUsers.value = List<int>.from(data['pttUsers'] ?? []);
+      _meetingSubscription = _firebaseService.getMeetingStream(meetingId).listen((doc) {
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          pttUsers.value = List<int>.from(data['pttUsers'] ?? []);
 
-              updateMuteStatesForPTT();
+          updateMuteStatesForPTT();
 
-              // Check for meeting time changes (extensions)
-              _handleMeetingDataUpdate(data);
-            }
-          });
+          // Check for meeting time changes (extensions)
+          _handleMeetingDataUpdate(data);
+        }
+      });
     } catch (e) {
       AppLogger.print('Error initializing meeting: $e');
     }
@@ -552,19 +487,17 @@ class MeetingController extends GetxController {
     });
     await _agoraService.muteLocalAudio(false);
     isMuted.value = false;
-    final dateTimeEpoch = DateTime.now().toUtc().millisecondsSinceEpoch;
-    speakingEventDocId = dateTimeEpoch.toString();
-    await _firebaseService.meetingsCollection
-        .doc(meetingId)
-        .collection('participants')
-        .doc(currentUser.userId.toString())
-        .collection('speakingEvents')
-        .doc(speakingEventDocId)
-        .set({
-          'start': dateTimeEpoch,
-          'userId': currentUser.userId,
-          'userName': currentUser.name,
-        });
+    if (isRecordingOn.value) {
+      final dateTimeEpoch = DateTime.now().toUtc().millisecondsSinceEpoch;
+      speakingEventDocId = dateTimeEpoch.toString();
+      await _firebaseService.meetingsCollection
+          .doc(meetingId)
+          .collection('recordingTracks')
+          .doc(speakingEventDocId)
+          .collection('speakingEvents')
+          .doc(speakingEventDocId)
+          .set({'start': dateTimeEpoch, 'userId': currentUser.userId, 'userName': currentUser.name});
+    }
   }
 
   Future<void> stopPtt() async {
@@ -573,13 +506,19 @@ class MeetingController extends GetxController {
     });
     await _agoraService.muteLocalAudio(true);
     isMuted.value = true;
-    await _firebaseService.meetingsCollection
-        .doc(meetingId)
-        .collection('participants')
-        .doc(currentUser.userId.toString())
-        .collection('speakingEvents')
-        .doc(speakingEventDocId)
-        .update({'stop': DateTime.now().toUtc().millisecondsSinceEpoch});
+    final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+    speakingEventDocId = speakingEventDocId.trim().isEmpty ? stopTime.toString() : speakingEventDocId;
+    final docRef = _firebaseService.meetingsCollection.doc(meetingId).collection('speakingEvents').doc(speakingEventDocId);
+
+    final docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      // ✅ Document exists → safe to update
+      await docRef.update({'stop': stopTime});
+    } else {
+      await docRef.set({'start': stopTime, 'stop': stopTime, 'recovered': true});
+    }
+
     speakingEventDocId = '';
   }
 
@@ -588,10 +527,7 @@ class MeetingController extends GetxController {
       // Host can hear everyone. Unmute all remote streams.
       for (final participant in participants) {
         if (participant.userId != currentUser.userId) {
-          _agoraService.engine?.muteRemoteAudioStream(
-            uid: participant.userId,
-            mute: false,
-          );
+          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: false);
         }
       }
     } else {
@@ -601,10 +537,7 @@ class MeetingController extends GetxController {
 
         // Participant can always hear the host.
         if (participant.userId == meetingModel.value.hostUserId) {
-          _agoraService.engine?.muteRemoteAudioStream(
-            uid: participant.userId,
-            mute: false,
-          );
+          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: false);
           continue;
         }
 
@@ -614,15 +547,9 @@ class MeetingController extends GetxController {
         final isOtherPtt = pttUsers.contains(participant.userId);
 
         if (amIPtt && isOtherPtt) {
-          _agoraService.engine?.muteRemoteAudioStream(
-            uid: participant.userId,
-            mute: false,
-          );
+          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: false);
         } else {
-          _agoraService.engine?.muteRemoteAudioStream(
-            uid: participant.userId,
-            mute: true,
-          );
+          _agoraService.engine?.muteRemoteAudioStream(uid: participant.userId, mute: true);
         }
       }
     }
@@ -638,22 +565,14 @@ class MeetingController extends GetxController {
       // The max participants check should be done on the server-side with security rules
       // or a cloud function for reliability. Client-side check is not secure.
 
-      final token = await _firebaseService.getAgoraToken(
-        channelName: channelName,
-        uid: currentUser.userId,
-        isHost: isHost,
-      );
+      final token = await _firebaseService.getAgoraToken(channelName: channelName, uid: currentUser.userId, isHost: isHost);
       print("\n\nthe agora token is $token\n");
       if (token.trim().isEmpty) {
         AppToastUtil.showErrorToast('Token not found');
         return;
       }
       agoraMeetingToken = token;
-      await _agoraService.joinChannel(
-        channelName: channelName,
-        token: token,
-        userId: currentUserId,
-      );
+      await _agoraService.joinChannel(channelName: channelName, token: token, userId: currentUserId);
     } catch (e) {
       AppLogger.print('Error joining channel: $e');
       AppToastUtil.showErrorToast('Error joining channel: $e');
@@ -672,25 +591,15 @@ class MeetingController extends GetxController {
     if (isOnSpeaker.value) {
       final dateTimeEpoch = DateTime.now().toUtc().millisecondsSinceEpoch;
       speakingEventDocId = dateTimeEpoch.toString();
-      await _firebaseService.meetingsCollection
-          .doc(meetingId)
-          .collection('participants')
-          .doc(currentUser.userId.toString())
-          .collection('speakingEvents')
-          .doc(speakingEventDocId)
-          .set({
-            'start': dateTimeEpoch,
-            'userId': currentUser.userId,
-            'userName': currentUser.name,
-          });
+      await _firebaseService.meetingsCollection.doc(meetingId).collection('speakingEvents').doc(speakingEventDocId).set({
+        'start': dateTimeEpoch,
+        'userId': currentUser.userId,
+        'userName': currentUser.name,
+      });
     } else {
-      await _firebaseService.meetingsCollection
-          .doc(meetingId)
-          .collection('participants')
-          .doc(currentUser.userId.toString())
-          .collection('speakingEvents')
-          .doc(speakingEventDocId)
-          .update({'stop': DateTime.now().toUtc().millisecondsSinceEpoch});
+      await _firebaseService.meetingsCollection.doc(meetingId).collection('speakingEvents').doc(speakingEventDocId).update({
+        'stop': DateTime.now().toUtc().millisecondsSinceEpoch,
+      });
       speakingEventDocId = '';
     }
     update();
@@ -784,23 +693,15 @@ class MeetingController extends GetxController {
   }
 
   Stream<List<Map<String, dynamic>>> fetchPendingRequests() async* {
-    AppLogger.print(
-      'Starting to listen for pending join requests for meeting: $meetingId',
-    );
+    AppLogger.print('Starting to listen for pending join requests for meeting: $meetingId');
 
-    yield* _firebaseService.getPendingJoinRequestsStream(meetingId).map((
-      querySnapshot,
-    ) {
-      AppLogger.print(
-        'Received querySnapshot with ${querySnapshot.docs.length} documents',
-      );
+    yield* _firebaseService.getPendingJoinRequestsStream(meetingId).map((querySnapshot) {
+      AppLogger.print('Received querySnapshot with ${querySnapshot.docs.length} documents');
       final List<Map<String, dynamic>> requests = [];
 
       for (final doc in querySnapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        AppLogger.print(
-          'Processing join request document: ${doc.id}, data: $data',
-        );
+        AppLogger.print('Processing join request document: ${doc.id}, data: $data');
 
         requests.add({
           'userId': data['userId'] as int,
@@ -840,18 +741,12 @@ class MeetingController extends GetxController {
 
     try {
       // Remove participant from Firebase
-      await _firebaseService.removeParticipants(
-        meetingId,
-        userId,
-        isRemovedByHost: true,
-      );
+      await _firebaseService.removeParticipants(meetingId, userId, isRemovedByHost: true);
 
       // Show success message
       AppToastUtil.showSuccessToast('Participant removed from meeting');
 
-      AppLogger.print(
-        'Host removed participant $userId from meeting $meetingId',
-      );
+      AppLogger.print('Host removed participant $userId from meeting $meetingId');
     } catch (e) {
       AppLogger.print('Error removing participant: $e');
       AppToastUtil.showErrorToast('Error removing participant: $e');
@@ -864,9 +759,7 @@ class MeetingController extends GetxController {
       AppLogger.print('Handling force removal cleanup...');
 
       // Show notification to user
-      AppToastUtil.showErrorToast(
-        'You have been removed from the meeting by the host',
-      );
+      AppToastUtil.showErrorToast('You have been removed from the meeting by the host');
 
       // Leave Agora channel
       _agoraService.leaveChannel();
@@ -902,9 +795,7 @@ class MeetingController extends GetxController {
         isUserSpeaking: muted ? false : participants[index].isUserSpeaking,
       );
     } else {
-      AppLogger.print(
-        'Warning: User $remoteUid not found in participants list',
-      );
+      AppLogger.print('Warning: User $remoteUid not found in participants list');
     }
 
     update();
@@ -912,15 +803,7 @@ class MeetingController extends GetxController {
 
   void onActiveSpeaker(RtcConnection conn, int userId) {
     currentSpeaker = '$userId';
-    participants =
-        participants
-            .map(
-              (e) =>
-                  e.userId == userId
-                      ? e.copyWith(isUserSpeaking: true)
-                      : e.copyWith(isUserSpeaking: false),
-            )
-            .toList();
+    participants = participants.map((e) => e.userId == userId ? e.copyWith(isUserSpeaking: true) : e.copyWith(isUserSpeaking: false)).toList();
     update();
   }
 
@@ -936,11 +819,7 @@ class MeetingController extends GetxController {
       }
 
       // Notify lifecycle manager that user is in a meeting
-      _lifecycleManager.setMeetingStatus(
-        isInMeeting: true,
-        meetingId: meetingId,
-        isHost: isHost,
-      );
+      _lifecycleManager.setMeetingStatus(isInMeeting: true, meetingId: meetingId, isHost: isHost);
 
       // Start heartbeat to keep participant active
       _timeoutService.startHeartbeat(meetingId);
@@ -964,13 +843,8 @@ class MeetingController extends GetxController {
         // The PTT logic will handle muting/unmuting.
         AppLogger.print('User joined: $remoteUid');
         if (isRecordingOn.value && remoteUid != currentUser.userId) {
-          final userList =
-              participants.map((e) => e.userId.toString()).toSet().toList();
-          AppFirebaseService.instance.updateRecordingUserStreamList(
-            meetingId,
-            'individual',
-            [...userList, remoteUid.toString()],
-          );
+          final userList = participants.map((e) => e.userId.toString()).toSet().toList();
+          AppFirebaseService.instance.updateRecordingUserStreamList(meetingId, 'individual', [...userList, remoteUid.toString()]);
         }
       },
       onUserOffline: (connection, remoteUid, reason) => removeUser(remoteUid),
@@ -983,9 +857,7 @@ class MeetingController extends GetxController {
       },
       onAudioVolumeIndication: (rtc, speakers, speakerNumber, totalVolume) {
         if (speakers.isNotEmpty) {
-          final loudest = speakers.reduce(
-            (a, b) => (a.volume ?? 0) > (b.volume ?? 0) ? a : b,
-          );
+          final loudest = speakers.reduce((a, b) => (a.volume ?? 0) > (b.volume ?? 0) ? a : b);
           if ((loudest.volume ?? 0) > 5) {
             // threshold
             activeSpeakerUid.value = loudest.uid ?? 0;
@@ -995,18 +867,13 @@ class MeetingController extends GetxController {
         }
       },
 
-      onUserMuteAudio:
-          (connection, remoteUid, muted) => updateMuteStatus(remoteUid, muted),
+      onUserMuteAudio: (connection, remoteUid, muted) => updateMuteStatus(remoteUid, muted),
       onActiveSpeaker: onActiveSpeaker,
 
       onError: (error, message) {
         print('❌ Agora error: $error,$message');
         AppToastUtil.showErrorToast('❌ Agora error: $error\n$message');
-        AppFirebaseService.instance.verifyAgoraToken(
-          channelName: meetingId,
-          uid: AppLocalStorage.getUserDetails().userId,
-          isHost: isHost,
-        );
+        AppFirebaseService.instance.verifyAgoraToken(channelName: meetingId, uid: AppLocalStorage.getUserDetails().userId, isHost: isHost);
       },
     );
   }
@@ -1049,17 +916,11 @@ class MeetingController extends GetxController {
 
   /// Extend meeting by 30 minutes (convenience method)
   Future<void> extendMeetingTime() async {
-    await extendMeetingWithOptions(
-      additionalMinutes: 30,
-      reason: 'Meeting extended by host during live session',
-    );
+    await extendMeetingWithOptions(additionalMinutes: 30, reason: 'Meeting extended by host during live session');
   }
 
   /// Extend meeting with custom options (additional minutes and reason)
-  Future<void> extendMeetingWithOptions({
-    required int additionalMinutes,
-    String? reason,
-  }) async {
+  Future<void> extendMeetingWithOptions({required int additionalMinutes, String? reason}) async {
     try {
       // Show loading state
       update();
@@ -1075,13 +936,10 @@ class MeetingController extends GetxController {
       // Set extension flag to prevent end time warnings
       _hasExtended = true;
       _timerWarningShown = false; // Hide timer warning dialog
-      _timerWarningDismissed =
-          false; // Reset dismissal flag for future warnings
+      _timerWarningDismissed = false; // Reset dismissal flag for future warnings
 
       // Show success message
-      AppToastUtil.showSuccessToast(
-        'Meeting extended by $additionalMinutes minutes',
-      );
+      AppToastUtil.showSuccessToast('Meeting extended by $additionalMinutes minutes');
 
       // Note: Local model update will be handled by the real-time listener
       // This prevents race conditions and ensures consistency
@@ -1093,66 +951,187 @@ class MeetingController extends GetxController {
     }
   }
 
-  Future<void> toggleRecordingButton() async {
+  Future<void> toggleMixRecordingButton() async {
     if (isRecordingOn.value) {
-      isRecordingOn.value =
-          !(await _firebaseService.stopRecording(meetingId: meetingId) ??
-              false);
-      if (!isRecordingOn.value) {
-        await _firebaseService.meetingsCollection
-            .doc(meetingId)
-            .collection('recordingTrack')
-            .doc(recordingStartTimeEpoch.toString())
-            .update({
-              'stopTime': DateTime.now().toUtc().millisecondsSinceEpoch,
-            });
-        AppToastUtil.showSuccessToast('Recording stopped');
+      // ---------------- STOP ----------------
+      await _firebaseService.stopRecordingMix(meetingId: meetingId);
+
+      final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+
+      final ref = _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(recordingStartTimeEpoch.toString());
+
+      final snap = await ref.get();
+
+      if (snap.exists) {
+        await ref.update({'stopTime': stopTime});
+      } else {
+        await ref.set({
+          'startTime': stopTime, // fallback
+          'stopTime': stopTime,
+          'recovered': true,
+        });
       }
-      await Future.delayed(Duration(seconds: 2), () {});
-      // await _firebaseService.queryAgoraRecordingStatus(meetingId, 'individual');
-      await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix');
+
+      await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": false});
+      isRecordingOn.value = false;
+      AppToastUtil.showSuccessToast('Recording stopped');
     } else {
+      // ---------------- START ----------------
+
       final token = await _firebaseService.getAgoraToken(
-        channelName:
-            meetingId.isNotEmpty ? meetingId : meetingModel.value.meetId,
+        channelName: meetingId.isNotEmpty ? meetingId : meetingModel.value.meetId,
         uid: currentUser.userId,
         isHost: isHost,
       );
-      final result =
-          await _firebaseService.startRecording(
-            meetingId,
-            token: agoraMeetingToken,
-            userId: currentUser.userId,
-          ) ??
-          false;
-      if (!result) {
-        AppToastUtil.showErrorToast('Failed to start recording');
+
+      if (token.isEmpty) {
+        AppToastUtil.showErrorToast('Failed to get Agora token');
         return;
       }
-      await Future.delayed(Duration(seconds: 2), () {});
-      // final v1 = await _firebaseService.queryAgoraRecordingStatus(
-      //   meetingId,
-      //   'individual',
-      // );
-      final v2 = await _firebaseService.queryAgoraRecordingStatus(
-        meetingId,
-        'mix',
-      );
-      isRecordingOn.value =
-          // v1 ||
-          v2;
 
-      if (isRecordingOn.value) {
-        final startTime = DateTime.now().toUtc().millisecondsSinceEpoch;
-        recordingStartTimeEpoch = startTime;
-        await _firebaseService.meetingsCollection
-            .doc(meetingId)
-            .collection('recordingTrack')
-            .doc(startTime.toString())
-            .set({'startTime': startTime});
-        AppToastUtil.showSuccessToast('Recording started');
+      // 1️⃣ START MIX FIRST (mandatory)
+      final mixStarted = await _firebaseService.startRecordingMix(meetingId, token: token);
+
+      if (mixStarted != true) {
+        AppToastUtil.showErrorToast('Recording failed to start');
+        // return;
       }
+
+      // 3️⃣ Poll MIX only (source of truth)
+      bool isMixRecording = false;
+      for (int i = 0; i < 5; i++) {
+        await Future.delayed(const Duration(seconds: 1));
+        isMixRecording = await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix', mixRecorderUid);
+        if (isMixRecording) break;
+      }
+
+      if (!isMixRecording) {
+        AppToastUtil.showErrorToast('mix Recording failed to start');
+        return;
+      }
+
+      // 4️⃣ Save metadata (CRITICAL)
+      final startTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+      recordingStartTimeEpoch = startTime;
+
+      await _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(startTime.toString()).set({
+        'startTime': startTime,
+        'mix': mixStarted,
+        'individual': false,
+      });
+      await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": true});
+
+      isRecordingOn.value = true;
+      AppToastUtil.showSuccessToast('Recording started');
     }
+
     update();
   }
+  // Future<void> toggleRecordingButton() async {
+  //   if (isRecordingOn.value) {
+  //     // ---------------- STOP ----------------
+  //     await _firebaseService.stopRecordingMix(meetingId: meetingId);
+
+  //     // best-effort stop
+  //     await _firebaseService.stopRecordingIndividuals(meetingId: meetingId);
+
+  //     final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+
+  //     final ref = _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(recordingStartTimeEpoch.toString());
+
+  //     final snap = await ref.get();
+
+  //     if (snap.exists) {
+  //       await ref.update({'stopTime': stopTime});
+  //     } else {
+  //       await ref.set({
+  //         'startTime': stopTime, // fallback
+  //         'stopTime': stopTime,
+  //         'recovered': true,
+  //       });
+  //     }
+
+  //     await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": false});
+  //     isRecordingOn.value = false;
+  //     AppToastUtil.showSuccessToast('Recording stopped');
+  //   } else {
+  //     // ---------------- START ----------------
+
+  //     final token = await _firebaseService.getAgoraToken(
+  //       channelName: meetingId.isNotEmpty ? meetingId : meetingModel.value.meetId,
+  //       uid: currentUser.userId,
+  //       isHost: isHost,
+  //     );
+
+  //     if (token.isEmpty) {
+  //       AppToastUtil.showErrorToast('Failed to get Agora token');
+  //       return;
+  //     }
+
+  //     // 1️⃣ START MIX FIRST (mandatory)
+  //     final mixStarted = await _firebaseService.startRecordingMix(meetingId, token: token);
+
+  //     if (mixStarted != true) {
+  //       AppToastUtil.showErrorToast('Recording failed to start');
+  //       // return;
+  //     }
+
+  //     // 2️⃣ START INDIVIDUAL (best-effort)
+  //     final individualStarted = await _firebaseService.startRecordingIndividual(meetingId, token: token) ?? false;
+
+  //     // 3️⃣ Poll MIX only (source of truth)
+  //     bool isMixRecording = false;
+  //     for (int i = 0; i < 5; i++) {
+  //       await Future.delayed(const Duration(seconds: 1));
+  //       isMixRecording = await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix', mixRecorderUid);
+  //       if (isMixRecording) break;
+  //     }
+
+  //     if (!isMixRecording) {
+  //       AppToastUtil.showErrorToast('mix Recording failed to start');
+  //       // return;
+  //     }
+
+  //     bool isIndRecording = false;
+  //     for (int i = 0; i < 5; i++) {
+  //       await Future.delayed(const Duration(seconds: 1));
+  //       isIndRecording = await _firebaseService.queryAgoraRecordingStatus(meetingId, 'individual', individualRecorderUid);
+  //       if (isIndRecording) break;
+  //     }
+
+  //     if (!isIndRecording) {
+  //       AppToastUtil.showErrorToast('Recording failed to start');
+  //       return;
+  //     }
+
+  //     // 4️⃣ Save metadata (CRITICAL)
+  //     final startTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+  //     recordingStartTimeEpoch = startTime;
+
+  //     await _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(startTime.toString()).set({
+  //       'startTime': startTime,
+  //       'mix': mixStarted,
+  //       'individual': false,
+  //     });
+
+  //     await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": true});
+
+  //     //INDIVIDUAL RECORDING START LOGIC
+  //     final individualStartTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+  //     recordingStartTimeEpoch = individualStartTime;
+
+  //     await _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(individualStartTime.toString()).set({
+  //       'startTime': individualStartTime,
+  //       'mix': false,
+  //       'individual': individualStarted,
+  //     });
+
+  //     await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": true});
+
+  //     isRecordingOn.value = true;
+  //     AppToastUtil.showSuccessToast('Recording started');
+  //   }
+
+  //   update();
+  // }
 }

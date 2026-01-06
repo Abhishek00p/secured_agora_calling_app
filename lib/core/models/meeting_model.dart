@@ -35,6 +35,7 @@ class MeetingModel {
 
   // Detailed participant tracking
   final List<ParticipantLog> participantHistory;
+  final bool isRecordingOn;
 
   const MeetingModel({
     required this.meetId,
@@ -63,6 +64,7 @@ class MeetingModel {
     required this.actualDuration,
     this.totalExtensions,
     required this.participantHistory,
+    this.isRecordingOn = false,
   });
 
   bool get isEmpty => this == MeetingModel.toEmpty();
@@ -135,6 +137,7 @@ class MeetingModel {
       actualDuration: _toDuration(json['actualDuration']),
       totalExtensions: json['totalExtensions'],
       participantHistory: _toParticipantLogList(json['participantHistory']),
+      isRecordingOn: json['isRecordingOn'] ?? false,
     );
   }
 
@@ -166,6 +169,7 @@ class MeetingModel {
     'totalExtensions': totalExtensions,
     'participantHistory':
         participantHistory.map((log) => log.toJson()).toList(),
+    "isRecordingOn": isRecordingOn,
   };
 
   static DateTime _toDateTime(dynamic value) {

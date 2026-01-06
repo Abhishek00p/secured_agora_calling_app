@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:secured_calling/core/config/app_config.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/firebase_function_logger.dart';
@@ -22,8 +23,8 @@ class AppHttpService {
     // if (kDebugMode) {
     //   // Use local emulator in debug mode
     //   if (Platform.isAndroid) {
-    // return 'http://192.168.31.41:3000/';
-    return 'https://secured-agora-calling-app.onrender.com/';
+    // return 'http://192.168.31.226:3000/';
+    return AppConfig.baseUrl.isEmpty ? 'https://18b4247dda9c.ngrok-free.app/' : AppConfig.baseUrl;
     //   } else if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
     //     return 'http://127.0.0.1:5001/secure-calling-2025/us-central1/';
     //   } else {
@@ -54,15 +55,10 @@ class AppHttpService {
   }
 
   /// Generic GET request
-  Future<Map<String, dynamic>?> get(
-    String endpoint, {
-    Map<String, String>? queryParams,
-    bool includeAuth = true,
-  }) async {
+  Future<Map<String, dynamic>?> get(String endpoint, {Map<String, String>? queryParams, bool includeAuth = true}) async {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
-      final finalUri =
-          queryParams != null ? uri.replace(queryParameters: queryParams) : uri;
+      final finalUri = queryParams != null ? uri.replace(queryParameters: queryParams) : uri;
 
       final response = await FirebaseFunctionLogger.instance.logFunctionCall(
         functionName: endpoint,
@@ -70,11 +66,7 @@ class AppHttpService {
         url: finalUri.toString(),
         headers: _getHeaders(includeAuth: includeAuth),
         body: '',
-        httpCall:
-            () => http.get(
-              finalUri,
-              headers: _getHeaders(includeAuth: includeAuth),
-            ),
+        httpCall: () => http.get(finalUri, headers: _getHeaders(includeAuth: includeAuth)),
       );
 
       return _handleResponse(response);
@@ -89,11 +81,7 @@ class AppHttpService {
   }
 
   /// Generic POST request
-  Future<Map<String, dynamic>?> post(
-    String endpoint, {
-    Map<String, dynamic>? body,
-    bool includeAuth = true,
-  }) async {
+  Future<Map<String, dynamic>?> post(String endpoint, {Map<String, dynamic>? body, bool includeAuth = true}) async {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
@@ -104,12 +92,7 @@ class AppHttpService {
         url: uri.toString(),
         headers: _getHeaders(includeAuth: includeAuth),
         body: requestBody,
-        httpCall:
-            () => http.post(
-              uri,
-              headers: _getHeaders(includeAuth: includeAuth),
-              body: requestBody,
-            ),
+        httpCall: () => http.post(uri, headers: _getHeaders(includeAuth: includeAuth), body: requestBody),
       );
 
       return _handleResponse(response);
@@ -124,11 +107,7 @@ class AppHttpService {
   }
 
   /// Generic PUT request
-  Future<Map<String, dynamic>?> put(
-    String endpoint, {
-    Map<String, dynamic>? body,
-    bool includeAuth = true,
-  }) async {
+  Future<Map<String, dynamic>?> put(String endpoint, {Map<String, dynamic>? body, bool includeAuth = true}) async {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
@@ -139,12 +118,7 @@ class AppHttpService {
         url: uri.toString(),
         headers: _getHeaders(includeAuth: includeAuth),
         body: requestBody,
-        httpCall:
-            () => http.put(
-              uri,
-              headers: _getHeaders(includeAuth: includeAuth),
-              body: requestBody,
-            ),
+        httpCall: () => http.put(uri, headers: _getHeaders(includeAuth: includeAuth), body: requestBody),
       );
 
       return _handleResponse(response);
@@ -159,11 +133,7 @@ class AppHttpService {
   }
 
   /// Generic DELETE request
-  Future<Map<String, dynamic>?> delete(
-    String endpoint, {
-    Map<String, dynamic>? body,
-    bool includeAuth = true,
-  }) async {
+  Future<Map<String, dynamic>?> delete(String endpoint, {Map<String, dynamic>? body, bool includeAuth = true}) async {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
@@ -174,12 +144,7 @@ class AppHttpService {
         url: uri.toString(),
         headers: _getHeaders(includeAuth: includeAuth),
         body: requestBody,
-        httpCall:
-            () => http.delete(
-              uri,
-              headers: _getHeaders(includeAuth: includeAuth),
-              body: requestBody,
-            ),
+        httpCall: () => http.delete(uri, headers: _getHeaders(includeAuth: includeAuth), body: requestBody),
       );
 
       return _handleResponse(response);
@@ -204,15 +169,10 @@ class AppHttpService {
     } else {
       try {
         final errorData = jsonDecode(response.body);
-        final errorMessage =
-            errorData['error_message'] ??
-            errorData['message'] ??
-            'Request failed with status ${response.statusCode}';
+        final errorMessage = errorData['error_message'] ?? errorData['message'] ?? 'Request failed with status ${response.statusCode}';
         return {'success': false, 'error_message': errorMessage};
       } catch (e) {
-        AppToastUtil.showErrorToast(
-          'Request failed with status ${response.statusCode}: ${response.reasonPhrase}',
-        );
+        AppToastUtil.showErrorToast('Request failed with status ${response.statusCode}: ${response.reasonPhrase}');
       }
     }
   }
@@ -226,19 +186,13 @@ class AppHttpService {
     int userRole = 0,
   }) async {
     try {
-      final doesTokenExist = await doesTokenAlreadyExistInFirebase(
-        channelName: channelName,
-        uid: uid,
-      );
+      final doesTokenExist = await doesTokenAlreadyExistInFirebase(channelName: channelName, uid: uid);
       if (doesTokenExist['exists'] == true) {
         return doesTokenExist['token'];
       }
 
       // Use the new CRUD function
-      final response = await post(
-        'api/agora/token',
-        body: {'channelName': channelName, 'uid': uid, 'userRole': userRole},
-      );
+      final response = await post('api/agora/token', body: {'channelName': channelName, 'uid': uid, 'userRole': userRole});
       if (response == null) {
         AppToastUtil.showErrorToast('Something went wrong, please try again');
         return null;
@@ -251,15 +205,11 @@ class AppHttpService {
           channelName: channelName,
           uid: uid,
           token: response['data']['token'],
-          expiryTime:
-              response['expireTime'] ??
-              DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
+          expiryTime: response['expireTime'] ?? DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
         );
         return response['data']['token'];
       } else {
-        AppToastUtil.showErrorToast(
-          response['error_message'] ?? "Token not found in response",
-        );
+        AppToastUtil.showErrorToast(response['error_message'] ?? "Token not found in response");
       }
     } on SocketException {
       AppToastUtil.showErrorToast('No Internet connection');
@@ -272,17 +222,10 @@ class AppHttpService {
   }
 
   /// verify token for a user
-  Future<String?> verifyAgoraToken({
-    required String channelName,
-    required int uid,
-    required String userRole,
-  }) async {
+  Future<String?> verifyAgoraToken({required String channelName, required int uid, required String userRole}) async {
     try {
       // Use the new CRUD function
-      final response = await post(
-        'verifyToken',
-        body: {'channelName': channelName, 'uid': uid, 'userRole': userRole},
-      );
+      final response = await post('verifyToken', body: {'channelName': channelName, 'uid': uid, 'userRole': userRole});
       if (response == null) {
         AppToastUtil.showErrorToast('Something went wrong, please try again');
         return null;
@@ -292,9 +235,7 @@ class AppHttpService {
         print('Token verified successfully');
         return response['token'];
       } else {
-        AppToastUtil.showErrorToast(
-          response['error_message'] ?? "Token not found in response",
-        );
+        AppToastUtil.showErrorToast(response['error_message'] ?? "Token not found in response");
       }
     } on SocketException {
       AppToastUtil.showErrorToast('No Internet connection');
@@ -307,25 +248,16 @@ class AppHttpService {
   }
 
   //store token in firebase
-  Future<void> storeTokenInFirebase({
-    required String channelName,
-    required int uid,
-    required String token,
-    required int expiryTime,
-  }) async {
+  Future<void> storeTokenInFirebase({required String channelName, required int uid, required String token, required int expiryTime}) async {
     try {
-      final meetingData = await AppFirebaseService.instance.getMeetingData(
-        channelName,
-      );
+      final meetingData = await AppFirebaseService.instance.getMeetingData(channelName);
       if (meetingData == null) {
         AppToastUtil.showErrorToast('No meeting data found for the channel');
         return;
       }
       final tokens = meetingData['tokens'] ?? {};
       tokens['$uid'] = {'token': token, 'expiry_time': expiryTime};
-      await AppFirebaseService.instance.meetingsCollection
-          .doc(channelName)
-          .update({'tokens': tokens});
+      await AppFirebaseService.instance.meetingsCollection.doc(channelName).update({'tokens': tokens});
       AppLogger.print('Token stored successfully');
     } on SocketException {
       AppToastUtil.showErrorToast('No Internet connection');
@@ -334,17 +266,10 @@ class AppHttpService {
     }
   }
 
-  Future<Map<String, dynamic>> doesTokenAlreadyExistInFirebase({
-    required String channelName,
-    required int uid,
-  }) async {
+  Future<Map<String, dynamic>> doesTokenAlreadyExistInFirebase({required String channelName, required int uid}) async {
     try {
-      final meetingData = await AppFirebaseService.instance.getMeetingData(
-        channelName,
-      );
-      if (meetingData == null ||
-          meetingData['tokens'] == null ||
-          meetingData['tokens']['$uid'] == null) {
+      final meetingData = await AppFirebaseService.instance.getMeetingData(channelName);
+      if (meetingData == null || meetingData['tokens'] == null || meetingData['tokens']['$uid'] == null) {
         return {'exists': false}; // No meeting data found for the channel
       }
       final expiryTime = meetingData['tokens']['$uid']['expiry_time'];
@@ -371,22 +296,9 @@ class AppHttpService {
   }
 
   /// send Notification to user
-  Future<void> sendPushNotification({
-    required String fcmToken,
-    required String title,
-    required String body,
-    Map<String, dynamic>? payload,
-  }) async {
+  Future<void> sendPushNotification({required String fcmToken, required String title, required String body, Map<String, dynamic>? payload}) async {
     try {
-      final response = await post(
-        'sendNotification',
-        body: {
-          'fcmToken': fcmToken,
-          'title': title,
-          'body': body,
-          'payload': payload ?? {},
-        },
-      );
+      final response = await post('sendNotification', body: {'fcmToken': fcmToken, 'title': title, 'body': body, 'payload': payload ?? {}});
 
       print('Notification sent: $response');
     } catch (e) {

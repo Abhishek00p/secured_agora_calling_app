@@ -3,7 +3,9 @@ import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
+import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/models/recording_file_model.dart';
+import 'package:secured_calling/core/models/recording_track_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
@@ -27,7 +29,7 @@ class MeetingDetailController extends GetxController {
   RxInt currentTabIndex = 0.obs;
 
   RxList<RecordingFileModel> mixRecordings = <RecordingFileModel>[].obs;
-  RxList<RecordingFileModel> individualRecordings = <RecordingFileModel>[].obs;
+  RxList<SpeakingEventModel> individualRecordings = <SpeakingEventModel>[].obs;
   // Stream subscriptions
   StreamSubscription<DocumentSnapshot>? _meetingStreamSubscription;
 
@@ -40,8 +42,8 @@ class MeetingDetailController extends GetxController {
     super.onInit();
     loadMeetingDetails();
     _initializeRealTimeUpdates();
-    fetchIndividualRecordings();
     // fetchAllIndividualRecordings();
+    fetchIndividualRecordings();
     fetchMixRecordings();
   }
 
@@ -225,16 +227,9 @@ class MeetingDetailController extends GetxController {
       isMixRecordingLoading.value = true;
       final items = <RecordingFileModel>[];
 
-      final firestoreRecordingTrack =
-          (await AppFirebaseService.instance.meetingsCollection
-                  .doc(meetingId)
-                  .collection('recordingTrack')
-                  .get())
-              .docs;
+      final firestoreRecordingTrack = (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
 
-      final allRecordings =
-          await AppFirebaseService.instance.getAllMixRecordings(meetingId) ??
-          [];
+      final allRecordings = await AppFirebaseService.instance.getAllMixRecordings(meetingId) ?? [];
 
       for (final doc in firestoreRecordingTrack) {
         final itemData = doc.data();
@@ -251,7 +246,7 @@ class MeetingDetailController extends GetxController {
           final recTime = element.recordingTime;
           if (recTime == null) return false;
 
-          return recTime.isAfter(startTime) && recTime.isBefore(stopTime);
+          return recTime.isAfter(startTime) && recTime.isBefore(stopTime.add(Duration(minutes: 1)));
         });
 
         for (final item in matched) {
@@ -282,101 +277,37 @@ class MeetingDetailController extends GetxController {
     try {
       isIndividualRecordingLoading.value = true;
 
-      final items = <RecordingFileModel>[];
-
-      // 🔹 fetch all individual recordings from backend
-      final allIndividualRecordings =
-          await AppFirebaseService.instance.getAllIndividualRecordings(
-            meetingId,
-          ) ??
-          [];
-
-      // 🔹 group recordings by userId for faster lookup
-      final recordingsByUser = <String, List<RecordingFileModel>>{};
-
-      for (final rec in allIndividualRecordings) {
-        if (rec.userId == null) continue;
-        recordingsByUser.putIfAbsent(rec.userId!.toString(), () => []).add(rec);
-      }
-
-      // 🔹 fetch participants
-      final participantsSnap =
-          await AppFirebaseService.instance.meetingsCollection
-              .doc(meetingId)
-              .collection('participants')
-              .get();
-
-      for (final participantDoc in participantsSnap.docs) {
-        final userId = participantDoc.id;
-
-        final userRecordings = recordingsByUser[userId];
-        if (userRecordings == null || userRecordings.isEmpty) continue;
-
-        // 🔹 fetch speaking events for this user
-        final speakingEventsSnap =
-            await AppFirebaseService.instance.meetingsCollection
-                .doc(meetingId)
-                .collection('participants')
-                .doc(userId)
-                .collection('speakingEvents')
-                .get();
-
-        for (final eventDoc in speakingEventsSnap.docs) {
-          final data = eventDoc.data();
-
-          if (data['start'] == null || data['stop'] == null) continue;
-
-          final startTime = (data['start'] as int).toDateTime;
-          final stopTime = (data['stop'] as int).toDateTime;
-
-          // ✅ match recordings inside speaking window
-          final matched = userRecordings.where((rec) {
-            final recTime = rec.recordingTime;
-            if (recTime == null) return false;
-
-            return recTime.isAfter(startTime) && recTime.isBefore(stopTime);
-          });
-
-          for (final rec in matched) {
-            items.add(
-              RecordingFileModel(
-                key: rec.key,
-                playableUrl: rec.playableUrl,
-                lastModified: rec.lastModified,
-                recordingTime: rec.recordingTime,
-                startTime: startTime,
-                stopTime: stopTime,
-                userId: int.tryParse(userId),
-                userName: rec.userName,
-                size: rec.size,
-              ),
-            );
-          }
-        }
-      }
-
-      individualRecordings.value = items;
-      isIndividualRecordingLoading.value = false;
+      individualRecordings.value = await AppFirebaseService.instance.getAllIndividualRecordings(meetingId) ?? [];
     } catch (e, st) {
-      AppLogger.print(
-        "Failed to fetch individual recording in controller : $e\n$st",
-      );
+      AppLogger.print("Failed to fetchIndividualRecordings : $e\n$st");
       individualRecordings.clear();
+    } finally {
       isIndividualRecordingLoading.value = false;
     }
   }
+  // Future<void> getAllUserWiseRecordings() async {
+  //   final eventsSnap =
+  //       await FirebaseFirestore.instance.collectionGroup('speakingEvents').where('meetingId', isEqualTo: meetingId).orderBy('start').get();
 
-  //   Future<List<dynamic>?> fetchIndividualRecordingsByUserId(
-  //     String userId,
-  //   ) async {
-  //     try {
-  //       return await AppFirebaseService.instance
-  //               .getAllIndividualRecordingsByUserId(meetingId, userId: userId) ??
-  //           [];
-  //     } catch (e) {
-  //       AppLogger.print(
-  //         "Failed to fetch individual b userid recording in controller : $e",
+  //   List<RecordingTrackModel> data = [];
+  //   for (var doc in eventsSnap.docs) {
+  //     final docData = RecordingTrackModel.fromJson(doc.data());
+  //     final recordedFile = mixRecordings.firstWhereOrNull(
+  //       (e) => (e.startTime?.isBefore(docData.startTime.toDateTime) ?? false) && (e.stopTime?.isAfter(docData.endTime.toDateTime) ?? false),
+  //     );
+
+  //     if (recordedFile != null) {
+  //       data.add(
+  //         IndividualRecordingModel(
+  //               url: recordedFile.playableUrl,
+  //               startTime: docData.startTime.toDateTime,
+  //               stopTime: docData.endTime.toDateTime,
+  //               recordingTime: recordedFile.recordingTime,
+  //               userId: int.tryParse(doc.reference.parent.parent?.id ?? '0'),
+  //             )
+  //             as RecordingTrackModel,
   //       );
   //     }
   //   }
+  // }
 }

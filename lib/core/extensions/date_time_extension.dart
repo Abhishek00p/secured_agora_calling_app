@@ -12,21 +12,27 @@ extension AppDateTimeExtension on DateTime? {
     final date = this;
     if (date == null) return false;
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   bool get isTomorrow {
     final date = this;
     if (date == null) return false;
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day + 1;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day + 1;
   }
 
   bool get isYesterday {
     final date = this;
     if (date == null) return false;
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day - 1;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day - 1;
   }
 
   String get meetStartTime {
@@ -66,6 +72,17 @@ extension AppDateTimeExtension on DateTime? {
     final hour = date.hour > 12 ? date.hour - 12 : date.hour;
     final minute = date.minute < 10 ? '0${date.minute}' : date.minute;
     final formattedTime = '$hour:$minute $timeofDate';
+    return formattedTime;
+  }
+
+  String get formatTimeWithSeconds {
+    final date = this;
+    if (date == null) return 'N/A';
+    final timeofDate = date.hour >= 12 ? 'PM' : 'AM';
+    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
+    final minute = date.minute < 10 ? '0${date.minute}' : date.minute;
+    final second = date.second < 10 ? '0${date.second}' : date.second;
+    final formattedTime = '$hour:$minute:$second $timeofDate';
     return formattedTime;
   }
 

@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/app/app.dart';
+import 'package:secured_calling/core/config/app_config.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/app_lifecycle_manager.dart';
 import 'package:secured_calling/core/services/app_sound_service.dart';
@@ -11,9 +12,12 @@ import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-
-
+  try {
+    await Firebase.initializeApp();
+    await AppConfig.initializeRemoteConfig();
+  } catch (e) {
+    debugPrint("Firebase initialization error: $e");
+  }
 
   await AppLocalStorage.init();
   // Initialize AppLifecycleManager
