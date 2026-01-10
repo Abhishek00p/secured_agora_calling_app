@@ -492,8 +492,8 @@ class MeetingController extends GetxController {
       speakingEventDocId = dateTimeEpoch.toString();
       await _firebaseService.meetingsCollection
           .doc(meetingId)
-          .collection('recordingTracks')
-          .doc(speakingEventDocId)
+          .collection('recordingTrack')
+          .doc(recordingStartTimeEpoch.toString())
           .collection('speakingEvents')
           .doc(speakingEventDocId)
           .set({'start': dateTimeEpoch, 'userId': currentUser.userId, 'userName': currentUser.name});
@@ -506,20 +506,26 @@ class MeetingController extends GetxController {
     });
     await _agoraService.muteLocalAudio(true);
     isMuted.value = true;
-    final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
-    speakingEventDocId = speakingEventDocId.trim().isEmpty ? stopTime.toString() : speakingEventDocId;
-    final docRef = _firebaseService.meetingsCollection.doc(meetingId).collection('speakingEvents').doc(speakingEventDocId);
+    if (isRecordingOn.value) {
+      final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+      speakingEventDocId = speakingEventDocId.trim().isEmpty ? stopTime.toString() : speakingEventDocId;
+      final docRef = _firebaseService.meetingsCollection
+          .doc(meetingId)
+          .collection('recordingTrack')
+          .doc(recordingStartTimeEpoch.toString())
+          .collection('speakingEvents')
+          .doc(speakingEventDocId);
 
-    final docSnap = await docRef.get();
+      final docSnap = await docRef.get();
 
-    if (docSnap.exists) {
-      // ✅ Document exists → safe to update
-      await docRef.update({'stop': stopTime});
-    } else {
-      await docRef.set({'start': stopTime, 'stop': stopTime, 'recovered': true});
+      if (docSnap.exists) {
+        // ✅ Document exists → safe to update
+        await docRef.update({'stop': stopTime});
+      } else {
+        await docRef.set({'start': stopTime, 'stop': stopTime, 'recovered': true});
+      }
+      speakingEventDocId = '';
     }
-
-    speakingEventDocId = '';
   }
 
   void updateMuteStatesForPTT() {
@@ -588,20 +594,7 @@ class MeetingController extends GetxController {
     isOnSpeaker.toggle();
     _agoraService.engine?.setEnableSpeakerphone(isOnSpeaker.value);
     //store data in firestore
-    if (isOnSpeaker.value) {
-      final dateTimeEpoch = DateTime.now().toUtc().millisecondsSinceEpoch;
-      speakingEventDocId = dateTimeEpoch.toString();
-      await _firebaseService.meetingsCollection.doc(meetingId).collection('speakingEvents').doc(speakingEventDocId).set({
-        'start': dateTimeEpoch,
-        'userId': currentUser.userId,
-        'userName': currentUser.name,
-      });
-    } else {
-      await _firebaseService.meetingsCollection.doc(meetingId).collection('speakingEvents').doc(speakingEventDocId).update({
-        'stop': DateTime.now().toUtc().millisecondsSinceEpoch,
-      });
-      speakingEventDocId = '';
-    }
+
     update();
   }
 
@@ -1019,6 +1012,7 @@ class MeetingController extends GetxController {
         'mix': mixStarted,
         'individual': false,
       });
+
       await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": true});
 
       isRecordingOn.value = true;
@@ -1027,111 +1021,4 @@ class MeetingController extends GetxController {
 
     update();
   }
-  // Future<void> toggleRecordingButton() async {
-  //   if (isRecordingOn.value) {
-  //     // ---------------- STOP ----------------
-  //     await _firebaseService.stopRecordingMix(meetingId: meetingId);
-
-  //     // best-effort stop
-  //     await _firebaseService.stopRecordingIndividuals(meetingId: meetingId);
-
-  //     final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
-
-  //     final ref = _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(recordingStartTimeEpoch.toString());
-
-  //     final snap = await ref.get();
-
-  //     if (snap.exists) {
-  //       await ref.update({'stopTime': stopTime});
-  //     } else {
-  //       await ref.set({
-  //         'startTime': stopTime, // fallback
-  //         'stopTime': stopTime,
-  //         'recovered': true,
-  //       });
-  //     }
-
-  //     await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": false});
-  //     isRecordingOn.value = false;
-  //     AppToastUtil.showSuccessToast('Recording stopped');
-  //   } else {
-  //     // ---------------- START ----------------
-
-  //     final token = await _firebaseService.getAgoraToken(
-  //       channelName: meetingId.isNotEmpty ? meetingId : meetingModel.value.meetId,
-  //       uid: currentUser.userId,
-  //       isHost: isHost,
-  //     );
-
-  //     if (token.isEmpty) {
-  //       AppToastUtil.showErrorToast('Failed to get Agora token');
-  //       return;
-  //     }
-
-  //     // 1️⃣ START MIX FIRST (mandatory)
-  //     final mixStarted = await _firebaseService.startRecordingMix(meetingId, token: token);
-
-  //     if (mixStarted != true) {
-  //       AppToastUtil.showErrorToast('Recording failed to start');
-  //       // return;
-  //     }
-
-  //     // 2️⃣ START INDIVIDUAL (best-effort)
-  //     final individualStarted = await _firebaseService.startRecordingIndividual(meetingId, token: token) ?? false;
-
-  //     // 3️⃣ Poll MIX only (source of truth)
-  //     bool isMixRecording = false;
-  //     for (int i = 0; i < 5; i++) {
-  //       await Future.delayed(const Duration(seconds: 1));
-  //       isMixRecording = await _firebaseService.queryAgoraRecordingStatus(meetingId, 'mix', mixRecorderUid);
-  //       if (isMixRecording) break;
-  //     }
-
-  //     if (!isMixRecording) {
-  //       AppToastUtil.showErrorToast('mix Recording failed to start');
-  //       // return;
-  //     }
-
-  //     bool isIndRecording = false;
-  //     for (int i = 0; i < 5; i++) {
-  //       await Future.delayed(const Duration(seconds: 1));
-  //       isIndRecording = await _firebaseService.queryAgoraRecordingStatus(meetingId, 'individual', individualRecorderUid);
-  //       if (isIndRecording) break;
-  //     }
-
-  //     if (!isIndRecording) {
-  //       AppToastUtil.showErrorToast('Recording failed to start');
-  //       return;
-  //     }
-
-  //     // 4️⃣ Save metadata (CRITICAL)
-  //     final startTime = DateTime.now().toUtc().millisecondsSinceEpoch;
-  //     recordingStartTimeEpoch = startTime;
-
-  //     await _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(startTime.toString()).set({
-  //       'startTime': startTime,
-  //       'mix': mixStarted,
-  //       'individual': false,
-  //     });
-
-  //     await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": true});
-
-  //     //INDIVIDUAL RECORDING START LOGIC
-  //     final individualStartTime = DateTime.now().toUtc().millisecondsSinceEpoch;
-  //     recordingStartTimeEpoch = individualStartTime;
-
-  //     await _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(individualStartTime.toString()).set({
-  //       'startTime': individualStartTime,
-  //       'mix': false,
-  //       'individual': individualStarted,
-  //     });
-
-  //     await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": true});
-
-  //     isRecordingOn.value = true;
-  //     AppToastUtil.showSuccessToast('Recording started');
-  //   }
-
-  //   update();
-  // }
 }

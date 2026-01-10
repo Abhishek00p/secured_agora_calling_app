@@ -4,11 +4,11 @@ import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
-import 'package:secured_calling/features/meeting/widgets/audio_player.dart';
 import 'package:secured_calling/features/meeting/widgets/recording_audio_row.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
 import 'package:secured_calling/widgets/meeting_info_card.dart';
+import 'package:secured_calling/widgets/no_data_found_widget.dart';
 import 'package:secured_calling/widgets/participant_list_item.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/features/meeting/controllers/meeting_detail_controller.dart';
@@ -41,7 +41,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
           controller.isMixRecordingLoading.value
               ? Center(child: CircularProgressIndicator.adaptive())
               : controller.mixRecordings.isEmpty
-              ? Text('No mix recordings available.')
+              ? NoDataFoundWidget(message: 'No mix recordings available.')
               : ListView.builder(
                 physics: NeverScrollableScrollPhysics(),
                 itemCount: controller.mixRecordings.length,
@@ -64,7 +64,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
           controller.isIndividualRecordingLoading.value
               ? Center(child: CircularProgressIndicator.adaptive())
               : controller.individualRecordings.isEmpty
-              ? Text('No individual recordings available.')
+              ? NoDataFoundWidget(message: 'No individual recordings available.')
               : ListView.builder(
                 physics: NeverScrollableScrollPhysics(),
                 itemCount: controller.individualRecordings.length,
@@ -173,6 +173,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 getMixRecordingListWidget(),
                                 SizedBox(height: 16),

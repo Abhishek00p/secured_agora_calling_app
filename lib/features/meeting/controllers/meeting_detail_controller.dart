@@ -173,55 +173,6 @@ class MeetingDetailController extends GetxController {
     return meetingStatus == 'upcoming';
   }
 
-  // Future<void> fetchMixRecordings() async {
-  //   try {
-  //     final items = <RecordingFileModel>[];
-  //     final firestoreRecordingTrack =
-  //         (await AppFirebaseService.instance.meetingsCollection
-  //                 .doc(meetingId)
-  //                 .collection('recordingTrack')
-  //                 .get())
-  //             .docs;
-  //     final allRecordings =
-  //         await AppFirebaseService.instance.getAllMixRecordings(meetingId) ??
-  //         [];
-  //     for (final doc in firestoreRecordingTrack) {
-  //       final itemData = doc.data();
-  //       final startTime =
-  //           itemData['startTime'] != null
-  //               ? (itemData['startTime'] as int).toDateTime
-  //               : DateTime.now();
-  //       final stopTime =
-  //           itemData['stopTime'] != null
-  //               ? (itemData['stopTime'] as int).toDateTime
-  //               : DateTime.now();
-
-  //       final item = allRecordings.firstWhere(
-  //         (element) =>
-  //             (element.lastModified ?? DateTime.now()).isAfter(startTime) &&
-  //             (element.lastModified ?? DateTime.now()).isBefore(stopTime),
-  //         orElse: () => RecordingFileModel.empty(),
-  //       );
-  //       if (item.isNotEmpty) {
-  //         items.add(
-  //           RecordingFileModel(
-  //             key: item.key,
-  //             playableUrl: item.playableUrl,
-  //             lastModified: item.lastModified,
-  //             startTime: startTime,
-  //             stopTime: stopTime,
-  //             size: item.size,
-  //           ),
-  //         );
-  //       }
-  //     }
-  //     mixRecordings.value = items;
-  //   } catch (e) {
-  //     AppLogger.print("Failed to fetch mix recording in controller : $e");
-  //     mixRecordings.clear();
-  //   }
-  // }
-
   Future<void> fetchMixRecordings() async {
     try {
       isMixRecordingLoading.value = true;

@@ -13,7 +13,7 @@ class MeetingDialogController extends GetxController {
   final titleController = TextEditingController();
   final passwordController = TextEditingController();
 
-  final durations = [...List.generate(5, (i) => (i + 1) * 5), ...List.generate(14, (i) => (i + 1) * 30)]; // in minutes
+  final durations = [...List.generate(14, (i) => (i + 1) * 30)]; // in minutes
   final selectedDuration = 30.obs;
   final maxParticipants = RxInt(5); // default value
   final isScheduled = false.obs;
@@ -82,7 +82,7 @@ class MeetingUtil {
         hostName: AppLocalStorage.getUserDetails().name,
         meetingName: meetingName,
         scheduledStartTime: result['scheduledStart'] ?? now,
-        
+
         requiresApproval: result['isApprovalRequired'] ?? false,
         maxParticipants: result['maxParticipants'] ?? 45,
         password: result['password']?.isEmpty ?? true ? null : result['password'],
@@ -105,11 +105,7 @@ class MeetingUtil {
         Navigator.pushNamed(
           context,
           AppRouter.meetingRoomRoute,
-          arguments: {
-            'channelName': meetingData['channelName'] ?? 'default_channel',
-            'isHost': true,
-            'meetingId': doc.id,
-          },
+          arguments: {'channelName': meetingData['channelName'] ?? 'default_channel', 'isHost': true, 'meetingId': doc.id},
         );
       } else {
         AppToastUtil.showInfoToast('Meeting "$meetingName" scheduled successfully');
@@ -120,18 +116,10 @@ class MeetingUtil {
     }
   }
 
-  static Future<void> startScheduledMeeting({
-    required BuildContext context,
-    required String meetingId,
-    required String channelName,
-  }) async {
+  static Future<void> startScheduledMeeting({required BuildContext context, required String meetingId, required String channelName}) async {
     try {
       await firebaseService.startMeeting(meetingId);
-      Navigator.pushNamed(
-        context,
-        AppRouter.meetingRoomRoute,
-        arguments: {'channelName': channelName, 'isHost': true, 'meetingId': meetingId},
-      );
+      Navigator.pushNamed(context, AppRouter.meetingRoomRoute, arguments: {'channelName': channelName, 'isHost': true, 'meetingId': meetingId});
     } catch (e) {
       AppToastUtil.showErrorToast('Error starting meeting: $e');
     }
@@ -146,7 +134,6 @@ class MeetingUtil {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       backgroundColor: Theme.of(Get.context!).dialogBackgroundColor,
       builder: (context) {
-        print('member: ${member.toMap()}');
         return Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 24),
           child: SingleChildScrollView(
@@ -156,11 +143,7 @@ class MeetingUtil {
                 children: [
                   Text('Create Meeting', style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 20),
-                  AppTextFormField(
-                    controller: controller.titleController,
-                    labelText: 'Meeting Title',
-                    type: AppTextFormFieldType.text,
-                  ),
+                  AppTextFormField(controller: controller.titleController, labelText: 'Meeting Title', type: AppTextFormFieldType.text),
                   const SizedBox(height: 16),
                   AppTextFormField(
                     controller: controller.passwordController,
@@ -195,31 +178,21 @@ class MeetingUtil {
                         ),
                       ),
                       16.w,
-                      if (member.isNotEmpty) ...[
+                      if (!member.isEmpty) ...[
                         Expanded(
                           child: DropdownButtonFormField<int>(
                             menuMaxHeight: 300,
                             value: controller.maxParticipants.value,
                             items:
-                                List.generate((member.maxParticipantsAllowed / 5).ceil(), (i) => (i + 1) * 5).map((
-                                  val,
-                                ) {
-                                  print('max participants: $val');
-                                  return DropdownMenuItem(
-                                    alignment: AlignmentDirectional.center,
-                                    value: val,
-                                    child: Text('$val'),
-                                  );
+                                List.generate((member.maximumParticipantsAllowed / 5).ceil(), (i) => (i + 1) * 5).map((val) {
+                                  return DropdownMenuItem(alignment: AlignmentDirectional.center, value: val, child: Text('$val'));
                                 }).toList(),
                             onChanged: (val) {
                               if (val != null) {
                                 controller.maxParticipants.value = val;
                               }
                             },
-                            decoration: const InputDecoration(
-                              labelText: 'Max Participants',
-                              enabledBorder: OutlineInputBorder(),
-                            ),
+                            decoration: const InputDecoration(labelText: 'Max Participants', enabledBorder: OutlineInputBorder()),
                           ),
                         ),
                       ],
@@ -364,11 +337,7 @@ class MeetingUtil {
                       ),
                       child: ListTile(
                         title: const Text('Select Time'),
-                        subtitle: Text(
-                          controller.selectedTime.value != null
-                              ? controller.selectedTime.value!.format(context)
-                              : 'No time selected',
-                        ),
+                        subtitle: Text(controller.selectedTime.value != null ? controller.selectedTime.value!.format(context) : 'No time selected'),
                         trailing: const Icon(Icons.access_time),
                         onTap: () async {
                           final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
@@ -382,9 +351,7 @@ class MeetingUtil {
                   const SizedBox(height: 24),
                   Row(
                     children: [
-                      Expanded(
-                        child: OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                      ),
+                      Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel'))),
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(

@@ -9,11 +9,17 @@ class AppConfig {
     final remoteConfig = FirebaseRemoteConfig.instance;
 
     try {
+      await remoteConfig.setConfigSettings(
+        RemoteConfigSettings(
+          fetchTimeout: const Duration(seconds: 10),
+          minimumFetchInterval: Duration(seconds: 5), // 👈 IMPORTANT
+        ),
+      );
       // Fetch and activate values from the Firebase service
       await remoteConfig.fetchAndActivate();
 
       // Get the base URL value
-      _baseUrl = remoteConfig.getString('api_base_url').trim() + '/';
+      _baseUrl = remoteConfig.getString('api_base_url').trim();
       print('Base URL set to: $_baseUrl');
     } catch (e) {
       // Handle exceptions, e.g., no internet connection

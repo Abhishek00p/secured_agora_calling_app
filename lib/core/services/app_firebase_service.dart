@@ -581,18 +581,18 @@ class AppFirebaseService {
     }
   }
 
-  Future<Member> getMemberData(String memberCode) async {
+  Future<AppUser> getMemberData(String userId) async {
     try {
-      final snapshot = await _firestore.collection('users').where('memberCode', isEqualTo: memberCode).get();
-      if (snapshot.docs.isNotEmpty) {
-        final data = snapshot.docs.first.data();
-        return Member.fromMap(snapshot.docs.first.id, data);
+      final snapshot = await _firestore.collection('users').doc(userId).get();
+      if (snapshot.exists) {
+        final data = snapshot.data();
+        return AppUser.fromJson(data ?? {});
       } else {
-        return Member.toEmpty();
+        return AppUser.toEmpty();
       }
     } catch (e) {
       AppLogger.print('Error getting member data: $e');
-      return Member.toEmpty();
+      return AppUser.toEmpty();
     }
   }
 
