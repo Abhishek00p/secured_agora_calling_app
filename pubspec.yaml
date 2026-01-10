@@ -53,6 +53,7 @@ dependencies:
   wakelock_plus: ^1.4.0
   better_player_plus: ^1.0.8
   firebase_remote_config: ^4.4.7
+  just_audio: ^0.10.5
 
 dev_dependencies:
   flutter_test:

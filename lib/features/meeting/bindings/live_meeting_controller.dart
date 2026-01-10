@@ -14,9 +14,11 @@ import 'package:secured_calling/core/services/app_lifecycle_manager.dart';
 import 'package:secured_calling/core/services/meeting_timeout_service.dart';
 import 'package:secured_calling/features/meeting/services/agora_service.dart';
 import 'package:secured_calling/core/models/participant_model.dart';
+import 'package:secured_calling/utils/assetspath_helper.dart';
 import 'package:secured_calling/utils/warm_color_generator.dart';
 import 'package:secured_calling/features/meeting/widgets/timer_warning_dialog.dart';
 import 'package:secured_calling/features/meeting/widgets/extend_meeting_dialog.dart';
+import 'package:secured_calling/widgets/app_sound_player.dart';
 
 class MeetingController extends GetxController {
   final AppFirebaseService _firebaseService = AppFirebaseService.instance;
@@ -48,6 +50,7 @@ class MeetingController extends GetxController {
   StreamSubscription? _leaveSubscription;
   StreamSubscription? _muteSubscription;
   StreamSubscription? _meetingSubscription;
+  StreamSubscription? _meetingRecordingSubscription;
 
   RxInt activeSpeakerUid = 0.obs;
 
@@ -63,13 +66,26 @@ class MeetingController extends GetxController {
   int mixRecorderUid = 0;
 
   @override
-  void onInit() {
+  void onInit() async {
     super.onInit();
     _muteSubscription = AppFirebaseService.instance.isCurrentUserMutedByHost(meetingId).listen((s) {
       if (s) {
         stopPtt();
       }
     });
+    final meetingDocRef = await AppFirebaseService.instance.meetingsCollection.doc(meetingId).get();
+    if (meetingDocRef.exists) {
+      _meetingRecordingSubscription = AppFirebaseService.instance.meetingsCollection.doc(meetingId).snapshots().listen((docSnap) {
+        if (docSnap.exists) {
+          final data = meetingDocRef.data() as Map<String, dynamic>;
+          final isRecording = data['isRecordingOn'] as bool? ?? false;
+          isRecordingOn.value = isRecording;
+          if (isRecordingOn.value) {
+            AssetAudioService().play(AssetsPathHelper.meetingRecordedSound);
+          }
+        }
+      });
+    }
   }
 
   void startTimer() async {
@@ -878,7 +894,7 @@ class MeetingController extends GetxController {
     _leaveSubscription?.cancel();
     _muteSubscription?.cancel();
     _meetingSubscription?.cancel();
-
+    _meetingRecordingSubscription?.cancel();
     // Clear meeting status from lifecycle manager
     _lifecycleManager.clearMeetingStatus();
 
@@ -1016,6 +1032,7 @@ class MeetingController extends GetxController {
       await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": true});
 
       isRecordingOn.value = true;
+      AssetAudioService().play(AssetsPathHelper.meetingRecordedSound);
       AppToastUtil.showSuccessToast('Recording started');
     }
 
