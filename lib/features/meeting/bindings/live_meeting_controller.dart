@@ -80,8 +80,23 @@ class MeetingController extends GetxController {
           final data = meetingDocRef.data() as Map<String, dynamic>;
           final isRecording = data['isRecordingOn'] as bool? ?? false;
           isRecordingOn.value = isRecording;
+
           if (isRecordingOn.value) {
             AssetAudioService().play(AssetsPathHelper.meetingRecordedSound);
+
+            // get recordingtack starttime if it is on
+            AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').where('stopTime', isEqualTo: null).get().then((
+              querySnapshot,
+            ) {
+              debugPrint("the recording track snapshot is : ${querySnapshot.docs.length} ");
+              if (querySnapshot.docs.isNotEmpty) {
+                final doc = querySnapshot.docs.firstOrNull;
+
+                if (doc == null) return;
+                final trackData = doc.data();
+                recordingStartTimeEpoch = trackData['startTime'] as int? ?? 0;
+              }
+            });
           }
         }
       });
@@ -498,21 +513,29 @@ class MeetingController extends GetxController {
   }
 
   Future<void> startPtt() async {
-    await _firebaseService.meetingsCollection.doc(meetingId).update({
-      'pttUsers': FieldValue.arrayUnion([currentUser.userId]),
-    });
-    await _agoraService.muteLocalAudio(false);
-    isMuted.value = false;
-    if (isRecordingOn.value) {
-      final dateTimeEpoch = DateTime.now().toUtc().millisecondsSinceEpoch;
-      speakingEventDocId = dateTimeEpoch.toString();
-      await _firebaseService.meetingsCollection
-          .doc(meetingId)
-          .collection('recordingTrack')
-          .doc(recordingStartTimeEpoch.toString())
-          .collection('speakingEvents')
-          .doc(speakingEventDocId)
-          .set({'start': dateTimeEpoch, 'userId': currentUser.userId, 'userName': currentUser.name});
+    try {
+      await _firebaseService.meetingsCollection.doc(meetingId).update({
+        'pttUsers': FieldValue.arrayUnion([currentUser.userId]),
+      });
+      await _agoraService.muteLocalAudio(false);
+      isMuted.value = false;
+      if (isRecordingOn.value) {
+        debugPrint("Recording is ... on");
+
+        final dateTimeEpoch = DateTime.now().toUtc().millisecondsSinceEpoch;
+        speakingEventDocId = dateTimeEpoch.toString();
+        final doc = _firebaseService.meetingsCollection
+            .doc(meetingId)
+            .collection('recordingTrack')
+            .doc(recordingStartTimeEpoch.toString())
+            .collection('speakingEvents')
+            .doc(speakingEventDocId);
+
+        await doc.set({'start': dateTimeEpoch, 'userId': currentUser.userId, 'userName': currentUser.name});
+        debugPrint("the doc snapshot is : ${doc.id}  and data is  ${(await doc.get()).data()} ");
+      }
+    } catch (e) {
+      debugPrint("Error in startPtt: $e");
     }
   }
 

@@ -39,13 +39,13 @@ class SpeakingEventModel {
 
   factory SpeakingEventModel.fromJson(Map<String, dynamic> json) {
     return SpeakingEventModel(
-      userId: json['userId'],
-      userName: json['userName'],
-      startTime: json['startTime'],
-      endTime: json['endTime'],
+      userId: (json['userId'] ?? '').toString(),
+      userName: json['userName'] ?? '',
+      startTime: json['start'] ?? 0,
+      endTime: json['stop'] ?? 0,
       recordingUrl: json['recordingUrl'],
-      trackStartTime: json['trackStartTime'],
-      trackStopTime: json['trackStopTime'],
+      trackStartTime: json['trackStartTime'] ?? 0,
+      trackStopTime: json['trackStopTime'] ?? 0,
     );
   }
 

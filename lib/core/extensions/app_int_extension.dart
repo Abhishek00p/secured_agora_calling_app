@@ -17,13 +17,12 @@ extension AppIntExtension on int {
 
   DateTime get toDateTime {
     final dateTime = DateTime.fromMillisecondsSinceEpoch(this);
-    return DateTime(
-      dateTime.year,
-      dateTime.month,
-      dateTime.day,
-      dateTime.hour,
-      dateTime.minute,
-    );
+    return DateTime(dateTime.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.minute);
+  }
+
+  DateTime get toDateTimeWithSec {
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(this);
+    return DateTime(dateTime.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.minute, dateTime.second);
   }
 }
 

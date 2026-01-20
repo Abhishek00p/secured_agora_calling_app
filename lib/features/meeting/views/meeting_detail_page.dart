@@ -71,11 +71,15 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
                   final item = controller.individualRecordings[index];
-
+                  debugPrint(
+                    "track start time  ${item.trackStartTime.toDateTimeWithSec}\n clip start and end time ${item.startTime.toDateTimeWithSec}  ${item.endTime.toDateTimeWithSec}",
+                  );
                   return RecorderAudioTile(
-                    recordingStartTime: item.trackStartTime.toDateTime,
-                    title: '${item.userName} ${item.startTime.toDateTime.toLocal().formatTime ?? ''} ',
+                    recordingStartTime: item.trackStartTime.toDateTimeWithSec,
+                    title: '${item.userName} ${item.startTime.toDateTimeWithSec.toLocal().formatTime ?? ''} ',
                     url: item.recordingUrl,
+                    clipStartTime: item.startTime.toDateTimeWithSec,
+                    clipEndTime: item.endTime.toDateTimeWithSec,
                   );
                 },
               ),

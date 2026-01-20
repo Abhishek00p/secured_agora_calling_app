@@ -887,7 +887,12 @@ class AppFirebaseService {
       final outPut = <SpeakingEventModel>[];
       for (var element in list) {
         if (element.speakingEvents.isNotEmpty) {
-          outPut.addAll(element.speakingEvents);
+          for (var i = 0; i < element.speakingEvents.length; i++) {
+            final item = element.speakingEvents[i];
+            if (item.startTime != 0 && item.userId.isNotEmpty) {
+              outPut.add(element.speakingEvents[i]);
+            }
+          }
         }
       }
       return outPut;

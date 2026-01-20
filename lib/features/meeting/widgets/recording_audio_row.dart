@@ -84,21 +84,26 @@ class _RecorderAudioTileState extends State<RecorderAudioTile> {
     _clipStart = clipStartTime.difference(recordingStart);
     _clipEnd = clipEndTime.difference(recordingStart);
     _clipDuration = _clipEnd - _clipStart;
+    if (_clipDuration <= Duration.zero) {
+      debugPrint("Invalid clip duration calculated: $_clipDuration");
+    }
   }
 
   void _togglePlay() {
     if (_isPlaying) {
       _controller.pause();
     } else {
-      if (_isClipped && _absolutePosition < _clipStart || _absolutePosition >= _clipEnd) {
-        debugPrint('Seeking to clip start: $_clipStart');
+      if (_isClipped && (_absolutePosition < _clipStart || _absolutePosition >= _clipEnd)) {
         _controller.seekTo(_clipStart);
+      } else {
+        debugPrint("Not clipped or within clip range");
       }
       _controller.play();
     }
   }
 
   void _seek(double value) {
+    if (_clipDuration == Duration.zero) return;
     final target = _clipStart + (_clipDuration * value);
     _controller.seekTo(target);
   }
@@ -110,11 +115,17 @@ class _RecorderAudioTileState extends State<RecorderAudioTile> {
     super.dispose();
   }
 
+  Duration _clampDuration(Duration value, Duration min, Duration max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final visiblePosition = _isClipped ? _absolutePosition - _clipStart : _absolutePosition;
+    final visiblePosition = _isClipped ? _clampDuration(_absolutePosition - _clipStart, Duration.zero, _clipDuration) : _absolutePosition;
 
     final visibleDuration = _isClipped ? _clipDuration : _controller.videoPlayerController?.value.duration ?? Duration.zero;
 
@@ -149,8 +160,8 @@ class _RecorderAudioTileState extends State<RecorderAudioTile> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(_fmt(visiblePosition), style: const TextStyle(color: Colors.white70)),
-                    Text(_fmt(visibleDuration), style: const TextStyle(color: Colors.white70)),
+                    Text(_fmt(visiblePosition), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                    Text(_fmt(visibleDuration), style: const TextStyle(color: Colors.white70, fontSize: 12)),
                   ],
                 ),
               ],

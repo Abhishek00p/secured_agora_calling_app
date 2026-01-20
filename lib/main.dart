@@ -18,7 +18,6 @@ void main() async {
   } catch (e) {
     debugPrint("Firebase initialization error: $e");
   }
-
   await AppLocalStorage.init();
   // Initialize AppLifecycleManager
   Get.put(AppLifecycleManager());
