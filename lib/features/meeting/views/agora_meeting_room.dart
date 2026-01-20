@@ -10,6 +10,7 @@ import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/features/meeting/views/join_request_widget.dart';
 import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/views/show_meeting_info.dart';
+import 'package:secured_calling/widgets/blinking_text.dart';
 import 'package:secured_calling/widgets/speaker_ripple_effect.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -180,19 +181,46 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
               iconTheme: const IconThemeData(color: Colors.white),
               actions: [
                 if (meetingController.isHost)
-                  IconButton(
-                    onPressed: () async {
-                      // await fetchPendingRequests();
-                      meetingController.toggleMixRecordingButton  ();
-                    },
-                    icon: Obx(
-                      () => Icon(
-                        meetingController.isRecordingOn.value ? Icons.stop_circle_rounded : Icons.fiber_manual_record_rounded,
-                        size: 24,
-                        color: Colors.red,
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () async {
+                          // await fetchPendingRequests();
+                          meetingController.toggleMixRecordingButton();
+                        },
+                        icon: Obx(
+                          () => Icon(
+                            meetingController.isRecordingOn.value ? Icons.stop_circle_rounded : Icons.fiber_manual_record_rounded,
+                            size: 24,
+                            color: Colors.red,
+                          ),
+                        ),
                       ),
-                    ),
+                      Obx(() {
+                        if (meetingController.isRecordingOn.value && meetingController.isHost) {
+                          return Row(
+                            children: [
+                              BlinkingText(text: 'Rec', style: TextStyle(fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w500)),
+                            ],
+                          );
+                        } else {
+                          return SizedBox.shrink();
+                        }
+                      }),
+                    ],
                   ),
+                Obx(() {
+                  return meetingController.isRecordingOn.value && !meetingController.isHost
+                      ? Row(
+                        children: [
+                          Icon(Icons.fiber_manual_record_rounded, size: 24, color: Colors.red),
+                          SizedBox(width: 4),
+                          BlinkingText(text: 'Rec', style: TextStyle(fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w500)),
+                        ],
+                      )
+                      : SizedBox.shrink();
+                }),
+
                 IconButton(
                   onPressed: () async {
                     // await fetchPendingRequests();
