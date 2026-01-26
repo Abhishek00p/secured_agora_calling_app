@@ -76,10 +76,12 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                   );
                   return RecorderAudioTile(
                     recordingStartTime: item.trackStartTime.toDateTimeWithSec,
+                    recordingEndTime: item.trackStopTime.toDateTimeWithSec,
                     title: '${item.userName} ${item.startTime.toDateTimeWithSec.toLocal().formatTime ?? ''} ',
                     url: item.recordingUrl,
                     clipStartTime: item.startTime.toDateTimeWithSec,
                     clipEndTime: item.endTime.toDateTimeWithSec,
+                    speakingEventModel: item,
                   );
                 },
               ),

@@ -944,4 +944,12 @@ class AppFirebaseService {
 
     return uniqueId;
   }
+
+  Future<void> cleanUpServiceSecureFiles() async {
+    try {
+      final resp = await AppHttpService().post('api/recording/cleanupSecureFiles', body: {});
+    } catch (e) {
+      debugPrint("error caught in cleaning up secure files : $e");
+    }
+  }
 }

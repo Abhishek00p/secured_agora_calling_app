@@ -1218,15 +1218,6 @@ class MeetingController extends GetxController {
         return;
       }
 
-      // 4️⃣ Save metadata (CRITICAL)
-      final startTime = DateTime.now().toUtc().millisecondsSinceEpoch;
-      recordingStartTimeEpoch = startTime;
-
-      await _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(startTime.toString()).set({
-        'startTime': startTime,
-        'mix': mixStarted,
-        'individual': false,
-      });
 
       await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": true});
 
