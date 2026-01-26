@@ -7,6 +7,7 @@ import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/models/recording_file_model.dart';
 import 'package:secured_calling/core/models/recording_track_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/utils/app_logger.dart';
@@ -40,11 +41,14 @@ class MeetingDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadMeetingDetails();
+    loadMeetingDetails().then((_) {
+      if (meetingDetail.value?.hostId == AppLocalStorage.getUserDetails().userId) {
+        fetchIndividualRecordings();
+      }
+      fetchMixRecordings();
+    });
     _initializeRealTimeUpdates();
     // fetchAllIndividualRecordings();
-    fetchIndividualRecordings();
-    fetchMixRecordings();
   }
 
   @override

@@ -37,7 +37,7 @@ class AppRouter {
 
   // GetPages
   static final List<GetPage> routes = [
-    GetPage(name: welcomeRoute, page: () => const WelcomeScreen(), middlewares: [WelcomeMiddleware()]),
+    GetPage(name: welcomeRoute, page: () => const WelcomeScreen(),),
     GetPage(
       name: loginRoute,
       page: () => const LoginScreen(),

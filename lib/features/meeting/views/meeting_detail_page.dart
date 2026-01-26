@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/meeting/widgets/recording_audio_row.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
@@ -183,16 +184,17 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                               children: [
                                 getMixRecordingListWidget(),
                                 SizedBox(height: 16),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Individual Recordings',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
-                                    ),
-                                    getIndividualRecordingWidgets(),
-                                  ],
-                                ),
+                                if (meetingDetail.hostId == AppLocalStorage.getUserDetails().userId)
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Individual Recordings',
+                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
+                                      ),
+                                      getIndividualRecordingWidgets(),
+                                    ],
+                                  ),
                                 // getRecordingListByUserWidget(),
                               ],
                             ),
