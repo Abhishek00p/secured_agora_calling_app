@@ -9,6 +9,7 @@ import 'package:secured_calling/core/constants.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/models/recording_file_model.dart';
+import 'package:secured_calling/core/services/agora_token_helper.dart';
 import 'package:secured_calling/core/services/http_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_meeting_id_genrator.dart';
@@ -477,11 +478,11 @@ class AppFirebaseService {
   }
 
   Future<String> getAgoraToken({required String channelName, required int uid, required bool isHost}) async {
-    return await AppHttpService().fetchAgoraToken(channelName: channelName, uid: uid, userRole: isHost ? 1 : 0) ?? '';
+    return await AgoraTokenHelper.fetchAgoraToken(channelName: channelName, uid: uid, userRole: isHost ? 1 : 0) ?? '';
   }
 
   Future<String> verifyAgoraToken({required String channelName, required int uid, required bool isHost}) async {
-    return await AppHttpService().verifyAgoraToken(channelName: channelName, uid: uid, userRole: isHost ? '1' : '0') ?? '';
+    return await AgoraTokenHelper.verifyAgoraToken(channelName: channelName, uid: uid, userRole: isHost ? '1' : '0') ?? '';
   }
 
   Stream<bool> isCurrentUserMutedByHost(String meetingId) {

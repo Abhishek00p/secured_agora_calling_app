@@ -6,7 +6,7 @@ import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
-import 'package:secured_calling/features/meeting/widgets/recording_audio_row.dart';
+import 'package:secured_calling/features/meeting/widgets/recorder_audio_tile.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
 import 'package:secured_calling/widgets/meeting_info_card.dart';
@@ -45,6 +45,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
               : controller.mixRecordings.isEmpty
               ? NoDataFoundWidget(message: 'No mix recordings available.')
               : ListView.builder(
+                padding: EdgeInsets.zero,
                 physics: NeverScrollableScrollPhysics(),
                 itemCount: controller.mixRecordings.length,
                 shrinkWrap: true,
@@ -76,20 +77,19 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
               : controller.individualRecordings.isEmpty
               ? NoDataFoundWidget(message: 'No individual recordings available.')
               : ListView.builder(
+                padding: EdgeInsets.zero,
                 physics: NeverScrollableScrollPhysics(),
                 itemCount: controller.individualRecordings.length,
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
                   final item = controller.individualRecordings[index];
-                  debugPrint(
-                    "track start time  ${item.trackStartTime.toDateTimeWithSec}\n clip start and end time ${item.startTime.toDateTimeWithSec}  ${item.endTime.toDateTimeWithSec}",
-                  );
+
                   return RecorderAudioTile(
                     recordingStartTime: item.trackStartTime.toDateTimeWithSec,
                     model: item,
                     url: item.recordingUrl,
-                    clipStartTime: item.startTime.toDateTimeWithSec,
-                    clipEndTime: item.endTime.toDateTimeWithSec,
+                    clipStartTime: item.startTime.toDateTimeWithSec.subtract(Duration(seconds: 3)),
+                    clipEndTime: item.endTime.toDateTimeWithSec.subtract(Duration(seconds: 3)),
                   );
                 },
               ),
@@ -189,20 +189,27 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                getMixRecordingListWidget(),
                                 SizedBox(height: 16),
+                                Text(
+                                  'Mix Recordings',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
+                                ),
+                                getMixRecordingListWidget(),
                                 if (meetingDetail.hostId == AppLocalStorage.getUserDetails().userId)
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      SizedBox(height: 16),
                                       Text(
                                         'Individual Recordings',
                                         style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
                                       ),
+                                      SizedBox(height: 16),
                                       getIndividualRecordingWidgets(),
                                     ],
                                   ),
-                                // getRecordingListByUserWidget(),
+
+                                SizedBox(height: 40),
                               ],
                             ),
                           ),

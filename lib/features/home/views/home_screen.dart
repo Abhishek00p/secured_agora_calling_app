@@ -1,5 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/app_color_extension.dart';
@@ -14,6 +16,7 @@ import 'package:secured_calling/core/services/notification_service.dart';
 import 'package:secured_calling/core/services/permission_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/features/admin/admin_home.dart';
+import 'package:secured_calling/features/home/network_log_screen.dart';
 import 'package:secured_calling/features/home/views/membar_tab_view_widget.dart';
 import 'package:secured_calling/features/home/views/user_tab.dart';
 import 'package:secured_calling/features/home/views/users_screen.dart';
@@ -95,9 +98,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> loadUserData() async {
     try {
       final userId = AppLocalStorage.getUserDetails().userId.toString();
-      AppLogger.print("app firebase : ${Firebase.apps.map((e)=>e.name)} --- > userId :$userId");
+      AppLogger.print("app firebase : ${Firebase.apps.map((e) => e.name)} --- > userId :$userId");
       final data = await AppFirebaseService.instance.getUserData(userId);
-      final userData = data.data() as Map<String, dynamic>? ??{};
+      final userData = data.data() as Map<String, dynamic>? ?? {};
       AppLogger.print("User data fetched in home screen : $userData");
       setState(() {
         user = AppUser.fromJson(userData);
@@ -160,6 +163,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                   ],
             ),
+
+            if (kDebugMode) ...[
+              IconButton(
+                onPressed: () {
+                  Get.to(() => NetworkLogScreen());
+                },
+                icon: Icon(Icons.show_chart_rounded),
+              ),
+            ],
           ],
           leading:
               !AppUserRoleService.isAdmin() && !AppUserRoleService.isMember()
@@ -190,27 +202,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 decoration: BoxDecoration(
                   gradient: AppTheme.primaryGradient,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4)),
-                  ],
+                  boxShadow: [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      user.name.titleCase,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
+                    Text(user.name.titleCase, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
                     const SizedBox(height: 4),
                     if (user.memberCode.isNotEmpty) ...[
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            'Code: ${user.memberCode}',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
-                          ),
+                          Text('Code: ${user.memberCode}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
                           4.w,
                           IconButton(
                             icon: const Icon(Icons.copy, color: Colors.white, size: 14),
@@ -229,10 +233,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAppOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                      decoration: BoxDecoration(color: Colors.white.withAppOpacity(0.2), borderRadius: BorderRadius.circular(20)),
                       child: Text(
                         'Role : ${AppUserRoleService.getCurrentUserRoleDisplayName()}',
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 12),
@@ -264,10 +265,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               // Tab Bar
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                decoration: BoxDecoration(color: Theme.of(context).cardTheme.color, borderRadius: BorderRadius.circular(12)),
                 // height: 50,
                 // width: double.infinity,
                 child: TabBar(
@@ -284,10 +282,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   dividerColor: Colors.transparent,
                   unselectedLabelColor: Theme.of(context).textTheme.bodyLarge?.color,
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                  tabs: const [
-                    Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'),
-                    Tab(icon: Icon(Icons.people), text: 'Join Meeting'),
-                  ],
+                  tabs: const [Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'), Tab(icon: Icon(Icons.people), text: 'Join Meeting')],
                 ),
               ),
               Divider(),

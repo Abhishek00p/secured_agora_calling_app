@@ -158,7 +158,7 @@ class _RecorderAudioTileState extends State<RecorderAudioTile> {
                 Text(
                   widget.model.startTime == 0
                       ? 'Mix recording  ${widget.model.trackStartTime.toDateTime.toLocal().formatTime}'
-                      : '${widget.model.userName} ${widget.model.startTime.toDateTime.toLocal().formatTime}',
+                      : '${widget.model.userName} ${widget.model.startTime.toDateTimeWithSec.toLocal().formatTimeWithSeconds}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 11),

@@ -2,12 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:secured_calling/core/config/app_config.dart';
-import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/firebase_function_logger.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
-import 'package:flutter/foundation.dart';
 
 class AppHttpService {
   static final AppHttpService _instance = AppHttpService._internal();
@@ -60,22 +58,18 @@ class AppHttpService {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final finalUri = queryParams != null ? uri.replace(queryParameters: queryParams) : uri;
 
-      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
+      final response = await _executeWithRefresh(
         functionName: endpoint,
         method: 'GET',
         url: finalUri.toString(),
-        headers: _getHeaders(includeAuth: includeAuth),
         body: '',
-        httpCall: () => http.get(finalUri, headers: _getHeaders(includeAuth: includeAuth)),
+        includeAuth: includeAuth,
+        call: (h) => http.get(finalUri, headers: h),
       );
 
       return _handleResponse(response);
     } on SocketException {
       AppToastUtil.showErrorToast('No Internet connection');
-      rethrow;
-    } catch (e) {
-      print('GET request error for $endpoint: $e');
-      AppToastUtil.showErrorToast('Request failed: $e');
       rethrow;
     }
   }
@@ -85,14 +79,13 @@ class AppHttpService {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
-
-      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
+      final response = await _executeWithRefresh(
         functionName: endpoint,
         method: 'POST',
         url: uri.toString(),
-        headers: _getHeaders(includeAuth: includeAuth),
         body: requestBody,
-        httpCall: () => http.post(uri, headers: _getHeaders(includeAuth: includeAuth), body: requestBody),
+        includeAuth: includeAuth,
+        call: (h) => http.post(uri, headers: h, body: requestBody),
       );
 
       return _handleResponse(response);
@@ -112,13 +105,13 @@ class AppHttpService {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
 
-      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
+      final response = await _executeWithRefresh(
         functionName: endpoint,
         method: 'PUT',
         url: uri.toString(),
-        headers: _getHeaders(includeAuth: includeAuth),
         body: requestBody,
-        httpCall: () => http.put(uri, headers: _getHeaders(includeAuth: includeAuth), body: requestBody),
+        includeAuth: includeAuth,
+        call: (h) => http.post(uri, headers: h, body: requestBody),
       );
 
       return _handleResponse(response);
@@ -138,13 +131,13 @@ class AppHttpService {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
 
-      final response = await FirebaseFunctionLogger.instance.logFunctionCall(
+      final response = await _executeWithRefresh(
         functionName: endpoint,
         method: 'DELETE',
         url: uri.toString(),
-        headers: _getHeaders(includeAuth: includeAuth),
         body: requestBody,
-        httpCall: () => http.delete(uri, headers: _getHeaders(includeAuth: includeAuth), body: requestBody),
+        includeAuth: includeAuth,
+        call: (h) => http.post(uri, headers: h, body: requestBody),
       );
 
       return _handleResponse(response);
@@ -177,132 +170,77 @@ class AppHttpService {
     }
   }
 
-  /// Get token for a user
-  Future<String?> fetchAgoraToken({
-    required String channelName,
-    required int uid,
+  bool _isRefreshing = false;
+  Future<void>? _refreshFuture;
 
-    /// 0 = SUBSCRIBER, 1 = PUBLISHER
-    int userRole = 0,
+  Future<http.Response> _executeWithRefresh({
+    required String functionName,
+    required String method,
+    required String url,
+    required String body,
+    required bool includeAuth,
+    required Future<http.Response> Function(Map<String, String> headers) call,
   }) async {
+    Map<String, String> headers = _getHeaders(includeAuth: includeAuth);
+
+    http.Response response = await AppApiFunctionLogger.instance.logFunctionCall(
+      functionName: functionName,
+      method: method,
+      url: url,
+      headers: headers,
+      body: body,
+      httpCall: () => call(headers),
+    );
+
+    if (response.statusCode != 401 || !includeAuth) {
+      return response;
+    }
+
+    // Token expired → refresh
+    await _refreshTokenOnce();
+
+    // Retry once with new token
+    headers = _getHeaders(includeAuth: includeAuth);
+
+    return AppApiFunctionLogger.instance.logFunctionCall(
+      functionName: '$functionName (retry)',
+      method: method,
+      url: url,
+      headers: headers,
+      body: body,
+      httpCall: () => call(headers),
+    );
+  }
+
+  Future<void> _refreshTokenOnce() async {
+    if (_isRefreshing) {
+      await _refreshFuture;
+      return;
+    }
+
+    _isRefreshing = true;
+    _refreshFuture = _refreshToken();
+
     try {
-      final doesTokenExist = await doesTokenAlreadyExistInFirebase(channelName: channelName, uid: uid);
-      if (doesTokenExist['exists'] == true) {
-        return doesTokenExist['token'];
-      }
-
-      // Use the new CRUD function
-      final response = await post('api/agora/token', body: {'channelName': channelName, 'uid': uid, 'userRole': userRole});
-      if (response == null) {
-        AppToastUtil.showErrorToast('Something went wrong, please try again');
-        return null;
-      }
-
-      if (response['success'] == true && response['data']['token'] != null) {
-        print('token generated successfully from Agora');
-        // Store the token in Firebase
-        await storeTokenInFirebase(
-          channelName: channelName,
-          uid: uid,
-          token: response['data']['token'],
-          expiryTime: response['expireTime'] ?? DateTime.now().add(Duration(hours: 40)).millisecondsSinceEpoch,
-        );
-        return response['data']['token'];
-      } else {
-        AppToastUtil.showErrorToast(response['error_message'] ?? "Token not found in response");
-      }
-    } on SocketException {
-      AppToastUtil.showErrorToast('No Internet connection');
-      return null;
-    } catch (e) {
-      print('Error fetching token: $e');
-      AppToastUtil.showErrorToast('Error fetching token: $e');
-      return null;
+      await _refreshFuture;
+    } finally {
+      _isRefreshing = false;
     }
   }
 
-  /// verify token for a user
-  Future<String?> verifyAgoraToken({required String channelName, required int uid, required String userRole}) async {
-    try {
-      // Use the new CRUD function
-      final response = await post('verifyToken', body: {'channelName': channelName, 'uid': uid, 'userRole': userRole});
-      if (response == null) {
-        AppToastUtil.showErrorToast('Something went wrong, please try again');
-        return null;
-      }
+  Future<void> _refreshToken() async {
+    final response = await get('api/auth/refreshLoginToken', queryParams: {'userId': AppLocalStorage.getUserDetails().userId.toString()});
 
-      if (response['success'] == true) {
-        print('Token verified successfully');
-        return response['token'];
-      } else {
-        AppToastUtil.showErrorToast(response['error_message'] ?? "Token not found in response");
-      }
-    } on SocketException {
-      AppToastUtil.showErrorToast('No Internet connection');
-      return null;
-    } catch (e) {
-      print('Error verifying token: $e');
-      AppToastUtil.showErrorToast('Error verifying token: $e');
-      return null;
+    if (response != null && response['success'] != true) {
+      throw Exception('Session expired');
     }
-  }
 
-  //store token in firebase
-  Future<void> storeTokenInFirebase({required String channelName, required int uid, required String token, required int expiryTime}) async {
-    try {
-      final meetingData = await AppFirebaseService.instance.getMeetingData(channelName);
-      if (meetingData == null) {
-        AppToastUtil.showErrorToast('No meeting data found for the channel');
-        return;
-      }
-      final tokens = meetingData['tokens'] ?? {};
-      tokens['$uid'] = {'token': token, 'expiry_time': expiryTime};
-      await AppFirebaseService.instance.meetingsCollection.doc(channelName).update({'tokens': tokens});
-      AppLogger.print('Token stored successfully');
-    } on SocketException {
-      AppToastUtil.showErrorToast('No Internet connection');
-    } catch (e) {
-      AppToastUtil.showErrorToast('Error storing token: $e');
+    final newToken = response?['token'] ?? '';
+
+    if (newToken == null || newToken.isEmpty) {
+      throw Exception('Invalid refresh response');
     }
-  }
 
-  Future<Map<String, dynamic>> doesTokenAlreadyExistInFirebase({required String channelName, required int uid}) async {
-    try {
-      final meetingData = await AppFirebaseService.instance.getMeetingData(channelName);
-      if (meetingData == null || meetingData['tokens'] == null || meetingData['tokens']['$uid'] == null) {
-        return {'exists': false}; // No meeting data found for the channel
-      }
-      final expiryTime = meetingData['tokens']['$uid']['expiry_time'];
-      if (expiryTime == null) {
-        return {'exists': false}; // Token or expiry time not found
-      }
-      final token = meetingData['tokens']['$uid']['token'];
-      if (token == null || token.isEmpty) {
-        return {'exists': false}; // Token not found
-      }
-      final expiryDate = DateTime.fromMillisecondsSinceEpoch(expiryTime);
-      if (expiryDate.isBefore(DateTime.now())) {
-        return {'exists': false}; // Token has expired
-      } else {
-        return {'exists': true, 'token': token}; // Token exists and is valid
-      }
-    } on SocketException {
-      AppToastUtil.showErrorToast('No Internet connection');
-      return {'exists': false}; // No internet connection
-    } catch (e) {
-      AppToastUtil.showErrorToast('Error checking token existence: $e');
-      return {'exists': false}; // Error occurred
-    }
-  }
-
-  /// send Notification to user
-  Future<void> sendPushNotification({required String fcmToken, required String title, required String body, Map<String, dynamic>? payload}) async {
-    try {
-      final response = await post('sendNotification', body: {'fcmToken': fcmToken, 'title': title, 'body': body, 'payload': payload ?? {}});
-
-      print('Notification sent: $response');
-    } catch (e) {
-      print('Error sending notification: $e');
-    }
+    AppLocalStorage.storeToken(newToken);
   }
 }

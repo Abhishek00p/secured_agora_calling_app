@@ -209,7 +209,6 @@ class MeetingDetailController extends GetxController {
             RecordingFileModel(
               key: item.key,
               playableUrl: item.playableUrl,
-              lastModified: item.lastModified,
               recordingTime: item.recordingTime,
               startTime: startTime,
               stopTime: stopTime,
