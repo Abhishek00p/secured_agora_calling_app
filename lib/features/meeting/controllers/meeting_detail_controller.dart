@@ -232,7 +232,7 @@ class MeetingDetailController extends GetxController {
     try {
       isIndividualRecordingLoading.value = true;
 
-      individualRecordings.value = await AppFirebaseService.instance.getAllIndividualRecordings(meetingId) ?? [];
+      individualRecordings.value = await AppFirebaseService.instance.getAllMeetingRecordings(meetingId: meetingId);
     } catch (e, st) {
       AppLogger.print("Failed to fetchIndividualRecordings : $e\n$st");
       individualRecordings.clear();

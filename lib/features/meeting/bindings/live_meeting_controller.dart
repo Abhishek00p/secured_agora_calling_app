@@ -580,6 +580,8 @@ class MeetingController extends GetxController {
       });
       await _agoraService.muteLocalAudio(false);
       isMuted.value = false;
+      final dateTimeEpoch = DateTime.now().toUtc().millisecondsSinceEpoch;
+
       if (isRecordingOn.value) {
         // Ensure recordingStartTimeEpoch is set before creating speaking events
         if (recordingStartTimeEpoch == 0) {
@@ -603,7 +605,6 @@ class MeetingController extends GetxController {
         debugPrint("Using recordingStartTimeEpoch: $recordingStartTimeEpoch");
         debugPrint("========================================");
 
-        final dateTimeEpoch = DateTime.now().toUtc().millisecondsSinceEpoch;
         speakingEventDocId = dateTimeEpoch.toString();
 
         final doc = _firebaseService.meetingsCollection
@@ -1217,7 +1218,6 @@ class MeetingController extends GetxController {
         AppToastUtil.showErrorToast('mix Recording failed to start');
         return;
       }
-
 
       await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": true});
 

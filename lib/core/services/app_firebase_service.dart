@@ -874,53 +874,88 @@ class AppFirebaseService {
     return [];
   }
 
-  Future<List<SpeakingEventModel>?> getAllIndividualRecordings(String meetingId) async {
-    final response = await AppHttpService().post('api/agora/recording/list/individual', body: {'channelName': meetingId});
+  Future<List<SpeakingEventModel>> getAllMeetingRecordings({required String meetingId}) async {
+    try {
+      List<SpeakingEventModel> allItems = [];
+      final allRecordingDocs = (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
 
-    if (response == null) {
-      debugPrint("response is null while fetching individual recording list");
-      return null;
-    }
-    AppLogger.print("data........ : ${response['success']} item lenth : ${response['data']?.length}");
-    if (response['success'] == true) {
-      final list = (response['data'] as List<dynamic>).map((e) => IndividualRecordingModel.fromJson(Map<String, dynamic>.from(e as Map))).toList();
-      final outPut = <SpeakingEventModel>[];
-      for (var element in list) {
-        if (element.speakingEvents.isNotEmpty) {
-          for (var i = 0; i < element.speakingEvents.length; i++) {
-            final item = element.speakingEvents[i];
-            if (item.startTime != 0 && item.userId.isNotEmpty) {
-              outPut.add(element.speakingEvents[i]);
-            }
+      for (QueryDocumentSnapshot doc in allRecordingDocs) {
+        String recordingUrl = '';
+        final docData = doc.data() as Map<String, dynamic>? ?? {};
+        final startTime = docData['startTime'] as int? ?? 0;
+        final endTime = docData['stopTime'] as int? ?? 0;
+
+        // fetch recordingUrl from server
+        final response = await AppHttpService().post(
+          'api/agora/recording/list/individual',
+          body: {'channelName': meetingId, 'type': 'mix', 'startTime': startTime, 'endTime': endTime},
+        );
+
+        if (response != null && response['success'] == true && response['data'] != null) {
+          recordingUrl = response['data']['playableUrl'] ?? '';
+        }
+
+        if (recordingUrl.isNotEmpty) {
+          final allSpeakingEventsOfThisRecordingDocs =
+              (await AppFirebaseService.instance.meetingsCollection
+                      .doc(meetingId)
+                      .collection('recordingTrack')
+                      .doc(doc.id)
+                      .collection('speakingEvents')
+                      .get())
+                  .docs;
+
+          for (QueryDocumentSnapshot item in allSpeakingEventsOfThisRecordingDocs) {
+            final speakingEventDocData = item.data() as Map<String, dynamic>? ?? {};
+
+            allItems.add(
+              SpeakingEventModel(
+                userId: speakingEventDocData['userId'].toString(),
+                userName: speakingEventDocData['userName'],
+                startTime: speakingEventDocData['start'],
+                endTime: speakingEventDocData['stop'],
+                recordingUrl: recordingUrl,
+                trackStartTime: startTime,
+                trackStopTime: endTime,
+              ),
+            );
           }
         }
       }
-      return outPut;
-    } else {
-      AppLogger.print(" failed to fetch list of individual recording : $response, message: ${response['error_message']}");
+      return allItems;
+    } catch (e, s) {
+      debugPrint("error while fetching meeting recordings... $e, $s");
       return [];
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getAllIndividualRecordingsByUserId(String meetingId, {String? userId}) async {
-    try {
-      final response = await AppHttpService().post('api/agora/recording/getRecordingsByUserId', body: {'meetingId': meetingId, "userId": userId});
+  // Future<List<SpeakingEventModel>?> getAllIndividualRecordings(String meetingId) async {
+  //   final response = await AppHttpService().post('api/agora/recording/list/individual', body: {'channelName': meetingId});
 
-      if (response == null) {
-        debugPrint("response is null while fetching individual recording list by userid");
-        return null;
-      }
-      if (response['success'] == true) {
-        return List<Map<String, dynamic>>.from(response['segments'] as List<dynamic>);
-      } else {
-        AppLogger.print(" failed to fetch list of individual recording by user id : $response, message: ${response['error_message']}");
-        return [];
-      }
-    } catch (e) {
-      AppLogger.print("exception caught in getting individual recording by userid : $e");
-      return [];
-    }
-  }
+  //   if (response == null) {
+  //     debugPrint("response is null while fetching individual recording list");
+  //     return null;
+  //   }
+  //   AppLogger.print("data........ : ${response['success']} item lenth : ${response['data']?.length}");
+  //   if (response['success'] == true) {
+  //     final list = (response['data'] as List<dynamic>).map((e) => IndividualRecordingModel.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+  //     final outPut = <SpeakingEventModel>[];
+  //     for (var element in list) {
+  //       if (element.speakingEvents.isNotEmpty) {
+  //         for (var i = 0; i < element.speakingEvents.length; i++) {
+  //           final item = element.speakingEvents[i];
+  //           if (item.startTime != 0 && item.userId.isNotEmpty) {
+  //             outPut.add(element.speakingEvents[i]);
+  //           }
+  //         }
+  //       }
+  //     }
+  //     return outPut;
+  //   } else {
+  //     AppLogger.print(" failed to fetch list of individual recording : $response, message: ${response['error_message']}");
+  //     return [];
+  //   }
+  // }
 
   /// Generates a random 7-digit number (1000000 - 9999999)
   int generate7DigitId() {
@@ -947,7 +982,7 @@ class AppFirebaseService {
 
   Future<void> cleanUpServiceSecureFiles() async {
     try {
-      final resp = await AppHttpService().post('api/recording/cleanupSecureFiles', body: {});
+      final resp = await AppHttpService().post('api/agora/recording/cleanupSecureFiles', body: {});
     } catch (e) {
       debugPrint("error caught in cleaning up secure files : $e");
     }

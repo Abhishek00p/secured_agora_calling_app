@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
+import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
@@ -51,7 +52,15 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                   final item = controller.mixRecordings[index];
 
                   return RecorderAudioTile(
-                    title: 'Mix Rec. ${item.startTime?.toLocal().formatTime ?? ''} - ${item.stopTime?.toLocal().formatTime ?? ''}',
+                    model: SpeakingEventModel(
+                      userId: '',
+                      userName: '',
+                      startTime: 0,
+                      endTime: 0,
+                      recordingUrl: item.playableUrl,
+                      trackStartTime: item.startTime?.millisecondsSinceEpoch ?? 0,
+                      trackStopTime: 0,
+                    ),
                     url: item.playableUrl,
                   );
                 },
@@ -77,12 +86,10 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                   );
                   return RecorderAudioTile(
                     recordingStartTime: item.trackStartTime.toDateTimeWithSec,
-                    recordingEndTime: item.trackStopTime.toDateTimeWithSec,
-                    title: '${item.userName} ${item.startTime.toDateTimeWithSec.toLocal().formatTime ?? ''} ',
+                    model: item,
                     url: item.recordingUrl,
                     clipStartTime: item.startTime.toDateTimeWithSec,
                     clipEndTime: item.endTime.toDateTimeWithSec,
-                    speakingEventModel: item,
                   );
                 },
               ),
