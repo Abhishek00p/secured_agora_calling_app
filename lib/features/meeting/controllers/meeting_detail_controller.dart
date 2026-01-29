@@ -29,7 +29,7 @@ class MeetingDetailController extends GetxController {
   final lastUpdated = Rxn<DateTime>();
   RxInt currentTabIndex = 0.obs;
 
-  RxList<RecordingFileModel> mixRecordings = <RecordingFileModel>[].obs;
+  RxList<MixRecordingModel> mixRecordings = <MixRecordingModel>[].obs;
   RxList<SpeakingEventModel> individualRecordings = <SpeakingEventModel>[].obs;
   // Stream subscriptions
   StreamSubscription<DocumentSnapshot>? _meetingStreamSubscription;
@@ -38,13 +38,14 @@ class MeetingDetailController extends GetxController {
   RxBool isMixRecordingLoading = false.obs;
   RxBool isIndividualRecordingLoading = false.obs;
 
+  bool get isCurrentUserHost => meetingDetail.value?.hostId == AppLocalStorage.getUserDetails().userId;
+
   @override
   void onInit() {
     super.onInit();
     loadMeetingDetails().then((_) {
-      if (meetingDetail.value?.hostId == AppLocalStorage.getUserDetails().userId) {
-        fetchIndividualRecordings();
-      }
+      fetchIndividualRecordings();
+
       fetchMixRecordings();
     });
     _initializeRealTimeUpdates();
@@ -180,45 +181,9 @@ class MeetingDetailController extends GetxController {
   Future<void> fetchMixRecordings() async {
     try {
       isMixRecordingLoading.value = true;
-      final items = <RecordingFileModel>[];
 
-      final firestoreRecordingTrack = (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
+      mixRecordings.value = await AppFirebaseService.instance.getAllMixRecordings(meetingId) ?? [];
 
-      final allRecordings = await AppFirebaseService.instance.getAllMixRecordings(meetingId) ?? [];
-
-      for (final doc in firestoreRecordingTrack) {
-        final itemData = doc.data();
-
-        if (itemData['startTime'] == null || itemData['stopTime'] == null) {
-          continue;
-        }
-
-        final startTime = (itemData['startTime'] as int).toDateTime;
-        final stopTime = (itemData['stopTime'] as int).toDateTime;
-
-        // ✅ collect ALL recordings inside this time window
-        final matched = allRecordings.where((element) {
-          final recTime = element.recordingTime;
-          if (recTime == null) return false;
-
-          return recTime.isAfter(startTime) && recTime.isBefore(stopTime.add(Duration(minutes: 1)));
-        });
-
-        for (final item in matched) {
-          items.add(
-            RecordingFileModel(
-              key: item.key,
-              playableUrl: item.playableUrl,
-              recordingTime: item.recordingTime,
-              startTime: startTime,
-              stopTime: stopTime,
-              size: item.size,
-            ),
-          );
-        }
-      }
-
-      mixRecordings.value = items;
       isMixRecordingLoading.value = false;
     } catch (e, st) {
       AppLogger.print("Failed to fetch mix recording in controller : $e\n$st");

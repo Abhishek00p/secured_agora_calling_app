@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/constants.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
+import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/models/recording_file_model.dart';
 import 'package:secured_calling/core/services/agora_token_helper.dart';
@@ -857,7 +858,7 @@ class AppFirebaseService {
     return response['success'] ?? false;
   }
 
-  Future<List<RecordingFileModel>?> getAllMixRecordings(String meetingId) async {
+  Future<List<MixRecordingModel>?> getAllMixRecordings(String meetingId) async {
     final response = await AppHttpService().post('api/agora/recording/list/mix', body: {'channelName': meetingId, 'meetingId': meetingId});
 
     if (response == null) {
@@ -866,7 +867,7 @@ class AppFirebaseService {
     }
     if (response['success'] == true) {
       if (response['data'] is List) {
-        return (response['data'] as List).map((e) => RecordingFileModel.fromJson(e)).toList();
+        return (response['data'] as List).map((e) => MixRecordingModel.fromJson(e)).toList();
       }
     } else {
       AppLogger.print(" failed to fetch list of recording : $response, message: ${response['error_message']}");
@@ -878,6 +879,10 @@ class AppFirebaseService {
   Future<List<SpeakingEventModel>> getAllMeetingRecordings({required String meetingId}) async {
     try {
       List<SpeakingEventModel> allItems = [];
+      final meetingData = MeetingModel.fromJson(
+        (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).get()).data() as Map<String, dynamic>? ?? {},
+      );
+
       final allRecordingDocs = (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
 
       for (QueryDocumentSnapshot doc in allRecordingDocs) {
@@ -908,7 +913,25 @@ class AppFirebaseService {
 
           for (QueryDocumentSnapshot item in allSpeakingEventsOfThisRecordingDocs) {
             final speakingEventDocData = item.data() as Map<String, dynamic>? ?? {};
+            final currentUserId = AppLocalStorage.getUserDetails().userId;
+            final isHost = currentUserId == meetingData.hostId;
+            final eventUserId = speakingEventDocData['userId'] as int? ?? 0;
 
+            // If host: skip only host's own recordings
+            if (isHost) {
+              if (eventUserId == meetingData.hostId) {
+                debugPrint("skipping becoz i am host and this is my recordimg");
+                continue;
+              }
+            }
+            // If participant: skip everything that is not theirs
+            else {
+              if (eventUserId != currentUserId) {
+                debugPrint("skipping becoz i am not a host and this is not my recordimg");
+
+                continue;
+              }
+            }
             allItems.add(
               SpeakingEventModel(
                 userId: speakingEventDocData['userId'].toString(),

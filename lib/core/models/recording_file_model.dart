@@ -1,36 +1,21 @@
-class RecordingFileModel {
-  final String key;
+class MixRecordingModel {
   final String playableUrl;
-  final DateTime? startTime;
-  final DateTime? stopTime;
-  final DateTime? recordingTime;
-  final String? userName;
-  final int? userId;
-  final int size;
+  final int startTime;
 
-  const RecordingFileModel({
-    required this.key,
-    required this.playableUrl,
-    required this.startTime,
-    required this.stopTime,
-    required this.size,
-    required this.recordingTime,
-    this.userName = '',
-    this.userId,
-  });
+  const MixRecordingModel({required this.playableUrl, required this.startTime});
 
   /// -----------------------------
   /// EMPTY MODEL
   /// -----------------------------
-  static RecordingFileModel empty() {
-    return RecordingFileModel(key: '', playableUrl: '', size: 0, startTime: null, stopTime: null, recordingTime: null);
+  static MixRecordingModel empty() {
+    return MixRecordingModel(playableUrl: '', startTime: 0);
   }
 
   /// -----------------------------
   /// IS EMPTY CHECK
   /// -----------------------------
   bool get isEmpty {
-    return key.isEmpty && playableUrl.isEmpty && size == 0;
+    return playableUrl.isEmpty && startTime == 0;
   }
 
   bool get isNotEmpty => !isEmpty;
@@ -38,57 +23,22 @@ class RecordingFileModel {
   /// -----------------------------
   /// FROM JSON
   /// -----------------------------
-  factory RecordingFileModel.fromJson(Map<String, dynamic> json) {
-    return RecordingFileModel(
-      key: json['key'] ?? '',
-      playableUrl: json['playableUrl'] ?? '',
-      size: (json['size'] ?? 0) is int ? json['size'] : int.tryParse(json['size'].toString()) ?? 0,
-
-      startTime: json['startTime'] != null ? DateTime.tryParse(json['startTime']) : null,
-      stopTime: json['stopTime'] != null ? DateTime.tryParse(json['stopTime']) : null,
-
-      recordingTime:
-          json['recordingTime'] != null
-              ? json['recordingTime'] is int?
-                  ? DateTime.fromMillisecondsSinceEpoch(json['recordingTime'])
-                  : DateTime.tryParse(json['recordingTime'])
-              : null,
-      userName: json['username'] ?? '',
-      userId: json['userId'] is String ? int.tryParse(json['userId']) : json['userId'],
-    );
+  factory MixRecordingModel.fromJson(Map<String, dynamic> json) {
+    return MixRecordingModel(playableUrl: json['url'] ?? '', startTime: json['startTime'] ?? 0);
   }
 
   /// -----------------------------
   /// TO JSON
   /// -----------------------------
   Map<String, dynamic> toJson() {
-    return {'key': key, 'playableUrl': playableUrl, 'size': size};
+    return {'playableUrl': playableUrl};
   }
 
   /// -----------------------------
   /// COPY WITH (OPTIONAL BUT USEFUL)
   /// -----------------------------
-  RecordingFileModel copyWith({
-    String? key,
-    String? playableUrl,
-    DateTime? lastModified,
-    int? size,
-    DateTime? startTime,
-    DateTime? stopTime,
-    DateTime? recordingTime,
-    int? userId,
-    String? userName,
-  }) {
-    return RecordingFileModel(
-      key: key ?? this.key,
-      playableUrl: playableUrl ?? this.playableUrl,
-      startTime: startTime ?? this.startTime,
-      stopTime: stopTime ?? this.stopTime,
-      size: size ?? this.size,
-      recordingTime: recordingTime ?? this.recordingTime,
-      userId: userId ?? this.userId,
-      userName: userName ?? this.userName,
-    );
+  MixRecordingModel copyWith({String? playableUrl, int? startTime}) {
+    return MixRecordingModel(playableUrl: playableUrl ?? this.playableUrl, startTime: startTime ?? this.startTime);
   }
 
   /// -----------------------------
@@ -96,10 +46,8 @@ class RecordingFileModel {
   /// -----------------------------
   @override
   String toString() {
-    return 'RecordingFileModel('
-        'key: $key, '
-        'playableUrl: $playableUrl, '
-        'size: $size'
+    return 'MixRecordingModel('
+        'playableUrl: $playableUrl, startTime : $startTime'
         ')';
   }
 }

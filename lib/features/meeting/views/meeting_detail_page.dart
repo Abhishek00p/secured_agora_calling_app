@@ -56,10 +56,10 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                     model: SpeakingEventModel(
                       userId: '',
                       userName: '',
-                      startTime: 0,
+                      startTime: item.startTime,
                       endTime: 0,
                       recordingUrl: item.playableUrl,
-                      trackStartTime: item.startTime?.millisecondsSinceEpoch ?? 0,
+                      trackStartTime: item.startTime,
                       trackStopTime: 0,
                     ),
                     url: item.playableUrl,
@@ -189,25 +189,30 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                SizedBox(height: 16),
-                                Text(
-                                  'Mix Recordings',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
-                                ),
-                                getMixRecordingListWidget(),
-                                if (meetingDetail.hostId == AppLocalStorage.getUserDetails().userId)
+                                if (controller.isCurrentUserHost) ...[
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       SizedBox(height: 16),
                                       Text(
-                                        'Individual Recordings',
+                                        'Mix Recordings',
                                         style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
                                       ),
-                                      SizedBox(height: 16),
-                                      getIndividualRecordingWidgets(),
+                                      getMixRecordingListWidget(),
                                     ],
                                   ),
+                                ],
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(height: 16),
+                                    Text(
+                                      '${controller.isCurrentUserHost ? 'Individual' : "Your"} Recordings',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
+                                    ),
+                                    SizedBox(height: 16),
+                                    getIndividualRecordingWidgets(),
+                                  ],
+                                ),
 
                                 SizedBox(height: 40),
                               ],

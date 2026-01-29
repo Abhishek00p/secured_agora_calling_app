@@ -22,6 +22,7 @@ class RecorderAudioTile extends StatefulWidget {
 
 class _RecorderAudioTileState extends State<RecorderAudioTile> {
   late BetterPlayerController _controller;
+  static BetterPlayerController? _currentlyPlaying;
 
   Duration _absolutePosition = Duration.zero;
   Duration _clipStart = Duration.zero;
@@ -39,7 +40,9 @@ class _RecorderAudioTileState extends State<RecorderAudioTile> {
     _controller = BetterPlayerController(
       const BetterPlayerConfiguration(autoPlay: false, looping: false, controlsConfiguration: BetterPlayerControlsConfiguration(showControls: false)),
     );
-
+    if (widget.url.isEmpty) {
+      debugPrint('\n hey boy -------> watch out url is empty');
+    }
     _controller.setupDataSource(
       BetterPlayerDataSource(BetterPlayerDataSourceType.network, widget.url, videoFormat: BetterPlayerVideoFormat.hls, useAsmsAudioTracks: true),
     );
@@ -95,24 +98,42 @@ class _RecorderAudioTileState extends State<RecorderAudioTile> {
   void _togglePlay() {
     if (_isPlaying) {
       _controller.pause();
+      if (_currentlyPlaying == _controller) {
+        _currentlyPlaying = null;
+      }
     } else {
+      // Pause any other playing audio
+      if (_currentlyPlaying != null && _currentlyPlaying != _controller) {
+        _currentlyPlaying!.pause();
+      }
+
       if (_isClipped && (_absolutePosition < _clipStart || _absolutePosition >= _clipEnd)) {
         _controller.seekTo(_clipStart);
-      } else {
-        debugPrint("Not clipped or within clip range");
       }
+
+      _currentlyPlaying = _controller;
       _controller.play();
     }
   }
 
   void _seek(double value) {
-    if (_clipDuration == Duration.zero) return;
-    final target = _clipStart + (_clipDuration * value);
-    _controller.seekTo(target);
+    if (_isClipped) {
+      if (_clipDuration == Duration.zero) return;
+      final target = _clipStart + (_clipDuration * value);
+      _controller.seekTo(target);
+    } else {
+      final total = _controller.videoPlayerController?.value.duration;
+      if (total == null || total == Duration.zero) return;
+      final target = total * value;
+      _controller.seekTo(target);
+    }
   }
 
   @override
   void dispose() {
+    if (_currentlyPlaying == _controller) {
+      _currentlyPlaying = null;
+    }
     _controller.removeEventsListener(_onEvent);
     _controller.dispose();
     super.dispose();
@@ -172,7 +193,7 @@ class _RecorderAudioTileState extends State<RecorderAudioTile> {
                   child: Slider(
                     value:
                         visibleDuration.inMilliseconds == 0 ? 0 : (visiblePosition.inMilliseconds / visibleDuration.inMilliseconds).clamp(0.0, 1.0),
-                    onChanged: _isClipped ? _seek : null,
+                    onChanged: _seek,
                   ),
                 ),
                 Row(
