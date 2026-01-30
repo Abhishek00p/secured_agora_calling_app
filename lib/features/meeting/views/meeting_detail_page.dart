@@ -88,8 +88,8 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                     recordingStartTime: item.trackStartTime.toDateTimeWithSec,
                     model: item,
                     url: item.recordingUrl,
-                    clipStartTime: item.startTime.toDateTimeWithSec.subtract(Duration(seconds: 3)),
-                    clipEndTime: item.endTime.toDateTimeWithSec.subtract(Duration(seconds: 3)),
+                    clipStartTime: item.startTime.toDateTimeWithSec.subtract(Duration(seconds: 2)),
+                    clipEndTime: item.endTime.toDateTimeWithSec.add(Duration(seconds: 2)),
                   );
                 },
               ),
