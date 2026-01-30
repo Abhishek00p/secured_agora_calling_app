@@ -71,7 +71,7 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
     final isBeforeStart = now.isBefore(widget.model.scheduledStartTime);
     final isAfterEnd = now.isAfter(widget.model.scheduledEndTime);
     final isHost = widget.model.hostId == AppLocalStorage.getUserDetails().userId;
-    final hasParticipants = widget.model.participants.isNotEmpty;
+    final hasParticipants = widget.model.allParticipants.isNotEmpty;
 
     final isButtonEnabled = !isAfterEnd && (!isBeforeStart || isHost || hasParticipants);
 

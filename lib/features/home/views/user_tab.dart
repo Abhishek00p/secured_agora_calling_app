@@ -30,9 +30,7 @@ class _UserTabState extends State<UserTab> {
     final currentUser = AppLocalStorage.getUserDetails();
     if (currentUser.memberCode.isNotEmpty) {
       // Members see all upcoming meetings for their member code
-      firebaseService.getUpcomingMeetingsStream(currentUser.memberCode).listen((
-        snapshot,
-      ) {
+      firebaseService.getUpcomingMeetingsStream(currentUser.memberCode).listen((snapshot) {
         final meetings =
             snapshot.docs.map((doc) {
               return MeetingModel.fromJson(doc.data() as Map<String, dynamic>);
@@ -61,11 +59,7 @@ class _UserTabState extends State<UserTab> {
             description: 'Enter a meeting ID to join an existing call',
             buttonText: 'Join',
             onPressed: () {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => JoinMeetingDialog(),
-              );
+              showDialog(context: context, barrierDismissible: false, builder: (context) => JoinMeetingDialog());
             },
           ),
 
@@ -77,12 +71,7 @@ class _UserTabState extends State<UserTab> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Recent Meetings',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text('Recent Meetings', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                   IconButton(
                     onPressed: () {
                       loadUpcomingMeetings();
@@ -95,9 +84,7 @@ class _UserTabState extends State<UserTab> {
 
               // Placeholder for call history
               StreamBuilder<QuerySnapshot>(
-                stream: AppFirebaseService.instance.getUpcomingMeetingsStream(
-                  AppLocalStorage.getUserDetails().memberCode,
-                ),
+                stream: AppFirebaseService.instance.getUpcomingMeetingsStream(AppLocalStorage.getUserDetails().memberCode),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -111,13 +98,10 @@ class _UserTabState extends State<UserTab> {
                     final meetings = getSortedMeetingList(snapshot.data!.docs);
                     return Column(
                       children: [
-                        ...List.generate(
-                          meetings.length > 10 ? 10 : meetings.length,
-                          (index) {
-                            final meeting = meetings[index];
-                            return MeetingTileWidget(model: meeting);
-                          },
-                        ),
+                        ...List.generate(meetings.length > 10 ? 10 : meetings.length, (index) {
+                          final meeting = meetings[index];
+                          return MeetingTileWidget(model: meeting);
+                        }),
 
                         if (meetings.length > 10)
                           TextButton(
@@ -125,10 +109,8 @@ class _UserTabState extends State<UserTab> {
                               // Navigate to the Meeting view all page and pass the full list of meetings
                               Navigator.pushNamed(
                                 context,
-                                AppRouter
-                                    .meetingViewAllRoute, // Ensure this route is defined
-                                arguments:
-                                    meetings, // Pass the full list of meetings
+                                AppRouter.meetingViewAllRoute, // Ensure this route is defined
+                                arguments: meetings, // Pass the full list of meetings
                               );
                             },
                             child: Text('View All'),
@@ -152,38 +134,24 @@ class _UserTabState extends State<UserTab> {
         children: [
           const Icon(Icons.history, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          Text(
-            'No recent meetings',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('No recent meetings', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text(
-            'Meetings you join will appear here',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text('Meetings you join will appear here', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     );
   }
 
-  List<MeetingModel> getSortedMeetingList(
-    List<QueryDocumentSnapshot<Object?>> meetings,
-  ) {
+  List<MeetingModel> getSortedMeetingList(List<QueryDocumentSnapshot<Object?>> meetings) {
     final modelList =
         meetings.map((meeting) {
-          return MeetingModel.fromJson(
-            meeting.data() as Map<String, dynamic>? ?? {},
-          );
+          return MeetingModel.fromJson(meeting.data() as Map<String, dynamic>? ?? {});
         }).toList();
 
     return modelList;
   }
 
-  void requuestMeetingApproval(
-    BuildContext context,
-    MeetingModel meeting,
-  ) async {
+  void requuestMeetingApproval(BuildContext context, MeetingModel meeting) async {
     if (!context.mounted) return;
 
     // Use centralized join request service
@@ -197,37 +165,28 @@ class _UserTabState extends State<UserTab> {
     );
   }
 
-  void listenForParticipantAddition(
-    MeetingModel meeting,
-    int userId,
-    BuildContext context,
-  ) {
-    _listener = FirebaseFirestore.instance
-        .collection('meetings')
-        .doc(meeting.meetId)
-        .snapshots()
-        .listen((snapshot) {
-          if (snapshot.exists) {
-            final data = snapshot.data() as Map<String, dynamic>;
-            final List<dynamic> participants = data['participants'] ?? [];
+  void listenForParticipantAddition(MeetingModel meeting, int userId, BuildContext context) {
+    _listener = FirebaseFirestore.instance.collection('meetings').doc(meeting.meetId).snapshots().listen((snapshot) {
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final List<dynamic> participants = data['participants'] ?? [];
 
-            if (participants.contains(userId)) {
-              // User has been added to the participants list, stop listening
-              _listener?.cancel(); // Stop listening to prevent further triggers
+        if (participants.contains(userId)) {
+          // User has been added to the participants list, stop listening
+          _listener?.cancel(); // Stop listening to prevent further triggers
 
-              Navigator.pushNamed(
-                context,
-                AppRouter.meetingRoomRoute,
-                arguments: {
-                  'channelName': meeting.channelName,
-                  'isHost':
-                      meeting.hostId == AppLocalStorage.getUserDetails().userId,
-                  'meetingId': meeting.meetId,
-                },
-              );
-            }
-          }
-        });
+          Navigator.pushNamed(
+            context,
+            AppRouter.meetingRoomRoute,
+            arguments: {
+              'channelName': meeting.channelName,
+              'isHost': meeting.hostId == AppLocalStorage.getUserDetails().userId,
+              'meetingId': meeting.meetId,
+            },
+          );
+        }
+      }
+    });
   }
 
   @override
