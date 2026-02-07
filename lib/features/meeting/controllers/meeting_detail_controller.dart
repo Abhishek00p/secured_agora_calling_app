@@ -46,7 +46,7 @@ class MeetingDetailController extends GetxController {
     loadMeetingDetails().then((_) {
       fetchIndividualRecordings();
 
-      fetchMixRecordings();
+      // fetchMixRecordings();
     });
     _initializeRealTimeUpdates();
     // fetchAllIndividualRecordings();

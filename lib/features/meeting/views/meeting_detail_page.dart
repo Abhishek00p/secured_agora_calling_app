@@ -6,6 +6,7 @@ import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/features/meeting/widgets/clip_audio_downloader.dart';
 import 'package:secured_calling/features/meeting/widgets/recorder_audio_tile.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
@@ -84,12 +85,46 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                 itemBuilder: (context, index) {
                   final item = controller.individualRecordings[index];
 
-                  return RecorderAudioTile(
-                    recordingStartTime: item.trackStartTime.toDateTimeWithSec,
-                    model: item,
-                    url: item.recordingUrl,
-                    clipStartTime: item.startTime.toDateTimeWithSec.subtract(Duration(seconds: 2)),
-                    clipEndTime: item.endTime.toDateTimeWithSec.add(Duration(seconds: 2)),
+                  return Row(
+                    children: [
+                      Flexible(
+                        child: RecorderAudioTile(
+                          recordingStartTime: item.trackStartTime.toDateTimeWithSec,
+                          model: item,
+                          url: item.recordingUrl,
+                          clipStartTime: item.startTime.toDateTimeWithSec.subtract(Duration(seconds: 2)),
+                          clipEndTime: item.endTime.toDateTimeWithSec.add(Duration(seconds: 2)),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.download),
+                        onPressed: () async {
+                          try {
+                            final downloader = ClipAudioDownloader();
+
+                            final recordingStart = item.trackStartTime.toDateTime;
+
+                            final clipStartTime = item.startTime.toDateTimeWithSec.subtract(const Duration(seconds: 2));
+
+                            final clipEndTime = item.endTime.toDateTimeWithSec.add(const Duration(seconds: 2));
+
+                            final clipStart = clipStartTime.difference(recordingStart);
+
+                            final clipEnd = clipEndTime.difference(recordingStart);
+
+                            final file = await downloader.downloadClip(m3u8Url: item.recordingUrl, clipStart: clipStart, clipEnd: clipEnd);
+
+                            if (!mounted) return;
+
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Audio saved successfully")));
+                          } catch (e) {
+                            if (!mounted) return;
+                            debugPrint("Download error → $e");
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Download failed: $e")));
+                          }
+                        },
+                      ),
+                    ],
                   );
                 },
               ),
@@ -189,18 +224,18 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (controller.isCurrentUserHost) ...[
-                                  Column(
-                                    children: [
-                                      SizedBox(height: 16),
-                                      Text(
-                                        'Mix Recordings',
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
-                                      ),
-                                      getMixRecordingListWidget(),
-                                    ],
-                                  ),
-                                ],
+                                // if (controller.isCurrentUserHost) ...[
+                                //   Column(
+                                //     children: [
+                                //       SizedBox(height: 16),
+                                //       Text(
+                                //         'Mix Recordings',
+                                //         style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
+                                //       ),
+                                //       getMixRecordingListWidget(),
+                                //     ],
+                                //   ),
+                                // ],
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [

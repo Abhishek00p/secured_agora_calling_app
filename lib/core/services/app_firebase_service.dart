@@ -893,7 +893,7 @@ class AppFirebaseService {
 
         // fetch recordingUrl from server
         final response = await AppHttpService().post(
-          'api/agora/recording/list/individual',
+          'api/agora/recording/list/individual/audiofile',
           body: {'channelName': meetingId, 'type': 'mix', 'startTime': startTime, 'endTime': endTime},
         );
 
