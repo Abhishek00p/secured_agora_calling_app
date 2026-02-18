@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
-import 'package:secured_calling/core/services/pip_service.dart';
 import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 
@@ -67,10 +66,8 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
     _checkMeetingStatus();
 
     if (_isInMeeting) {
-      // Try to show PIP so user has a floating "Back to app"
-      PipService.enterPipMode();
-      // Do NOT run delayed cleanup here: user may close PIP and return via the
-      // persistent notification. Cleanup only on detached (app process killed).
+      // Do NOT run delayed cleanup here: user may return via the
+      // persistent notification or call bar. Cleanup only on detached (app process killed).
     }
   }
 

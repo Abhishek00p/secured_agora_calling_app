@@ -11,7 +11,7 @@ import androidx.core.app.NotificationCompat
 
 /**
  * Foreground service that shows a persistent "In call" notification
- * so the user can tap to return to the app. Does not end the meeting when PIP is closed.
+ * so the user can tap to return to the app.
  */
 class CallForegroundService : Service() {
 
@@ -52,6 +52,7 @@ class CallForegroundService : Service() {
 
         val openIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            putExtra(MainActivity.EXTRA_RETURN_TO_MEETING, true)
         }
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -61,8 +62,8 @@ class CallForegroundService : Service() {
         )
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("SecuredCalling")
-            .setContentText("In call: $meetingName — Tap to return")
+            .setContentTitle("In call: $meetingName")
+            .setContentText("Tap to return")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
             .setOngoing(true)

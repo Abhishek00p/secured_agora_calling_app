@@ -1052,7 +1052,7 @@ class MeetingController extends GetxController {
       // Notify lifecycle manager that user is in a meeting
       _lifecycleManager.setMeetingStatus(isInMeeting: true, meetingId: meetingId, isHost: isHost);
 
-      // Show persistent notification so user can return to app (e.g. after closing PIP)
+      // Show persistent notification so user can return to app
       CallNotificationService.startOngoingCallNotification(
         meetingName: meetingModel.value.meetingName.isNotEmpty ? meetingModel.value.meetingName : 'Meeting',
       );

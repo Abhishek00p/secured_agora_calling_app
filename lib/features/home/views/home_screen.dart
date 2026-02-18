@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:secured_calling/core/services/pip_service.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/app_color_extension.dart';
@@ -9,6 +10,7 @@ import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/services/call_notification_service.dart';
 
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/app_user_role_service.dart';
@@ -35,7 +37,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   final List<Widget> _pages = [MembarTabViewWidget(), UserTab()];
   int _selectedIndex = 0;
@@ -84,9 +86,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       loadUserData();
+      _checkReturnToMeeting();
     });
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
@@ -114,31 +118,59 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      _checkReturnToMeeting();
+    }
+  }
+
+  Future<void> _checkReturnToMeeting() async {
+    final shouldReturn = await CallNotificationService.getAndClearReturnToMeetingFlag();
+    if (!shouldReturn || !mounted) return;
+    if (Get.currentRoute == AppRouter.meetingRoomRoute) return;
+    if (Get.isRegistered<MeetingController>()) {
+      final c = Get.find<MeetingController>();
+      if (c.isJoined.value) {
+        Get.toNamed(
+          AppRouter.meetingRoomRoute,
+          arguments: {
+            'channelName': c.channelName,
+            'isHost': c.isHost,
+            'meetingId': c.meetingId,
+          },
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
+      onPopInvokedWithResult: (didPop, result) async {
         if (poppedTimes == 0) {
           setState(() {
             poppedTimes++;
           });
-          AppToastUtil.showInfoToast(title: 'Exit Confirmation', 'Press back again to exit the app');
+          AppToastUtil.showInfoToast('Press back again to send app to background', title: 'Minimize');
 
           // Reset after a short delay (to avoid double count after timeout)
           Future.delayed(const Duration(seconds: 2), () {
             poppedTimes = 0;
           });
         } else {
-          // Exit the app
-          if (Get.isRegistered<MeetingController>() && Get.find<MeetingController>().isJoined.value) {
-            AppToastUtil.showInfoToast('Call continues in background. Reopen app or use PIP to return.');
+          final inMeeting = Get.isRegistered<MeetingController>() && Get.find<MeetingController>().isJoined.value;
+          if (inMeeting) {
+            AppToastUtil.showInfoToast('Call continues in background. Tap notification or call bar to return.');
           }
-          SystemNavigator.pop(); // or use exit(0) from 'dart:io' if needed
+          await PipService.moveTaskToBack();
         }
       },
       child: Scaffold(

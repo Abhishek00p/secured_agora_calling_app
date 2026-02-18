@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Shows or hides the persistent "In call" notification on Android.
-/// User can tap the notification to return to the app; closing PIP does not end the meeting.
+/// User can tap the notification to return to the app.
 class CallNotificationService {
   static const MethodChannel _channel =
       MethodChannel('com.example.secured_calling/call_notification');
@@ -36,6 +36,22 @@ class CallNotificationService {
         // ignore: avoid_print
         print('CallNotificationService: stop failed: ${e.message}');
       }
+    }
+  }
+
+  /// Returns true if the app was opened from the "in call" notification (tap to return to meeting).
+  /// Clears the flag after reading. Call when app resumes to navigate to meeting if true.
+  static Future<bool> getAndClearReturnToMeetingFlag() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      final result = await _channel.invokeMethod<bool>('getAndClearReturnToMeetingFlag');
+      return result == true;
+    } on PlatformException catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('CallNotificationService: getAndClearReturnToMeetingFlag failed: ${e.message}');
+      }
+      return false;
     }
   }
 }

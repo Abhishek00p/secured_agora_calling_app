@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:secured_calling/core/services/pip_service.dart';
 import 'package:secured_calling/core/extensions/app_color_extension.dart';
 import 'package:secured_calling/core/models/participant_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
@@ -155,9 +154,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.paused && meetingController.isJoined.value) {
-      PipService.enterPipMode();
-    }
     // AppLifecycleManager will handle app termination cleanup automatically
   }
 

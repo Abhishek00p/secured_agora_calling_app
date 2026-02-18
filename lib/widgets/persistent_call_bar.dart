@@ -40,7 +40,7 @@ class PersistentCallBar extends StatelessWidget {
             ],
           ),
           child: SafeArea(
-            top: false,
+            // top: false,
             child: Row(
               children: [
                 const Icon(Icons.call, color: Colors.white, size: 24),
