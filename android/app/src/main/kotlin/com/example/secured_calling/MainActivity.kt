@@ -12,11 +12,12 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.example.secured_calling/pip"
+    private val PIP_CHANNEL = "com.example.secured_calling/pip"
+    private val CALL_NOTIFICATION_CHANNEL = "com.example.secured_calling/call_notification"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL).setMethodCallHandler { call, result ->
             if (call.method == "enterPipMode") {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     val intent = Intent(this, MainActivity::class.java).apply {
@@ -40,6 +41,31 @@ class MainActivity : FlutterActivity() {
                 }
             } else {
                 result.notImplemented()
+            }
+        }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CALL_NOTIFICATION_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "startOngoingCallNotification" -> {
+                    val meetingName = call.argument<String>("meetingName") ?: "Meeting"
+                    val intent = Intent(this, CallForegroundService::class.java).apply {
+                        action = CallForegroundService.ACTION_START
+                        putExtra(CallForegroundService.EXTRA_MEETING_NAME, meetingName)
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
+                    result.success(null)
+                }
+                "stopOngoingCallNotification" -> {
+                    val intent = Intent(this, CallForegroundService::class.java).apply {
+                        action = CallForegroundService.ACTION_STOP
+                    }
+                    startService(intent)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
             }
         }
     }

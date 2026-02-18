@@ -4,6 +4,7 @@ import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/home/views/delete_confirmation_dialog.dart';
 import 'package:secured_calling/features/home/views/user_creation_form.dart';
+import 'package:secured_calling/widgets/persistent_call_bar.dart';
 import 'package:secured_calling/widgets/user_credentials_dialog.dart';
 
 class UsersScreen extends StatefulWidget {
@@ -75,6 +76,7 @@ class _UsersScreenState extends State<UsersScreen> {
       ),
       body: Column(
         children: [
+          const PersistentCallBar(),
           // Search Bar
           Padding(
             padding: const EdgeInsets.all(16.0),

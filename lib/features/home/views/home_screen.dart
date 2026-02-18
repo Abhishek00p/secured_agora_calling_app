@@ -20,6 +20,8 @@ import 'package:secured_calling/features/home/network_log_screen.dart';
 import 'package:secured_calling/features/home/views/membar_tab_view_widget.dart';
 import 'package:secured_calling/features/home/views/user_tab.dart';
 import 'package:secured_calling/features/home/views/users_screen.dart';
+import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
+import 'package:secured_calling/widgets/persistent_call_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
@@ -133,6 +135,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           });
         } else {
           // Exit the app
+          if (Get.isRegistered<MeetingController>() && Get.find<MeetingController>().isJoined.value) {
+            AppToastUtil.showInfoToast('Call continues in background. Reopen app or use PIP to return.');
+          }
           SystemNavigator.pop(); // or use exit(0) from 'dart:io' if needed
         }
       },
@@ -194,6 +199,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         body: SingleChildScrollView(
           child: Column(
             children: [
+              const PersistentCallBar(),
               // User profile card
               Container(
                 width: double.infinity,

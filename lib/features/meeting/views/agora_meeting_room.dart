@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:secured_calling/core/services/pip_service.dart';
 import 'package:secured_calling/core/extensions/app_color_extension.dart';
 import 'package:secured_calling/core/models/participant_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/utils/app_logger.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/features/meeting/views/join_request_widget.dart';
 import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
@@ -124,15 +125,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
 
   final meetingController = Get.find<MeetingController>();
   final currentUser = AppLocalStorage.getUserDetails();
-  static const platform = MethodChannel('com.example.secured_calling/pip');
-
-  Future<void> enterPipMode() async {
-    try {
-      await platform.invokeMethod('enterPipMode');
-    } on PlatformException catch (e) {
-      debugPrint("Failed to enter PIP mode: '${e.message}'.");
-    }
-  }
 
   @override
   void initState() {
@@ -140,7 +132,17 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     WidgetsBinding.instance.addObserver(this);
     WakelockPlus.enable();
     AppLogger.print('meeting id before init  :${widget.meetingId}');
-    meetingController.initializeMeeting(meetingId: widget.meetingId, isUserHost: widget.isHost, context: context);
+    // Re-entry: already in this meeting, no need to initialize again
+    final alreadyInThisMeeting = meetingController.isJoined.value &&
+        meetingController.meetingId == widget.meetingId;
+    if (!alreadyInThisMeeting) {
+      meetingController.initializeMeeting(
+        meetingId: widget.meetingId,
+        channelName: widget.channelName,
+        isUserHost: widget.isHost,
+        context: context,
+      );
+    }
   }
 
   @override
@@ -154,7 +156,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.paused && meetingController.isJoined.value) {
-      enterPipMode();
+      PipService.enterPipMode();
     }
     // AppLifecycleManager will handle app termination cleanup automatically
   }
@@ -164,14 +166,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     return GetBuilder<MeetingController>(
       builder: (meetingController) {
         return PopScope(
-          canPop: false,
+          canPop: true,
           onPopInvokedWithResult: (didPop, result) async {
-            if (!didPop) {
-              if (meetingController.isJoined.value) {
-                enterPipMode();
-              } else {
-                Navigator.pop(context);
-              }
+            if (didPop && meetingController.isJoined.value && context.mounted) {
+              AppToastUtil.showInfoToast('Call continues in background. Tap the bar to return.');
             }
           },
           child: Scaffold(

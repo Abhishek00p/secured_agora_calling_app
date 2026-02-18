@@ -11,6 +11,7 @@ import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/app_lifecycle_manager.dart';
+import 'package:secured_calling/core/services/call_notification_service.dart';
 import 'package:secured_calling/core/services/meeting_timeout_service.dart';
 import 'package:secured_calling/features/meeting/services/agora_service.dart';
 import 'package:secured_calling/core/models/participant_model.dart';
@@ -40,6 +41,8 @@ class MeetingController extends GetxController {
   final pttUsers = <int>[].obs;
 
   String meetingId = '';
+  /// Stored for re-navigation when user returns to the meeting from another screen.
+  String channelName = '';
   bool isHost = false;
   int remainingSeconds = AppLocalStorage.getUserDetails().isMember ? 25200 : 300;
   String currentSpeaker = '';
@@ -402,6 +405,8 @@ class MeetingController extends GetxController {
     participants.clear();
     pttUsers.clear();
     remainingSeconds = 0;
+    meetingId = '';
+    channelName = '';
     isHost = false;
     isMuted.value = false;
     isOnSpeaker.value = false;
@@ -422,6 +427,9 @@ class MeetingController extends GetxController {
     // Clear meeting status from lifecycle manager
     _lifecycleManager.clearMeetingStatus();
 
+    // Remove ongoing call notification
+    CallNotificationService.stopOngoingCallNotification();
+
     // Destroy Agora engine to prevent error -17
     try {
       _agoraService.destroy();
@@ -434,8 +442,14 @@ class MeetingController extends GetxController {
     AppLogger.print('_clearMeetingState cleanup completed');
   }
 
-  Future<void> initializeMeeting({required String meetingId, required bool isUserHost, required BuildContext context}) async {
+  Future<void> initializeMeeting({
+    required String meetingId,
+    required String channelName,
+    required bool isUserHost,
+    required BuildContext context,
+  }) async {
     this.meetingId = meetingId;
+    this.channelName = channelName;
     isHost = isUserHost;
 
     try {
@@ -452,7 +466,7 @@ class MeetingController extends GetxController {
 
       await _agoraService.initialize(rtcEngineEventHandler: _rtcEngineEventHandler(context));
 
-      await joinChannel(channelName: meetingId);
+      await joinChannel(channelName: channelName);
       await _agoraService.engine?.enableAudio();
       await _agoraService.engine?.muteLocalAudioStream(true);
       isMuted.value = true; // All users start muted by default
@@ -812,6 +826,15 @@ class MeetingController extends GetxController {
     update();
   }
 
+  /// Mute/unmute local audio for recording playback (e.g. on meeting detail).
+  /// When [mute] is true, your mic is muted so recording playback is not sent to the call.
+  /// When [mute] is false, restores the meeting mute state ([isMuted]).
+  Future<void> setMutedForRecordingPlayback(bool mute) async {
+    if (!isJoined.value) return;
+    await _agoraService.muteLocalAudio(mute ? true : isMuted.value);
+    update();
+  }
+
   Future<void> endMeeting() async {
     try {
       AppLogger.print('Starting endMeeting process...');
@@ -1028,6 +1051,11 @@ class MeetingController extends GetxController {
 
       // Notify lifecycle manager that user is in a meeting
       _lifecycleManager.setMeetingStatus(isInMeeting: true, meetingId: meetingId, isHost: isHost);
+
+      // Show persistent notification so user can return to app (e.g. after closing PIP)
+      CallNotificationService.startOngoingCallNotification(
+        meetingName: meetingModel.value.meetingName.isNotEmpty ? meetingModel.value.meetingName : 'Meeting',
+      );
 
       // Start heartbeat to keep participant active
       _timeoutService.startHeartbeat(meetingId);
