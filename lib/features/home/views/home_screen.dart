@@ -15,6 +15,7 @@ import 'package:secured_calling/core/services/app_user_role_service.dart';
 import 'package:secured_calling/core/services/notification_service.dart';
 import 'package:secured_calling/core/services/permission_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/admin/admin_home.dart';
 import 'package:secured_calling/features/home/network_log_screen.dart';
 import 'package:secured_calling/features/home/views/membar_tab_view_widget.dart';
@@ -191,14 +192,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
         ),
 
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              // User profile card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                margin: const EdgeInsets.all(16),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final padding = responsivePadding(context);
+            final maxWidth = (context.layoutType != AppLayoutType.mobile) ? 700.0 : double.infinity;
+            return SingleChildScrollView(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Column(
+                    children: [
+                      // User profile card
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(padding),
+                        margin: EdgeInsets.all(padding),
                 decoration: BoxDecoration(
                   gradient: AppTheme.primaryGradient,
                   borderRadius: BorderRadius.circular(16),
@@ -262,34 +270,38 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
               ),
 
-              // Tab Bar
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(color: Theme.of(context).cardTheme.color, borderRadius: BorderRadius.circular(12)),
+                      // Tab Bar
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: padding),
+                        decoration: BoxDecoration(color: Theme.of(context).cardTheme.color, borderRadius: BorderRadius.circular(12)),
                 // height: 50,
                 // width: double.infinity,
-                child: TabBar(
-                  onTap: (index) {
-                    setState(() {
-                      _selectedIndex = index;
-                    });
-                  },
-                  controller: _tabController,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  indicator: BoxDecoration(borderRadius: BorderRadius.circular(12), color: AppTheme.primaryColor),
-                  labelColor: Colors.white,
-                  indicatorPadding: EdgeInsets.all(8),
-                  dividerColor: Colors.transparent,
-                  unselectedLabelColor: Theme.of(context).textTheme.bodyLarge?.color,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                  tabs: const [Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'), Tab(icon: Icon(Icons.people), text: 'Join Meeting')],
+                        child: TabBar(
+                          onTap: (index) {
+                            setState(() {
+                              _selectedIndex = index;
+                            });
+                          },
+                          controller: _tabController,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          indicator: BoxDecoration(borderRadius: BorderRadius.circular(12), color: AppTheme.primaryColor),
+                          labelColor: Colors.white,
+                          indicatorPadding: EdgeInsets.all(8),
+                          dividerColor: Colors.transparent,
+                          unselectedLabelColor: Theme.of(context).textTheme.bodyLarge?.color,
+                          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                          tabs: const [Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'), Tab(icon: Icon(Icons.people), text: 'Join Meeting')],
+                        ),
+                      ),
+                      const Divider(),
+                      // Tab content
+                      _pages[_selectedIndex],
+                    ],
+                  ),
                 ),
               ),
-              Divider(),
-              // Tab content
-              _pages[_selectedIndex],
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

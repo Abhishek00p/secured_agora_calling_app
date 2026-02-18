@@ -5,6 +5,7 @@ import 'package:secured_calling/core/extensions/app_color_extension.dart';
 import 'package:secured_calling/core/models/participant_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/features/meeting/views/join_request_widget.dart';
@@ -295,7 +296,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                         if (meetingController.isHost) ...[
                           JoinRequestWidget(),
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 30.0),
+                            padding: EdgeInsets.only(bottom: responsivePadding(context) * 2),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               // runSpacing: 24,
@@ -311,12 +312,12 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                   },
                                   child: Obx(() {
                                     final isPttActive = meetingController.pttUsers.contains(meetingController.currentUser.userId);
+                                    final radius = controlRadius(context);
                                     return CircleAvatar(
-                                      radius: 60,
+                                      radius: radius,
                                       backgroundColor: isPttActive ? Colors.green : Colors.white.withAppOpacity(0.2),
-                                      child: Icon(isPttActive ? Icons.mic : Icons.mic_off, color: Colors.white, size: 50),
+                                      child: Icon(isPttActive ? Icons.mic : Icons.mic_off, color: Colors.white, size: radius * 0.85),
                                     );
-                                    // );
                                   }),
                                 ),
 
@@ -326,12 +327,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                     Obx(
                                       () => SizedBox(
                                         height: 50,
-
                                         child: OutlinedButton(
                                           style: OutlinedButton.styleFrom(
                                             side: BorderSide(color: meetingController.isOnSpeaker.value ? Colors.green : Colors.white),
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                            padding: EdgeInsets.symmetric(horizontal: responsivePadding(context), vertical: 8),
                                           ),
                                           onPressed: meetingController.toggleSpeaker,
                                           child: Row(
@@ -362,7 +362,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                         ],
                         if (!meetingController.isHost) ...[
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 30.0),
+                            padding: EdgeInsets.only(bottom: responsivePadding(context) * 2),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               // runSpacing: 24,
@@ -377,12 +377,12 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                   },
                                   child: Obx(() {
                                     final isPttActive = meetingController.pttUsers.contains(meetingController.currentUser.userId);
+                                    final radius = controlRadius(context);
                                     return CircleAvatar(
-                                      radius: 75,
+                                      radius: radius,
                                       backgroundColor: isPttActive ? Colors.green : Colors.white.withAppOpacity(0.2),
-                                      child: Icon(isPttActive ? Icons.mic : Icons.mic_off, color: Colors.white, size: 65),
+                                      child: Icon(isPttActive ? Icons.mic : Icons.mic_off, color: Colors.white, size: radius * 0.85),
                                     );
-                                    // );
                                   }),
                                 ),
                                 16.h,
@@ -396,7 +396,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                           style: OutlinedButton.styleFrom(
                                             side: BorderSide(color: meetingController.isOnSpeaker.value ? Colors.green : Colors.white),
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                            padding: EdgeInsets.symmetric(horizontal: responsivePadding(context), vertical: 8),
                                           ),
                                           onPressed: meetingController.toggleSpeaker,
                                           child: Row(

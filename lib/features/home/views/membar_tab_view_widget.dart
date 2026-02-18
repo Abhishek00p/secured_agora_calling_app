@@ -5,6 +5,7 @@ import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/permission_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/home/views/meeting_action_card.dart';
 import 'package:secured_calling/features/home/views/meeting_util_service.dart';
 import 'package:secured_calling/features/meeting/views/meeting_tile_widget.dart';
@@ -49,8 +50,10 @@ class MembarTabViewWidget extends StatelessWidget {
       );
     }
 
+    final padding = responsivePadding(context);
+    final useGrid = context.layoutType != AppLayoutType.mobile;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -126,10 +129,26 @@ class MembarTabViewWidget extends StatelessWidget {
                 );
               }
 
+              if (useGrid) {
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: context.layoutType == AppLayoutType.laptop ? 3 : 2,
+                    childAspectRatio: 1.4,
+                    crossAxisSpacing: padding,
+                    mainAxisSpacing: padding,
+                  ),
+                  itemCount: meetings.length,
+                  itemBuilder: (context, index) {
+                    final meeting = MeetingModel.fromJson(meetings[index].data() as Map<String, dynamic>);
+                    return MeetingTileWidget(model: meeting);
+                  },
+                );
+              }
               return Column(
                 children: List.generate(meetings.length, (index) {
                   final meeting = MeetingModel.fromJson(meetings[index].data() as Map<String, dynamic>);
-
                   return MeetingTileWidget(model: meeting);
                 }),
               );

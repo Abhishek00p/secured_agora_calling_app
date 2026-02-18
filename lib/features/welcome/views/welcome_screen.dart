@@ -1,8 +1,9 @@
-import 'package:secured_calling/core/services/app_firebase_service.dart';
-import 'package:secured_calling/utils/app_icon_constants.dart';
-import 'package:secured_calling/core/routes/app_router.dart';
-import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:secured_calling/core/routes/app_router.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
+import 'package:secured_calling/utils/app_icon_constants.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -21,6 +22,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final padding = responsivePadding(context);
+    final isWide = context.isTablet || context.isLaptop;
+    final logoSize = isWide ? (context.isLaptop ? 100.0 : 96.0) : 80.0;
+    final maxContentWidth = isWide ? 560.0 : double.infinity;
 
     return Scaffold(
       body: Container(
@@ -35,54 +40,46 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(height: size.height * 0.08),
-                // App Logo
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(gradient: AppTheme.primaryGradient, borderRadius: BorderRadius.circular(18)),
-                  child: const Icon(Icons.call, size: 40, color: Colors.white),
-                ),
-                SizedBox(height: size.height * 0.04),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxContentWidth),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(height: size.height * 0.08),
+                    // App Logo
+                    Container(
+                      width: logoSize,
+                      height: logoSize,
+                      decoration: BoxDecoration(gradient: AppTheme.primaryGradient, borderRadius: BorderRadius.circular(18)),
+                      child: Icon(Icons.call, size: logoSize * 0.5, color: Colors.white),
+                    ),
+                    SizedBox(height: size.height * 0.04),
 
-                // App Name
-                Text(
-                  'SecuredCalling',
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    // background:
-                    //     Paint()
-                    //       ..shader = const LinearGradient(
-                    //         colors: [
-                    //           AppTheme.primaryColor,
-                    //           AppTheme.secondaryColor,
-                    //         ],
-                    //         begin: Alignment.topLeft,
-                    //         end: Alignment.bottomRight,
-                    //       ).createShader(
-                    //         const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0),
-                    //       ),
-                  ),
-                ),
-                const SizedBox(height: 12),
+                    // App Name
+                    Text(
+                      'SecuredCalling',
+                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
-                // App Description
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text('Connect. Collaborate. Create.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
-                ),
-                SizedBox(height: size.height * 0.04),
+                    // App Description
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: padding),
+                      child: Text('Connect. Collaborate. Create.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
+                    ),
+                    SizedBox(height: size.height * 0.04),
                 Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(20),
+                  margin: EdgeInsets.symmetric(horizontal: padding),
+                  padding: EdgeInsets.all(padding + 4),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3), width: 1.5),
                   ),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         'About Our Company',
@@ -120,8 +117,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 SizedBox(height: size.height * 0.08),
                 // App Features Description
                 Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(24),
+                  margin: EdgeInsets.symmetric(horizontal: padding),
+                  padding: EdgeInsets.all(padding + 8),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardTheme.color,
                     borderRadius: BorderRadius.circular(20),
@@ -142,7 +139,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
                 // Company Description
                 SizedBox(height: size.height * 0.05),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),

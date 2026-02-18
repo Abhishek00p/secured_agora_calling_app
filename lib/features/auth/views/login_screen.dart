@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:secured_calling/utils/app_logger.dart';
-import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
+import 'package:secured_calling/utils/app_logger.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -24,44 +25,48 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(title: const Text('Login'), backgroundColor: Colors.transparent, elevation: 0, foregroundColor: AppTheme.primaryColor),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
+          padding: EdgeInsets.all(responsivePadding(context)),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: contentMaxWidth(context)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 40),
 
-              // App Logo
-              Center(
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(gradient: AppTheme.primaryGradient, borderRadius: BorderRadius.circular(18)),
-                  child: const Icon(Icons.call, size: 40, color: Colors.white),
-                ),
-              ),
+                  // App Logo
+                  Center(
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(gradient: AppTheme.primaryGradient, borderRadius: BorderRadius.circular(18)),
+                      child: const Icon(Icons.call, size: 40, color: Colors.white),
+                    ),
+                  ),
 
-              const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-              // Welcome Text
-              Text(
-                'Welcome Back',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-              ),
+                  // Welcome Text
+                  Text(
+                    'Welcome Back',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                  ),
 
-              const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-              Text('Sign in to continue to SecuredCalling', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600])),
+                  Text('Sign in to continue to SecuredCalling', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600])),
 
-              const SizedBox(height: 40),
+                  const SizedBox(height: 40),
 
-              // Login Form
-              LoginForm(formKey: _loginFormKey, onSubmit: _login),
+                  // Login Form
+                  LoginForm(formKey: _loginFormKey, onSubmit: _login),
 
-              const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-              // Info Message
-              Container(
-                padding: const EdgeInsets.all(16),
+                  // Info Message
+                  Container(
+                    padding: EdgeInsets.all(responsivePadding(context)),
                 decoration: BoxDecoration(
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -81,8 +86,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
-            ],
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
           ),
         ),
       ),

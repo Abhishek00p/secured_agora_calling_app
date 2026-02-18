@@ -7,6 +7,7 @@ import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/join_request_service.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/home/views/meeting_action_card.dart';
 import 'package:secured_calling/features/meeting/views/join_meeting_dialog.dart';
 import 'package:secured_calling/features/meeting/views/meeting_tile_widget.dart';
@@ -48,8 +49,10 @@ class _UserTabState extends State<UserTab> {
 
   @override
   Widget build(BuildContext context) {
+    final padding = responsivePadding(context);
+    final useGrid = context.layoutType != AppLayoutType.mobile;
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(padding),
       child: Column(
         children: [
           // Join existing meeting card
@@ -93,27 +96,52 @@ class _UserTabState extends State<UserTab> {
                   } else if (snapshot.hasData && snapshot.data!.docs.isEmpty) {
                     return _buildNoMeetingsPlaceholder(context);
                   } else {
-                    // Display the list of meetings
-
                     final meetings = getSortedMeetingList(snapshot.data!.docs);
+                    final displayCount = meetings.length > 10 ? 10 : meetings.length;
+                    final toShow = meetings.take(displayCount).toList();
+                    if (useGrid) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: context.layoutType == AppLayoutType.laptop ? 3 : 2,
+                              childAspectRatio: 1.4,
+                              crossAxisSpacing: padding,
+                              mainAxisSpacing: padding,
+                            ),
+                            itemCount: toShow.length,
+                            itemBuilder: (context, index) => MeetingTileWidget(model: toShow[index]),
+                          ),
+                          if (meetings.length > 10)
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRouter.meetingViewAllRoute,
+                                  arguments: meetings,
+                                );
+                              },
+                              child: const Text('View All'),
+                            ),
+                        ],
+                      );
+                    }
                     return Column(
                       children: [
-                        ...List.generate(meetings.length > 10 ? 10 : meetings.length, (index) {
-                          final meeting = meetings[index];
-                          return MeetingTileWidget(model: meeting);
-                        }),
-
+                        ...List.generate(toShow.length, (index) => MeetingTileWidget(model: toShow[index])),
                         if (meetings.length > 10)
                           TextButton(
                             onPressed: () {
-                              // Navigate to the Meeting view all page and pass the full list of meetings
                               Navigator.pushNamed(
                                 context,
-                                AppRouter.meetingViewAllRoute, // Ensure this route is defined
-                                arguments: meetings, // Pass the full list of meetings
+                                AppRouter.meetingViewAllRoute,
+                                arguments: meetings,
                               );
                             },
-                            child: Text('View All'),
+                            child: const Text('View All'),
                           ),
                       ],
                     );

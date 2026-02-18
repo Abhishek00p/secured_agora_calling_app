@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:secured_calling/widgets/app_text_form_widget.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
+import 'package:secured_calling/widgets/app_text_form_widget.dart';
 
 class RegisterForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -16,7 +17,7 @@ class RegisterForm extends StatelessWidget {
         return Form(
           key: formKey,
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(responsivePadding(context)),
             child: Column(
               children: [
                 AppTextFormField(

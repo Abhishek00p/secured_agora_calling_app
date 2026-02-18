@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 
 class ActionCard extends StatelessWidget {
   final String title;
@@ -18,11 +19,12 @@ class ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final padding = responsivePadding(context);
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(padding + 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

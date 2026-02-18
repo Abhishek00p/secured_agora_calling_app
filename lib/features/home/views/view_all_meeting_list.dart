@@ -6,6 +6,7 @@ import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/join_request_service.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/meeting/views/meeting_tile_widget.dart';
 
 class ViewAllMeetingList extends StatefulWidget {
@@ -22,12 +23,26 @@ class _ViewAllMeetingListState extends State<ViewAllMeetingList> {
 
   @override
   Widget build(BuildContext context) {
+    final padding = responsivePadding(context);
+    final useGrid = context.layoutType != AppLayoutType.mobile;
     return Scaffold(
       appBar: AppBar(title: const Text('View All Meetings')),
       body:
           widget.meetings.isNotEmpty
-              ? ListView.builder(
-                padding: const EdgeInsets.all(16.0),
+              ? useGrid
+                  ? GridView.builder(
+                      padding: EdgeInsets.all(padding),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: context.layoutType == AppLayoutType.laptop ? 3 : 2,
+                        childAspectRatio: 1.4,
+                        crossAxisSpacing: padding,
+                        mainAxisSpacing: padding,
+                      ),
+                      itemCount: widget.meetings.length,
+                      itemBuilder: (context, index) => MeetingTileWidget(model: widget.meetings[index]),
+                    )
+                  : ListView.builder(
+                padding: EdgeInsets.all(padding),
                 itemCount: widget.meetings.length,
                 itemBuilder: (context, index) {
                   final meeting = widget.meetings[index];
