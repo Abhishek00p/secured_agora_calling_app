@@ -1,6 +1,7 @@
 name: Build Windows App
 
 # Windows uses Firebase from lib/firebase_options.dart (no flavor / google-services.json).
+
 # Build uses VS 17.10 (LTSC) to avoid firebase_auth C2665 with VS 17.12+ (see flutterfire#16536).
 on:
   push:
