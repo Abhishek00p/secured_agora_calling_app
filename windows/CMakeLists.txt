@@ -32,14 +32,22 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
+# Global: do not treat warnings as errors; suppress C4996 (deprecation) and C4244 (conversion).
+# Plugins (e.g. firebase_auth, agora) inherit this. Fixes Windows CI build.
+if(MSVC)
+  add_compile_options(/WX- /wd4996 /wd4244)
+endif()
+
 # Compilation settings that should be applied to most targets.
 #
 # Be cautious about adding new options here, as plugins use this function by
 # default. In most cases, you should add new options to specific targets instead
 # of modifying this function.
+# Don't treat warnings as errors (/WX-). Suppress deprecation (C4996) and unreferenced formal (4100).
+# Required for firebase_auth and other plugins that trigger C4996 on Windows.
 function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_features(${TARGET} PUBLIC cxx_std_17)
-  target_compile_options(${TARGET} PRIVATE /W4 /WX /wd"4100")
+  target_compile_options(${TARGET} PRIVATE /W4 /wd"4100" /wd"4996")
   target_compile_options(${TARGET} PRIVATE /EHsc)
   target_compile_definitions(${TARGET} PRIVATE "_HAS_EXCEPTIONS=0")
   target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Debug>:_DEBUG>")

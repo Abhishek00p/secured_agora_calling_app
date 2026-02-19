@@ -1,6 +1,7 @@
 name: Build Windows App
 
 # Windows uses Firebase from lib/firebase_options.dart (no flavor / google-services.json).
+# Build uses VS 17.10 (LTSC) to avoid firebase_auth C2665 with VS 17.12+ (see flutterfire#16536).
 on:
   push:
     branches: [main, master]
@@ -15,6 +16,22 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # Remove existing VS so the next step installs only 17.10 (workaround for flutterfire#16536).
+      - name: Remove existing Visual Studio
+        continue-on-error: true
+        run: |
+          if (Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\Installer\InstallCleanup.exe") {
+            & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\InstallCleanup.exe" -silent -full
+          }
+        shell: pwsh
+
+      # Install VS 2022 17.10 (LTSC) to avoid firebase_auth std::variant C2665 on VS 17.12+.
+      - name: Install Visual Studio 2022 17.10 (C++ workload)
+        run: |
+          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release.ltsc.17.10/vs_community.exe" -OutFile "vs_community.exe"
+          Start-Process -FilePath ".\vs_community.exe" -ArgumentList "--add", "Microsoft.VisualStudio.Workload.NativeDesktop", "--quiet", "--norestart", "--wait", "--includeRecommended" -Wait -NoNewWindow
+        shell: pwsh
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
