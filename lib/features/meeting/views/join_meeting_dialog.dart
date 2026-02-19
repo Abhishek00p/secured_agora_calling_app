@@ -1,378 +1,519 @@
-import 'dart:async';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:secured_calling/core/models/meeting_model.dart';
+import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/services/join_request_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
+import 'package:secured_calling/widgets/app_text_form_widget.dart';
 
-class JoinMeetingDialog extends StatefulWidget {
-  const JoinMeetingDialog({super.key});
+class JoinMeetingController extends GetxController {
+  final meetingIdController = TextEditingController();
+  final passwordController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  final firebaseService = AppFirebaseService.instance;
+  final joinRequestService = JoinRequestService();
+
+  final isLoading = false.obs;
+  final errorMessage = RxnString();
+  final meetingFound = false.obs;
+  final meetingId = RxnString();
+  final meetingData = Rxn<MeetingModel>();
+  final isWaitingForApproval = false.obs;
+
+  // New variables for upcoming meetings and user selection
+  final upcomingMeetings = <MeetingModel>[].obs;
+  final selectedUsers = <AppUser>[].obs;
+  final showUserSelection = false.obs;
+  final inviteType = 'all'.obs; // 'all' or 'selected'
+  final availableUsers = <AppUser>[].obs;
 
   @override
-  State<JoinMeetingDialog> createState() => _JoinMeetingDialogState();
-}
-
-class _JoinMeetingDialogState extends State<JoinMeetingDialog> {
-  final TextEditingController _meetingIdController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final AppFirebaseService _firebaseService = AppFirebaseService.instance;
-
-  bool _isLoading = false;
-  String? _errorMessage;
-  bool _meetingFound = false;
-  String? _meetingId;
-  Map<String, dynamic>? _meetingData;
-
-  @override
-  void dispose() {
-    _meetingIdController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  void onInit() {
+    super.onInit();
+    clearState();
+    // loadUpcomingMeetings();
+    // loadAvailableUsers();
   }
 
-  Future<void> _searchMeeting() async {
-    // Validate form first
-    if (!_formKey.currentState!.validate()) return;
+  void toggleUserSelection() {
+    showUserSelection.value = !showUserSelection.value;
+    if (!showUserSelection.value) {
+      selectedUsers.clear();
+    }
+  }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _meetingFound = false;
-      _meetingData = null;
-      _meetingId = null;
-    });
+  void selectUser(AppUser user) {
+    if (selectedUsers.contains(user)) {
+      selectedUsers.remove(user);
+    } else {
+      selectedUsers.add(user);
+    }
+  }
+
+  void setInviteType(String type) {
+    inviteType.value = type;
+    if (type == 'all') {
+      selectedUsers.clear();
+    }
+  }
+
+  void cancelJoinRequest() {
+    joinRequestService.stopListening();
+    isWaitingForApproval.value = false;
+
+    if (meetingId.value != null) {
+      firebaseService.cancelJoinRequest(meetingId.value!, AppLocalStorage.getUserDetails().userId);
+    }
+    clearState();
+    Get.back();
+  }
+
+  void clearState() {
+    isLoading.value = false;
+    errorMessage.value = null;
+    meetingFound.value = false;
+    meetingData.value = null;
+    meetingId.value = null;
+    isWaitingForApproval.value = false;
+    meetingIdController.clear();
+    passwordController.clear();
+    selectedUsers.clear();
+    showUserSelection.value = false;
+    inviteType.value = 'all';
+    joinRequestService.stopListening();
+  }
+
+  void searchMeeting() async {
+    if (!formKey.currentState!.validate()) return;
+
+    isLoading.value = true;
+    errorMessage.value = null;
+    meetingFound.value = false;
+    meetingData.value = null;
+    meetingId.value = null;
+
+    final meetingIdText = meetingIdController.text.trim();
+    final passwordText = passwordController.text;
 
     try {
-      final channelName = _meetingIdController.text.trim();
-      final documentSnapshot = await _firebaseService.searchMeetingByMeetId(
-        _meetingIdController.text,
-        channelName,
-      );
-
-      if (documentSnapshot == null || !documentSnapshot.exists) {
-        setState(() {
-          _errorMessage = 'No active meeting found with this ID';
-          _isLoading = false;
-        });
+      final docSnapshot = await firebaseService.searchMeetingByMeetId(meetingIdText, meetingIdText);
+      if (docSnapshot == null || !docSnapshot.exists) {
+        errorMessage.value = 'No active meeting found with this ID';
+        isLoading.value = false;
         return;
       }
 
-      final meetingData = documentSnapshot.data() as Map<String, dynamic>;
-
-      // Check password if required
-      if (meetingData['password'] != null &&
-          meetingData['password'].isNotEmpty) {
-        final enteredPassword = _passwordController.text;
-        if (enteredPassword != meetingData['password']) {
-          setState(() {
-            _errorMessage = 'Incorrect password for this meeting';
-            _isLoading = false;
-          });
-          return;
-        }
+      final data = MeetingModel.fromJson(docSnapshot.data() as Map<String, dynamic>);
+      if (data.password?.isNotEmpty == true && data.password != passwordText) {
+        errorMessage.value = 'Incorrect password for this meeting';
+        isLoading.value = false;
+        return;
       }
 
-      setState(() {
-        _meetingFound = true;
-        _meetingData = meetingData;
-        _meetingId = documentSnapshot.id;
-        _isLoading = false;
-      });
+      meetingFound.value = true;
+      meetingData.value = data;
+      meetingId.value = docSnapshot.id;
+      isLoading.value = false;
 
-      // If the meeting doesn't require approval, join immediately
-      // Otherwise, request to join
-      if (meetingData['requiresApproval'] == false) {
-        _joinMeeting();
-      }
+      if (!data.requiresApproval) joinMeeting();
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Error searching for meeting: $e';
-        _isLoading = false;
-      });
+      errorMessage.value = 'Error searching for meeting: $e';
+      isLoading.value = false;
     }
   }
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  StreamSubscription<DocumentSnapshot>? _listener;
+  void requestToJoin() async {
+    if (meetingId.value == null || meetingData.value == null) return;
 
-  void listenForParticipantAddition(String meetingId, String userId) {
-    _listener = _firestore
-        .collection('meetings')
-        .doc(meetingId)
-        .snapshots()
-        .listen((snapshot) {
-          if (snapshot.exists) {
-            final data = snapshot.data() as Map<String, dynamic>;
-            final List<dynamic> participants = data['participants'] ?? [];
+    isLoading.value = true;
 
-            if (participants.contains(userId)) {
-              // User has been added to the participants list, stop listening
-              _listener?.cancel(); // Stop listening to prevent further triggers
-
-              _meetingData = {'channelName': 'testing'};
-              _joinMeeting(); // Pass meeting data if needed
-            }
-          }
-        });
-  }
-
-  Future<void> _requestToJoin() async {
-    if (_meetingId == null || _meetingData == null) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final userId = _firebaseService.currentUser!.uid;
-      await _firebaseService.requestToJoinMeeting(_meetingId!, userId);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Request sent to join ${_meetingData!['meetingName']}',
-            ),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-        listenForParticipantAddition(_meetingId ?? '-', userId);
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Error requesting to join: $e';
-        _isLoading = false;
-      });
-    }
-  }
-
-  void _joinMeeting() {
-    if (_meetingData == null) return;
-
-    Navigator.pop(context); // Close dialog
-    Navigator.pushNamed(
-      context,
-      AppRouter.meetingRoomRoute,
-      arguments: {
-        'channelName': _meetingData!['channelName'],
-        'isHost': false,
-        'meetingId': _meetingId,
+    // Use centralized join request service
+    final success = await joinRequestService.requestToJoinMeeting(
+      context: Get.context!,
+      meeting: meetingData.value!,
+      onStateChanged: (isWaiting, errorMessage) {
+        isWaitingForApproval.value = isWaiting;
+        this.errorMessage.value = errorMessage;
+        isLoading.value = false;
       },
+    );
+
+    if (!success) {
+      isLoading.value = false;
+    }
+  }
+
+  void joinMeeting() {
+    if (meetingData.value == null) return;
+    Get.back();
+    Get.toNamed(
+      AppRouter.meetingRoomRoute,
+      arguments: {'channelName': meetingData.value!.channelName, 'isHost': false, 'meetingId': meetingId.value},
     );
   }
 
   @override
+  void onClose() {
+    joinRequestService.stopListening();
+    clearState();
+    super.onClose();
+  }
+}
+
+class JoinMeetingDialog extends StatelessWidget {
+  JoinMeetingDialog({super.key});
+
+  final controller = Get.put(JoinMeetingController());
+  @override
   Widget build(BuildContext context) {
+    controller.clearState();
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Dialog Title
-              Row(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: dialogMaxWidth(context), maxHeight: 600),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: responsivePadding(context),
+            vertical: responsivePadding(context),
+          ),
+          child: Form(
+            key: controller.formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.login_rounded,
-                      color: AppTheme.primaryColor,
-                    ),
+                  _buildDialogTitle(),
+                  const SizedBox(height: 24),
+
+                  // Upcoming Meetings Section (for members only)
+                  // Obx(() {
+                  //   final currentUser = AppLocalStorage.getUserDetails();
+                  //   if (currentUser.isMember && controller.upcomingMeetings.isNotEmpty) {
+                  //     return Column(
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         Text(
+                  //           'Upcoming Meetings',
+                  //           style: Get.textTheme.titleMedium?.copyWith(
+                  //             fontWeight: FontWeight.bold,
+                  //           ),
+                  //         ),
+                  //         const SizedBox(height: 12),
+                  //         Container(
+                  //           height: 120,
+                  //           child: ListView.builder(
+                  //             scrollDirection: Axis.horizontal,
+                  //             itemCount: controller.upcomingMeetings.length,
+                  //             itemBuilder: (context, index) {
+                  //               final meeting = controller.upcomingMeetings[index];
+                  //               return Container(
+                  //                 width: 200,
+                  //                 margin: const EdgeInsets.only(right: 12),
+                  //                 child: Card(
+                  //                   child: InkWell(
+                  //                     onTap: () {
+                  //                       controller.meetingIdController.text = meeting.meetId;
+                  //                       controller.searchMeeting();
+                  //                     },
+                  //                     child: Padding(
+                  //                       padding: const EdgeInsets.all(12),
+                  //                       child: Column(
+                  //                         crossAxisAlignment: CrossAxisAlignment.start,
+                  //                         children: [
+                  //                           Text(
+                  //                             meeting.meetingName,
+                  //                             style: const TextStyle(
+                  //                               fontWeight: FontWeight.bold,
+                  //                               fontSize: 12,
+                  //                             ),
+                  //                             maxLines: 1,
+                  //                             overflow: TextOverflow.ellipsis,
+                  //                           ),
+                  //                           const SizedBox(height: 4),
+                  //                           Text(
+                  //                             'Host: ${meeting.hostName}',
+                  //                             style: const TextStyle(fontSize: 10),
+                  //                             maxLines: 1,
+                  //                             overflow: TextOverflow.ellipsis,
+                  //                           ),
+                  //                           const SizedBox(height: 4),
+                  //                           Text(
+                  //                             meeting.scheduledStartTime.formatDateTime,
+                  //                             style: const TextStyle(fontSize: 10),
+                  //                           ),
+                  //                         ],
+                  //                       ),
+                  //                     ),
+                  //                   ),
+                  //                 ),
+                  //               );
+                  //             },
+                  //           ),
+                  //         ),
+                  //         const SizedBox(height: 16),
+                  //       ],
+                  //     );
+                  //   }
+                  //   return const SizedBox.shrink();
+                  // }),
+
+                  // User Selection Section (for members only)
+                  // Obx(() {
+                  //   final currentUser = AppLocalStorage.getUserDetails();
+                  //   if (currentUser.isMember) {
+                  //     return Column(
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         Row(
+                  //           children: [
+                  //             Text(
+                  //               'Meeting Invites',
+                  //               style: Get.textTheme.titleMedium?.copyWith(
+                  //                 fontWeight: FontWeight.bold,
+                  //               ),
+                  //             ),
+                  //             const Spacer(),
+                  //             IconButton(
+                  //               icon: Icon(
+                  //                 controller.showUserSelection.value
+                  //                   ? Icons.expand_less
+                  //                   : Icons.expand_more,
+                  //               ),
+                  //               onPressed: controller.toggleUserSelection,
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         if (controller.showUserSelection.value) ...[
+                  //           const SizedBox(height: 12),
+                  //           Row(
+                  //             children: [
+                  //               Expanded(
+                  //                 child: RadioListTile<String>(
+                  //                   title: const Text('All Users', style: TextStyle(fontSize: 12)),
+                  //                   value: 'all',
+                  //                   groupValue: controller.inviteType.value,
+                  //                   onChanged: (value) => controller.setInviteType(value!),
+                  //                 ),
+                  //               ),
+                  //               Expanded(
+                  //                 child: RadioListTile<String>(
+                  //                   title: const Text('Selected Users', style: TextStyle(fontSize: 12)),
+                  //                   value: 'selected',
+                  //                   groupValue: controller.inviteType.value,
+                  //                   onChanged: (value) => controller.setInviteType(value!),
+                  //                 ),
+                  //               ),
+                  //             ],
+                  //           ),
+                  //           if (controller.inviteType.value == 'selected') ...[
+                  //             const SizedBox(height: 8),
+                  //             Container(
+                  //               height: 100,
+                  //               decoration: BoxDecoration(
+                  //                 border: Border.all(color: Colors.grey.shade300),
+                  //                 borderRadius: BorderRadius.circular(8),
+                  //               ),
+                  //               child: ListView.builder(
+                  //                 itemCount: controller.availableUsers.length,
+                  //                 itemBuilder: (context, index) {
+                  //                   final user = controller.availableUsers[index];
+                  //                   final isSelected = controller.selectedUsers.contains(user);
+                  //                   return CheckboxListTile(
+                  //                     title: Text(user.name, style: const TextStyle(fontSize: 12)),
+                  //                     subtitle: Text(user.email, style: const TextStyle(fontSize: 10)),
+                  //                     value: isSelected,
+                  //                     onChanged: (value) => controller.selectUser(user),
+                  //                   );
+                  //                 },
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ],
+                  //         const SizedBox(height: 16),
+                  //       ],
+                  //     );
+                  //   }
+                  //   return const SizedBox.shrink();
+                  // }),
+                  AppTextFormField(
+                    controller: controller.meetingIdController,
+                    labelText: 'Meeting ID',
+                    type: AppTextFormFieldType.text,
                   ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Join Meeting',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  const SizedBox(height: 16),
+                  AppTextFormField(
+                    controller: controller.passwordController,
+                    labelText: 'Password (Optional)',
+                    type: AppTextFormFieldType.password,
+                    isPasswordRequired: false,
                   ),
+                  const SizedBox(height: 16),
+                  Obx(
+                    () =>
+                        controller.errorMessage.value == null
+                            ? const SizedBox.shrink()
+                            : _buildError(controller.errorMessage.value!),
+                  ),
+                  const SizedBox(height: 8),
+                  Obx(
+                    () =>
+                        controller.meetingFound.value && controller.meetingData.value != null
+                            ? _buildMeetingInfo(controller.meetingData.value!)
+                            : const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 16),
+                  Obx(() => _buildActionButtons()),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // Meeting ID Field
-              TextFormField(
-                controller: _meetingIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Meeting ID',
-                  prefixIcon: Icon(Icons.meeting_room),
-                  hintText: 'Enter the meeting ID',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a meeting ID';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Password Field (Optional)
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password (Optional)',
-                  prefixIcon: Icon(Icons.lock_outline),
-                  hintText: 'Enter meeting password if required',
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 24),
-
-              // Error Message
-              if (_errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.errorColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppTheme.errorColor.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: AppTheme.errorColor,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(
-                            color: AppTheme.errorColor,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Meeting Found UI
-              if (_meetingFound && _meetingData != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.successColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppTheme.successColor.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Meeting Found: ${_meetingData!['meetingName']}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.successColor,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Host: ${_meetingData!['hostId']}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      if (_meetingData!['requiresApproval'] == true) ...[
-                        const SizedBox(height: 8),
-                        const Text(
-                          'This meeting requires host approval to join',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Action Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: _isLoading ? null : () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  if (_meetingFound &&
-                      _meetingData != null &&
-                      _meetingData!['requiresApproval'] == true) ...[
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _requestToJoin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.successColor,
-                      ),
-                      child:
-                          _isLoading
-                              ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : const Text('Request to Join'),
-                    ),
-                  ] else if (_meetingFound && _meetingData != null) ...[
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _joinMeeting,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.successColor,
-                      ),
-                      child:
-                          _isLoading
-                              ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : const Text('Join Now'),
-                    ),
-                  ] else ...[
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _searchMeeting,
-                      child:
-                          _isLoading
-                              ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : const Text('Search'),
-                    ),
-                  ],
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDialogTitle() {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.login_rounded, color: AppTheme.primaryColor),
+        ),
+        const SizedBox(width: 16),
+        Text('Join Meeting', style: Get.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildError(String message) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.errorColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.errorColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 16),
+          const SizedBox(width: 8),
+          Expanded(child: Text(message, style: const TextStyle(color: AppTheme.errorColor, fontSize: 12))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMeetingInfo(MeetingModel data) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.successColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.successColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Meeting Name - ${data.meetingName}',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.successColor),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.person, color: AppTheme.darkSecondaryTextColor, size: 16),
+              const SizedBox(width: 12),
+              Text('${data.hostName}\'s Meeting', style: const TextStyle(fontSize: 12)),
+            ],
+          ),
+          if (data.requiresApproval)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'This meeting requires host approval to join',
+                style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    final isLoading = controller.isLoading.value;
+    final meetingFound = controller.meetingFound.value;
+    final meetingData = controller.meetingData.value;
+    final isWaitingForApproval = controller.isWaitingForApproval.value;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        TextButton(
+          onPressed:
+              isLoading || isWaitingForApproval
+                  ? () {
+                    // If loading or waiting, cancel the listener to prevent further actions
+                    controller.cancelJoinRequest();
+                  }
+                  : () => Get.back(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed:
+              isLoading || isWaitingForApproval
+                  ? null
+                  : meetingFound && meetingData != null
+                  ? (meetingData.requiresApproval ? controller.requestToJoin : controller.joinMeeting)
+                  : controller.searchMeeting,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isWaitingForApproval ? Colors.orange : AppTheme.successColor,
+          ),
+          child:
+              isLoading
+                  ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                  : isWaitingForApproval
+                  ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Waiting for Approval',
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  )
+                  : Text(
+                    meetingFound && meetingData != null
+                        ? (meetingData.requiresApproval ? 'Request to Join' : 'Join Now')
+                        : 'Search',
+                    style: TextStyle(
+                      fontSize: meetingFound && meetingData != null ? 12 : 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+        ),
+      ],
     );
   }
 }

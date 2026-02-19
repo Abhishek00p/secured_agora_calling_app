@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:secured_calling/app_logger.dart';
-import 'package:secured_calling/app_tost_util.dart';
-import 'package:secured_calling/core/services/app_firebase_service.dart';
-import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/utils/app_logger.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
+import 'package:secured_calling/core/services/app_auth_service.dart';
 
 class LoginRegisterController extends GetxController {
   // State Variables
@@ -28,10 +26,12 @@ class LoginRegisterController extends GetxController {
 
   void setError(String? error) {
     errorMessage.value = error;
+    update();
   }
 
   void clearError() {
     errorMessage.value = null;
+    update();
   }
 
   void toggleLoginPasswordVisibility() {
@@ -48,104 +48,93 @@ class LoginRegisterController extends GetxController {
     setLoading(true);
     clearError();
     update();
+
     try {
-      final result = await AppFirebaseService.instance
-          .signInWithEmailAndPassword(
+      final result = await AppAuthService.instance
+          .login(
             email: loginEmailController.text.trim(),
             password: loginPasswordController.text,
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              AppToastUtil.showErrorToast(
+                'Login request timed out. Please check your internet connection and try again.',
+              );
+            },
           );
-      AppLogger.print("login button presed :  ${result.user}");
-      AppToastUtil.showSuccessToast(context, 'Success ${result.user != null}');
-
-      if (result.user != null) {
-        await AppFirebaseService.instance.getLoggedInUserDataAsModel().then((
-          e,
-        ) {
-          if (!e.isEmpty) {
-            AppLocalStorage.storeUserDetails(e);
-          }
-        });
+      if (result == null) {
+        AppToastUtil.showErrorToast('Failed to login. Please try again.');
+        return null;
       }
 
-      AppLocalStorage.setLoggedIn(result.user != null);
+      AppLogger.print("login successful: ${result['user']}");
+      loginEmailController.clear();
+      loginPasswordController.clear();
       return null;
-    } on FirebaseAuthException catch (e) {
-      AppLogger.print("firebase error while logging in :${e.code}");
+    } on Exception catch (e) {
+      AppLogger.print("error while logging in: $e");
+      String errorMessage = e.toString();
 
-      late LoginError errorType;
-
-      switch (e.code) {
-        case 'network-request-failed':
-          errorType = LoginError.network;
-          break;
-        case 'invalid-credential':
-          errorType = LoginError.invalidCredential;
-          break;
-        case 'user-not-found':
-          errorType = LoginError.userNotFound;
-          break;
-        case 'wrong-password':
-          errorType = LoginError.wrongPassword;
-          break;
-        case 'invalid-email':
-          errorType = LoginError.invalidEmail;
-          break;
-        default:
-          errorType = LoginError.unknown;
+      // Handle specific error types
+      if (errorMessage.contains('timeout')) {
+        errorMessage =
+            'Request timed out. Please check your internet connection.';
+      } else if (errorMessage.contains('SocketException') ||
+          errorMessage.contains('NetworkException')) {
+        errorMessage =
+            'No internet connection. Please check your network and try again.';
+      } else if (errorMessage.contains('Failed with status')) {
+        errorMessage = 'Server error. Please try again later.';
       }
 
-      setError(errorType.message);
-      return errorType.message;
+      setError(errorMessage);
+      return errorMessage;
     } catch (e) {
-      AppLogger.print("error while logging in :$e");
+      AppLogger.print("unexpected error while logging in: $e");
       setError('An unexpected error occurred. Please try again.');
-      return 'Something went wrong..';
+      return 'An unexpected error occurred. Please try again.';
     } finally {
       setLoading(false);
       update();
     }
   }
 
-  Future<bool> register(BuildContext context) async {
+  /// Test method for simulating different login scenarios (for debugging)
+  Future<void> testLoginScenarios() async {
+    AppLogger.print('🧪 Testing login scenarios...');
+
+    // Test 1: Simulate loading state
+    AppLogger.print('Test 1: Simulating loading state');
     setLoading(true);
+    await Future.delayed(const Duration(seconds: 2));
+    setLoading(false);
+
+    // Test 2: Simulate timeout
+    AppLogger.print('Test 2: Simulating timeout');
+    setLoading(true);
+    await Future.delayed(const Duration(seconds: 1));
+    setError('Request timed out. Please check your internet connection.');
+    setLoading(false);
+
+    // Test 3: Simulate network error
+    AppLogger.print('Test 3: Simulating network error');
+    await Future.delayed(const Duration(seconds: 1));
+    setError(
+      'No internet connection. Please check your network and try again.',
+    );
+
+    // Test 4: Simulate server error
+    AppLogger.print('Test 4: Simulating server error');
+    await Future.delayed(const Duration(seconds: 1));
+    setError('Server error. Please try again later.');
+
+    // Test 5: Clear errors
+    AppLogger.print('Test 5: Clearing errors');
+    await Future.delayed(const Duration(seconds: 1));
     clearError();
-    try {
-      final resp = await AppFirebaseService.instance.signUpWithEmailAndPassword(
-        name: registerNameController.text.trim(),
-        email: registerEmailController.text.trim(),
-        password: registerPasswordController.text.trim(),
-        memberCode: registerMemberCodeController.text.trim(),
-      );
-      if (resp) {
-        if (context.mounted) {
-          AppToastUtil.showSuccessToast(context, 'Registeration Success...');
-        }
-      } else {
-        if (context.mounted) {
-          AppToastUtil.showErrorToast(context, 'Registeration Failed...');
-        }
-      }
-      return resp;
-    } on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'email-already-in-use':
-          setError('An account already exists with this email.');
-          break;
-        case 'weak-password':
-          setError('Password is too weak. Use at least 6 characters.');
-          break;
-        case 'invalid-email':
-          setError('Invalid email format.');
-          break;
-        default:
-          setError('Error: ${e.message}');
-      }
-    } catch (_) {
-      setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-    return false;
+
+    AppLogger.print('✅ Login scenario testing completed');
   }
 
   @override

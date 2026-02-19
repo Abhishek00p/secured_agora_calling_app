@@ -1,32 +1,56 @@
 import 'package:get/get.dart';
-import 'package:secured_calling/app_logger.dart';
-import 'package:secured_calling/features/auth/views/login_register_screen.dart';
+import 'package:secured_calling/core/models/meeting_model.dart';
+import 'package:secured_calling/features/auth/views/login_screen.dart';
 import 'package:secured_calling/features/home/views/home_screen.dart';
-import 'package:secured_calling/features/meeting/views/agora_meeting_room.dart';
 import 'package:secured_calling/features/welcome/views/welcome_screen.dart';
+import 'package:secured_calling/features/admin/admin_home.dart';
+import 'package:secured_calling/features/home/views/users_screen.dart';
+import 'package:secured_calling/features/home/views/user_creation_form.dart';
+import 'package:secured_calling/features/admin/member_form.dart';
+import 'package:secured_calling/features/meeting/views/agora_meeting_room.dart';
+import 'package:secured_calling/features/meeting/views/meeting_detail_page.dart';
+import 'package:secured_calling/features/home/views/view_all_meeting_list.dart';
+import 'package:secured_calling/features/meeting/bindings/meeting_binding.dart';
+import 'package:secured_calling/features/meeting/bindings/meeting_detail_binding.dart';
+import 'package:secured_calling/utils/app_logger.dart';
+
+// Import middleware
+import 'package:secured_calling/core/middleware/auth_middleware.dart';
 
 // (Optional) Import your Bindings here if you create them
 import 'package:secured_calling/features/auth/bindings/auth_binding.dart';
-import 'package:secured_calling/features/meeting/bindings/meeting_binding.dart';
 
 class AppRouter {
+  // Route constants
   static const String welcomeRoute = '/welcome';
-  static const String loginRegisterRoute = '/auth';
+  static const String loginRoute = '/login';
   static const String homeRoute = '/home';
-  static const String meetingRoomRoute = '/meeting';
+  static const String adminRoute = '/admin';
+  static const String usersRoute = '/users';
+  static const String userCreationRoute = '/user-creation';
+  static const String memberFormRoute = '/member-form';
 
-  static List<GetPage> routes = [
-    GetPage(name: welcomeRoute, page: () => const WelcomeScreen()),
+  // Meeting routes
+  static const String meetingRoomRoute = '/meeting';
+  static const String meetingViewAllRoute = '/meeting/view_all';
+  static const String meetingDetailRoute = '/meeting-detail';
+
+  // GetPages
+  static final List<GetPage> routes = [
+    GetPage(name: welcomeRoute, page: () => const WelcomeScreen(),),
     GetPage(
-      name: loginRegisterRoute,
-      page: () => const LoginRegisterScreen(),
-      binding: AuthBinding(), // Inject Auth Controller
+      name: loginRoute,
+      page: () => const LoginScreen(),
+      binding: AuthBinding(),
+      middlewares: [LoginMiddleware()],
     ),
-    GetPage(
-      name: homeRoute,
-      page: () => const HomeScreen(),
-      // binding: HomeBinding(), // Inject Home Controller
-    ),
+    GetPage(name: homeRoute, page: () => const HomeScreen(), middlewares: [AuthMiddleware()]),
+    GetPage(name: adminRoute, page: () => const AdminScreen(), middlewares: [AuthMiddleware()]),
+    GetPage(name: usersRoute, page: () => const UsersScreen(), middlewares: [AuthMiddleware()]),
+    GetPage(name: userCreationRoute, page: () => const UserCreationForm(), middlewares: [AuthMiddleware()]),
+    GetPage(name: memberFormRoute, page: () => const MemberForm(), middlewares: [AuthMiddleware()]),
+
+    // Meeting routes
     GetPage(
       name: meetingRoomRoute,
       page: () {
@@ -38,7 +62,26 @@ class AppRouter {
           meetingId: args['meetingId'] ?? '',
         );
       },
-      binding: MeetingBinding(), // Inject Meeting Controller
+      binding: MeetingBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: meetingViewAllRoute,
+      page: () {
+        final args = Get.arguments as List<MeetingModel>;
+        return ViewAllMeetingList(meetings: args);
+      },
+      binding: MeetingBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: meetingDetailRoute,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>;
+        return MeetingDetailPage(meetingId: args['meetingId']);
+      },
+      binding: MeetingDetailBinding(),
+      middlewares: [AuthMiddleware()],
     ),
   ];
 }

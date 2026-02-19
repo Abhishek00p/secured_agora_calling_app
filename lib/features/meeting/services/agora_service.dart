@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:secured_calling/app_logger.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 
 // Replace with your Agora App ID
 const String agoraAppId = '225a62f4b5aa4e94ab46f91d0a0257e1';
@@ -25,9 +25,7 @@ class AgoraService {
   RtcEngine? get engine => _engine;
   bool get isInitialized => _isInitialized;
 
-  Future<bool> initialize({
-    required RtcEngineEventHandler rtcEngineEventHandler,
-  }) async {
+  Future<bool> initialize({required RtcEngineEventHandler rtcEngineEventHandler}) async {
     try {
       if (_isInitialized) {
         AppLogger.print('already initi  agora returnning...');
@@ -38,8 +36,8 @@ class AgoraService {
       _engine = createAgoraRtcEngine();
       await _engine!.initialize(const RtcEngineContext(appId: agoraAppId));
       await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-      await _engine!.enableAudio();
 
+      await _engine!.enableAudioVolumeIndication(interval: 200, smooth: 3, reportVad: true);
       _engine!.registerEventHandler(rtcEngineEventHandler);
 
       _isInitialized = true;
@@ -53,15 +51,11 @@ class AgoraService {
   Future<void> _requestPermissions() async {
     if (kIsWeb) return;
     if (Platform.isAndroid || Platform.isIOS) {
-      await [Permission.microphone, Permission.camera].request();
+      await [Permission.microphone].request();
     }
   }
 
-  Future<void> joinChannel({
-    required String channelName,
-    required String token,
-    required int userId,
-  }) async {
+  Future<void> joinChannel({required String channelName, required String token, required int userId}) async {
     if (!_isInitialized) {
       throw Exception('Agora Not Initialize , ........');
     }
@@ -81,9 +75,25 @@ class AgoraService {
   }
 
   Future<void> destroy() async {
-    await _engine?.release();
-    _engine = null;
-    _isInitialized = false;
+    try {
+      if (_engine != null) {
+        // Leave channel first if still connected
+        try {
+          await _engine!.leaveChannel();
+        } catch (e) {
+          AppLogger.print('Error leaving channel during destroy: $e');
+        }
+
+        // Release the engine
+        await _engine!.release();
+        AppLogger.print('Agora engine released successfully');
+      }
+    } catch (e) {
+      AppLogger.print('Error destroying Agora engine: $e');
+    } finally {
+      _engine = null;
+      _isInitialized = false;
+    }
   }
 
   // Basic audio/video toggles
@@ -95,12 +105,14 @@ class AgoraService {
     await _engine?.muteLocalVideoStream(mute);
   }
 
+  Future<void> muteRemoteAudioStream({required int userId, required bool mute}) async {
+    await _engine?.muteRemoteAudioStream(uid: userId, mute: mute);
+  }
+
   // Start/stop screen sharing
   Future<void> startScreenSharing() async {
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      await _engine!.startScreenCapture(
-        const ScreenCaptureParameters2(captureAudio: true, captureVideo: true),
-      );
+      await _engine!.startScreenCapture(const ScreenCaptureParameters2(captureAudio: true, captureVideo: true));
     }
   }
 

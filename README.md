@@ -1,5 +1,6 @@
 App Documentation
 
+ipconfig getifaddr en0
 
 App Architecture Overview
 
@@ -172,3 +173,44 @@ Final Testing & Deployment
 
 --------------------------
 # secured_agora_calling_app
+
+
+
+
+
+delivery  :
+Phase 1  ( feedback)
+Theme
+App flow
+Login - register ,
+ Name ( fname,lName)
+ memberCode
+ Password
+Email
+Meeting working  ( meet joining , mute/unmute)
+Free Go through App join or create Call ( max 5 min call )
+Drawer : user details  
+Phase 2
+Admin Section
+Add Members
+Name, 
+Email,
+Purchase date
+Subscription plan days quarterly
+isAcitve
+Total user of member
+  ● Member List ( user detail , payment status, expiry date) 
+● Edit Member Details 
+ ● Reminder for Payment Subscription.  button
+● Enable/Disable Member button
+ Mobile
+	Meet : Accept/Reject Request ,45  max limit .
+            Phase 1 feedback refactor
+            ● Speaker Focus
+            ● Host can Mute/Unmute User
+            ● Extend Time Feature after scheduled Meeting Hours
+Phase 3
+   1-1 private room for Host and one user
+   ● Cross Platform ( Android,IOS,Macos,windows)
+    Recording of Meet ( Host Only option)
+    Login/Register Screen with TWO factor Auth using OTP

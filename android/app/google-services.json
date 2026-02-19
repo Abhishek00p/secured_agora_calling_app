@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "210466860375",
-    "project_id": "secure-calling-2025",
-    "storage_bucket": "secure-calling-2025.firebasestorage.app"
+    "project_number": "385594222575",
+    "project_id": "d-calling-dev",
+    "storage_bucket": "d-calling-dev.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:210466860375:android:8a619464ead7edfc65a212",
+        "mobilesdk_app_id": "1:385594222575:android:724da3fef4643f0d68b81a",
         "android_client_info": {
-          "package_name": "com.example.secured_calling"
+          "package_name": "com.example.secured_calling.dev"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDxBxRwfgmLeSIFJ34w6DLtXRwVujrRP98"
+          "current_key": "AIzaSyBeo4wmzIs1X8O1IvGRtutUi4lSKdMz984"
         }
       ],
       "services": {

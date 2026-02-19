@@ -1,20 +1,33 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:secured_calling/core/extensions/app_string_extension.dart';
+import 'package:secured_calling/core/extensions/date_time_extension.dart';
 
 class AppUser {
   final int userId;
-  final String firebaseUserId;
   final String name;
   final String email;
   final bool isMember;
   final DateTime createdAt;
   final Subscription subscription;
-
+  final String memberCode;
+  final String? planExpiryDate;
+  final int? totalUsers;
+  final bool isActive;
+  final int planDays;
+  final String purchaseDate;
+  final int maximumParticipantsAllowed;
   AppUser({
     this.name = '',
     this.email = '',
     this.userId = 0,
-    this.firebaseUserId = '',
     this.isMember = false,
+    this.memberCode = '',
+    this.planExpiryDate,
+    this.totalUsers = 0,
+    this.isActive = false,
+    this.maximumParticipantsAllowed = 0,
+    this.planDays = 0,
+    this.purchaseDate = '',
     DateTime? createdAt,
     Subscription? subscription,
   }) : createdAt = createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
@@ -28,12 +41,24 @@ class AppUser {
       email: json['email'] as String? ?? '',
       isMember: json['isMember'] as bool? ?? false,
       userId: json['userId'] ?? 0,
-      firebaseUserId: json['firebaseUserId'] ?? '',
+      memberCode: json['memberCode'] as String? ?? '',
       createdAt:
           json['createdAt'] is String
               ? DateTime.parse(json['createdAt'])
-              : (json['createdAt'] as Timestamp?)?.toDate(),
+              : json['createdAt'] is Timestamp
+              ? (json['createdAt'] as Timestamp?)?.toDate()
+              : null,
       subscription: Subscription.fromJson(json['subscription']),
+      planExpiryDate:
+          json['planExpiryDate'] == null ||
+                  json['planExpiryDate'].toString().trim().isEmpty
+              ? null
+              : json['planExpiryDate'].toString().toDateTime.formatDate,
+      totalUsers: json['totalUsers'] ?? 0,
+      isActive: json['isActive'] ?? false,
+      maximumParticipantsAllowed: json['maxParticipantsAllowed'] ?? 0,
+      planDays: json['planDays'] ?? 0,
+      purchaseDate: json['purchaseDate'] ?? '',
     );
   }
 
@@ -45,7 +70,9 @@ class AppUser {
       'createdAt': createdAt.toIso8601String(),
       'subscription': subscription.toJson(),
       'userId': userId,
-      'firebaseUserId': firebaseUserId,
+      'memberCode': memberCode,
+      'planExpiryDate': planExpiryDate,
+      'totalUsers': totalUsers,
     };
   }
 
@@ -59,22 +86,22 @@ class AppUser {
     DateTime? createdAt,
     Subscription? subscription,
     int? userId,
-    String? firebaseUserId,
+    String? memberCode,
   }) {
     return AppUser(
       name: name ?? this.name,
       userId: userId ?? this.userId,
-      firebaseUserId: firebaseUserId ?? this.firebaseUserId,
       email: email ?? this.email,
       isMember: isMember ?? this.isMember,
       createdAt: createdAt ?? this.createdAt,
       subscription: subscription ?? this.subscription,
+      memberCode: memberCode ?? this.memberCode,
     );
   }
 
   @override
   String toString() {
-    return 'AppUser(userId: $userId, firebaseUserId: $firebaseUserId ,name: $name, email: $email, isMember: $isMember, createdAt: $createdAt, subscription: $subscription)';
+    return 'AppUser(userId: $userId, name: $name, email: $email, isMember: $isMember, memberCode: $memberCode, createdAt: $createdAt, subscription: $subscription)';
   }
 }
 
@@ -89,18 +116,18 @@ class Subscription {
 
   factory Subscription.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Subscription.toEmpty();
-
     return Subscription(
       plan: json['plan'] as String? ?? '',
-      startDate:
-          json['startDate'] is String
-              ? DateTime.parse(json['startDate'])
-              : (json['startDate'] as Timestamp?)?.toDate(),
-      expiryDate:
-          json['expiryDate'] is String
-              ? DateTime.parse(json['expiryDate'])
-              : (json['expiryDate'] as Timestamp?)?.toDate(),
+      startDate: _parseDate(json['startDate']),
+      expiryDate: _parseDate(json['expiryDate']),
     );
+  }
+
+  static DateTime _parseDate(dynamic value) {
+    if (value == null) return DateTime.fromMillisecondsSinceEpoch(0);
+    if (value is Timestamp) return value.toDate();
+    if (value is String && value.isNotEmpty) return DateTime.parse(value);
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   Map<String, dynamic> toJson() {
@@ -111,7 +138,11 @@ class Subscription {
     };
   }
 
-  bool get isEmpty => plan.isEmpty;
+  bool get isEmpty =>
+      plan.isEmpty &&
+      startDate.millisecondsSinceEpoch == 0 &&
+      expiryDate.millisecondsSinceEpoch == 0;
+
   static Subscription toEmpty() => Subscription();
 
   Subscription copyWith({
