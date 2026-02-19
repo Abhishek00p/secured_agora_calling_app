@@ -1,8 +1,5 @@
 name: Build Windows App
 
-# Windows uses Firebase from lib/firebase_options.dart (no flavor / google-services.json).
-
-# Build uses VS 17.10 (LTSC) to avoid firebase_auth C2665 with VS 17.12+ (see flutterfire#16536).
 on:
   push:
     branches: [main, master]
@@ -18,37 +15,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Remove existing VS so the next step installs only 17.10 (workaround for flutterfire#16536).
-      - name: Remove existing Visual Studio
-        continue-on-error: true
-        run: |
-          if (Test-Path "C:\Program Files (x86)\Microsoft Visual Studio\Installer\InstallCleanup.exe") {
-            & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\InstallCleanup.exe" -silent -full
-          }
-        shell: pwsh
-
-      # Install VS 2022 17.10 (LTSC) to avoid firebase_auth std::variant C2665 on VS 17.12+.
-      # Use C:\ for download/run to avoid "corrupted and unreadable" on runner temp/workspace drives.
-      - name: Install Visual Studio 2022 17.10 (C++ workload)
-        run: |
-          $outPath = "C:\vs_community.exe"
-          $uri = "https://aka.ms/vs/17/release.ltsc.17.10/vs_community.exe"
-          foreach ($attempt in 1..3) {
-            try {
-              Invoke-WebRequest -Uri $uri -OutFile $outPath -UseBasicParsing
-              if ((Test-Path $outPath) -and (Get-Item $outPath).Length -gt 1MB) { break }
-            } catch { if ($attempt -eq 3) { throw } }
-            Start-Sleep -Seconds 10
-          }
-          $p = Start-Process -FilePath $outPath -ArgumentList "--add", "Microsoft.VisualStudio.Workload.NativeDesktop", "--quiet", "--norestart", "--wait", "--includeRecommended" -WorkingDirectory "C:\" -Wait -PassThru
-          if ($p.ExitCode -ne 0) { exit $p.ExitCode }
-        shell: pwsh
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
+
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
 
       - name: Get dependencies
         run: flutter pub get
@@ -60,4 +34,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: build/windows/x64/runner/Release/
+          path: build/windows/runner/Release/
