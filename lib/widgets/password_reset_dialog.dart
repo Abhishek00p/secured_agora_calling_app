@@ -202,8 +202,9 @@ import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/services/app_password_reset_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/app_user_role_service.dart';
-import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 
 class PasswordResetBottomSheet extends StatefulWidget {
   final String targetEmail;
@@ -292,12 +293,14 @@ class _PasswordResetBottomSheetState extends State<PasswordResetBottomSheet> {
         currentUserRole == UserRole.superAdmin ||
         currentUserRole == UserRole.member;
 
+    final padding = responsivePadding(context);
+
     return Container(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20, // 👈 adjusts for keyboard
+        left: padding,
+        right: padding,
+        top: padding,
+        bottom: MediaQuery.of(context).viewInsets.bottom + padding,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,

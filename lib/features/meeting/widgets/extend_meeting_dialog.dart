@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 
 class ExtendMeetingDialog extends StatefulWidget {
@@ -59,35 +60,38 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final padding = responsivePadding(context);
+
     return AlertDialog(
       title: Row(
         children: [
           Icon(Icons.schedule, color: AppTheme.primaryColor),
-          const SizedBox(width: 8),
+          SizedBox(width: padding / 2),
           const Text('Extend Meeting'),
         ],
       ),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Extend "${widget.meetingTitle}"',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: dialogMaxWidth(context)),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Extend "${widget.meetingTitle}"',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: padding),
 
-            // Duration selection
-            Text(
-              'Additional Duration:',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              Text(
+                'Additional Duration:',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              SizedBox(height: padding / 2),
+              Wrap(
+                spacing: padding / 2,
+                runSpacing: padding / 2,
               children:
                   _extensionOptions.map((minutes) {
                     final isSelected = _selectedMinutes == minutes;
@@ -114,31 +118,29 @@ class _ExtendMeetingDialogState extends State<ExtendMeetingDialog> {
                       ),
                     );
                   }).toList(),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Reason input (optional)
-            TextFormField(
-              controller: _reasonController,
-              decoration: const InputDecoration(
-                labelText: 'Reason (Optional)',
-                hintText: 'Why are you extending this meeting?',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.note),
               ),
-              maxLines: 2,
-              maxLength: 200,
-            ),
-
-            const SizedBox(height: 8),
-            Text(
-              'The meeting will be extended by $_selectedMinutes minutes',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.grey[600], fontStyle: FontStyle.italic),
-            ),
-          ],
+              SizedBox(height: padding),
+              TextFormField(
+                controller: _reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Reason (Optional)',
+                  hintText: 'Why are you extending this meeting?',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.note),
+                ),
+                maxLines: 2,
+                maxLength: 200,
+              ),
+              SizedBox(height: padding / 2),
+              Text(
+                'The meeting will be extended by $_selectedMinutes minutes',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.grey[600], fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [

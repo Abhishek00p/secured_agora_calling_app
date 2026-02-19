@@ -360,6 +360,7 @@ import 'package:secured_calling/core/services/app_user_role_service.dart';
 import 'package:secured_calling/features/home/views/delete_confirmation_dialog.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/widgets/password_reset_dialog.dart';
 
 class UserCredentialsBottomSheet extends StatefulWidget {
@@ -479,14 +480,14 @@ class _UserCredentialsBottomSheetState
         currentUserRole == UserRole.admin ||
         currentUserRole == UserRole.superAdmin ||
         currentUserRole == UserRole.member;
+    final padding = responsivePadding(context);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          // Handle bar
           Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 4),
+            padding: EdgeInsets.only(top: padding, bottom: padding / 4),
             child: Container(
               height: 5,
               width: 50,
@@ -497,9 +498,8 @@ class _UserCredentialsBottomSheetState
             ),
           ),
 
-          // Title
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(padding),
             child: Row(
               children: [
                 Icon(Icons.account_circle, color: AppTheme.primaryColor),
@@ -519,10 +519,9 @@ class _UserCredentialsBottomSheetState
 
           const Divider(height: 0),
 
-          // Content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(padding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -631,10 +630,9 @@ class _UserCredentialsBottomSheetState
             ),
           ),
 
-          // Bottom actions
           if (canViewCredentials && _credentials != null)
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(padding),
               child: ElevatedButton.icon(
                 onPressed: _showPasswordResetDialog,
                 icon: const Icon(Icons.lock_reset),
@@ -650,7 +648,7 @@ class _UserCredentialsBottomSheetState
               ),
             ),
           Padding(
-            padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+            padding: EdgeInsets.only(bottom: padding, left: padding, right: padding),
             child: ElevatedButton.icon(
               onPressed: () {
                 showDialog(

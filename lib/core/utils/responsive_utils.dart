@@ -49,6 +49,12 @@ double responsivePadding(BuildContext context) {
   return 16;
 }
 
+/// Max width for dialogs and overlays so they don't stretch on large screens.
+double dialogMaxWidth(BuildContext context) {
+  if (context.isMobile) return 400;
+  return 500; // tablet and laptop
+}
+
 /// Use for in-call control sizes (e.g. mic circle, speaker button) in the Agora meeting
 /// room. Single source of truth so radii are consistent and maintainable.
 ///

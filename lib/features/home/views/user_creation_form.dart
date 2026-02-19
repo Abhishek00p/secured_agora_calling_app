@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:secured_calling/core/services/app_auth_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
-import 'package:secured_calling/core/theme/app_theme.dart';
 
 class UserCreationForm extends StatefulWidget {
   const UserCreationForm({super.key});
@@ -76,17 +77,24 @@ class _UserCreationFormState extends State<UserCreationForm> {
 
   @override
   Widget build(BuildContext context) {
+    final padding = responsivePadding(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create New User'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: Form(
-        key: _formKey,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ListView(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: contentMaxWidth(context) == double.infinity ? double.infinity : 560,
+          ),
+          child: Form(
+            key: _formKey,
+            child: Padding(
+              padding: EdgeInsets.all(padding),
+              child: ListView(
             children: [
               const SizedBox(height: 24),
 
@@ -228,6 +236,8 @@ class _UserCreationFormState extends State<UserCreationForm> {
                 ),
               ),
             ],
+              ),
+            ),
           ),
         ),
       ),

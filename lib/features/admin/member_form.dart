@@ -5,6 +5,7 @@ import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/services/app_auth_service.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/widgets/app_text_container.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
@@ -148,11 +149,13 @@ class _MemberFormState extends State<MemberForm> {
 
   @override
   Widget build(BuildContext context) {
+    final padding = responsivePadding(context);
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         bottomNavigationBar: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(padding),
           child: ElevatedButton(
             onPressed: _isLoading ? null : _saveMember,
             child:
@@ -172,11 +175,14 @@ class _MemberFormState extends State<MemberForm> {
         appBar: AppBar(
           title: Text(widget.member == null ? "Add Member" : "Edit Member"),
         ),
-        body: Form(
-          key: _formKey,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ListView(
+        body: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: contentMaxWidth(context) == double.infinity ? double.infinity : 560),
+            child: Form(
+              key: _formKey,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: padding),
+                child: ListView(
               children: [
                 24.h,
                 AppTextFormField(
@@ -261,8 +267,10 @@ class _MemberFormState extends State<MemberForm> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: padding * 1.5),
               ],
+                ),
+              ),
             ),
           ),
         ),

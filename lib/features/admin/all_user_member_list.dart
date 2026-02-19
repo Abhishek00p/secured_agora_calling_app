@@ -3,6 +3,7 @@ import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 
 class AllUserMemberList extends StatefulWidget {
   final Member member;
@@ -18,11 +19,16 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
     final member = widget.member;
     final theme = Theme.of(context);
 
+    final padding = responsivePadding(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text("Member Details")),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+        padding: EdgeInsets.all(padding),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: contentMaxWidth(context) == double.infinity ? double.infinity : 600),
+            child: Column(
           children: [
             Card(
               child: Padding(
@@ -94,6 +100,8 @@ class _AllUserMemberListState extends State<AllUserMemberList> {
               },
             ),
           ],
+        ),
+          ),
         ),
       ),
     );

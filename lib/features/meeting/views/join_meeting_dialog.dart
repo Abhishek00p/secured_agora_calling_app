@@ -7,6 +7,7 @@ import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/join_request_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
 
 class JoinMeetingController extends GetxController {
@@ -172,10 +173,13 @@ class JoinMeetingDialog extends StatelessWidget {
     controller.clearState();
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 600),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: dialogMaxWidth(context), maxHeight: 600),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: responsivePadding(context),
+            vertical: responsivePadding(context),
+          ),
           child: Form(
             key: controller.formKey,
             child: SingleChildScrollView(

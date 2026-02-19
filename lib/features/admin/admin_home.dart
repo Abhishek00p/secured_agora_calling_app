@@ -8,6 +8,7 @@ import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/models/member_model.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/admin/member_form.dart';
 import 'package:secured_calling/utils/reminder_dialog.dart';
 import 'package:secured_calling/widgets/user_credentials_dialog.dart';
@@ -58,14 +59,20 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final padding = responsivePadding(context);
+    final maxWidth = contentMaxWidth(context) == double.infinity ? 700.0 : contentMaxWidth(context) * 1.3;
+
     return Scaffold(
       backgroundColor: Colors.white.withAlpha(250),
       appBar: AppBar(title: const Text("All Members")),
       body: SingleChildScrollView(
-        child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: context.layoutType == AppLayoutType.mobile ? double.infinity : maxWidth),
+            child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(padding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -181,8 +188,26 @@ class _AdminScreenState extends State<AdminScreen> {
                   );
                 }
                 print("Number of members found: ${members.length}");
+                final useGrid = context.layoutType != AppLayoutType.mobile;
+                if (useGrid) {
+                  return Padding(
+                    padding: EdgeInsets.only(left: padding, right: padding, bottom: 80),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.85,
+                        crossAxisSpacing: padding,
+                        mainAxisSpacing: padding / 2,
+                      ),
+                      itemCount: members.length,
+                      itemBuilder: (context, index) => _buildMemberCard(context, theme, members[index], now),
+                    ),
+                  );
+                }
                 return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 80),
+                  padding: EdgeInsets.only(left: padding, right: padding, bottom: 80),
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   itemCount: members.length,
@@ -194,442 +219,15 @@ class _AdminScreenState extends State<AdminScreen> {
                                 .inDays ??
                             0) <=
                         60;
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          color: Colors.black.withAppOpacity(0.2),
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      color:
-                          isExpiringSoon ? Colors.red.shade50 : theme.cardColor,
-                      elevation: 2,
-                      shadowColor: Colors.black.withAppOpacity(0.08),
-                      child: ExpansionTile(
-                        tilePadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        childrenPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        collapsedShape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-
-                        // Title Section
-                        title: Text(
-                          member.name.sentenceCase,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color:
-                                isExpiringSoon
-                                    ? Colors.red.shade700
-                                    : theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                member.email,
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.lock_clock,
-                                    size: 14,
-                                    color: Colors.grey,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    "Expires: ${member.planExpiryDate?.toDateTime.formatDate}",
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color:
-                                          isExpiringSoon
-                                              ? Colors.red.shade700
-                                              : Colors.grey[700],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Expanded Details
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Left Column
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildDetailRow(
-                                      icon: Icons.person,
-                                      label: "Name",
-                                      value: member.name,
-                                      theme: theme,
-                                    ),
-                                    _buildDetailRow(
-                                      icon: Icons.numbers,
-                                      label: "User Id",
-                                      value: member.email,
-                                      theme: theme,
-                                    ),
-                                    // _buildDetailRow(
-                                    //   icon: Icons.calendar_today,
-                                    //   label: "Purchase",
-                                    //   value: DateFormat.yMMMd().format(
-                                    //     member.p,
-                                    //   ),
-                                    //   theme: theme,
-                                    // ),
-                                    _buildDetailRow(
-                                      icon: Icons.lock_clock,
-                                      label: "Expires",
-                                      value:
-                                          member
-                                              .planExpiryDate
-                                              ?.toDateTime
-                                              .formatDate ??
-                                          '',
-                                      theme: theme,
-                                    ),
-                                    _buildDetailRow(
-                                      icon: Icons.people,
-                                      label: "Users",
-                                      value: member.totalUsers.toString(),
-                                      theme: theme,
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Right Column (Status)
-                              Column(
-                                children: [
-                                  Switch(
-                                    value: member.isActive,
-                                    onChanged: (val) {
-                                      FirebaseFirestore.instance
-                                          .collection('users')
-                                          .doc(member.userId.toString())
-                                          .update({'isActive': val});
-                                    },
-                                    activeColor: theme.colorScheme.primary,
-                                  ),
-                                  Text(
-                                    member.isActive ? "Active" : "Inactive",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color:
-                                          member.isActive
-                                              ? Colors.green
-                                              : Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 12),
-                          const Divider(),
-                          const SizedBox(height: 8),
-
-                          // Action Buttons
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              // OutlinedButton.icon(
-                              //   onPressed:
-                              //       () => showReminderDialog(context, member),
-                              //   icon: const Icon(Icons.notifications, size: 18),
-                              //   label: const Text(
-                              //     "Reminder",
-                              //     style: TextStyle(fontSize: 13),
-                              //   ),
-                              //   style: OutlinedButton.styleFrom(
-                              //     padding: const EdgeInsets.symmetric(
-                              //       horizontal: 12,
-                              //       vertical: 10,
-                              //     ),
-                              //     shape: RoundedRectangleBorder(
-                              //       borderRadius: BorderRadius.circular(10),
-                              //     ),
-                              //   ),
-                              // ),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => MemberForm(member: member),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.edit, size: 18),
-                                label: const Text(
-                                  "Edit",
-                                  style: TextStyle(fontSize: 13),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: theme.colorScheme.primary,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
-                              OutlinedButton.icon(
-                                onPressed: () {
-                                  UserCredentialsBottomSheet.show(
-                                    context,
-                                    targetEmail: member.email,
-                                    targetName: member.name,
-                                    isMember: true,
-                                    userId: member.userId.toString(),
-                                  );
-                                },
-                                icon: const Icon(
-                                  Icons.remove_red_eye,
-                                  size: 18,
-                                ),
-                                label: const Text(
-                                  "view more",
-                                  style: TextStyle(fontSize: 13),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                    // return Card(
-                    //   margin: const EdgeInsets.symmetric(
-                    //     horizontal: 16,
-                    //     vertical: 8,
-                    //   ),
-                    //   shape: RoundedRectangleBorder(
-                    //     borderRadius: BorderRadius.circular(16),
-                    //   ),
-                    //   color:
-                    //       isExpiringSoon ? Colors.red.shade50 : theme.cardColor,
-                    //   elevation: 1,
-                    //   child: ExpansionTile(
-                    //     tilePadding: const EdgeInsets.symmetric(
-                    //       horizontal: 16,
-                    //       vertical: 10,
-                    //     ),
-                    //     childrenPadding: const EdgeInsets.symmetric(
-                    //       horizontal: 16,
-                    //       vertical: 8,
-                    //     ),
-                    //     title: Text(
-                    //       member.name.sentenceCase,
-                    //       style: theme.textTheme.titleMedium?.copyWith(
-                    //         fontWeight: FontWeight.bold,
-                    //         color: isExpiringSoon ? Colors.red : null,
-                    //       ),
-                    //     ),
-                    //     subtitle: Column(
-                    //       crossAxisAlignment: CrossAxisAlignment.start,
-                    //       children: [
-                    //         Text(
-                    //           member.email,
-                    //           style: theme.textTheme.bodyMedium,
-                    //         ),
-                    //         const SizedBox(height: 4),
-                    //         Text(
-                    //           "Expires: ${DateFormat.yMMMd().format(member.expiryDate)}",
-                    //           style: theme.textTheme.bodySmall?.copyWith(
-                    //             color: isExpiringSoon ? Colors.red : null,
-                    //           ),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //     children: [
-                    //       Row(
-                    //         crossAxisAlignment: CrossAxisAlignment.start,
-                    //         children: [
-                    //           Expanded(
-                    //             child: Column(
-                    //               crossAxisAlignment: CrossAxisAlignment.start,
-                    //               children: [
-                    //                 Text(
-                    //                   "Name: ${member.name}",
-                    //                   style: theme.textTheme.bodyLarge,
-                    //                 ),
-                    //                 4.h,
-                    //                 Text(
-                    //                   "Email: ${member.email}",
-                    //                   style: theme.textTheme.bodyLarge,
-                    //                 ),
-                    //                 const SizedBox(height: 8),
-                    //                 Row(
-                    //                   children: [
-                    //                     const Icon(
-                    //                       Icons.calendar_today,
-                    //                       size: 16,
-                    //                       color: Colors.grey,
-                    //                     ),
-                    //                     const SizedBox(width: 6),
-                    //                     Text(
-                    //                       "Purchase: ${DateFormat.yMMMd().format(member.purchaseDate)}",
-                    //                       style: theme.textTheme.bodyMedium,
-                    //                     ),
-                    //                   ],
-                    //                 ),
-                    //                 const SizedBox(height: 6),
-                    //                 Row(
-                    //                   children: [
-                    //                     const Icon(
-                    //                       Icons.lock_clock,
-                    //                       size: 16,
-                    //                       color: Colors.grey,
-                    //                     ),
-                    //                     const SizedBox(width: 6),
-                    //                     Text(
-                    //                       "Expires: ${DateFormat.yMMMd().format(member.expiryDate)}",
-                    //                       style: theme.textTheme.bodyMedium,
-                    //                     ),
-                    //                   ],
-                    //                 ),
-                    //                 const SizedBox(height: 6),
-                    //                 Row(
-                    //                   children: [
-                    //                     const Icon(
-                    //                       Icons.people,
-                    //                       size: 16,
-                    //                       color: Colors.grey,
-                    //                     ),
-                    //                     const SizedBox(width: 6),
-                    //                     Text(
-                    //                       "Users: ${member.totalUsers}",
-                    //                       style: theme.textTheme.bodyMedium,
-                    //                     ),
-                    //                   ],
-                    //                 ),
-                    //               ],
-                    //             ),
-                    //           ),
-                    //           Column(
-                    //             children: [
-                    //               Switch(
-                    //                 value: member.isActive,
-                    //                 onChanged: (val) {
-                    //                   FirebaseFirestore.instance
-                    //                       .collection('members')
-                    //                       .doc(member.id)
-                    //                       .update({'isActive': val});
-                    //                 },
-                    //                 activeColor: theme.colorScheme.primary,
-                    //               ),
-                    //               Text(
-                    //                 member.isActive ? "Active" : "Inactive",
-                    //                 style: TextStyle(
-                    //                   fontWeight: FontWeight.w500,
-                    //                   color:
-                    //                       member.isActive
-                    //                           ? Colors.green
-                    //                           : Colors.red,
-                    //                 ),
-                    //               ),
-                    //               const SizedBox(height: 8),
-                    //             ],
-                    //           ),
-                    //         ],
-                    //       ),
-                    //       12.h,
-                    //       Row(
-                    //         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    //         children: [
-                    //           SizedBox(
-                    //             width: MediaQuery.sizeOf(context).width * 0.3,
-                    //             child: OutlinedButton.icon(
-                    //               onPressed:
-                    //                   () => showReminderDialog(context, member),
-                    //               icon: const Icon(Icons.notifications),
-                    //               label: const Text(
-                    //                 "Reminder",
-                    //                 style: TextStyle(fontSize: 12),
-                    //               ),
-                    //             ),
-                    //           ),
-                    //           ElevatedButton.icon(
-                    //             onPressed: () {
-                    //               Navigator.push(
-                    //                 context,
-                    //                 MaterialPageRoute(
-                    //                   builder:
-                    //                       (_) => MemberForm(member: member),
-                    //                 ),
-                    //               );
-                    //             },
-                    //             icon: const Icon(Icons.edit),
-                    //             label: const Text(
-                    //               "Edit",
-                    //               style: TextStyle(fontSize: 12),
-                    //             ),
-                    //             style: ElevatedButton.styleFrom(
-                    //               backgroundColor: theme.colorScheme.primary,
-                    //             ),
-                    //           ),
-                    //           IconButton(
-                    //             icon: Icon(
-                    //               Icons.visibility,
-                    //               color: Colors.blue[600],
-                    //               size: 20,
-                    //             ),
-                    //             onPressed: () {
-                    //               UserCredentialsBottomSheet.show(
-                    //                 context,
-                    //                 targetEmail: member.email,
-                    //                 targetName: member.name,
-                    //                 isMember: true,
-                    //               );
-                    //             },
-                    //             tooltip: 'View Credentials',
-                    //           ),
-                    //         ],
-                    //       ),
-                    //     ],
-                    //   ),
-                    // );
+                    return _buildMemberCard(context, theme, member, now);
                   },
                 );
               },
             ),
           ],
         ),
+        ),
+      ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -639,6 +237,142 @@ class _AdminScreenState extends State<AdminScreen> {
           );
         },
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildMemberCard(BuildContext context, ThemeData theme, AppUser member, DateTime now) {
+    final isExpiringSoon =
+        (member.planExpiryDate?.toDateTime.difference(now).inDays ?? 0) <= 60;
+    final padding = responsivePadding(context);
+
+    return Card(
+      margin: EdgeInsets.symmetric(horizontal: padding, vertical: padding / 2),
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: Colors.black.withAppOpacity(0.2)),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      color: isExpiringSoon ? Colors.red.shade50 : theme.cardColor,
+      elevation: 2,
+      shadowColor: Colors.black.withAppOpacity(0.08),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.symmetric(horizontal: padding, vertical: 12),
+        childrenPadding: EdgeInsets.symmetric(horizontal: padding, vertical: 12),
+        collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          member.name.sentenceCase,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: isExpiringSoon ? Colors.red.shade700 : theme.colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(member.email, style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.lock_clock, size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    "Expires: ${member.planExpiryDate?.toDateTime.formatDate}",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: isExpiringSoon ? Colors.red.shade700 : Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDetailRow(icon: Icons.person, label: "Name", value: member.name, theme: theme),
+                    _buildDetailRow(icon: Icons.numbers, label: "User Id", value: member.email, theme: theme),
+                    _buildDetailRow(
+                      icon: Icons.lock_clock,
+                      label: "Expires",
+                      value: member.planExpiryDate?.toDateTime.formatDate ?? '',
+                      theme: theme,
+                    ),
+                    _buildDetailRow(icon: Icons.people, label: "Users", value: member.totalUsers.toString(), theme: theme),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  Switch(
+                    value: member.isActive,
+                    onChanged: (val) {
+                      FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(member.userId.toString())
+                          .update({'isActive': val});
+                    },
+                    activeColor: theme.colorScheme.primary,
+                  ),
+                  Text(
+                    member.isActive ? "Active" : "Inactive",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: member.isActive ? Colors.green : Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => MemberForm(member: member)),
+                  );
+                },
+                icon: const Icon(Icons.edit, size: 18),
+                label: const Text("Edit", style: TextStyle(fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  padding: EdgeInsets.symmetric(horizontal: padding, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  UserCredentialsBottomSheet.show(
+                    context,
+                    targetEmail: member.email,
+                    targetName: member.name,
+                    isMember: true,
+                    userId: member.userId.toString(),
+                  );
+                },
+                icon: const Icon(Icons.remove_red_eye, size: 18),
+                label: const Text("view more", style: TextStyle(fontSize: 13)),
+                style: OutlinedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: padding / 2 * 1.2, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

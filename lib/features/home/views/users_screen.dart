@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/home/views/delete_confirmation_dialog.dart';
 import 'package:secured_calling/features/home/views/user_creation_form.dart';
 import 'package:secured_calling/widgets/user_credentials_dialog.dart';
@@ -64,8 +65,62 @@ class _UsersScreenState extends State<UsersScreen> {
     });
   }
 
+  Widget _buildUserCard(BuildContext context, AppUser user) {
+    return Card(
+      margin: EdgeInsets.only(bottom: responsivePadding(context) / 2 * 1.5),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue[100],
+          child: Text(
+            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+            style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold),
+          ),
+        ),
+        title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: SizedBox(
+          width: MediaQuery.sizeOf(context).width * 0.5,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(user.email),
+              Text(
+                'Joined: ${_formatDate(user.createdAt)}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        trailing: InkWell(
+          onTap: () {
+            UserCredentialsBottomSheet.show(
+              context,
+              targetEmail: user.email,
+              targetName: user.name,
+              isMember: false,
+              userId: user.userId.toString(),
+            );
+          },
+          child: Card(
+            color: Colors.blue,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: 8,
+                horizontal: responsivePadding(context),
+              ),
+              child: Text('View more', style: TextStyle(fontSize: 12, color: Colors.white)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final padding = responsivePadding(context);
+    final useGrid = context.layoutType != AppLayoutType.mobile;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Associated Users'),
@@ -75,9 +130,8 @@ class _UsersScreenState extends State<UsersScreen> {
       ),
       body: Column(
         children: [
-          // Search Bar
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(padding),
             child: TextField(
               controller: _searchController,
               onChanged: _filterUsers,
@@ -133,58 +187,25 @@ class _UsersScreenState extends State<UsersScreen> {
                         ],
                       ),
                     )
+                    : useGrid
+                    ? GridView.builder(
+                        padding: EdgeInsets.symmetric(horizontal: padding),
+                        shrinkWrap: false,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 1.1,
+                          crossAxisSpacing: padding,
+                          mainAxisSpacing: padding / 2,
+                        ),
+                        itemCount: _filteredUsers.length,
+                        itemBuilder: (context, index) =>
+                            _buildUserCard(context, _filteredUsers[index]),
+                      )
                     : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(horizontal: padding),
                       itemCount: _filteredUsers.length,
-                      itemBuilder: (context, index) {
-                        final user = _filteredUsers[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.blue[100],
-                              child: Text(
-                                user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                                style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                            subtitle: SizedBox(
-                              width: MediaQuery.sizeOf(context).width * 0.5,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(user.email),
-                                  if (user.createdAt != null)
-                                    Text(
-                                      'Joined: ${_formatDate(user.createdAt)}',
-                                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            trailing: InkWell(
-                              onTap: () {
-                                UserCredentialsBottomSheet.show(
-                                  context,
-                                  targetEmail: user.email,
-                                  targetName: user.name,
-                                  isMember: false,
-                                  userId: user.userId.toString(),
-                                );
-                              },
-                              child: Card(
-                                color: Colors.blue,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                  child: Text('View more', style: TextStyle(fontSize: 12, color: Colors.white)),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
+                      itemBuilder: (context, index) =>
+                          _buildUserCard(context, _filteredUsers[index]),
                     ),
           ),
         ],

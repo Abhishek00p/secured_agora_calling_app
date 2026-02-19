@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 
 class MemberRemindersPage extends StatelessWidget {
   final String memberId;
@@ -27,12 +28,15 @@ class MemberRemindersPage extends StatelessWidget {
             return const Center(child: Text('No reminders yet.'));
           }
 
+          final padding = responsivePadding(context);
+
           return ListView.builder(
+            padding: EdgeInsets.symmetric(horizontal: padding),
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final data = docs[index].data();
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                margin: EdgeInsets.symmetric(horizontal: padding / 2, vertical: padding / 2),
                 child: ListTile(
                   title: Text(data['title']),
                   subtitle: Text(data['description']),

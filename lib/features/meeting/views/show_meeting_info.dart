@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/state_manager.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/widgets/extend_meeting_dialog.dart';
@@ -24,51 +25,50 @@ void showMeetingInfo(BuildContext context) {
                 final result = snapshot.data;
                 return AlertDialog(
                   title: const Text('Meeting Settings'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Meeting Info Section
-                      const Text(
-                        'Meeting Information',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SelectableText('Meeting Id: ${result?['meet_id']}'),
-                      SelectableText('Password: ${result?['password']}'),
-
-                      const SizedBox(height: 16),
-
-                      // Host Controls Section
-                      if (isHost) ...[
+                  content: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: dialogMaxWidth(context)),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         const Text(
-                          'Host Controls',
+                          'Meeting Information',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context); // Close current dialog
-                              _showExtendMeetingDialog(context, controller);
-                            },
-                            icon: const Icon(Icons.schedule),
-                            label: const Text('Extend Meeting'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
+                        SizedBox(height: responsivePadding(context) / 2),
+                        SelectableText('Meeting Id: ${result?['meet_id']}'),
+                        SelectableText('Password: ${result?['password']}'),
+                        SizedBox(height: responsivePadding(context)),
+                        if (isHost) ...[
+                          const Text(
+                            'Host Controls',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
+                          SizedBox(height: responsivePadding(context) / 2),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _showExtendMeetingDialog(context, controller);
+                              },
+                              icon: const Icon(Icons.schedule),
+                              label: const Text('Extend Meeting'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                   actions: [
                     TextButton(

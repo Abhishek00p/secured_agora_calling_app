@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 
 class TimerWarningDialog extends StatefulWidget {
@@ -31,28 +32,30 @@ class TimerWarningDialogState extends State<TimerWarningDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final padding = responsivePadding(context);
+
     return AlertDialog(
       title: Row(
         children: [
           Icon(Icons.warning, color: Colors.orange, size: 28),
-          const SizedBox(width: 12),
+          SizedBox(width: padding / 2),
           const Text('Meeting Time Warning', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         ],
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Your meeting is about to end!',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.red[700]),
-          ),
-          const SizedBox(height: 16),
-
-          // Large countdown timer
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: dialogMaxWidth(context)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your meeting is about to end!',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.red[700]),
+            ),
+            SizedBox(height: padding),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
               color: Colors.red[50],
               borderRadius: BorderRadius.circular(12),
@@ -79,18 +82,14 @@ class TimerWarningDialogState extends State<TimerWarningDialog> {
               ],
             ),
           ),
-
-          const SizedBox(height: 16),
-
+          SizedBox(height: padding),
           Text(
             'To continue your meeting, you can extend the time using the button below.',
             style: TextStyle(fontSize: 14, color: Colors.grey[700]),
           ),
-
-          const SizedBox(height: 8),
-
+          SizedBox(height: padding / 2),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
               color: Colors.blue[50],
               borderRadius: BorderRadius.circular(8),
@@ -110,13 +109,11 @@ class TimerWarningDialogState extends State<TimerWarningDialog> {
             ),
           ),
         ],
+        ),
       ),
       actions: [
-        // Dismiss button (only if meeting is extended)
-        if (_remainingSeconds > 60) // Hide dismiss button in last minute
+        if (_remainingSeconds > 60)
           TextButton(onPressed: widget.onDismiss, child: const Text('Dismiss', style: TextStyle(color: Colors.grey))),
-
-        // Extend meeting button
         ElevatedButton.icon(
           onPressed: widget.onExtend,
           icon: const Icon(Icons.schedule),
@@ -124,11 +121,11 @@ class TimerWarningDialogState extends State<TimerWarningDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: EdgeInsets.symmetric(horizontal: padding, vertical: 12),
           ),
         ),
       ],
-      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      actionsPadding: EdgeInsets.fromLTRB(padding, 0, padding, padding),
     );
   }
 }

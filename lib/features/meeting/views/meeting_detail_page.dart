@@ -6,6 +6,7 @@ import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/meeting/widgets/clip_audio_downloader.dart';
 import 'package:secured_calling/features/meeting/widgets/recorder_audio_tile.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
@@ -191,25 +192,48 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                   // ),
                 ],
               ),
-              SliverToBoxAdapter(child: MeetingInfoCard(meeting: meetingDetail)),
+              SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: contentMaxWidth(context)),
+                    child: MeetingInfoCard(meeting: meetingDetail),
+                  ),
+                ),
+              ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: AppTheme.lightSurfaceColor, borderRadius: BorderRadius.circular(14)),
-                    child: TabBar(
-                      controller: tabBarController,
-                      onTap: (value) {
-                        controller.currentTabIndex.value = value;
-                      },
-                      dividerHeight: 0,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      indicator: BoxDecoration(color: AppTheme.primaryColor, borderRadius: BorderRadius.circular(10)),
-                      labelColor: Colors.white,
-                      unselectedLabelColor: AppTheme.lightSecondaryTextColor,
-                      labelStyle: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                      tabs: const [Tab(text: 'Participants'), Tab(text: 'Recordings')],
+                  padding: EdgeInsets.fromLTRB(
+                    responsivePadding(context),
+                    responsivePadding(context),
+                    responsivePadding(context),
+                    8.0,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: contentMaxWidth(context)),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.lightSurfaceColor,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: TabBar(
+                          controller: tabBarController,
+                          onTap: (value) {
+                            controller.currentTabIndex.value = value;
+                          },
+                          dividerHeight: 0,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          indicator: BoxDecoration(
+                            color: AppTheme.primaryColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          labelColor: Colors.white,
+                          unselectedLabelColor: AppTheme.lightSecondaryTextColor,
+                          labelStyle: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                          tabs: const [Tab(text: 'Participants'), Tab(text: 'Recordings')],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -217,40 +241,30 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
               Obx(
                 () =>
                     controller.currentTabIndex == 0
-                        ? _buildParticipantsList(meetingDetail)
+                        ? _buildParticipantsList(context, meetingDetail)
                         : SliverToBoxAdapter(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // if (controller.isCurrentUserHost) ...[
-                                //   Column(
-                                //     children: [
-                                //       SizedBox(height: 16),
-                                //       Text(
-                                //         'Mix Recordings',
-                                //         style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
-                                //       ),
-                                //       getMixRecordingListWidget(),
-                                //     ],
-                                //   ),
-                                // ],
-                                Column(
+                            padding: EdgeInsets.symmetric(horizontal: responsivePadding(context)),
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(maxWidth: contentMaxWidth(context)),
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    SizedBox(height: 16),
+                                    SizedBox(height: responsivePadding(context)),
                                     Text(
                                       '${controller.isCurrentUserHost ? 'Individual' : "Your"} Recordings',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                    SizedBox(height: 16),
+                                    SizedBox(height: responsivePadding(context)),
                                     getIndividualRecordingWidgets(),
+                                    const SizedBox(height: 40),
                                   ],
                                 ),
-
-                                SizedBox(height: 40),
-                              ],
+                              ),
                             ),
                           ),
                         ),
@@ -262,36 +276,31 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
     );
   }
 
-  // Widget _buildRecordingsList(MeetingDetail meetingDetail) {
-  Widget _buildParticipantsList(MeetingDetail meetingDetail) {
+  Widget _buildParticipantsList(BuildContext context, MeetingDetail meetingDetail) {
     if (meetingDetail.participants.isEmpty) {
       return const SliverFillRemaining(
-        child: Center(child: Text('No participants have joined yet.', style: TextStyle(fontSize: 16, color: Colors.grey))),
+        child: Center(
+          child: Text('No participants have joined yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+        ),
       );
     }
+
+    final padding = responsivePadding(context);
+    final maxWidth = contentMaxWidth(context);
 
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         final participant = meetingDetail.participants[index];
-        return ParticipantListItem(participant: participant, index: index);
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: padding),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: ParticipantListItem(participant: participant, index: index),
+            ),
+          ),
+        );
       }, childCount: meetingDetail.participants.length),
     );
   }
-} //     }, childCount: meetingDetail.recordings.length),
-
-//   );
-// }
-Widget _buildParticipantsList(MeetingDetail meetingDetail) {
-  if (meetingDetail.participants.isEmpty) {
-    return const SliverFillRemaining(
-      child: Center(child: Text('No participants have joined yet.', style: TextStyle(fontSize: 16, color: Colors.grey))),
-    );
-  }
-
-  return SliverList(
-    delegate: SliverChildBuilderDelegate((context, index) {
-      final participant = meetingDetail.participants[index];
-      return ParticipantListItem(participant: participant, index: index);
-    }, childCount: meetingDetail.participants.length),
-  );
 }

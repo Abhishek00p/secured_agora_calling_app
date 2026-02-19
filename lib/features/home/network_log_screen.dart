@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:secured_calling/core/services/firebase_function_logger.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
+import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 
 class NetworkLogScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class _NetworkLogScreenState extends State<NetworkLogScreen> {
           logs.isEmpty
               ? const Center(child: Text('No network calls yet'))
               : ListView.builder(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(responsivePadding(context)),
                 itemCount: logs.length,
                 itemBuilder: (context, index) {
                   final log = logs[index];
@@ -60,11 +61,13 @@ class _NetworkLogTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final padding = responsivePadding(context);
+
     return Card(
       child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        tilePadding: EdgeInsets.symmetric(horizontal: padding, vertical: 8),
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        childrenPadding: EdgeInsets.fromLTRB(padding, 0, padding, padding),
         title: Text(log.url.split('/api').last, style: Theme.of(context).textTheme.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Row(
           children: [
