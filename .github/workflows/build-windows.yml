@@ -40,7 +40,7 @@ jobs:
             } catch { if ($attempt -eq 3) { throw } }
             Start-Sleep -Seconds 10
           }
-          $p = Start-Process -FilePath $outPath -ArgumentList "--add", "Microsoft.VisualStudio.Workload.NativeDesktop", "--quiet", "--norestart", "--wait", "--includeRecommended" -Wait -PassThru
+          $p = Start-Process -FilePath $outPath -ArgumentList "--add", "Microsoft.VisualStudio.Workload.NativeDesktop", "--quiet", "--norestart", "--wait", "--includeRecommended" -WorkingDirectory "C:\" -Wait -PassThru
           if ($p.ExitCode -ne 0) { exit $p.ExitCode }
         shell: pwsh
 
