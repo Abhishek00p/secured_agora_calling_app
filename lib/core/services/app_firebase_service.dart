@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -26,7 +25,6 @@ class AppFirebaseService {
   static AppFirebaseService get instance => _instance;
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  User? get currentUser => FirebaseAuth.instance.currentUser;
 
   // Firestore references
   CollectionReference get usersCollection => _firestore.collection('users');
