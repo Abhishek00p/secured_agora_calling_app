@@ -3,7 +3,6 @@ import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
-import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/services/app_auth_service.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
@@ -55,20 +54,12 @@ class _MemberFormState extends State<MemberForm> {
     password = TextEditingController();
     purchaseDate = widget.member?.purchaseDate.toDateTime ?? DateTime.now();
     isActive = widget.member?.isActive ?? true;
-    maxParticipantsAllowed = TextEditingController(
-      text: widget.member?.maximumParticipantsAllowed.toString() ?? '',
-    );
+    maxParticipantsAllowed = TextEditingController(text: widget.member?.maximumParticipantsAllowed.toString() ?? '');
 
     // Set initial subscription plan if editing existing member
     if (widget.member != null) {
       final days = widget.member!.planDays;
-      selectedPlan =
-          subscriptionPlans.entries
-              .firstWhere(
-                (entry) => entry.value == days,
-                orElse: () => subscriptionPlans.entries.first,
-              )
-              .key;
+      selectedPlan = subscriptionPlans.entries.firstWhere((entry) => entry.value == days, orElse: () => subscriptionPlans.entries.first).key;
     }
   }
 
@@ -104,10 +95,7 @@ class _MemberFormState extends State<MemberForm> {
           memberCode: memberCode,
           purchaseDate: purchaseDate,
           planDays: planDays,
-          maxParticipantsAllowed:
-              int.parse(maxParticipantsAllowed.text) <= 0
-                  ? 45
-                  : int.parse(maxParticipantsAllowed.text),
+          maxParticipantsAllowed: int.parse(maxParticipantsAllowed.text) <= 0 ? 45 : int.parse(maxParticipantsAllowed.text),
         );
 
         if ((success ?? false) && mounted) {
@@ -139,13 +127,11 @@ class _MemberFormState extends State<MemberForm> {
 
   List<DropdownModel<String>> get subscriptionPlanItems {
     return subscriptionPlans.entries.map((entry) {
-      return DropdownModel<String>(
-        label: entry.key,
-        value: entry.key,
-        description: '${entry.value} days',
-      );
+      return DropdownModel<String>(label: entry.key, value: entry.key, description: '${entry.value} days');
     }).toList();
   }
+
+  bool isDesktop(BuildContext context) => context.layoutType == AppLayoutType.laptop || context.layoutType == AppLayoutType.laptop;
 
   @override
   Widget build(BuildContext context) {
@@ -160,21 +146,11 @@ class _MemberFormState extends State<MemberForm> {
             onPressed: _isLoading ? null : _saveMember,
             child:
                 _isLoading
-                    ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                    : Text(
-                      widget.member == null
-                          ? "Save & Register Member"
-                          : "Update Member Details",
-                    ),
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text(widget.member == null ? "Save & Register Member" : "Update Member Details"),
           ),
         ),
-        appBar: AppBar(
-          title: Text(widget.member == null ? "Add Member" : "Edit Member"),
-        ),
+        appBar: AppBar(title: Text(widget.member == null ? "Add Member" : "Edit Member")),
         body: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: contentMaxWidth(context) == double.infinity ? double.infinity : 560),
@@ -183,92 +159,75 @@ class _MemberFormState extends State<MemberForm> {
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: padding),
                 child: ListView(
-              children: [
-                24.h,
-                AppTextFormField(
-                  controller: name,
-                  labelText: "Name",
-                  type: AppTextFormFieldType.name,
-                ),
-                const SizedBox(height: 12),
-                AppTextFormField(
-                  controller: email,
-                  labelText: "userId",
-                  type: AppTextFormFieldType.text,
-                ),
-                const SizedBox(height: 12),
-                if (widget.member == null) ...[
-                  AppTextFormField(
-                    controller: password,
-                    labelText: "Password",
-                    type: AppTextFormFieldType.password,
-                    helperText: "Enter a Temporary password for member login",
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                AppTextContainer(
-                  text: purchaseDate.formatDate,
-                  label: "Purchase Date",
-                  prefixIcon: Icons.calendar_month,
-                  onPressed:
-                      () => showDatePicker(
-                        context: context,
-                        initialDate: purchaseDate,
-                        firstDate: DateTime.now().subtract(
-                          const Duration(days: 60),
-                        ),
-                        lastDate: DateTime(2100),
-                      ).then((value) {
-                        if (value != null) {
-                          setState(() => purchaseDate = value);
-                        }
-                      }),
-                ),
-                const SizedBox(height: 12),
-                AppDropdownField<String>(
-                  label: "Subscription Plan",
-                  value: selectedPlan,
-                  items: subscriptionPlanItems,
-                  prefixIcon: Icons.subscriptions,
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        selectedPlan = newValue;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                AppTextFormField(
-                  controller: maxParticipantsAllowed,
-                  labelText: "Max Participants Allowed",
-                  type: AppTextFormFieldType.number,
-                  validator: (value) {
-                    if (value == null || int.parse(value) <= 0) {
-                      return 'Max participants allowed must be greater than 0';
-                    }
-                    if (int.parse(value) % 5 != 0) {
-                      return 'Max participants must be a multiple of 5';
-                    }
-                    return null;
-                  },
-                  helperText:
-                      "Max number of participants allowed in a Meeting in Multple of 5, eg: 5, 10, 15...",
-                  prefixIcon: Icons.group,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text("Active"),
-                    Switch(
-                      value: isActive,
-                      onChanged: (v) => setState(() => isActive = v),
+                    24.h,
+                    AppTextFormField(controller: name, labelText: "Name", type: AppTextFormFieldType.name),
+                    const SizedBox(height: 12),
+                    AppTextFormField(controller: email, labelText: "userId", type: AppTextFormFieldType.text),
+                    const SizedBox(height: 12),
+                    if (widget.member == null) ...[
+                      AppTextFormField(
+                        controller: password,
+                        labelText: "Password",
+                        type: AppTextFormFieldType.password,
+                        helperText: "Enter a Temporary password for member login",
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    AppTextContainer(
+                      text: purchaseDate.formatDate,
+                      label: "Purchase Date",
+                      prefixIcon: Icons.calendar_month,
+                      onPressed:
+                          () => showDatePicker(
+                            context: context,
+                            initialDate: purchaseDate,
+                            firstDate: DateTime.now().subtract(const Duration(days: 60)),
+                            lastDate: DateTime(2100),
+                          ).then((value) {
+                            if (value != null) {
+                              setState(() => purchaseDate = value);
+                            }
+                          }),
                     ),
+                    const SizedBox(height: 12),
+                    AppDropdownField<String>(
+                      label: "Subscription Plan",
+                      value: selectedPlan,
+                      items: subscriptionPlanItems,
+                      prefixIcon: Icons.subscriptions,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            selectedPlan = newValue;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextFormField(
+                      controller: maxParticipantsAllowed,
+                      labelText: "Max Participants Allowed",
+                      type: AppTextFormFieldType.number,
+                      validator: (value) {
+                        if (value == null || int.parse(value) <= 0) {
+                          return 'Max participants allowed must be greater than 0';
+                        }
+                        if (int.parse(value) % 5 != 0) {
+                          return 'Max participants must be a multiple of 5';
+                        }
+                        return null;
+                      },
+                      helperText: "Max number of participants allowed in a Meeting in Multple of 5, eg: 5, 10, 15...",
+                      prefixIcon: Icons.group,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [const Text("Active"), Switch(value: isActive, onChanged: (v) => setState(() => isActive = v))],
+                    ),
+                    SizedBox(height: padding * 1.5),
                   ],
-                ),
-                SizedBox(height: padding * 1.5),
-              ],
                 ),
               ),
             ),

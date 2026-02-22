@@ -51,16 +51,12 @@ class LoginRegisterController extends GetxController {
 
     try {
       final result = await AppAuthService.instance
-          .login(
-            email: loginEmailController.text.trim(),
-            password: loginPasswordController.text,
-          )
+          .login(email: loginEmailController.text.trim(), password: loginPasswordController.text)
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
-              AppToastUtil.showErrorToast(
-                'Login request timed out. Please check your internet connection and try again.',
-              );
+              AppToastUtil.showErrorToast('Login request timed out. Please check your internet connection and try again.');
+              return null;
             },
           );
       if (result == null) {
@@ -78,12 +74,9 @@ class LoginRegisterController extends GetxController {
 
       // Handle specific error types
       if (errorMessage.contains('timeout')) {
-        errorMessage =
-            'Request timed out. Please check your internet connection.';
-      } else if (errorMessage.contains('SocketException') ||
-          errorMessage.contains('NetworkException')) {
-        errorMessage =
-            'No internet connection. Please check your network and try again.';
+        errorMessage = 'Request timed out. Please check your internet connection.';
+      } else if (errorMessage.contains('SocketException') || errorMessage.contains('NetworkException')) {
+        errorMessage = 'No internet connection. Please check your network and try again.';
       } else if (errorMessage.contains('Failed with status')) {
         errorMessage = 'Server error. Please try again later.';
       }
@@ -120,9 +113,7 @@ class LoginRegisterController extends GetxController {
     // Test 3: Simulate network error
     AppLogger.print('Test 3: Simulating network error');
     await Future.delayed(const Duration(seconds: 1));
-    setError(
-      'No internet connection. Please check your network and try again.',
-    );
+    setError('No internet connection. Please check your network and try again.');
 
     // Test 4: Simulate server error
     AppLogger.print('Test 4: Simulating server error');
@@ -150,14 +141,7 @@ class LoginRegisterController extends GetxController {
 
 // --- ENUMs
 
-enum LoginError {
-  network,
-  userNotFound,
-  wrongPassword,
-  invalidEmail,
-  invalidCredential,
-  unknown,
-}
+enum LoginError { network, userNotFound, wrongPassword, invalidEmail, invalidCredential, unknown }
 
 extension LoginErrorMessage on LoginError {
   String get message {

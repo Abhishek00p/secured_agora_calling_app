@@ -41,6 +41,7 @@ class MeetingController extends GetxController {
   final pttUsers = <int>[].obs;
 
   String meetingId = '';
+
   /// Stored for re-navigation when user returns to the meeting from another screen.
   String channelName = '';
   bool isHost = false;
@@ -67,12 +68,6 @@ class MeetingController extends GetxController {
 
   int individualRecorderUid = 0;
   int mixRecorderUid = 0;
-
-  @override
-  void onInit() async {
-    super.onInit();
-    // Note: meetingId is not set yet at this point, so subscriptions are set up in initializeMeeting()
-  }
 
   /// Fetch the recording start time from Firestore
   Future<void> _fetchRecordingStartTime() async {
@@ -117,13 +112,13 @@ class MeetingController extends GetxController {
         AppToastUtil.showErrorToast('Meeting data not found');
         return;
       }
-      print("\n <-------- meeting model data in start timer: ${result.entries.join("\n")} \n ----> ");
+      AppLogger.print("\n <-------- meeting model data in start timer: ${result.entries.join("\n")} \n ----> ");
       meetingModel.value = MeetingModel.fromJson(result);
       isRecordingOn.value = meetingModel.value.isRecordingOn;
       final thisMeetingScheduledEndTime = meetingModel.value.scheduledEndTime;
       final currentTime = DateTime.now();
       remainingSeconds = thisMeetingScheduledEndTime.difference(currentTime).inSeconds;
-      print(
+      AppLogger.print(
         "\n <------------------------------------------------\n meeting end time which was scheduled : $thisMeetingScheduledEndTime , current time : $currentTime, difference in sec : $remainingSeconds\n ---------------------------------------->\n",
       );
       isHost = meetingModel.value.hostUserId == currentUser.userId;
@@ -135,7 +130,7 @@ class MeetingController extends GetxController {
         // Check if meeting time has ended
         if (remainingSeconds <= 0) {
           timer.cancel();
-          print("forcing end meeting becoz remaining second < = 0, we are in start timer func");
+          AppLogger.print("forcing end meeting becoz remaining second < = 0, we are in start timer func");
           _forceEndMeeting();
           return;
         }
@@ -164,7 +159,7 @@ class MeetingController extends GetxController {
       _leaveSubscription?.cancel();
       _leaveSubscription = _firebaseService.isInstructedToLeave(meetingId).listen((isInstructed) {
         if (isInstructed) {
-          print("<<<<<<< ----------- \n user got instruction to leave the meeting ...... \n --------- >>>>>>");
+          AppLogger.print("<<<<<<< ----------- \n user got instruction to leave the meeting ...... \n --------- >>>>>>");
           endMeeting();
         }
       });
@@ -266,7 +261,7 @@ class MeetingController extends GetxController {
         // Check if meeting time has ended
         if (remainingSeconds <= 0) {
           timer.cancel();
-          print("meeting time is less then 0, we are inside refreshtimerWithNewData");
+          AppLogger.print("meeting time is less then 0, we are inside refreshtimerWithNewData");
           _forceEndMeeting();
           return;
         }
@@ -800,7 +795,7 @@ class MeetingController extends GetxController {
       // or a cloud function for reliability. Client-side check is not secure.
 
       final token = await _firebaseService.getAgoraToken(channelName: channelName, uid: currentUser.userId, isHost: isHost);
-      print("\n\nthe agora token is $token\n");
+      AppLogger.print("\n\nthe agora token is $token\n");
       if (token.trim().isEmpty) {
         AppToastUtil.showErrorToast('Token not found');
         return;
@@ -1108,7 +1103,7 @@ class MeetingController extends GetxController {
       onActiveSpeaker: onActiveSpeaker,
 
       onError: (error, message) {
-        print('❌ Agora error: $error,$message');
+        AppLogger.print('❌ Agora error: $error,$message');
         AppToastUtil.showErrorToast('❌ Agora error: $error\n$message');
         AppFirebaseService.instance.verifyAgoraToken(channelName: meetingId, uid: AppLocalStorage.getUserDetails().userId, isHost: isHost);
       },

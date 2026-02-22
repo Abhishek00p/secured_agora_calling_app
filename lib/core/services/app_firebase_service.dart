@@ -3,11 +3,9 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:secured_calling/core/constants.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
-import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/models/recording_file_model.dart';
 import 'package:secured_calling/core/services/agora_token_helper.dart';
 import 'package:secured_calling/core/services/http_service.dart';
@@ -511,13 +509,13 @@ class AppFirebaseService {
   Future<void> muteParticipants(String meetingId, int userId, bool isMute) async {
     try {
       if (meetingId.trim().isEmpty) {
-        print("meetingId cannot be empty");
+        AppLogger.print("meetingId cannot be empty");
         return;
       }
       final meetingDoc = await meetingsCollection.doc(meetingId).get();
 
       if (!meetingDoc.exists) {
-        print('Meeting document not found for ID: $meetingId');
+        AppLogger.print('Meeting document not found for ID: $meetingId');
         return;
       }
 
@@ -539,10 +537,10 @@ class AppFirebaseService {
 
       await meetingsCollection.doc(meetingId).update({'isParticipantsMuted': updatedMutedMap});
 
-      print("Participant muted Successfully...");
-    } catch (e, stackTrace) {
+      AppLogger.print("Participant muted Successfully...");
+    } catch (e) {
       // Logging or error reporting
-      print('Error in muteParticipants: $e');
+      AppLogger.print('Error in muteParticipants: $e');
       // Optionally send to error reporting service
     }
   }
@@ -559,7 +557,7 @@ class AppFirebaseService {
 
   Future<List<AppUser>> getUsersByMemberCodeData(String memberCode) async {
     final QuerySnapshot querySnapshot = await usersCollection.where('memberCode', isEqualTo: memberCode.toUpperCase()).get();
-    print('Fetched ${querySnapshot.docs.length} users for member code $memberCode');
+    AppLogger.print('Fetched ${querySnapshot.docs.length} users for member code $memberCode');
     return querySnapshot.docs
         .map((doc) => AppUser.fromJson(doc.data() as Map<String, dynamic>))
         .toList()
@@ -1004,7 +1002,7 @@ class AppFirebaseService {
 
   Future<void> cleanUpServiceSecureFiles() async {
     try {
-      final resp = await AppHttpService().post('api/agora/recording/cleanupSecureFiles', body: {});
+      await AppHttpService().post('api/agora/recording/cleanupSecureFiles', body: {});
     } catch (e) {
       debugPrint("error caught in cleaning up secure files : $e");
     }

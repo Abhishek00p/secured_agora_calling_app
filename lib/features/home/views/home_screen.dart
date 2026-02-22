@@ -14,13 +14,13 @@ import 'package:secured_calling/core/services/call_notification_service.dart';
 
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/app_user_role_service.dart';
-import 'package:secured_calling/core/services/notification_service.dart';
-import 'package:secured_calling/core/services/permission_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/admin/admin_home.dart';
 import 'package:secured_calling/features/home/network_log_screen.dart';
 import 'package:secured_calling/features/home/views/membar_tab_view_widget.dart';
+import 'package:secured_calling/features/home/views/member_meeting_list_widget.dart';
+import 'package:secured_calling/features/home/views/user_meeting_list_widget.dart';
 import 'package:secured_calling/features/home/views/user_tab.dart';
 import 'package:secured_calling/features/home/views/users_screen.dart';
 import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
@@ -44,45 +44,92 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   int _selectedIndex = 0;
 
   int poppedTimes = 0;
+  bool isDesktop(BuildContext context) => context.layoutType == AppLayoutType.laptop || context.layoutType == AppLayoutType.laptop;
 
-  void _showNotificationPermissionSheet(BuildContext context) async {
-    final result = await PermissionService.requestPermission(context: context, type: AppPermissionType.notification);
-    if (result) {
-      return; // Permission granted, no need to show the sheet
+  AppUser user = AppUser.toEmpty();
+  Widget _buildMeetingListForRole() {
+    if (AppLocalStorage.getUserDetails().isMember) {
+      return MemberMeetingListWidget();
+    } else {
+      return UserMeetingListWidget();
     }
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder:
-          (_) => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
+  }
+
+  Widget _buildUserCard(double padding) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(padding),
+      margin: EdgeInsets.all(padding),
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(user.name.titleCase, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+          const SizedBox(height: 4),
+          if (user.memberCode.isNotEmpty) ...[
+            Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("Enable Notifications", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                Text(
-                  "We use notifications to remind you of meetings, alerts, and important messages. You can enable them now or later.",
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 20),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.notifications),
-                  label: Text("Enable Notifications"),
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    // await NotificationService()
-                    //     .requestPermissionAndInitialize();
+                Text('Code: ${user.memberCode}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+                4.w,
+                IconButton(
+                  icon: const Icon(Icons.copy, color: Colors.white, size: 14),
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    // Copy member code to clipboard
+                    Clipboard.setData(ClipboardData(text: user.memberCode));
+                    AppToastUtil.showSuccessToast('Member code copied to clipboard');
                   },
                 ),
-                TextButton(onPressed: () => Navigator.pop(context), child: Text("Maybe later")),
               ],
             ),
+          ],
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(color: Colors.white.withAppOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+            child: Text(
+              'Role : ${AppUserRoleService.getCurrentUserRoleDisplayName()}',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 12),
+            ),
           ),
+          if (!user.subscription.isEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Plan: ${user.subscription.plan}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                8.w,
+                Text('Expires: ${user.subscription.expiryDate.formatDate}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 
-  AppUser user = AppUser.toEmpty();
+  Widget _buildTabBar(double padding) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: padding),
+      decoration: BoxDecoration(color: Get.theme.cardTheme.color, borderRadius: BorderRadius.circular(12)),
+      child: TabBar(
+        controller: _tabController,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        indicator: BoxDecoration(color: AppTheme.primaryColor, borderRadius: BorderRadius.circular(12)),
+        dividerColor: Colors.transparent,
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: Colors.white,
+        unselectedLabelColor: Get.textTheme.bodyLarge?.color,
+        tabs: const [Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'), Tab(icon: Icon(Icons.people), text: 'Join Meeting')],
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -139,14 +186,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     if (Get.isRegistered<MeetingController>()) {
       final c = Get.find<MeetingController>();
       if (c.isJoined.value) {
-        Get.toNamed(
-          AppRouter.meetingRoomRoute,
-          arguments: {
-            'channelName': c.channelName,
-            'isHost': c.isHost,
-            'meetingId': c.meetingId,
-          },
-        );
+        Get.toNamed(AppRouter.meetingRoomRoute, arguments: {'channelName': c.channelName, 'isHost': c.isHost, 'meetingId': c.meetingId});
       }
     }
   }
@@ -176,6 +216,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       },
       child: Scaffold(
         appBar: AppBar(
+          scrolledUnderElevation: 0,
           title: const Text('SecuredCalling'),
 
           actions: [
@@ -232,112 +273,41 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         body: LayoutBuilder(
           builder: (context, constraints) {
             final padding = responsivePadding(context);
-            final maxWidth = (context.layoutType != AppLayoutType.mobile) ? 700.0 : double.infinity;
-            return SingleChildScrollView(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: Column(
-                    children: [
-              const PersistentCallBar(),
-                      // User profile card
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(padding),
-                        margin: EdgeInsets.all(padding),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
-                ),
+            final desktop = isDesktop(context);
+
+            if (!desktop) {
+              // ✅ MOBILE — unchanged
+              return SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(user.name.titleCase, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                    const SizedBox(height: 4),
-                    if (user.memberCode.isNotEmpty) ...[
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('Code: ${user.memberCode}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
-                          4.w,
-                          IconButton(
-                            icon: const Icon(Icons.copy, color: Colors.white, size: 14),
-                            padding: EdgeInsets.zero,
-
-                            onPressed: () {
-                              // Copy member code to clipboard
-                              Clipboard.setData(ClipboardData(text: user.memberCode));
-                              AppToastUtil.showSuccessToast('Member code copied to clipboard');
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.white.withAppOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-                      child: Text(
-                        'Role : ${AppUserRoleService.getCurrentUserRoleDisplayName()}',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 12),
-                      ),
-                    ),
-
-                    if (!user.subscription.isEmpty) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        // mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Plan: ${user.subscription.plan}',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
-                          ),
-                          8.w,
-                          Text(
-                            'Expires: ${user.subscription.expiryDate.formatDate ?? 'N/A'}',
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
+                  children: [const PersistentCallBar(), _buildUserCard(padding), _buildTabBar(padding), const Divider(), _pages[_selectedIndex]],
                 ),
-              ),
+              );
+            }
 
-                      // Tab Bar
-                      Container(
-                        margin: EdgeInsets.symmetric(horizontal: padding),
-                        decoration: BoxDecoration(color: Theme.of(context).cardTheme.color, borderRadius: BorderRadius.circular(12)),
-                // height: 50,
-                // width: double.infinity,
-                        child: TabBar(
-                          onTap: (index) {
-                            setState(() {
-                              _selectedIndex = index;
-                            });
-                          },
-                          controller: _tabController,
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          indicator: BoxDecoration(borderRadius: BorderRadius.circular(12), color: AppTheme.primaryColor),
-                          labelColor: Colors.white,
-                          indicatorPadding: EdgeInsets.all(8),
-                          dividerColor: Colors.transparent,
-                          unselectedLabelColor: Theme.of(context).textTheme.bodyLarge?.color,
-                          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                          tabs: const [Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'), Tab(icon: Icon(Icons.people), text: 'Join Meeting')],
-                        ),
-                      ),
-                      const Divider(),
-                      // Tab content
-                      _pages[_selectedIndex],
-                    ],
+            // ✅ DESKTOP — split layout
+            return Row(
+              children: [
+                // LEFT PANEL
+                SizedBox(
+                  width: MediaQuery.sizeOf(context).width * 0.4,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const PersistentCallBar(),
+                        _buildUserCard(padding),
+                        _buildTabBar(padding),
+                        const Divider(),
+                        _pages[_selectedIndex], // only actions
+                      ],
+                    ),
                   ),
                 ),
-              ),
+
+                const VerticalDivider(width: 1),
+
+                // RIGHT PANEL — MEETING LIST
+                Expanded(child: Padding(padding: EdgeInsets.all(padding), child: SingleChildScrollView(child: _buildMeetingListForRole()))),
+              ],
             );
           },
         ),

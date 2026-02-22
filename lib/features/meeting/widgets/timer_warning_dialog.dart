@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
-import 'package:secured_calling/utils/app_tost_util.dart';
 
 class TimerWarningDialog extends StatefulWidget {
   final VoidCallback onExtend;

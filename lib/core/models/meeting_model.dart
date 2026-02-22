@@ -175,8 +175,9 @@ class MeetingModel {
   static DateTime _toDateTime(dynamic value) {
     if (value == null) return DateTime.fromMillisecondsSinceEpoch(0);
     if (value is Timestamp) return value.toDate();
-    if (value is String)
+    if (value is String) {
       return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    }
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 

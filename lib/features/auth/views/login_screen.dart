@@ -67,24 +67,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Info Message
                   Container(
                     padding: EdgeInsets.all(responsivePadding(context)),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'New users must be registered by a member or admin. Please contact your organization for access.',
-                        style: TextStyle(color: Colors.blue[700], fontSize: 14),
-                      ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
                     ),
-                  ],
-                ),
-              ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'New users must be registered by a member or admin. Please contact your organization for access.',
+                            style: TextStyle(color: Colors.blue[700], fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                   const SizedBox(height: 16),
                 ],
@@ -113,20 +113,6 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       AppToastUtil.showErrorToast(result);
     }
-  }
-
-  Widget _buildDebugButton(String label, IconData icon, VoidCallback onPressed) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 16),
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.orange[100],
-        foregroundColor: Colors.orange[800],
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
   }
 }
 

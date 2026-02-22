@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/utils/app_helpers.dart';
-import 'package:secured_calling/utils/app_tost_util.dart';
 
 class MeetingInfoCard extends StatefulWidget {
   final MeetingDetail meeting;

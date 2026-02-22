@@ -27,10 +27,7 @@ class MeetingDialogController extends GetxController {
   final inviteType = 'all'.obs; // 'all' or 'selected'
   final availableUsers = <AppUser>[].obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-  }
+ 
 
   void toggleUserSelection() {
     showUserSelection.value = !showUserSelection.value;

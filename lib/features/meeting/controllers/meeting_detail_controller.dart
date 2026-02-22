@@ -1,11 +1,8 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart';
-import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/models/recording_file_model.dart';
-import 'package:secured_calling/core/models/recording_track_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
@@ -100,10 +97,9 @@ class MeetingDetailController extends GetxController {
   Future<void> refreshParticipants() async {
     try {
       final details = await _meetingService.fetchMeetingDetail(meetingId);
-      if (details != null) {
-        meetingDetail.value = details;
-        AppToastUtil.showSuccessToast('Participants refreshed');
-      }
+
+      meetingDetail.value = details;
+      AppToastUtil.showSuccessToast('Participants refreshed');
     } catch (e) {
       AppToastUtil.showErrorToast('Failed to refresh participants: $e');
     }

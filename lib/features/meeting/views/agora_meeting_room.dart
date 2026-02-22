@@ -133,15 +133,9 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     WakelockPlus.enable();
     AppLogger.print('meeting id before init  :${widget.meetingId}');
     // Re-entry: already in this meeting, no need to initialize again
-    final alreadyInThisMeeting = meetingController.isJoined.value &&
-        meetingController.meetingId == widget.meetingId;
+    final alreadyInThisMeeting = meetingController.isJoined.value && meetingController.meetingId == widget.meetingId;
     if (!alreadyInThisMeeting) {
-      meetingController.initializeMeeting(
-        meetingId: widget.meetingId,
-        channelName: widget.channelName,
-        isUserHost: widget.isHost,
-        context: context,
-      );
+      meetingController.initializeMeeting(meetingId: widget.meetingId, channelName: widget.channelName, isUserHost: widget.isHost, context: context);
     }
   }
 
@@ -150,12 +144,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     WidgetsBinding.instance.removeObserver(this);
     WakelockPlus.disable();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    // AppLifecycleManager will handle app termination cleanup automatically
   }
 
   @override

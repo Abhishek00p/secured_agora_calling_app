@@ -125,7 +125,7 @@ class AppApiFunctionLogger {
     final buffer = StringBuffer();
     buffer.write("curl -X $method '$url'");
     headers.forEach((k, v) {
-      buffer.write(" -H '${k}: $v'");
+      buffer.write(" -H '$k: $v'");
     });
     if (body.isNotEmpty) {
       final escaped = body.replaceAll("'", r"'\''");

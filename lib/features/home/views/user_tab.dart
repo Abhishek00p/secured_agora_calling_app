@@ -10,11 +10,9 @@ import 'package:secured_calling/core/services/join_request_service.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/home/views/meeting_action_card.dart';
 import 'package:secured_calling/features/meeting/views/join_meeting_dialog.dart';
-import 'package:secured_calling/features/meeting/views/meeting_tile_widget.dart';
 
 class UserTab extends StatefulWidget {
-  UserTab({super.key});
-
+  const UserTab({super.key});
   @override
   State<UserTab> createState() => _UserTabState();
 }
@@ -27,30 +25,14 @@ class _UserTabState extends State<UserTab> {
 
   final ValueNotifier<List<MeetingModel>> upcomingMeetings = ValueNotifier([]);
 
-  void loadUpcomingMeetings() {
-    final currentUser = AppLocalStorage.getUserDetails();
-    if (currentUser.memberCode.isNotEmpty) {
-      // Members see all upcoming meetings for their member code
-      firebaseService.getUpcomingMeetingsStream(currentUser.memberCode).listen((snapshot) {
-        final meetings =
-            snapshot.docs.map((doc) {
-              return MeetingModel.fromJson(doc.data() as Map<String, dynamic>);
-            }).toList();
-        upcomingMeetings.value = meetings;
-      });
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    loadUpcomingMeetings();
   }
 
   @override
   Widget build(BuildContext context) {
     final padding = responsivePadding(context);
-    final useGrid = context.layoutType != AppLayoutType.mobile;
     return Padding(
       padding: EdgeInsets.all(padding),
       child: Column(
@@ -67,116 +49,9 @@ class _UserTabState extends State<UserTab> {
           ),
 
           const SizedBox(height: 24),
-
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Recent Meetings', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                  IconButton(
-                    onPressed: () {
-                      loadUpcomingMeetings();
-                    },
-                    icon: const Icon(Icons.refresh),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Placeholder for call history
-              StreamBuilder<QuerySnapshot>(
-                stream: AppFirebaseService.instance.getUpcomingMeetingsStream(AppLocalStorage.getUserDetails().memberCode),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return const Center(child: Text('Error loading meetings'));
-                  } else if (snapshot.hasData && snapshot.data!.docs.isEmpty) {
-                    return _buildNoMeetingsPlaceholder(context);
-                  } else {
-                    final meetings = getSortedMeetingList(snapshot.data!.docs);
-                    final displayCount = meetings.length > 10 ? 10 : meetings.length;
-                    final toShow = meetings.take(displayCount).toList();
-                    if (useGrid) {
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: context.layoutType == AppLayoutType.laptop ? 3 : 2,
-                              childAspectRatio: 1.4,
-                              crossAxisSpacing: padding,
-                              mainAxisSpacing: padding,
-                            ),
-                            itemCount: toShow.length,
-                            itemBuilder: (context, index) => MeetingTileWidget(model: toShow[index]),
-                          ),
-                          if (meetings.length > 10)
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRouter.meetingViewAllRoute,
-                                  arguments: meetings,
-                                );
-                              },
-                              child: const Text('View All'),
-                            ),
-                        ],
-                      );
-                    }
-                    return Column(
-                      children: [
-                        ...List.generate(toShow.length, (index) => MeetingTileWidget(model: toShow[index])),
-                        if (meetings.length > 10)
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(
-                                context,
-                                AppRouter.meetingViewAllRoute,
-                                arguments: meetings,
-                              );
-                            },
-                            child: const Text('View All'),
-                          ),
-                      ],
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
         ],
       ),
     );
-  }
-
-  Widget _buildNoMeetingsPlaceholder(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.history, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text('No recent meetings', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text('Meetings you join will appear here', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      ),
-    );
-  }
-
-  List<MeetingModel> getSortedMeetingList(List<QueryDocumentSnapshot<Object?>> meetings) {
-    final modelList =
-        meetings.map((meeting) {
-          return MeetingModel.fromJson(meeting.data() as Map<String, dynamic>? ?? {});
-        }).toList();
-
-    return modelList;
   }
 
   void requuestMeetingApproval(BuildContext context, MeetingModel meeting) async {

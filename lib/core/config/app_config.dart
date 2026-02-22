@@ -1,5 +1,7 @@
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
+import '../../utils/app_logger.dart';
+
 class AppConfig {
   static String _baseUrl = 'api.yourapp.com'; // Fallback value
 
@@ -20,10 +22,10 @@ class AppConfig {
 
       // Get the base URL value
       _baseUrl = remoteConfig.getString('api_base_url').trim();
-      print('Base URL set to: $_baseUrl');
+      AppLogger.print('Base URL set to: $_baseUrl');
     } catch (e) {
       // Handle exceptions, e.g., no internet connection
-      print("Error fetching remote config: $e");
+      AppLogger.print("Error fetching remote config: $e");
     }
   }
 }

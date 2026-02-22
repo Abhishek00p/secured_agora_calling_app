@@ -4,8 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:secured_calling/core/config/app_config.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/firebase_function_logger.dart';
-import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
+
+import '../../utils/app_logger.dart';
 
 class AppHttpService {
   static final AppHttpService _instance = AppHttpService._internal();
@@ -42,10 +43,10 @@ class AppHttpService {
     if (includeAuth) {
       final token = AppLocalStorage.getToken();
       if (token != null && token.isNotEmpty) {
-        print('Bearer token before api call : $token');
+        AppLogger.print('Bearer token before api call : $token');
         headers['Authorization'] = 'Bearer $token';
       } else {
-        print("No auth token found in local storage, while calling api");
+        AppLogger.print("No auth token found in local storage, while calling api");
       }
     }
 
@@ -93,7 +94,7 @@ class AppHttpService {
       AppToastUtil.showErrorToast('No Internet connection');
       rethrow;
     } catch (e) {
-      print('POST request error for $endpoint: $e');
+      AppLogger.print('POST request error for $endpoint: $e');
       AppToastUtil.showErrorToast('Request failed: $e');
       rethrow;
     }
@@ -119,7 +120,7 @@ class AppHttpService {
       AppToastUtil.showErrorToast('No Internet connection');
       rethrow;
     } catch (e) {
-      print('PUT request error for $endpoint: $e');
+      AppLogger.print('PUT request error for $endpoint: $e');
       AppToastUtil.showErrorToast('Request failed: $e');
       rethrow;
     }
@@ -145,7 +146,7 @@ class AppHttpService {
       AppToastUtil.showErrorToast('No Internet connection');
       rethrow;
     } catch (e) {
-      print('DELETE request error for $endpoint: $e');
+      AppLogger.print('DELETE request error for $endpoint: $e');
       AppToastUtil.showErrorToast('Request failed: $e');
       rethrow;
     }
@@ -168,6 +169,7 @@ class AppHttpService {
         AppToastUtil.showErrorToast('Request failed with status ${response.statusCode}: ${response.reasonPhrase}');
       }
     }
+    return null;
   }
 
   bool _isRefreshing = false;

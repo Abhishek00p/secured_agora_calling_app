@@ -83,15 +83,15 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
   }
 
   /// Handle app termination from background (Android specific)
-  void _handleAppTerminated() {
-    AppLogger.print('App terminated from background - performing cleanup');
+  // void _handleAppTerminated() {
+  //   AppLogger.print('App terminated from background - performing cleanup');
 
-    // Cancel any pending cleanup timer
-    _cleanupTimer?.cancel();
+  //   // Cancel any pending cleanup timer
+  //   _cleanupTimer?.cancel();
 
-    // Perform immediate cleanup
-    _performMeetingCleanup();
-  }
+  //   // Perform immediate cleanup
+  //   _performMeetingCleanup();
+  // }
 
   /// Called when app is resumed
   void _handleAppResumed() {

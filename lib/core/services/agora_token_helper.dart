@@ -28,7 +28,7 @@ class AgoraTokenHelper {
       }
 
       if (response['success'] == true && response['data']['token'] != null) {
-        print('token generated successfully from Agora');
+        AppLogger.print('token generated successfully from Agora');
         // Store the token in Firebase
         await storeTokenInFirebase(
           channelName: channelName,
@@ -44,10 +44,11 @@ class AgoraTokenHelper {
       AppToastUtil.showErrorToast('No Internet connection');
       return null;
     } catch (e) {
-      print('Error fetching token: $e');
+      AppLogger.print('Error fetching token: $e');
       AppToastUtil.showErrorToast('Error fetching token: $e');
       return null;
     }
+    return null;
   }
 
   /// verify token for a user
@@ -61,7 +62,7 @@ class AgoraTokenHelper {
       }
 
       if (response['success'] == true) {
-        print('Token verified successfully');
+        AppLogger.print('Token verified successfully');
         return response['token'];
       } else {
         AppToastUtil.showErrorToast(response['error_message'] ?? "Token not found in response");
@@ -70,10 +71,11 @@ class AgoraTokenHelper {
       AppToastUtil.showErrorToast('No Internet connection');
       return null;
     } catch (e) {
-      print('Error verifying token: $e');
+      AppLogger.print('Error verifying token: $e');
       AppToastUtil.showErrorToast('Error verifying token: $e');
       return null;
     }
+    return null;
   }
 
   //store token in firebase

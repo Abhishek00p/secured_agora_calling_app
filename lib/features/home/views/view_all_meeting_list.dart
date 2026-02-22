@@ -10,7 +10,7 @@ import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/meeting/views/meeting_tile_widget.dart';
 
 class ViewAllMeetingList extends StatefulWidget {
-  ViewAllMeetingList({super.key, required this.meetings});
+  const ViewAllMeetingList({super.key, required this.meetings});
   final List<MeetingModel> meetings;
 
   @override

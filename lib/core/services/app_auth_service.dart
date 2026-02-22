@@ -68,7 +68,7 @@ class AppAuthService {
               response['data'] != null
                   ? Map<String, dynamic>.from(response['data'])
                   : {};
-          print("the token received from api is : ${data['token']}");
+          AppLogger.print("the token received from api is : ${data['token']}");
           _currentToken = data['token'];
           _currentUser = AppUser.fromJson(data['user']);
 
@@ -94,6 +94,7 @@ class AppAuthService {
       AppLogger.print('Login error: $e');
       AppToastUtil.showErrorToast('Login failed: $e');
     }
+    return null;
   }
 
   /// Create new user (called by members)
@@ -140,6 +141,7 @@ class AppAuthService {
       AppToastUtil.showErrorToast('Failed to create user: $e');
       return false;
     }
+    return null;
   }
 
   /// Create new member (called by admins)
@@ -193,6 +195,7 @@ class AppAuthService {
       AppToastUtil.showErrorToast('Failed to create member: $e');
       return false;
     }
+    return null;
   }
 
   /// Reset user password
@@ -232,6 +235,7 @@ class AppAuthService {
       AppToastUtil.showErrorToast('Failed to reset password: $e');
       return false;
     }
+    return null;
   }
 
   /// Get user credentials
@@ -264,6 +268,7 @@ class AppAuthService {
       AppToastUtil.showErrorToast('Failed to get credentials: $e');
       return null;
     }
+    return null;
   }
 
   /// Get users for password reset
@@ -295,6 +300,7 @@ class AppAuthService {
       AppToastUtil.showErrorToast('Failed to get users: $e');
       return [];
     }
+    return null;
   }
 
   /// Logout user
