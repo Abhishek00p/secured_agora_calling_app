@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
@@ -77,7 +78,11 @@ class _MeetingTileWidgetState extends State<MeetingTileWidget> {
 
     return InkWell(
       onTap: () {
-        Navigator.pushNamed(context, AppRouter.meetingDetailRoute, arguments: {'meetingId': widget.model.meetId});
+        Navigator.pushNamed(
+          context,
+          AppRouter.meetingDetailRoute,
+          arguments: {'meetingId': widget.model.meetId, 'meetingName': widget.model.meetingName.capitalize ?? ''},
+        );
       },
       child: Card(
         elevation: 2,

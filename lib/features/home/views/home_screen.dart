@@ -279,7 +279,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               // ✅ MOBILE — unchanged
               return SingleChildScrollView(
                 child: Column(
-                  children: [const PersistentCallBar(), _buildUserCard(padding), _buildTabBar(padding), const Divider(), _pages[_selectedIndex]],
+                  children: [
+                    const PersistentCallBar(),
+                    _buildUserCard(padding),
+                    _buildTabBar(padding),
+                    const Divider(),
+                    _pages[_selectedIndex],
+                    Padding(padding: EdgeInsets.all(padding), child: _buildMeetingListForRole()),
+                  ],
                 ),
               );
             }

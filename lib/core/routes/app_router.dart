@@ -37,13 +37,8 @@ class AppRouter {
 
   // GetPages
   static final List<GetPage> routes = [
-    GetPage(name: welcomeRoute, page: () => const WelcomeScreen(),),
-    GetPage(
-      name: loginRoute,
-      page: () => const LoginScreen(),
-      binding: AuthBinding(),
-      middlewares: [LoginMiddleware()],
-    ),
+    GetPage(name: welcomeRoute, page: () => const WelcomeScreen()),
+    GetPage(name: loginRoute, page: () => const LoginScreen(), binding: AuthBinding(), middlewares: [LoginMiddleware()]),
     GetPage(name: homeRoute, page: () => const HomeScreen(), middlewares: [AuthMiddleware()]),
     GetPage(name: adminRoute, page: () => const AdminScreen(), middlewares: [AuthMiddleware()]),
     GetPage(name: usersRoute, page: () => const UsersScreen(), middlewares: [AuthMiddleware()]),
@@ -56,11 +51,7 @@ class AppRouter {
       page: () {
         final args = Get.arguments as Map<String, dynamic>;
         AppLogger.print(args.toString());
-        return AgoraMeetingRoom(
-          channelName: args['channelName'],
-          isHost: args['isHost'] ?? false,
-          meetingId: args['meetingId'] ?? '',
-        );
+        return AgoraMeetingRoom(channelName: args['channelName'], isHost: args['isHost'] ?? false, meetingId: args['meetingId'] ?? '');
       },
       binding: MeetingBinding(),
       middlewares: [AuthMiddleware()],
@@ -78,7 +69,7 @@ class AppRouter {
       name: meetingDetailRoute,
       page: () {
         final args = Get.arguments as Map<String, dynamic>;
-        return MeetingDetailPage(meetingId: args['meetingId']);
+        return MeetingDetailPage(meetingId: args['meetingId'], meetingName: args['meetingName']);
       },
       binding: MeetingDetailBinding(),
       middlewares: [AuthMiddleware()],
