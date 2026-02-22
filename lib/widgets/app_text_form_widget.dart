@@ -10,6 +10,7 @@ class AppTextFormField extends StatefulWidget {
   final String? helperText;
   final IconData? prefixIcon;
   final bool isPasswordRequired;
+  final bool readOnly;
 
   const AppTextFormField({
     super.key,
@@ -20,6 +21,7 @@ class AppTextFormField extends StatefulWidget {
     this.helperText,
     this.prefixIcon,
     this.isPasswordRequired = true,
+    this.readOnly = false,
   });
 
   @override
@@ -153,6 +155,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
         obscureText: widget.type == AppTextFormFieldType.password ? _obscureText : false,
         keyboardType: _keyboardType,
         validator: widget.validator ?? _defaultValidator,
+        readOnly: widget.readOnly,
       );
     } catch (e) {
       // If controller is disposed, return a placeholder widget

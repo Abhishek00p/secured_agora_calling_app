@@ -144,6 +144,59 @@ class AppAuthService {
     return null;
   }
 
+  /// Update user details (endpoint to be provided by backend; bound till repo for now)
+  Future<bool?> updateUser({
+    required int userId,
+    required String name,
+    required String email,
+    String? newPassword,
+    required String memberCode,
+  }) async {
+    try {
+      if (!isUserLoggedIn) {
+        AppToastUtil.showErrorToast('User not logged in');
+        return null;
+      }
+
+      AppLogger.print('Updating user: $userId ($email)');
+
+      final body = <String, dynamic>{
+        'userId': userId,
+        'name': name.trim(),
+        'email': email.trim().toLowerCase(),
+        'memberCode': memberCode,
+        'memberUserId': AppLocalStorage.getUserDetails().userId,
+      };
+      if (newPassword != null && newPassword.isNotEmpty) {
+        body['password'] = newPassword;
+      }
+
+      final response = await _httpService.post(
+        'api/auth/update-user',
+        body: body,
+      );
+
+      if (response == null) {
+        AppToastUtil.showErrorToast('Something went wrong, please try again');
+        return null;
+      }
+
+      if (response['success'] == true) {
+        AppToastUtil.showSuccessToast('User updated successfully');
+        return true;
+      } else {
+        final errorMessage =
+            response['error_message'] ?? 'Failed to update user';
+        AppToastUtil.showErrorToast(errorMessage);
+      }
+    } catch (e) {
+      AppLogger.print('Update user error: $e');
+      AppToastUtil.showErrorToast('Failed to update user: $e');
+      return false;
+    }
+    return null;
+  }
+
   /// Create new member (called by admins)
   Future<bool?> createMember({
     required String name,

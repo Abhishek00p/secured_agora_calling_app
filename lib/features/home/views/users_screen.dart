@@ -5,7 +5,6 @@ import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/home/views/user_creation_form.dart';
 import 'package:secured_calling/widgets/persistent_call_bar.dart';
-import 'package:secured_calling/widgets/user_credentials_dialog.dart';
 
 import '../../../utils/app_logger.dart';
 
@@ -85,23 +84,48 @@ class _UsersScreenState extends State<UsersScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [Text(user.email), Text('Joined: ${_formatDate(user.createdAt)}', style: TextStyle(color: Colors.grey[600], fontSize: 12))],
         ),
-        trailing: _buildViewMoreButton(context, user),
+        trailing: _buildUserActions(context, user),
       ),
     );
   }
 
-  Widget _buildViewMoreButton(BuildContext context, AppUser user) {
-    return ElevatedButton(
-      onPressed: () {
-        UserCredentialsBottomSheet.show(context, targetEmail: user.email, targetName: user.name, isMember: false, userId: user.userId.toString());
-      },
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        minimumSize: Size.zero,
-        backgroundColor: Colors.blue,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: const Text('View more', style: TextStyle(fontSize: 12)),
+  Widget _buildUserActions(BuildContext context, AppUser user) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserCreationForm(user: user, viewOnly: true),
+              ),
+            );
+            if (result == true) _loadUsers();
+          },
+          icon: const Icon(Icons.visibility_outlined),
+          tooltip: 'View',
+          style: IconButton.styleFrom(
+            foregroundColor: Colors.blue[700],
+          ),
+        ),
+        IconButton(
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserCreationForm(user: user, viewOnly: false),
+              ),
+            );
+            if (result == true) _loadUsers();
+          },
+          icon: const Icon(Icons.edit_outlined),
+          tooltip: 'Edit',
+          style: IconButton.styleFrom(
+            foregroundColor: Colors.blue[700],
+          ),
+        ),
+      ],
     );
   }
 
@@ -146,7 +170,7 @@ class _UsersScreenState extends State<UsersScreen> {
             const SizedBox(height: 12),
 
             // Action
-            Align(alignment: Alignment.centerRight, child: _buildViewMoreButton(context, user)),
+            Align(alignment: Alignment.centerRight, child: _buildUserActions(context, user)),
           ],
         ),
       ),

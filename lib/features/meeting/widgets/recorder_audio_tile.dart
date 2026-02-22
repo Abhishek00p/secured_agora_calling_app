@@ -16,6 +16,7 @@ class RecorderAudioTile extends StatefulWidget {
 
   /// Called when playback starts. Use e.g. to mute meeting mic so recording is not sent to the call.
   final VoidCallback? onPlaybackStart;
+
   /// Called when playback stops (pause or finished). Use e.g. to restore meeting mic state.
   final VoidCallback? onPlaybackEnd;
 
