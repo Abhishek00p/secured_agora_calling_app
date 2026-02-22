@@ -11,6 +11,7 @@ import 'package:secured_calling/core/models/member_model.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/admin/member_form.dart';
 import 'package:secured_calling/utils/reminder_dialog.dart';
+import 'package:secured_calling/widgets/persistent_call_bar.dart';
 import 'package:secured_calling/widgets/user_credentials_dialog.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -71,6 +72,7 @@ class _AdminScreenState extends State<AdminScreen> {
             constraints: BoxConstraints(maxWidth: context.layoutType == AppLayoutType.mobile ? double.infinity : maxWidth),
             child: Column(
           children: [
+            const PersistentCallBar(),
             Padding(
               padding: EdgeInsets.all(padding),
               child: Column(

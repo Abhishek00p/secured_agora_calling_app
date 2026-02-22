@@ -66,15 +66,8 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
     _checkMeetingStatus();
 
     if (_isInMeeting) {
-      AppLogger.print('User is in meeting during pause - setting up delayed cleanup');
-
-      // Set up a delayed cleanup timer (30 seconds)
-      // This gives the app a chance to resume if it was just minimized
-      _cleanupTimer?.cancel();
-      _cleanupTimer = Timer(const Duration(seconds: 30), () {
-        AppLogger.print('Delayed cleanup triggered - app was not resumed in time');
-        _performMeetingCleanup();
-      });
+      // Do NOT run delayed cleanup here: user may return via the
+      // persistent notification or call bar. Cleanup only on detached (app process killed).
     }
   }
 

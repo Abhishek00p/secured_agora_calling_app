@@ -14,7 +14,21 @@ class RecorderAudioTile extends StatefulWidget {
   final DateTime? clipEndTime;
   final SpeakingEventModel model;
 
-  const RecorderAudioTile({required this.model, required this.url, this.recordingStartTime, this.clipStartTime, this.clipEndTime, super.key});
+  /// Called when playback starts. Use e.g. to mute meeting mic so recording is not sent to the call.
+  final VoidCallback? onPlaybackStart;
+  /// Called when playback stops (pause or finished). Use e.g. to restore meeting mic state.
+  final VoidCallback? onPlaybackEnd;
+
+  const RecorderAudioTile({
+    required this.model,
+    required this.url,
+    this.recordingStartTime,
+    this.clipStartTime,
+    this.clipEndTime,
+    this.onPlaybackStart,
+    this.onPlaybackEnd,
+    super.key,
+  });
 
   @override
   State<RecorderAudioTile> createState() => _RecorderAudioTileState();
@@ -75,10 +89,12 @@ class _RecorderAudioTileState extends State<RecorderAudioTile> {
 
     if (event.betterPlayerEventType == BetterPlayerEventType.play) {
       setState(() => _isPlaying = true);
+      widget.onPlaybackStart?.call();
     }
 
     if (event.betterPlayerEventType == BetterPlayerEventType.pause || event.betterPlayerEventType == BetterPlayerEventType.finished) {
       setState(() => _isPlaying = false);
+      widget.onPlaybackEnd?.call();
     }
   }
 

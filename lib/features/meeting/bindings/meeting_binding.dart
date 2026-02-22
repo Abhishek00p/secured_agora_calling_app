@@ -4,6 +4,9 @@ import 'package:secured_calling/features/meeting/bindings/live_meeting_controlle
 class MeetingBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => MeetingController());
+    // Keep controller alive so user can navigate away from meeting and return
+    if (!Get.isRegistered<MeetingController>()) {
+      Get.put(MeetingController(), permanent: true);
+    }
   }
 }
