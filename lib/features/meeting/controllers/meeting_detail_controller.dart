@@ -191,8 +191,11 @@ class MeetingDetailController extends GetxController {
   Future<void> fetchIndividualRecordings() async {
     try {
       isIndividualRecordingLoading.value = true;
+      final list = await AppFirebaseService.instance.getAllMeetingRecordings(meetingId: meetingId);
 
-      individualRecordings.value = await AppFirebaseService.instance.getAllMeetingRecordings(meetingId: meetingId);
+      list.sort((a, b) => a.userName.toLowerCase().compareTo(b.userName.toLowerCase()));
+
+      individualRecordings.value = list;
     } catch (e, st) {
       AppLogger.print("Failed to fetchIndividualRecordings : $e\n$st");
       individualRecordings.clear();

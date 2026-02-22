@@ -111,6 +111,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                 itemCount: controller.individualRecordings.length,
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
+                  
                   final item = controller.individualRecordings[index];
 
                   return Row(
