@@ -14,7 +14,10 @@ import 'package:secured_calling/features/meeting/services/meeting_detail_service
 import 'package:secured_calling/widgets/meeting_info_card.dart';
 import 'package:secured_calling/widgets/no_data_found_widget.dart';
 import 'package:secured_calling/widgets/participant_list_item.dart';
+import 'package:secured_calling/widgets/persistent_call_bar.dart';
 import 'package:secured_calling/utils/app_logger.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
+import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
 import 'package:secured_calling/features/meeting/controllers/meeting_detail_controller.dart';
 
 class MeetingDetailPage extends StatefulWidget {
@@ -37,6 +40,29 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
         Get.isRegistered<MeetingDetailController>()
             ? Get.find<MeetingDetailController>()
             : Get.put(MeetingDetailController(meetingId: widget.meetingId));
+  }
+
+  void _onRecordingPlaybackStart() {
+    if (Get.isRegistered<MeetingController>()) {
+      final meetingController = Get.find<MeetingController>();
+      if (meetingController.isJoined.value) {
+        meetingController.setMutedForRecordingPlayback(true);
+        AppToastUtil.showInfoToast('Mic muted in call while playing recording.');
+      }
+    }
+  }
+
+  bool _isInActiveCall() {
+    return Get.isRegistered<MeetingController>() && Get.find<MeetingController>().isJoined.value;
+  }
+
+  void _onRecordingPlaybackEnd() {
+    if (Get.isRegistered<MeetingController>()) {
+      final meetingController = Get.find<MeetingController>();
+      if (meetingController.isJoined.value) {
+        meetingController.setMutedForRecordingPlayback(false);
+      }
+    }
   }
 
   Widget getMixRecordingListWidget() {
@@ -65,6 +91,8 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                       trackStopTime: 0,
                     ),
                     url: item.playableUrl,
+                    onPlaybackStart: _onRecordingPlaybackStart,
+                    onPlaybackEnd: _onRecordingPlaybackEnd,
                   );
                 },
               ),
@@ -95,6 +123,8 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                           url: item.recordingUrl,
                           clipStartTime: item.startTime.toDateTimeWithSec.subtract(Duration(seconds: 2)),
                           clipEndTime: item.endTime.toDateTimeWithSec.add(Duration(seconds: 2)),
+                          onPlaybackStart: _onRecordingPlaybackStart,
+                          onPlaybackEnd: _onRecordingPlaybackEnd,
                         ),
                       ),
                       IconButton(
@@ -135,7 +165,12 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Obx(() {
+      body: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const PersistentCallBar(),
+          Expanded(
+            child: Obx(() {
         if (controller.isLoading.value && controller.meetingDetail.value == null) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -259,6 +294,29 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                                         fontSize: 14,
                                       ),
                                     ),
+                                    if (_isInActiveCall())
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8.0),
+                                        child: Material(
+                                          color: AppTheme.primaryColor.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.info_outline, size: 18, color: AppTheme.primaryColor),
+                                                SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    'You\'re in an active call. Your mic will be muted in the call while playing a recording.',
+                                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.primaryColor),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     SizedBox(height: responsivePadding(context)),
                                     getIndividualRecordingWidgets(),
                                     const SizedBox(height: 40),
@@ -273,6 +331,9 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
           ),
         );
       }),
+          ),
+        ],
+      ),
     );
   }
 
