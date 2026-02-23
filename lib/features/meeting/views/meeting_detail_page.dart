@@ -16,8 +16,8 @@ import 'package:secured_calling/features/meeting/controllers/meeting_detail_cont
 
 class MeetingDetailPage extends StatefulWidget {
   final String meetingId;
-
-  const MeetingDetailPage({super.key, required this.meetingId});
+  final String meetingName;
+  const MeetingDetailPage({super.key, required this.meetingId, required this.meetingName});
 
   @override
   State<MeetingDetailPage> createState() => _MeetingDetailPageState();
@@ -111,6 +111,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                 itemCount: controller.individualRecordings.length,
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
+                  
                   final item = controller.individualRecordings[index];
 
                   return Row(
@@ -239,15 +240,6 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
       onRefresh: controller.refreshMeetingDetails,
       child: CustomScrollView(
         slivers: [
-          // App Bar
-          SliverAppBar(
-            title: Text(meetingDetail.meetingTitle),
-            floating: true,
-            pinned: true,
-            snap: false,
-            actions: [IconButton(icon: const Icon(Icons.refresh), tooltip: 'Refresh', onPressed: controller.refreshMeetingDetails)],
-          ),
-
           // Meeting Info Card
           SliverToBoxAdapter(
             child: Center(
@@ -372,7 +364,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Meeting Detail')),
+      appBar: AppBar(title: Text(widget.meetingName)),
       body: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

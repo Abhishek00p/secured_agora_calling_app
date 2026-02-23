@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:385594222575:android:55eced1a9c73ff7c68b81a",
+        "android_client_info": {
+          "package_name": "com.example.secured_calling"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBeo4wmzIs1X8O1IvGRtutUi4lSKdMz984"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:385594222575:android:724da3fef4643f0d68b81a",
         "android_client_info": {
           "package_name": "com.example.secured_calling.dev"

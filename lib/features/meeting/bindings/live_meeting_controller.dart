@@ -115,6 +115,7 @@ class MeetingController extends GetxController {
       AppLogger.print("\n <-------- meeting model data in start timer: ${result.entries.join("\n")} \n ----> ");
       meetingModel.value = MeetingModel.fromJson(result);
       isRecordingOn.value = meetingModel.value.isRecordingOn;
+
       final thisMeetingScheduledEndTime = meetingModel.value.scheduledEndTime;
       final currentTime = DateTime.now();
       remainingSeconds = thisMeetingScheduledEndTime.difference(currentTime).inSeconds;
@@ -163,6 +164,10 @@ class MeetingController extends GetxController {
           endMeeting();
         }
       });
+
+      if (isHost && !isRecordingOn.value) {
+        toggleMixRecordingButton();
+      }
     } catch (e) {
       AppLogger.print('Error starting timer: $e');
     }

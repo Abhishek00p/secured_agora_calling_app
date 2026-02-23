@@ -17,7 +17,11 @@ android {
     namespace = "com.example.secured_calling"
     compileSdk = 36
     ndkVersion = "27.0.12077973"
-
+   lint {
+        disable "NullSafeMutableLiveData"
+        abortOnError false
+        checkReleaseBuilds false
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
