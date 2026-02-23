@@ -11,7 +11,7 @@ import 'package:secured_calling/firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     await AppConfig.initializeRemoteConfig();
   } catch (e) {
     debugPrint("Firebase initialization error: $e");

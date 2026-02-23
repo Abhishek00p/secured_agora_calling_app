@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyBCQPADo64jCw28p1lwaS1_nTDZLJkq3C4</string>
+	<string>AIzaSyCKcO5Sj0FEcJ6vstPHADUnYkInJUARP1w</string>
 	<key>GCM_SENDER_ID</key>
-	<string>210466860375</string>
+	<string>385594222575</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.example.securedCalling</string>
 	<key>PROJECT_ID</key>
-	<string>secure-calling-2025</string>
+	<string>d-calling-dev</string>
 	<key>STORAGE_BUCKET</key>
-	<string>secure-calling-2025.firebasestorage.app</string>
+	<string>d-calling-dev.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:210466860375:ios:fc1b1fb53bc1a1bb65a212</string>
+	<string>1:385594222575:ios:5f5ef3958cc8f1dd68b81a</string>
 </dict>
 </plist>
