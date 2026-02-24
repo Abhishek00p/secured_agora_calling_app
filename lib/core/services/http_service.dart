@@ -23,7 +23,7 @@ class AppHttpService {
     //   // Use local emulator in debug mode
     //   if (Platform.isAndroid) {
     // return 'http://192.168.31.226:3000/';
-    return AppConfig.baseUrl.isEmpty ? 'https://18b4247dda9c.ngrok-free.app/' : AppConfig.baseUrl;
+    return AppConfig.baseUrl;
     //   } else if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
     //     return 'http://127.0.0.1:5001/secure-calling-2025/us-central1/';
     //   } else {

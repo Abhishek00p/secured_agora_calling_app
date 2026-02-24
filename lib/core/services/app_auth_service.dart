@@ -11,21 +11,7 @@ class AppAuthService {
   static AppAuthService get instance => _instance;
 
   /// Get the appropriate base URL based on platform and environment
-  String get baseUrl {
-    if (kDebugMode) {
-      // Use local emulator in debug mode
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5001/secure-calling-2025/us-central1';
-      } else if (Platform.isIOS || Platform.isMacOS) {
-        return 'http://127.0.0.1:5001/secure-calling-2025/us-central1';
-      } else {
-        return 'http://localhost:5001/secure-calling-2025/us-central1';
-      }
-    } else {
-      // Use production URL in release mode
-      return 'https://us-central1-secure-calling-2025.cloudfunctions.net';
-    }
-  }
+  String get baseUrl => "https://secured-agora-calling-app.onrender.com/";
 
   // final FirebaseFunctions _functions = FirebaseFunctions.instance; // Not used in HTTP implementation
   String? _currentToken;
@@ -41,10 +27,7 @@ class AppAuthService {
   bool get isUserLoggedIn => AppLocalStorage.getLoggedInStatus();
 
   /// Login user using Firebase Functions (HTTP)
-  Future<Map<String, dynamic>?> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<Map<String, dynamic>?> login({required String email, required String password}) async {
     try {
       AppLogger.print('Attempting login for: $email');
 
@@ -64,10 +47,7 @@ class AppAuthService {
 
         if (response['success'] == true) {
           // Extract token + user
-          final data =
-              response['data'] != null
-                  ? Map<String, dynamic>.from(response['data'])
-                  : {};
+          final data = response['data'] != null ? Map<String, dynamic>.from(response['data']) : {};
           AppLogger.print("the token received from api is : ${data['token']}");
           _currentToken = data['token'];
           _currentUser = AppUser.fromJson(data['user']);
@@ -78,11 +58,7 @@ class AppAuthService {
           AppLocalStorage.storeToken(_currentToken!);
 
           AppLogger.print('Login successful for user: ${_currentUser!.name}');
-          return {
-            'success': true,
-            'user': _currentUser,
-            'token': _currentToken,
-          };
+          return {'success': true, 'user': _currentUser, 'token': _currentToken};
         } else {
           final errorMessage = response['error_message'] ?? 'Login failed';
           AppToastUtil.showErrorToast(errorMessage);
@@ -98,12 +74,7 @@ class AppAuthService {
   }
 
   /// Create new user (called by members)
-  Future<bool?> createUser({
-    required String name,
-    required String email,
-    required String password,
-    required String memberCode,
-  }) async {
+  Future<bool?> createUser({required String name, required String email, required String password, required String memberCode}) async {
     try {
       if (!isUserLoggedIn) {
         AppToastUtil.showErrorToast('User not logged in');
@@ -132,8 +103,7 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('User created successfully');
         return true;
       } else {
-        final errorMessage =
-            response['error_message'] ?? 'Failed to create user';
+        final errorMessage = response['error_message'] ?? 'Failed to create user';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {
@@ -239,8 +209,7 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('Member created successfully');
         return true;
       } else {
-        final errorMessage =
-            response['error_message'] ?? 'Failed to create member';
+        final errorMessage = response['error_message'] ?? 'Failed to create member';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {
@@ -252,23 +221,14 @@ class AppAuthService {
   }
 
   /// Reset user password
-  Future<bool?> resetPassword({
-    required String targetEmail,
-    required String newPassword,
-  }) async {
+  Future<bool?> resetPassword({required String targetEmail, required String newPassword}) async {
     try {
       if (!isUserLoggedIn) AppToastUtil.showErrorToast('User not logged in');
 
       AppLogger.print('Resetting password for: $targetEmail');
 
       // Use the new CRUD function (auth token will be added automatically)
-      final response = await _httpService.post(
-        'resetPassword',
-        body: {
-          'targetEmail': targetEmail.trim().toLowerCase(),
-          'newPassword': newPassword,
-        },
-      );
+      final response = await _httpService.post('resetPassword', body: {'targetEmail': targetEmail.trim().toLowerCase(), 'newPassword': newPassword});
 
       if (response == null) {
         AppToastUtil.showErrorToast('Something went wrong, please try again');
@@ -279,8 +239,7 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('Password reset successfully');
         return true;
       } else {
-        final errorMessage =
-            response['error_message'] ?? 'Failed to reset password';
+        final errorMessage = response['error_message'] ?? 'Failed to reset password';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {
@@ -299,9 +258,7 @@ class AppAuthService {
       AppLogger.print('Getting credentials for: $userId');
 
       // Use the new CRUD function (auth token will be added automatically)
-      final response = await _httpService.get(
-        'api/auth/user-credentials/$userId',
-      );
+      final response = await _httpService.get('api/auth/user-credentials/$userId');
 
       if (response == null) {
         AppToastUtil.showErrorToast('Something went wrong, please try again');
@@ -312,8 +269,7 @@ class AppAuthService {
         final data = Map<String, dynamic>.from(response['data']);
         return data;
       } else {
-        final errorMessage =
-            response['error_message'] ?? 'Failed to get credentials';
+        final errorMessage = response['error_message'] ?? 'Failed to get credentials';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {
