@@ -141,7 +141,10 @@ class AppAuthService {
         body['password'] = newPassword;
       }
 
-      final response = await _httpService.post('api/auth/update-user', body: body);
+      final response = await _httpService.post(
+        'api/auth/update-user',
+        body: body,
+      );
 
       if (response == null) {
         AppToastUtil.showErrorToast('Something went wrong, please try again');
@@ -152,7 +155,8 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('User updated successfully');
         return true;
       } else {
-        final errorMessage = response['error_message'] ?? 'Failed to update user';
+        final errorMessage =
+            response['error_message'] ?? 'Failed to update user';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {
