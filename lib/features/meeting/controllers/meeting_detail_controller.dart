@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/models/recording_file_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
@@ -35,15 +36,20 @@ class MeetingDetailController extends GetxController {
   RxBool isMixRecordingLoading = false.obs;
   RxBool isIndividualRecordingLoading = false.obs;
 
-  bool get isCurrentUserHost => meetingDetail.value?.hostId == AppLocalStorage.getUserDetails().userId;
+  AppUser loggedInUserData = AppLocalStorage.getUserDetails();
+
+  bool get isCurrentUserHost => meetingDetail.value?.hostId == loggedInUserData.userId;
+
+  bool get canCurrentUserSeeMixRecording => loggedInUserData.canSeeMixRecording;
 
   @override
   void onInit() {
     super.onInit();
     loadMeetingDetails().then((_) {
       fetchIndividualRecordings();
-
-      // fetchMixRecordings();
+      if (canCurrentUserSeeMixRecording) {
+        fetchMixRecordings();
+      }
     });
     _initializeRealTimeUpdates();
     // fetchAllIndividualRecordings();

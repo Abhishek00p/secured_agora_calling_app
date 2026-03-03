@@ -24,7 +24,7 @@ class _MemberFormState extends State<MemberForm> {
   DateTime purchaseDate = DateTime.now();
   bool isActive = true;
   bool _isLoading = false;
-
+  bool canSeeMixRecording = false;
   // Add subscription plans
   final Map<String, int> subscriptionPlans = {
     '1 Month': 30,
@@ -51,9 +51,10 @@ class _MemberFormState extends State<MemberForm> {
     super.initState();
     name = TextEditingController(text: widget.member?.name ?? '');
     email = TextEditingController(text: widget.member?.email ?? '');
-    password = TextEditingController();
+    password = TextEditingController(text: widget.member?.password ?? '');
     purchaseDate = widget.member?.purchaseDate.toDateTime ?? DateTime.now();
     isActive = widget.member?.isActive ?? true;
+    canSeeMixRecording = widget.member?.canSeeMixRecording ?? false;
     maxParticipantsAllowed = TextEditingController(text: widget.member?.maximumParticipantsAllowed.toString() ?? '');
 
     // Set initial subscription plan if editing existing member
@@ -82,29 +83,27 @@ class _MemberFormState extends State<MemberForm> {
     });
 
     try {
-      if (widget.member == null) {
-        // New member registration flow
-        final memberCode = generateMemberCode;
-        final planDays = subscriptionPlans[selectedPlan]!;
+      // New member registration flow
+      final memberCode = widget.member?.memberCode ?? generateMemberCode;
+      final planDays = subscriptionPlans[selectedPlan]!;
 
-        // Create member using the new auth service
-        final success = await AppAuthService.instance.createMember(
-          name: name.text.trim(),
-          email: email.text.trim(),
-          password: password.text,
-          memberCode: memberCode,
-          purchaseDate: purchaseDate,
-          planDays: planDays,
-          maxParticipantsAllowed: int.parse(maxParticipantsAllowed.text) <= 0 ? 45 : int.parse(maxParticipantsAllowed.text),
-        );
+      // Create member using the new auth service
+      final success = await AppAuthService.instance.createOrEditMember(
+        userId: widget.member?.userId,
+        isEdit: widget.member != null,
+        name: name.text.trim(),
+        email: email.text.trim(),
+        password: password.text,
+        memberCode: memberCode,
+        purchaseDate: purchaseDate,
+        planDays: planDays,
+        isActive: isActive,
+        canSeeMixRecording: canSeeMixRecording,
+        maxParticipantsAllowed: int.parse(maxParticipantsAllowed.text) <= 0 ? 45 : int.parse(maxParticipantsAllowed.text),
+      );
 
-        if ((success ?? false) && mounted) {
-          AppToastUtil.showSuccessToast('Member created successfully.');
-          Navigator.pop(context);
-        }
-      } else {
-        // Update existing member - this would need a separate update function
-        AppToastUtil.showErrorToast('Member updates not yet implemented');
+      if ((success ?? false) && mounted) {
+        Navigator.pop(context);
       }
     } catch (e) {
       String message = 'An error occurred';
@@ -150,7 +149,7 @@ class _MemberFormState extends State<MemberForm> {
                     : Text(widget.member == null ? "Save & Register Member" : "Update Member Details"),
           ),
         ),
-        appBar: AppBar(title: Text(widget.member == null ? "Add Member" : "Edit Member")),
+        appBar: AppBar(scrolledUnderElevation: 0, title: Text(widget.member == null ? "Add Member" : "Edit Member")),
         body: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: contentMaxWidth(context) == double.infinity ? double.infinity : 560),
@@ -164,6 +163,8 @@ class _MemberFormState extends State<MemberForm> {
                     AppTextFormField(controller: name, labelText: "Name", type: AppTextFormFieldType.name),
                     const SizedBox(height: 12),
                     AppTextFormField(controller: email, labelText: "userId", type: AppTextFormFieldType.text),
+                    const SizedBox(height: 12),
+                    AppTextFormField(controller: password, labelText: "Password", type: AppTextFormFieldType.password),
                     const SizedBox(height: 12),
                     if (widget.member == null) ...[
                       AppTextFormField(
@@ -225,6 +226,14 @@ class _MemberFormState extends State<MemberForm> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [const Text("Active"), Switch(value: isActive, onChanged: (v) => setState(() => isActive = v))],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Can see mix recording"),
+                        Switch(value: canSeeMixRecording, onChanged: (v) => setState(() => canSeeMixRecording = v)),
+                      ],
                     ),
                     SizedBox(height: padding * 1.5),
                   ],

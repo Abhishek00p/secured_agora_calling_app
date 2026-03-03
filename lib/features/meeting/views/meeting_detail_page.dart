@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/meeting/widgets/recorder_audio_tile.dart';
@@ -111,7 +112,6 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                 itemCount: controller.individualRecordings.length,
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
-                  
                   final item = controller.individualRecordings[index];
 
                   return Row(
@@ -208,6 +208,11 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (controller.loggedInUserData.isMember && controller.canCurrentUserSeeMixRecording) ...[
+              Text('Mix Recordings', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              getMixRecordingListWidget(),
+            ],
             Text('${controller.isCurrentUserHost ? 'Individual' : 'Your'} Recordings', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             getIndividualRecordingWidgets(),

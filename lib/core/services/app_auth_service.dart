@@ -141,10 +141,7 @@ class AppAuthService {
         body['password'] = newPassword;
       }
 
-      final response = await _httpService.post(
-        'api/auth/update-user',
-        body: body,
-      );
+      final response = await _httpService.post('api/auth/update-user', body: body);
 
       if (response == null) {
         AppToastUtil.showErrorToast('Something went wrong, please try again');
@@ -155,8 +152,7 @@ class AppAuthService {
         AppToastUtil.showSuccessToast('User updated successfully');
         return true;
       } else {
-        final errorMessage =
-            response['error_message'] ?? 'Failed to update user';
+        final errorMessage = response['error_message'] ?? 'Failed to update user';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {
@@ -168,7 +164,8 @@ class AppAuthService {
   }
 
   /// Create new member (called by admins)
-  Future<bool?> createMember({
+  Future<bool?> createOrEditMember({
+    int? userId,
     required String name,
     required String email,
     required String password,
@@ -176,6 +173,9 @@ class AppAuthService {
     required DateTime purchaseDate,
     required int planDays,
     required int maxParticipantsAllowed,
+    required bool isActive,
+    required bool canSeeMixRecording,
+    required bool isEdit,
   }) async {
     try {
       if (!isUserLoggedIn) {
@@ -184,21 +184,24 @@ class AppAuthService {
 
       AppLogger.print('Creating member: $email with member code: $memberCode');
 
+      Map<String, dynamic> body = {
+        'name': name.trim(),
+        'email': email.trim().toLowerCase(),
+        'password': password,
+        'memberCode': memberCode,
+        'purchaseDate': purchaseDate.toIso8601String(),
+        'planDays': planDays,
+        'maxParticipantsAllowed': maxParticipantsAllowed,
+        'isMember': true,
+        'isActive': isActive,
+        'canSeeMixRecording': canSeeMixRecording,
+      };
+
+      if (userId != null && userId != -1) {
+        body['userId'] = userId;
+      }
       // Use the new CRUD function (auth token will be added automatically)
-      final response = await _httpService.post(
-        'api/auth/create-member',
-        body: {
-          'name': name.trim(),
-          'email': email.trim().toLowerCase(),
-          'password': password,
-          'memberCode': memberCode,
-          'purchaseDate': purchaseDate.toIso8601String(),
-          'planDays': planDays,
-          'maxParticipantsAllowed': maxParticipantsAllowed,
-          'isMember': true,
-          'isActive': true,
-        },
-      );
+      final response = await _httpService.post(isEdit ? 'api/auth/update-member' : 'api/auth/create-member', body: body);
 
       if (response == null) {
         AppToastUtil.showErrorToast('Something went wrong, please try again');
@@ -206,15 +209,15 @@ class AppAuthService {
       }
 
       if (response['success'] == true) {
-        AppToastUtil.showSuccessToast('Member created successfully');
+        AppToastUtil.showSuccessToast('Member ${isEdit ? 'updated' : 'created'}  successfully');
         return true;
       } else {
-        final errorMessage = response['error_message'] ?? 'Failed to create member';
+        final errorMessage = response['error_message'] ?? 'Failed to ${isEdit ? 'update' : 'create'} member';
         AppToastUtil.showErrorToast(errorMessage);
       }
     } catch (e) {
       AppLogger.print('Create member error: $e');
-      AppToastUtil.showErrorToast('Failed to create member: $e');
+      AppToastUtil.showErrorToast('Failed to ${isEdit ? 'update' : 'create'} member: $e');
       return false;
     }
     return null;
