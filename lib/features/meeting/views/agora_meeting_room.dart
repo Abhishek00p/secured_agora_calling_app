@@ -15,6 +15,12 @@ import 'package:secured_calling/widgets/blinking_text.dart';
 import 'package:secured_calling/widgets/speaker_ripple_effect.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+class _Breakpoint {
+  static bool isMobile(double width) => width < 600;
+  static bool isTablet(double width) => width >= 600 && width < 1024;
+  static bool isLaptop(double width) => width >= 1024;
+}
+
 class AgoraMeetingRoom extends StatefulWidget {
   final String meetingId;
   final String channelName;
@@ -420,62 +426,108 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     );
   }
 
-  Widget _buildParticipantTile(ParticipantModel user, MeetingController meetingController) {
+  Widget _buildParticipantTile(ParticipantModel user, MeetingController meetingController, double screenWidth) {
+    // Scale values based on breakpoint
+    final double fontSize;
+    final double iconSize;
+    final double padding;
+    final double borderRadius;
+    final double topIconSize;
+    final double indicatorDotSize;
+
+    if (_Breakpoint.isMobile(screenWidth)) {
+      // Current mobile design — unchanged
+      fontSize = 20;
+      iconSize = 20;
+      padding = 8;
+      borderRadius = 8;
+      topIconSize = 14;
+      indicatorDotSize = 8;
+    } else if (_Breakpoint.isTablet(screenWidth)) {
+      fontSize = 22;
+      iconSize = 24;
+      padding = 12;
+      borderRadius = 10;
+      topIconSize = 17;
+      indicatorDotSize = 10;
+    } else {
+      // Laptop
+      fontSize = 26;
+      iconSize = 28;
+      padding = 16;
+      borderRadius = 12;
+      topIconSize = 20;
+      indicatorDotSize = 12;
+    }
+
     return Container(
-      margin: EdgeInsets.all(8),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: user.color)),
+      margin: EdgeInsets.all(padding),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(borderRadius), border: Border.all(color: user.color)),
       child: Stack(
         children: [
-          Obx(() => meetingController.pttUsers.contains(user.userId) ? Positioned.fill(child: WaterRipple(color: user.color)) : SizedBox.shrink()),
+          // Water ripple for PTT users
+          Obx(
+            () => meetingController.pttUsers.contains(user.userId) ? Positioned.fill(child: WaterRipple(color: user.color)) : const SizedBox.shrink(),
+          ),
+
+          // Name label
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(padding),
             child: Center(
               child: Text(
                 user.userId == meetingController.currentUser.userId ? 'You' : user.name,
                 textAlign: TextAlign.center,
                 maxLines: 2,
-                style: TextStyle(fontSize: 20, color: user.color),
+                style: TextStyle(fontSize: fontSize, color: user.color),
               ),
             ),
           ),
+
+          // Bottom-left mic + speaking indicator
           Positioned(
-            bottom: 8,
-            left: 8,
+            bottom: padding,
+            left: padding,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   user.isUserMuted || !(meetingController.pttUsers.contains(user.userId)) ? Icons.mic_off : Icons.mic,
                   color: user.isUserMuted || !(meetingController.pttUsers.contains(user.userId)) ? Colors.red : Colors.white,
-                  size: 20,
+                  size: iconSize,
                 ),
-                // if (user.isUserSpeaking && !user.isUserMuted)
                 if (meetingController.pttUsers.contains(user.userId)) ...[
-                  const SizedBox(width: 4),
-                  Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                  SizedBox(width: padding / 2),
+                  Container(
+                    width: indicatorDotSize,
+                    height: indicatorDotSize,
+                    decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                  ),
                 ],
               ],
             ),
           ),
+
+          // Top-right PTT active badge
           Obx(() {
             if (meetingController.pttUsers.contains(user.userId)) {
               return Positioned(
-                top: 8,
-                right: 8,
+                top: padding,
+                right: padding,
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: EdgeInsets.all(padding / 2),
                   decoration: BoxDecoration(color: Colors.green.withOpacity(0.8), shape: BoxShape.circle),
-                  child: Icon(Icons.mic, color: Colors.white, size: 14),
+                  child: Icon(Icons.mic, color: Colors.white, size: topIconSize),
                 ),
               );
             }
-            return SizedBox.shrink();
+            return const SizedBox.shrink();
           }),
-          // Host-only remove button
+
+          // Top-left host controls (remove participant)
           if (meetingController.isHost && user.userId != meetingController.currentUser.userId)
             Positioned(
-              top: 8,
-              left: 8,
+              top: padding,
+              left: padding,
               child: PopupMenuButton<String>(
                 color: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -483,13 +535,6 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                   if (value == 'remove') {
                     _showRemoveParticipantDialog(context, user, meetingController);
                   }
-                  // else if (value == 'mute') {
-                  //   if (user.isUserMuted) {
-                  //     meetingController.unMuteThisParticipantsForAllUser(user);
-                  //   } else {
-                  //     meetingController.muteThisParticipantsForAllUser(user);
-                  //   }
-                  // }
                 },
                 itemBuilder:
                     (context) => [
@@ -497,25 +542,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                         value: 'remove',
                         child: Row(children: const [Icon(Icons.close, color: Colors.red, size: 18), SizedBox(width: 8), Text("Remove")]),
                       ),
-                      // PopupMenuItem(
-                      //   value: 'mute',
-                      //   child: Row(
-                      //     children: [
-                      //       Icon(
-                      //         user.isUserMuted ? Icons.volume_up : Icons.volume_off,
-                      //         color: Colors.blue,
-                      //         size: 18,
-                      //       ),
-                      //       SizedBox(width: 8),
-                      //       Text(user.isUserMuted ? "Unmute" : "Mute"),
-                      //     ],
-                      //   ),
-                      // ),
                     ],
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: EdgeInsets.all(padding / 2),
                   decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), shape: BoxShape.circle),
-                  child: const Icon(Icons.more_vert, color: Colors.white, size: 16),
+                  child: Icon(Icons.more_vert, color: Colors.white, size: topIconSize),
                 ),
               ),
             ),
@@ -525,12 +556,38 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
   }
 
   Widget _buildHostView(MeetingController meetingController) {
-    return GridView.builder(
-      itemCount: meetingController.participants.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1.0),
-      itemBuilder: (context, index) {
-        final user = meetingController.participants[index];
-        return _buildParticipantTile(user, meetingController);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+
+        int crossAxisCount;
+        double childAspectRatio;
+
+        if (_Breakpoint.isMobile(width)) {
+          crossAxisCount = 2;
+          childAspectRatio = 1.0;
+        } else if (_Breakpoint.isTablet(width)) {
+          crossAxisCount = 3;
+          childAspectRatio = 1.05;
+        } else {
+          // Laptop / Desktop
+          crossAxisCount = 4;
+          childAspectRatio = 1.1;
+        }
+
+        return GridView.builder(
+          itemCount: meetingController.participants.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: childAspectRatio,
+            crossAxisSpacing: 4,
+            mainAxisSpacing: 4,
+          ),
+          itemBuilder: (context, index) {
+            final user = meetingController.participants[index];
+            return _buildParticipantTile(user, meetingController, width);
+          },
+        );
       },
     );
   }
@@ -543,13 +600,48 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     if (host != null) viewParticipants.add(host);
     if (self != null && self.userId != host?.userId) viewParticipants.add(self);
 
-    return ListView.builder(
-      itemCount: viewParticipants.length,
-      itemBuilder: (context, index) {
-        final user = viewParticipants[index];
-        return SizedBox(
-          height: 180, // Give a fixed height to the list items
-          child: _buildParticipantTile(user, meetingController),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+        final bool isLaptop = _Breakpoint.isLaptop(width);
+
+        final double tileHeight;
+        final double tileWidth;
+
+        if (_Breakpoint.isMobile(width)) {
+          tileHeight = 180;
+          tileWidth = width; // full width for mobile
+        } else if (_Breakpoint.isTablet(width)) {
+          tileHeight = 220;
+          tileWidth = width; // full width for tablet
+        } else {
+          tileHeight = 280;
+          tileWidth = 320; // fixed card width when horizontal
+        }
+
+        // Laptop: horizontal scrolling row
+        if (isLaptop) {
+          return SizedBox(
+            height: tileHeight,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: viewParticipants.length,
+              itemBuilder: (context, index) {
+                final user = viewParticipants[index];
+                return SizedBox(width: tileWidth, height: tileHeight, child: _buildParticipantTile(user, meetingController, width));
+              },
+            ),
+          );
+        }
+
+        // Mobile & Tablet: vertical list (existing behaviour)
+        return ListView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: viewParticipants.length,
+          itemBuilder: (context, index) {
+            final user = viewParticipants[index];
+            return SizedBox(height: tileHeight, child: _buildParticipantTile(user, meetingController, width));
+          },
         );
       },
     );

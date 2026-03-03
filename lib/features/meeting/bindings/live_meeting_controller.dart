@@ -1035,6 +1035,7 @@ class MeetingController extends GetxController {
   void onActiveSpeaker(RtcConnection conn, int userId) {
     currentSpeaker = '$userId';
     participants = participants.map((e) => e.userId == userId ? e.copyWith(isUserSpeaking: true) : e.copyWith(isUserSpeaking: false)).toList();
+    participants.sort((a, b) => (b.isUserSpeaking ? 1 : 0).compareTo(a.isUserSpeaking ? 1 : 0));
     update();
   }
 
