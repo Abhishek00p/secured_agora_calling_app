@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:secured_calling/core/config/app_config.dart';
 import 'package:secured_calling/core/constants.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
@@ -874,20 +875,32 @@ class AppFirebaseService {
 
   Future<List<SpeakingEventModel>> getAllMeetingRecordings({required String meetingId}) async {
     try {
-      List<SpeakingEventModel> allItems = [];
-      final meetingData = MeetingModel.fromJson(
-        (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).get()).data() as Map<String, dynamic>? ?? {},
-      );
+      final meetingsRef = AppFirebaseService.instance.meetingsCollection.doc(meetingId);
+      final currentUserId = AppLocalStorage.getUserDetails().userId;
 
-      final allRecordingDocs = (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
+      final meetingSnap = await meetingsRef.get();
+      final meetingData = MeetingModel.fromJson(meetingSnap.data() as Map<String, dynamic>? ?? {});
 
-      for (QueryDocumentSnapshot doc in allRecordingDocs) {
+      final isHost = currentUserId == meetingData.hostId;
+
+      final trackSnap = await meetingsRef.collection('recordingTrack').get();
+      final allRecordingDocs = trackSnap.docs;
+
+      final List<SpeakingEventModel> allItems = [];
+
+      for (final doc in allRecordingDocs) {
+        final docData = doc.data();
+        int startTime = docData['startTime'] as int? ?? 0;
+        int endTime = docData['stopTime'] as int? ?? 0;
+
+        if (startTime == 0) continue;
+        if (endTime == 0) {
+          endTime = meetingData.scheduledEndTime.millisecondsSinceEpoch;
+        }
+
         String recordingUrl = '';
-        final docData = doc.data() as Map<String, dynamic>? ?? {};
-        final startTime = docData['startTime'] as int? ?? 0;
-        final endTime = docData['stopTime'] as int? ?? 0;
 
-        // fetch recordingUrl from server
+        /// ---- API CALL (same as before) ----
         final response = await AppHttpService().post(
           'api/agora/recording/list/individual/audiofile',
           body: {'channelName': meetingId, 'type': 'mix', 'startTime': startTime, 'endTime': endTime},
@@ -897,51 +910,39 @@ class AppFirebaseService {
           recordingUrl = response['data']['playableUrl'] ?? '';
         }
 
-        if (recordingUrl.isNotEmpty) {
-          final allSpeakingEventsOfThisRecordingDocs =
-              (await AppFirebaseService.instance.meetingsCollection
-                      .doc(meetingId)
-                      .collection('recordingTrack')
-                      .doc(doc.id)
-                      .collection('speakingEvents')
-                      .get())
-                  .docs;
+        if (recordingUrl.isEmpty) continue;
 
-          for (QueryDocumentSnapshot item in allSpeakingEventsOfThisRecordingDocs) {
-            final speakingEventDocData = item.data() as Map<String, dynamic>? ?? {};
-            final currentUserId = AppLocalStorage.getUserDetails().userId;
-            final isHost = currentUserId == meetingData.hostId;
-            final eventUserId = speakingEventDocData['userId'] as int? ?? 0;
+        /// ---- Fetch speaking events ----
+        final eventsSnap = await meetingsRef.collection('recordingTrack').doc(doc.id).collection('speakingEvents').get();
 
-            // If host: skip only host's own recordings
-            if (isHost) {
-              if (eventUserId == meetingData.hostId) {
-                debugPrint("skipping becoz i am host and this is my recordimg");
-                continue;
-              }
-            }
-            // If participant: skip everything that is not theirs
-            else {
-              if (eventUserId != currentUserId) {
-                debugPrint("skipping becoz i am not a host and this is not my recordimg");
+        for (final eventDoc in eventsSnap.docs) {
+          final eventData = eventDoc.data();
 
-                continue;
-              }
-            }
-            allItems.add(
-              SpeakingEventModel(
-                userId: speakingEventDocData['userId'].toString(),
-                userName: speakingEventDocData['userName'],
-                startTime: speakingEventDocData['start'],
-                endTime: speakingEventDocData['stop'],
-                recordingUrl: recordingUrl,
-                trackStartTime: startTime,
-                trackStopTime: endTime,
-              ),
-            );
+          final eventUserId = eventData['userId'] as int? ?? 0;
+
+          /// Host logic
+          if (isHost) {
+            if (eventUserId == meetingData.hostId) continue;
           }
+          /// Participant logic
+          else {
+            if (eventUserId != currentUserId) continue;
+          }
+
+          allItems.add(
+            SpeakingEventModel(
+              userId: eventUserId.toString(),
+              userName: eventData['userName'],
+              startTime: eventData['start'],
+              endTime: eventData['stop'],
+              recordingUrl: recordingUrl,
+              trackStartTime: startTime,
+              trackStopTime: endTime,
+            ),
+          );
         }
       }
+
       return allItems;
     } catch (e, s) {
       debugPrint("error while fetching meeting recordings... $e, $s");

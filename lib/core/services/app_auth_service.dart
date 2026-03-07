@@ -3,15 +3,14 @@ import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/http_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
-import 'package:flutter/foundation.dart';
-import 'dart:io';
 
 class AppAuthService {
   static final AppAuthService _instance = AppAuthService._();
   static AppAuthService get instance => _instance;
 
   /// Get the appropriate base URL based on platform and environment
-  String get baseUrl => "https://secured-agora-calling-app.onrender.com/";
+  // String get baseUrl => "https://secured-agora-calling-app.onrender.com/";
+  String get baseUrl => "https://8541-2409-40c0-11b7-75cb-d123-5337-ba2d-36bb.ngrok-free.app/";
 
   // final FirebaseFunctions _functions = FirebaseFunctions.instance; // Not used in HTTP implementation
   String? _currentToken;

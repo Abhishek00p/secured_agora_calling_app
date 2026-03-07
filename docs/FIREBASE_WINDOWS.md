@@ -1,14 +1,5 @@
 # Firebase on Windows
 
-## Why flavor isn’t used on Windows
-
-- **Android**: Dev/prod flavors pick different `google-services.json` files, so each build can use a different Firebase project/app.
-- **Windows**: There is no `google-services.json`. The Windows build uses a **single** Firebase config that lives in **`lib/firebase_options.dart`** (the `windows` entry). No flavor is required.
-
-So: **flavor is not required for the Windows app.** Firebase for Windows is configured only via `firebase_options.dart`.
-
----
-
 ## How the Windows app uses Firebase
 
 1. **`lib/firebase_options.dart`**  
@@ -52,4 +43,4 @@ You only need to do this if you add a new Firebase project, or add or change the
    ```
    so that on Windows the app uses the `windows` entry from `firebase_options.dart`.
 
-After this, the Windows build uses Firebase without any flavor; the single Windows config in `firebase_options.dart` is enough.
+After this, the Windows build uses the single Windows config in `firebase_options.dart`.
