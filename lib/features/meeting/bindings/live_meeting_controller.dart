@@ -368,6 +368,9 @@ class MeetingController extends GetxController {
       // Show final warning
       AppToastUtil.showErrorToast('Meeting time has expired. Ending meeting...');
 
+      // Stop recording before removing participants.
+      await _stopRecordingIfActive();
+
       // Force remove all participants including host
       await _firebaseService.removeAllParticipants(meetingId);
 
@@ -839,6 +842,9 @@ class MeetingController extends GetxController {
     try {
       AppLogger.print('Starting endMeeting process...');
 
+      // Stop recording before leaving so Agora cloud recording is not orphaned.
+      await _stopRecordingIfActive();
+
       // Leave Agora channel first
       await _agoraService.leaveChannel();
       AppLogger.print('Left Agora channel successfully');
@@ -884,6 +890,9 @@ class MeetingController extends GetxController {
 
   Future<void> endMeetForAll() async {
     try {
+      // Stop recording before tearing down the session.
+      await _stopRecordingIfActive();
+
       // First remove all participants from Firebase
       await removeAllParticipants();
 
@@ -1186,6 +1195,45 @@ class MeetingController extends GetxController {
       AppToastUtil.showErrorToast('Failed to extend meeting: $e');
     } finally {
       update();
+    }
+  }
+
+  /// Silently stops the mix recording if it is currently active and this
+  /// client is the host.  Called automatically before every meeting-end path
+  /// so the Agora cloud recording is never left running after a session ends.
+  Future<void> _stopRecordingIfActive() async {
+    if (!isHost || !isRecordingOn.value || meetingId.isEmpty) return;
+
+    try {
+      AppLogger.print('Auto-stopping recording before meeting end…');
+
+      await _firebaseService.stopRecordingMix(meetingId: meetingId);
+
+      final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+
+      if (recordingStartTimeEpoch > 0) {
+        final ref = _firebaseService.meetingsCollection
+            .doc(meetingId)
+            .collection('recordingTrack')
+            .doc(recordingStartTimeEpoch.toString());
+
+        final snap = await ref.get();
+        if (snap.exists) {
+          await ref.update({'stopTime': stopTime});
+        } else {
+          await ref.set({'startTime': recordingStartTimeEpoch, 'stopTime': stopTime, 'recovered': true});
+        }
+      }
+
+      await _firebaseService.meetingsCollection
+          .doc(meetingId)
+          .update({'isRecordingOn': false});
+
+      isRecordingOn.value = false;
+      AppLogger.print('Recording auto-stopped successfully');
+    } catch (e) {
+      // Non-fatal — log and continue with meeting teardown.
+      AppLogger.print('Error auto-stopping recording: $e');
     }
   }
 

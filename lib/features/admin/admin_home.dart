@@ -121,7 +121,7 @@ class _AdminScreenState extends State<AdminScreen> {
             maxCrossAxisExtent: 320,
             mainAxisSpacing: 16,
             crossAxisSpacing: 16,
-            childAspectRatio: 0.95,
+            mainAxisExtent: 270,
           ),
           itemBuilder: (context, i) => _buildMemberCardCollapsed(context, Theme.of(context), members[i], now),
         );
@@ -131,36 +131,145 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Widget _buildMemberCardCollapsed(BuildContext context, ThemeData theme, AppUser member, DateTime now) {
     final isExpiringSoon = (member.planExpiryDate?.toDateTime.difference(now).inDays ?? 0) <= 60;
+    final padding = responsivePadding(context);
 
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: isExpiringSoon ? Colors.red.shade50 : theme.cardColor,
       child: Padding(
-        padding: EdgeInsets.all(responsivePadding(context)),
+        padding: EdgeInsets.all(padding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              member.name.sentenceCase,
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: isExpiringSoon ? Colors.red : null),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 6),
-            Text(member.email, maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 6),
+            // ── Name + Active switch ──────────────────────────────────────
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.lock_clock, size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text("Expires: ${member.planExpiryDate?.toDateTime.formatDate}", style: theme.textTheme.bodySmall),
+                Expanded(
+                  child: Text(
+                    member.name.sentenceCase,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isExpiringSoon ? Colors.red.shade700 : null,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Transform.scale(
+                      scale: 0.85,
+                      child: Switch(
+                        value: member.isActive,
+                        onChanged: (val) {
+                          FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(member.userId.toString())
+                              .update({'isActive': val});
+                        },
+                        activeColor: theme.colorScheme.primary,
+                      ),
+                    ),
+                    Text(
+                      member.isActive ? 'Active' : 'Inactive',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: member.isActive ? Colors.green : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
+
+            const SizedBox(height: 4),
+
+            // ── Email ─────────────────────────────────────────────────────
+            Text(
+              member.email,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+            ),
+
+            const SizedBox(height: 6),
+
+            // ── Expiry ────────────────────────────────────────────────────
+            Row(
+              children: [
+                Icon(Icons.lock_clock, size: 13, color: isExpiringSoon ? Colors.red.shade400 : Colors.grey),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Expires: ${member.planExpiryDate?.toDateTime.formatDate}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: isExpiringSoon ? Colors.red.shade700 : Colors.grey[700],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 4),
+
+            // ── Total users ───────────────────────────────────────────────
+            Row(
+              children: [
+                Icon(Icons.people_outline, size: 13, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text('Users: ${member.totalUsers}', style: theme.textTheme.bodySmall),
+              ],
+            ),
+
             const Spacer(),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(onPressed: () => _openMemberDetails(context, member), child: const Text("View details")),
+            const Divider(height: 16),
+
+            // ── Action buttons ────────────────────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => MemberForm(member: member)),
+                    ),
+                    icon: const Icon(Icons.edit, size: 15),
+                    label: const Text('Edit', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => UserCredentialsBottomSheet.show(
+                      context,
+                      targetEmail: member.email,
+                      targetName: member.name,
+                      isMember: true,
+                      userId: member.userId.toString(),
+                    ),
+                    icon: const Icon(Icons.remove_red_eye, size: 15),
+                    label: const Text('View', style: TextStyle(fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -168,14 +277,8 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
-  void _openMemberDetails(BuildContext context, AppUser member) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder:
-          (_) => UserCredentialsBottomSheet(targetEmail: member.email, targetName: member.name, isMember: true, userId: member.userId.toString()),
-    );
-  }
+
+
 
   @override
   Widget build(BuildContext context) {

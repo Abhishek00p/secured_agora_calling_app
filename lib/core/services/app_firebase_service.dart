@@ -949,33 +949,33 @@ class AppFirebaseService {
     }
   }
 
-  // Future<List<SpeakingEventModel>?> getAllIndividualRecordings(String meetingId) async {
-  //   final response = await AppHttpService().post('api/agora/recording/list/individual', body: {'channelName': meetingId});
+  Future<List<SpeakingEventModel>?> getAllIndividualRecordings(String meetingId) async {
+    final response = await AppHttpService().post('api/agora/recording/list/individual', body: {'channelName': meetingId});
 
-  //   if (response == null) {
-  //     debugPrint("response is null while fetching individual recording list");
-  //     return null;
-  //   }
-  //   AppLogger.print("data........ : ${response['success']} item lenth : ${response['data']?.length}");
-  //   if (response['success'] == true) {
-  //     final list = (response['data'] as List<dynamic>).map((e) => IndividualRecordingModel.fromJson(Map<String, dynamic>.from(e as Map))).toList();
-  //     final outPut = <SpeakingEventModel>[];
-  //     for (var element in list) {
-  //       if (element.speakingEvents.isNotEmpty) {
-  //         for (var i = 0; i < element.speakingEvents.length; i++) {
-  //           final item = element.speakingEvents[i];
-  //           if (item.startTime != 0 && item.userId.isNotEmpty) {
-  //             outPut.add(element.speakingEvents[i]);
-  //           }
-  //         }
-  //       }
-  //     }
-  //     return outPut;
-  //   } else {
-  //     AppLogger.print(" failed to fetch list of individual recording : $response, message: ${response['error_message']}");
-  //     return [];
-  //   }
-  // }
+    if (response == null) {
+      debugPrint("response is null while fetching individual recording list");
+      return null;
+    }
+    AppLogger.print("data........ : ${response['success']} item lenth : ${response['data']?.length}");
+    if (response['success'] == true) {
+      final list = (response['data'] as List<dynamic>).map((e) => IndividualRecordingModel.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+      final outPut = <SpeakingEventModel>[];
+      for (var element in list) {
+        if (element.speakingEvents.isNotEmpty) {
+          for (var i = 0; i < element.speakingEvents.length; i++) {
+            final item = element.speakingEvents[i];
+            if (item.startTime != 0 && item.userId.isNotEmpty) {
+              outPut.add(element.speakingEvents[i]);
+            }
+          }
+        }
+      }
+      return outPut;
+    } else {
+      AppLogger.print(" failed to fetch list of individual recording : $response, message: ${response['error_message']}");
+      return [];
+    }
+  }
 
   /// Generates a random 7-digit number (1000000 - 9999999)
   int generate7DigitId() {

@@ -137,6 +137,48 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
 
       final currentUser = AppLocalStorage.getUserDetails();
 
+      // If user was host, stop recording first so Agora cloud recording is not orphaned.
+      if (_isHost) {
+        try {
+          bool recordingActive = false;
+          int startTimeEpoch = 0;
+
+          if (Get.isRegistered<MeetingController>()) {
+            final mc = Get.find<MeetingController>();
+            recordingActive = mc.isRecordingOn.value;
+            startTimeEpoch = mc.recordingStartTimeEpoch;
+          }
+
+          if (recordingActive) {
+            AppLogger.print('Host app killed with recording active — stopping recording…');
+            await _firebaseService.stopRecordingMix(meetingId: _currentMeetingId);
+
+            final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+
+            if (startTimeEpoch > 0) {
+              final ref = _firebaseService.meetingsCollection
+                  .doc(_currentMeetingId)
+                  .collection('recordingTrack')
+                  .doc(startTimeEpoch.toString());
+              final snap = await ref.get();
+              if (snap.exists) {
+                await ref.update({'stopTime': stopTime});
+              } else {
+                await ref.set({'startTime': startTimeEpoch, 'stopTime': stopTime, 'recovered': true});
+              }
+            }
+
+            await _firebaseService.meetingsCollection
+                .doc(_currentMeetingId)
+                .update({'isRecordingOn': false});
+
+            AppLogger.print('Recording stopped during app kill cleanup');
+          }
+        } catch (e) {
+          AppLogger.print('Error stopping recording during app kill: $e');
+        }
+      }
+
       // Remove user from meeting participants
       await _firebaseService.removeParticipantFromMeeting(_currentMeetingId, currentUser.userId);
 

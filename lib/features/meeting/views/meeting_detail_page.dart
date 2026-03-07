@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
-import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/services/download_controller.dart';
+import 'package:secured_calling/core/services/download_manager_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
+import 'package:secured_calling/features/meeting/widgets/clip_audio_downloader.dart';
 import 'package:secured_calling/features/meeting/widgets/recorder_audio_tile.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/widgets/meeting_info_card.dart';
@@ -28,6 +30,9 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
   late TabController tabBarController;
   late MeetingDetailController controller;
 
+  // Tracks which recordings are actively being downloaded, keyed by a unique id.
+  final Map<String, bool> _downloadingMap = {};
+
   bool _isDesktop(BuildContext context) {
     return context.layoutType == AppLayoutType.laptop || context.layoutType == AppLayoutType.laptop;
   }
@@ -41,6 +46,83 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
             ? Get.find<MeetingDetailController>()
             : Get.put(MeetingDetailController(meetingId: widget.meetingId));
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Download helpers
+  // ──────────────────────────────────────────────────────────────────────────
+
+  bool _isDownloading(String key) => _downloadingMap[key] == true;
+
+  void _setDownloading(String key, bool value) {
+    if (mounted) setState(() => _downloadingMap[key] = value);
+  }
+
+  Future<void> _handleDownload({
+    required String m3u8Url,
+    required String downloadKey,
+    Duration? clipStart,
+    Duration? clipEnd,
+    String? fileName,
+  }) async {
+    if (_isDownloading(downloadKey)) return;
+    _setDownloading(downloadKey, true);
+
+    final displayName = (fileName ?? 'recording').replaceAll('_', ' ');
+    final dlService = DownloadManagerService.instance;
+    final dlController = DownloadController();
+
+    await dlService.onDownloadStarted(
+      downloadKey: downloadKey,
+      fileName: displayName,
+      meetingId: widget.meetingId,
+      meetingName: widget.meetingName,
+      controller: dlController,
+    );
+
+    try {
+      final downloader = ClipAudioDownloader();
+      final savedMsg = await downloader.download(
+        m3u8Url: m3u8Url,
+        clipStart: clipStart,
+        clipEnd: clipEnd,
+        fileName: fileName,
+        controller: dlController,
+        onProgress: (downloaded, total) {
+          dlService.onProgress(
+            downloadKey: downloadKey,
+            downloaded: downloaded,
+            total: total,
+          );
+        },
+        onProcessing: () {
+          dlService.onProcessing(downloadKey: downloadKey);
+        },
+      );
+
+      await dlService.onDownloadComplete(
+        downloadKey: downloadKey,
+        savedMessage: savedMsg,
+      );
+      if (mounted) AppToastUtil.showSuccessToast('Saved to Downloads');
+    } on DownloadCancelledException {
+      // Cancelled by the user — no error toast needed, notification already dismissed.
+      debugPrint('Download $downloadKey was cancelled');
+    } catch (e) {
+      debugPrint('Download error → $e');
+      await dlService.onDownloadError(
+        downloadKey: downloadKey,
+        fileName: displayName,
+        error: e.toString(),
+      );
+      if (mounted) AppToastUtil.showErrorToast('Download failed: $e');
+    } finally {
+      _setDownloading(downloadKey, false);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Playback callbacks
+  // ──────────────────────────────────────────────────────────────────────────
 
   void _onRecordingPlaybackStart() {
     if (Get.isRegistered<MeetingController>()) {
@@ -65,102 +147,138 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Recording list widgets
+  // ──────────────────────────────────────────────────────────────────────────
+
   Widget getMixRecordingListWidget() {
     return Obx(
-      () =>
-          controller.isMixRecordingLoading.value
-              ? Center(child: CircularProgressIndicator.adaptive())
-              : controller.mixRecordings.isEmpty
-              ? NoDataFoundWidget(message: 'No mix recordings available.')
-              : ListView.builder(
-                padding: EdgeInsets.zero,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: controller.mixRecordings.length,
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  final item = controller.mixRecordings[index];
+      () => controller.isMixRecordingLoading.value
+          ? const Center(child: CircularProgressIndicator.adaptive())
+          : controller.mixRecordings.isEmpty
+          ? const NoDataFoundWidget(message: 'No mix recordings available.')
+          : ListView.builder(
+              padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.mixRecordings.length,
+              shrinkWrap: true,
+              itemBuilder: (context, index) {
+                final item = controller.mixRecordings[index];
+                final downloadKey = 'mix_$index';
+                final downloading = _isDownloading(downloadKey);
 
-                  return RecorderAudioTile(
-                    model: SpeakingEventModel(
-                      userId: '',
-                      userName: '',
-                      startTime: item.startTime,
-                      endTime: 0,
-                      recordingUrl: item.playableUrl,
-                      trackStartTime: item.startTime,
-                      trackStopTime: 0,
+                return Row(
+                  children: [
+                    Flexible(
+                      child: RecorderAudioTile(
+                        model: SpeakingEventModel(
+                          userId: '',
+                          userName: '',
+                          startTime: item.startTime,
+                          endTime: 0,
+                          recordingUrl: item.playableUrl,
+                          trackStartTime: item.startTime,
+                          trackStopTime: 0,
+                        ),
+                        url: item.playableUrl,
+                        onPlaybackStart: _onRecordingPlaybackStart,
+                        onPlaybackEnd: _onRecordingPlaybackEnd,
+                      ),
                     ),
-                    url: item.playableUrl,
-                    onPlaybackStart: _onRecordingPlaybackStart,
-                    onPlaybackEnd: _onRecordingPlaybackEnd,
-                  );
-                },
-              ),
+                    IconButton(
+                      tooltip: downloading ? 'Downloading…' : 'Download audio',
+                      icon: downloading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.download_rounded),
+                      onPressed: downloading
+                          ? null
+                          : () => _handleDownload(
+                                m3u8Url: item.playableUrl,
+                                downloadKey: downloadKey,
+                                fileName: 'mix_recording_${index + 1}',
+                              ),
+                    ),
+                  ],
+                );
+              },
+            ),
     );
   }
 
   Widget getIndividualRecordingWidgets() {
     return Obx(
-      () =>
-          controller.isIndividualRecordingLoading.value
-              ? Center(child: CircularProgressIndicator.adaptive())
-              : controller.individualRecordings.isEmpty
-              ? NoDataFoundWidget(message: 'No individual recordings available.')
-              : ListView.builder(
-                padding: EdgeInsets.zero,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: controller.individualRecordings.length,
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  final item = controller.individualRecordings[index];
+      () => controller.isIndividualRecordingLoading.value
+          ? const Center(child: CircularProgressIndicator.adaptive())
+          : controller.individualRecordings.isEmpty
+          ? const NoDataFoundWidget(message: 'No individual recordings available.')
+          : ListView.builder(
+              padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.individualRecordings.length,
+              shrinkWrap: true,
+              itemBuilder: (context, index) {
+                final item = controller.individualRecordings[index];
+                final downloadKey = 'individual_$index';
+                final downloading = _isDownloading(downloadKey);
 
-                  return Row(
-                    children: [
-                      Flexible(
-                        child: RecorderAudioTile(
-                          recordingStartTime: item.trackStartTime.toDateTimeWithSec,
-                          model: item,
-                          url: item.recordingUrl,
-                          clipStartTime: item.startTime.toDateTimeWithSec.subtract(Duration(seconds: 2)),
-                          clipEndTime: item.endTime.toDateTimeWithSec.add(Duration(seconds: 2)),
-                          onPlaybackStart: _onRecordingPlaybackStart,
-                          onPlaybackEnd: _onRecordingPlaybackEnd,
-                        ),
+                return Row(
+                  children: [
+                    Flexible(
+                      child: RecorderAudioTile(
+                        recordingStartTime: item.trackStartTime.toDateTimeWithSec,
+                        model: item,
+                        url: item.recordingUrl,
+                        clipStartTime: item.startTime.toDateTimeWithSec.subtract(const Duration(seconds: 2)),
+                        clipEndTime: item.endTime.toDateTimeWithSec.add(const Duration(seconds: 2)),
+                        onPlaybackStart: _onRecordingPlaybackStart,
+                        onPlaybackEnd: _onRecordingPlaybackEnd,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.download),
-                        onPressed: () async {
-                          try {
-                            // final downloader = ClipAudioDownloader();
+                    ),
+                    IconButton(
+                      tooltip: downloading ? 'Downloading…' : 'Download audio',
+                      icon: downloading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.download_rounded),
+                      onPressed: downloading
+                          ? null
+                          : () {
+                              final recordingStart = item.trackStartTime.toDateTimeWithSec;
+                              final clipStartTime = item.startTime.toDateTimeWithSec.subtract(const Duration(seconds: 2));
+                              final clipEndTime = item.endTime.toDateTimeWithSec.add(const Duration(seconds: 2));
+                              final clipStart = clipStartTime.difference(recordingStart);
+                              final clipEnd = clipEndTime.difference(recordingStart);
 
-                            // final recordingStart = item.trackStartTime.toDateTime;
+                              final safeName = item.userName.isNotEmpty
+                                  ? '${item.userName}_recording_${index + 1}'
+                                  : 'recording_${index + 1}';
 
-                            // final clipStartTime = item.startTime.toDateTimeWithSec.subtract(const Duration(seconds: 2));
-
-                            // final clipEndTime = item.endTime.toDateTimeWithSec.add(const Duration(seconds: 2));
-
-                            // final clipStart = clipStartTime.difference(recordingStart);
-
-                            // final clipEnd = clipEndTime.difference(recordingStart);
-
-                            // final file = await downloader.downloadClip(m3u8Url: item.recordingUrl, clipStart: clipStart, clipEnd: clipEnd);
-
-                            if (!mounted) return;
-
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Audio saved successfully")));
-                          } catch (e) {
-                            if (!mounted) return;
-                            debugPrint("Download error → $e");
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Download failed: $e")));
-                          }
-                        },
-                      ),
-                    ],
-                  );
-                },
-              ),
+                              _handleDownload(
+                                m3u8Url: item.recordingUrl,
+                                downloadKey: downloadKey,
+                                clipStart: clipStart,
+                                clipEnd: clipEnd,
+                                fileName: safeName,
+                              );
+                            },
+                    ),
+                  ],
+                );
+              },
+            ),
     );
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Layout builders
+  // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildDesktopLayout(BuildContext context, MeetingDetail meetingDetail) {
     final padding = responsivePadding(context);
@@ -212,6 +330,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
               Text('Mix Recordings', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               getMixRecordingListWidget(),
+              const SizedBox(height: 20),
             ],
             Text('${controller.isCurrentUserHost ? 'Individual' : 'Your'} Recordings', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
@@ -322,6 +441,16 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                       children: [
                         SizedBox(height: responsivePadding(context)),
 
+                        if (controller.loggedInUserData.isMember && controller.canCurrentUserSeeMixRecording) ...[
+                          Text(
+                            'Mix Recordings',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
+                          ),
+                          SizedBox(height: responsivePadding(context)),
+                          getMixRecordingListWidget(),
+                          SizedBox(height: responsivePadding(context)),
+                        ],
+
                         Text(
                           '${controller.isCurrentUserHost ? 'Individual' : "Your"} Recordings',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
@@ -415,12 +544,12 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                 return const Center(child: Text('Meeting details not found.'));
               }
 
-              // 🔥 DESKTOP LAYOUT
+              // Desktop layout
               if (_isDesktop(context)) {
                 return _buildDesktopLayout(context, meetingDetail);
               }
 
-              // 📱 MOBILE LAYOUT (UNCHANGED)
+              // Mobile layout
               return _buildMobileLayout(context, meetingDetail);
             }),
           ),
