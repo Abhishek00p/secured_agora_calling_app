@@ -1209,21 +1209,7 @@ class MeetingController extends GetxController {
 
       await _firebaseService.stopRecordingMix(meetingId: meetingId);
 
-      final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
-
-      if (recordingStartTimeEpoch > 0) {
-        final ref = _firebaseService.meetingsCollection
-            .doc(meetingId)
-            .collection('recordingTrack')
-            .doc(recordingStartTimeEpoch.toString());
-
-        final snap = await ref.get();
-        if (snap.exists) {
-          await ref.update({'stopTime': stopTime});
-        } else {
-          await ref.set({'startTime': recordingStartTimeEpoch, 'stopTime': stopTime, 'recovered': true});
-        }
-      }
+      // recordingTrack stopTime is updated by backend webhook
 
       await _firebaseService.meetingsCollection
           .doc(meetingId)
@@ -1242,21 +1228,7 @@ class MeetingController extends GetxController {
       // ---------------- STOP ----------------
       await _firebaseService.stopRecordingMix(meetingId: meetingId);
 
-      final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
-
-      final ref = _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(recordingStartTimeEpoch.toString());
-
-      final snap = await ref.get();
-
-      if (snap.exists) {
-        await ref.update({'stopTime': stopTime});
-      } else {
-        await ref.set({
-          'startTime': stopTime, // fallback
-          'stopTime': stopTime,
-          'recovered': true,
-        });
-      }
+      // recordingTrack stopTime is updated by backend webhook
 
       await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": false});
       isRecordingOn.value = false;
