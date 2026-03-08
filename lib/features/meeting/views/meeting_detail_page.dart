@@ -251,10 +251,42 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                                   );
                                 },
                       ),
-                    ],
-                  );
-                },
-              ),
+                    ),
+                    IconButton(
+                      tooltip: downloading ? 'Downloading…' : 'Download audio',
+                      icon: downloading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.download_rounded),
+                      onPressed: downloading
+                          ? null
+                          : () {
+                              final recordingStart = item.trackStartTime.toDateTimeWithSec;
+                              final clipStartTime = item.startTime.toDateTimeWithSec.subtract(const Duration(seconds: 2));
+                              final clipEndTime = item.endTime.toDateTimeWithSec.add(const Duration(seconds: 2));
+                              final clipStart = clipStartTime.difference(recordingStart);
+                              final clipEnd = clipEndTime.difference(recordingStart);
+
+                              final safeName = item.userName.isNotEmpty
+                                  ? '${item.userName}_recording_${index + 1}'
+                                  : 'recording_${index + 1}';
+
+                              _handleDownload(
+                                m3u8Url: item.recordingUrl,
+                                downloadKey: downloadKey,
+                                clipStart: clipStart,
+                                clipEnd: clipEnd,
+                                fileName: safeName,
+                              );
+                            },
+                    ),
+                  ],
+                );
+              },
+            ),
     );
   }
 
