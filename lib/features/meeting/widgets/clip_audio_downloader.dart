@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -58,8 +59,8 @@ class ClipAudioDownloader {
       final segStart = Duration(milliseconds: (timeline * 1000).toInt());
       final segEnd = Duration(milliseconds: ((timeline + duration) * 1000).toInt());
 
-      final includeSegment = (clipStart == null && clipEnd == null) ||
-          (clipStart != null && clipEnd != null && segEnd > clipStart && segStart < clipEnd);
+      final includeSegment =
+          (clipStart == null && clipEnd == null) || (clipStart != null && clipEnd != null && segEnd > clipStart && segStart < clipEnd);
 
       if (includeSegment) {
         selectedSegments.add(Uri.parse(m3u8Url).resolve(segmentLine).toString());
@@ -117,15 +118,9 @@ class ClipAudioDownloader {
   // ──────────────────────────────────────────────────────────────────────────
   // Android path: FFmpeg merge → .m4a → MediaStore Downloads
   // ──────────────────────────────────────────────────────────────────────────
-  Future<String> _processAndroid(
-    Directory tempDir,
-    List<String> segmentPaths,
-    String baseName,
-  ) async {
+  Future<String> _processAndroid(Directory tempDir, List<String> segmentPaths, String baseName) async {
     final concatFile = File('${tempDir.path}/concat_${DateTime.now().millisecondsSinceEpoch}.txt');
-    await concatFile.writeAsString(
-      segmentPaths.map((p) => "file '${p.replaceAll("'", "\\'")}'").join('\n'),
-    );
+    await concatFile.writeAsString(segmentPaths.map((p) => "file '${p.replaceAll("'", "\\'")}'").join('\n'));
 
     final outputPath = '${tempDir.path}/$baseName.m4a';
     final command = '-f concat -safe 0 -i "${concatFile.path}" -vn -acodec aac -y "$outputPath"';
@@ -145,20 +140,22 @@ class ClipAudioDownloader {
 
   Future<void> _saveToAndroidDownloads(File source, String fileName) async {
     await MediaStore.ensureInitialized();
-    MediaStore.appFolder = '';
 
-    PermissionStatus status = await Permission.storage.status;
-    if (!status.isGranted) {
-      status = await Permission.storage.request();
+    final mediaStore = MediaStore();
+
+    // Check Android version
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+
+    // Request permission only for Android 9 and below
+    if (sdkInt < 29) {
+      PermissionStatus status = await Permission.storage.request();
+      if (!status.isGranted) {
+        throw Exception("Storage permission denied");
+      }
     }
 
-    // On Android 10+ MediaStore works without WRITE_EXTERNAL_STORAGE — proceed regardless.
-    final mediaStore = MediaStore();
-    final result = await mediaStore.saveFile(
-      tempFilePath: source.path,
-      dirType: DirType.download,
-      dirName: DirName.download,
-    );
+    final result = await mediaStore.saveFile(tempFilePath: source.path, relativePath: fileName, dirType: DirType.download, dirName: DirName.download);
 
     if (result == null) {
       throw Exception('MediaStore failed to save the file to Downloads');
@@ -168,11 +165,7 @@ class ClipAudioDownloader {
   // ──────────────────────────────────────────────────────────────────────────
   // Desktop / Windows path: binary concat of TS → Downloads directory
   // ──────────────────────────────────────────────────────────────────────────
-  Future<String> _processDesktop(
-    Directory tempDir,
-    List<String> segmentPaths,
-    String baseName,
-  ) async {
+  Future<String> _processDesktop(Directory tempDir, List<String> segmentPaths, String baseName) async {
     final tempOutput = File('${tempDir.path}/$baseName.ts');
     final sink = tempOutput.openWrite(mode: FileMode.writeOnly);
 
@@ -211,11 +204,7 @@ class ClipAudioDownloader {
   // ──────────────────────────────────────────────────────────────────────────
   // Legacy API kept for backward compatibility
   // ──────────────────────────────────────────────────────────────────────────
-  Future<File> downloadClip({
-    required String m3u8Url,
-    required Duration clipStart,
-    required Duration clipEnd,
-  }) async {
+  Future<File> downloadClip({required String m3u8Url, required Duration clipStart, required Duration clipEnd}) async {
     final tempDir = await getTemporaryDirectory();
 
     final playlistResponse = await http.get(Uri.parse(m3u8Url));
@@ -253,9 +242,7 @@ class ClipAudioDownloader {
     }
 
     final concatFile = File('${tempDir.path}/concat.txt');
-    await concatFile.writeAsString(
-      segmentPaths.map((p) => "file '${p.replaceAll("'", "\\'")}'").join('\n'),
-    );
+    await concatFile.writeAsString(segmentPaths.map((p) => "file '${p.replaceAll("'", "\\'")}'").join('\n'));
 
     final outputPath = '${tempDir.path}/clip_${DateTime.now().millisecondsSinceEpoch}.m4a';
     final command = '-f concat -safe 0 -i ${concatFile.path} -vn -acodec aac $outputPath';
@@ -281,11 +268,7 @@ class ClipAudioDownloader {
       if (!status.isGranted) throw Exception('Storage permission not granted');
     }
 
-    final result = await mediaStore.saveFile(
-      tempFilePath: source.path,
-      dirType: DirType.download,
-      dirName: DirName.download,
-    );
+    final result = await mediaStore.saveFile(tempFilePath: source.path, dirType: DirType.download, dirName: DirName.download);
     if (result == null) throw Exception('Failed to save to Downloads');
 
     return File(result.uri.toFilePath());

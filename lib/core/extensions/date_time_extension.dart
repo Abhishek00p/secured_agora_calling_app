@@ -12,27 +12,21 @@ extension AppDateTimeExtension on DateTime? {
     final date = this;
     if (date == null) return false;
     final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    return date.year == now.year && date.month == now.month && date.day == now.day;
   }
 
   bool get isTomorrow {
     final date = this;
     if (date == null) return false;
     final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day + 1;
+    return date.year == now.year && date.month == now.month && date.day == now.day + 1;
   }
 
   bool get isYesterday {
     final date = this;
     if (date == null) return false;
     final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day - 1;
+    return date.year == now.year && date.month == now.month && date.day == now.day - 1;
   }
 
   String get meetStartTime {
@@ -62,28 +56,39 @@ extension AppDateTimeExtension on DateTime? {
   String get formatDate {
     final date = this;
     if (date == null) return 'N/A';
-    return '${date.day}/${date.month}/${date.year}';
+
+    String getDaySuffix(int day) {
+      if (day >= 11 && day <= 13) return 'th';
+      switch (day % 10) {
+        case 1:
+          return 'st';
+        case 2:
+          return 'nd';
+        case 3:
+          return 'rd';
+        default:
+          return 'th';
+      }
+    }
+
+    const months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    final suffix = getDaySuffix(date.day);
+    final monthName = months[date.month];
+
+    return '${date.day}$suffix $monthName ${date.year}';
   }
 
   String get formatTime {
     final date = this;
-    if (date == null) return 'N/A';
-    final timeofDate = date.hour >= 12 ? 'PM' : 'AM';
-    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
-    final minute = date.minute < 10 ? '0${date.minute}' : date.minute;
-    final formattedTime = '$hour:$minute $timeofDate';
-    return formattedTime;
+    if (date == null) return 'NA';
+    return DateFormat('hh:mm a').format(date);
   }
 
   String get formatTimeWithSeconds {
     final date = this;
-    if (date == null) return 'N/A';
-    final timeofDate = date.hour >= 12 ? 'PM' : 'AM';
-    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
-    final minute = date.minute < 10 ? '0${date.minute}' : date.minute;
-    final second = date.second < 10 ? '0${date.second}' : date.second;
-    final formattedTime = '$hour:$minute:$second $timeofDate';
-    return formattedTime;
+    if (date == null) return 'NA';
+    return DateFormat('hh:mm:ss a').format(date);
   }
 
   int get differenceInDays {

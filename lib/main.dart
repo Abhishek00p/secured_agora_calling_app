@@ -13,14 +13,16 @@ import 'package:secured_calling/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // Firebase Crashlytics for Flutter errors (Android only); backend webhook handles the rest.
+    await crashlytics_handler.initCrashlytics();
+    crashlytics_handler.setCrashlyticsFlutterErrorHandler();
   } catch (e) {
-    debugPrint("Firebase initialization error: $e");
+    debugPrint("Firebase Crashlytics initialization error: $e");
   }
-  // Firebase Crashlytics for Flutter errors (Android only); backend webhook handles the rest.
-  crashlytics_handler.setCrashlyticsFlutterErrorHandler();
-  await crashlytics_handler.initCrashlytics();
+
   await AppLocalStorage.init();
   await DownloadManagerService.instance.initialize();
   // Check if the app was launched by tapping a download notification while

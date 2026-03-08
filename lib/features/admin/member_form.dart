@@ -166,15 +166,7 @@ class _MemberFormState extends State<MemberForm> {
                     const SizedBox(height: 12),
                     AppTextFormField(controller: password, labelText: "Password", type: AppTextFormFieldType.password),
                     const SizedBox(height: 12),
-                    if (widget.member == null) ...[
-                      AppTextFormField(
-                        controller: password,
-                        labelText: "Password",
-                        type: AppTextFormFieldType.password,
-                        helperText: "Enter a Temporary password for member login",
-                      ),
-                      const SizedBox(height: 12),
-                    ],
+
                     AppTextContainer(
                       text: purchaseDate.formatDate,
                       label: "Purchase Date",

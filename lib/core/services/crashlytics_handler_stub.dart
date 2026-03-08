@@ -1,6 +1,17 @@
-/// Stub implementation of Crashlytics handler for non-IO platforms (e.g. web).
-/// The real implementation in [crashlytics_handler_io.dart] runs only on Android.
+import 'package:flutter/foundation.dart';
+import 'package:secured_calling/core/services/app_firebase_service.dart';
 
+/// Stub used on web (no dart:io). No Crashlytics; report Flutter errors to Firestore only.
 Future<void> initCrashlytics() async {}
 
-void setCrashlyticsFlutterErrorHandler() {}
+/// Sets [FlutterError.onError] to report to Firestore (app_crash) on web.
+void setCrashlyticsFlutterErrorHandler() {
+  FlutterError.onError = (FlutterErrorDetails details) {
+    AppFirebaseService.reportErrorToFirestore(
+      exception: details.exceptionAsString(),
+      stackTrace: details.stack?.toString() ?? '',
+      platform: 'web',
+    );
+    FlutterError.presentError(details);
+  };
+}

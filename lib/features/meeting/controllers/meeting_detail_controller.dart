@@ -197,10 +197,51 @@ class MeetingDetailController extends GetxController {
   Future<void> fetchIndividualRecordings() async {
     try {
       isIndividualRecordingLoading.value = true;
-      final list = await AppFirebaseService.instance.getAllMeetingRecordings(meetingId: meetingId);
+      final allRecordingTracks = (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
+      List<SpeakingEventModel> list = [];
+      individualRecordings.clear();
 
+      for (var item in allRecordingTracks) {
+        final itemData = item.data();
+        final startTime = itemData['startTime'] as int? ?? 0;
+        final endTime = itemData['stopTime'] as int? ?? 0;
+        if (startTime == 0 || endTime == 0) {
+          AppLogger.print(" =======> start or endtime is 0 , skipping fetch recording for this track : ${item.id}");
+          continue;
+        }
+        final recordingUrl = await AppFirebaseService.instance.getAllIndividualRecordings(meetingId: meetingId, start: startTime, end: endTime);
+        if (recordingUrl.trim().isNotEmpty) {
+          final speakingEventsOfThisTrack =
+              (await AppFirebaseService.instance.meetingsCollection
+                      .doc(meetingId)
+                      .collection('recordingTrack')
+                      .doc(item.id)
+                      .collection('speakingEvents')
+                      .get())
+                  .docs;
+          for (var speakingEvent in speakingEventsOfThisTrack) {
+            final data = speakingEvent.data();
+            if (data['stop'] != null || data['stop'] != 0) {
+              list.add(
+                SpeakingEventModel(
+                  userId: data['userId'].toString(),
+                  userName: data['userName'],
+                  startTime: data['start'],
+                  endTime: data['stop'],
+                  recordingUrl: recordingUrl,
+                  trackStartTime: itemData['startTime'],
+                  trackStopTime: itemData['stopTime'],
+                ),
+              );
+            } else {
+              continue;
+            }
+          }
+        } else {
+          continue;
+        }
+      }
       list.sort((a, b) => a.userName.toLowerCase().compareTo(b.userName.toLowerCase()));
-
       individualRecordings.value = list;
     } catch (e, st) {
       AppLogger.print("Failed to fetchIndividualRecordings : $e\n$st");
