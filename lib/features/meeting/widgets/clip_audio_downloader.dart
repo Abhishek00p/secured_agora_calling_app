@@ -140,26 +140,16 @@ class ClipAudioDownloader {
 
   Future<void> _saveToAndroidDownloads(File source, String fileName) async {
     await MediaStore.ensureInitialized();
-
+    MediaStore.appFolder = 'secured_Calling';
     final mediaStore = MediaStore();
 
-    // Check Android version
-    final androidInfo = await DeviceInfoPlugin().androidInfo;
-    final sdkInt = androidInfo.version.sdkInt;
-
-    // Request permission only for Android 9 and below
-    if (sdkInt < 29) {
-      PermissionStatus status = await Permission.storage.request();
-      if (!status.isGranted) {
-        throw Exception("Storage permission denied");
-      }
-    }
-
-    final result = await mediaStore.saveFile(tempFilePath: source.path, relativePath: fileName, dirType: DirType.download, dirName: DirName.download);
+    final result = await mediaStore.saveFile(tempFilePath: source.path, dirType: DirType.download, dirName: DirName.download);
 
     if (result == null) {
       throw Exception('MediaStore failed to save the file to Downloads');
     }
+
+    debugPrint("Saved to: $result");
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -259,7 +249,7 @@ class ClipAudioDownloader {
 
   Future<File> saveToDownloads(File source) async {
     await MediaStore.ensureInitialized();
-    MediaStore.appFolder = '';
+    MediaStore.appFolder = 'secured_calling';
     final mediaStore = MediaStore();
 
     PermissionStatus status = await Permission.storage.status;
@@ -268,7 +258,7 @@ class ClipAudioDownloader {
       if (!status.isGranted) throw Exception('Storage permission not granted');
     }
 
-    final result = await mediaStore.saveFile(tempFilePath: source.path, dirType: DirType.download, dirName: DirName.download);
+    final result = await mediaStore.saveFile(tempFilePath: source.path, dirType: DirType.audio, dirName: DirName.audiobooks);
     if (result == null) throw Exception('Failed to save to Downloads');
 
     return File(result.uri.toFilePath());
