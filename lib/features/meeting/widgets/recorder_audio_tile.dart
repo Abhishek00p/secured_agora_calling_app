@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 
 class RecorderAudioTile extends StatefulWidget {
@@ -59,13 +60,22 @@ class _RecorderAudioTileState extends State<RecorderAudioTile> {
       debugPrint('\n hey boy -------> watch out url is empty');
     }
     _controller.setupDataSource(
-      BetterPlayerDataSource(BetterPlayerDataSourceType.network, widget.url, videoFormat: BetterPlayerVideoFormat.hls, useAsmsAudioTracks: true),
+      BetterPlayerDataSource(
+        BetterPlayerDataSourceType.network,
+        widget.url,
+        videoFormat: BetterPlayerVideoFormat.hls,
+        useAsmsAudioTracks: true,
+        headers: {"Authorization": "Bearer ${AppLocalStorage.getToken()}"},
+      ),
     );
 
     _controller.addEventsListener(_onEvent);
   }
 
   void _onEvent(BetterPlayerEvent event) {
+    if (!(_controller.isVideoInitialized() ?? false)) {
+      return;
+    }
     if (event.betterPlayerEventType == BetterPlayerEventType.initialized) {
       if (_isClipped) {
         _calculateClip();

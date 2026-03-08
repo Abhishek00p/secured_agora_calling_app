@@ -6,7 +6,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:media_store_plus/media_store_plus.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/download_controller.dart';
+import 'package:secured_calling/utils/app_logger.dart';
 
 class ClipAudioDownloader {
   /// Downloads a recording from [m3u8Url] and saves it to the device Downloads folder.
@@ -35,7 +37,8 @@ class ClipAudioDownloader {
     final tempDir = await getTemporaryDirectory();
 
     // ── Step 1: Fetch playlist ──────────────────────────────────────────────
-    final playlistResponse = await http.get(Uri.parse(m3u8Url));
+    final playlistResponse = await http.get(Uri.parse(m3u8Url), headers: {"Authorization": "Bearer ${AppLocalStorage.getToken()}"});
+    AppLogger.print("response of download audio :${playlistResponse.statusCode}, ${playlistResponse.body}");
     if (playlistResponse.statusCode != 200) {
       throw Exception('Failed to fetch playlist (HTTP ${playlistResponse.statusCode})');
     }
@@ -87,7 +90,8 @@ class ClipAudioDownloader {
       // Honour pause / cancel signals between every segment.
       await controller?.checkPoint();
 
-      final res = await http.get(Uri.parse(selectedSegments[i]));
+      final res = await http.get(Uri.parse(selectedSegments[i]), headers: {"Authorization": "Bearer ${AppLocalStorage.getToken()}"});
+      AppLogger.print("failed to download segment : ${res.statusCode}, ${res.body}");
       if (res.statusCode != 200) {
         throw Exception('Failed to download segment $i (HTTP ${res.statusCode})');
       }
@@ -197,7 +201,8 @@ class ClipAudioDownloader {
   Future<File> downloadClip({required String m3u8Url, required Duration clipStart, required Duration clipEnd}) async {
     final tempDir = await getTemporaryDirectory();
 
-    final playlistResponse = await http.get(Uri.parse(m3u8Url));
+    final playlistResponse = await http.get(Uri.parse(m3u8Url), headers: {"Authorization": "Bearer ${AppLocalStorage.getToken()}"});
+    AppLogger.print("downloadClip=> response of download audio :${playlistResponse.statusCode}, ${playlistResponse.body}");
     if (playlistResponse.statusCode != 200) {
       throw Exception('Failed to fetch playlist');
     }
