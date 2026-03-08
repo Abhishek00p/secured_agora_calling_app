@@ -60,7 +60,6 @@ class LoginRegisterController extends GetxController {
             },
           );
       if (result == null) {
-        AppToastUtil.showErrorToast('Failed to login. Please try again.');
         return null;
       }
 

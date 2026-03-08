@@ -64,7 +64,8 @@ class MeetingController extends GetxController {
   String agoraMeetingToken = '';
 
   String speakingEventDocId = '';
-  int recordingStartTimeEpoch = 0;
+  // int recordingStartTimeEpoch = 0;
+  String activeRecordingTrack = '';
 
   int individualRecorderUid = 0;
   int mixRecorderUid = 0;
@@ -81,17 +82,14 @@ class MeetingController extends GetxController {
               .limit(1)
               .get();
 
-      debugPrint("Fetching recording track - found ${querySnapshot.docs.length} active tracks");
-
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
         final trackData = doc.data();
-        final startTime = trackData['startTime'] as int? ?? 0;
+        final trackSid = trackData['sid'] as String? ?? '';
 
-        if (startTime > 0) {
-          recordingStartTimeEpoch = startTime;
-          AppLogger.print('Recording start time fetched: $recordingStartTimeEpoch');
-          debugPrint("Recording start time set to: $recordingStartTimeEpoch");
+        if (trackSid.trim().isNotEmpty) {
+          activeRecordingTrack = trackSid;
+          AppLogger.print('Recording start time fetched: $trackSid');
         } else {
           AppLogger.print('Warning: Recording track found but startTime is 0 or null');
         }
@@ -100,7 +98,6 @@ class MeetingController extends GetxController {
       }
     } catch (e) {
       AppLogger.print('Error fetching recording start time: $e');
-      debugPrint("Error fetching recording start time: $e");
     }
   }
 
@@ -368,6 +365,9 @@ class MeetingController extends GetxController {
       // Show final warning
       AppToastUtil.showErrorToast('Meeting time has expired. Ending meeting...');
 
+      // Stop recording before removing participants.
+      await _stopRecordingIfActive();
+
       // Force remove all participants including host
       await _firebaseService.removeAllParticipants(meetingId);
 
@@ -579,7 +579,7 @@ class MeetingController extends GetxController {
         }
 
         // Always fetch recordingStartTimeEpoch when recording is on (in case it wasn't set)
-        if (isRecordingOn.value && recordingStartTimeEpoch == 0) {
+        if (isRecordingOn.value && activeRecordingTrack.isEmpty) {
           AppLogger.print('[$userRole] Recording is on but start time is 0, fetching...');
           await _fetchRecordingStartTime();
         }
@@ -598,55 +598,36 @@ class MeetingController extends GetxController {
 
       if (isRecordingOn.value) {
         // Ensure recordingStartTimeEpoch is set before creating speaking events
-        if (recordingStartTimeEpoch == 0) {
-          AppLogger.print('Warning: recordingStartTimeEpoch is 0, fetching from Firestore...');
+        if (activeRecordingTrack.isEmpty) {
+          AppLogger.print('Warning: activeRecordingTrack.isEmpty, fetching from Firestore...');
           await _fetchRecordingStartTime();
         }
 
         // Double-check after fetch
-        if (recordingStartTimeEpoch == 0) {
-          AppLogger.print('Error: Cannot create speaking event - recordingStartTimeEpoch is still 0');
-          debugPrint("ERROR: Cannot create speaking event - recordingStartTimeEpoch is 0");
+        if (activeRecordingTrack.isEmpty) {
+          AppLogger.print('Error: Cannot create speaking event - activeRecordingTrack.isEmpty');
+
           return;
         }
 
         final userRole = isHost ? 'HOST' : 'PARTICIPANT';
-        debugPrint("========================================");
-        debugPrint("Recording is on - Creating speaking event");
-        debugPrint("User Role: $userRole");
-        debugPrint("User ID: ${currentUser.userId}");
-        debugPrint("User Name: ${currentUser.name}");
-        debugPrint("Using recordingStartTimeEpoch: $recordingStartTimeEpoch");
-        debugPrint("========================================");
 
         speakingEventDocId = dateTimeEpoch.toString();
 
         final doc = _firebaseService.meetingsCollection
             .doc(meetingId)
             .collection('recordingTrack')
-            .doc(recordingStartTimeEpoch.toString())
+            .doc(activeRecordingTrack)
             .collection('speakingEvents')
             .doc(speakingEventDocId);
 
         await doc.set({'start': dateTimeEpoch, 'userId': currentUser.userId, 'userName': currentUser.name});
 
-        final createdData = await doc.get();
-        debugPrint("========================================");
-        debugPrint("✅ Speaking event created successfully!");
-        debugPrint("User Role: $userRole");
-        debugPrint("Full Path: meetings/$meetingId/recordingTrack/$recordingStartTimeEpoch/speakingEvents/${doc.id}");
-        debugPrint("Collection: recordingTrack/$recordingStartTimeEpoch/speakingEvents");
-        debugPrint("Document ID: ${doc.id}");
-        debugPrint("Document Data: ${createdData.data()}");
-        debugPrint("========================================");
         AppLogger.print(
-          '✅ [$userRole] Speaking event created for user ${currentUser.userId} (${currentUser.name}) at path: recordingTrack/$recordingStartTimeEpoch/speakingEvents/${doc.id}',
+          '✅ [$userRole] Speaking event created for user ${currentUser.userId} (${currentUser.name}) at path: recordingTrack/$activeRecordingTrack/speakingEvents/${doc.id}',
         );
-      } else {
-        debugPrint("Recording is off - Skipping speaking event creation");
-      }
+      } else {}
     } catch (e) {
-      debugPrint("Error in startPtt: $e");
       AppLogger.print('Error creating speaking event: $e');
     }
   }
@@ -660,14 +641,14 @@ class MeetingController extends GetxController {
       isMuted.value = true;
       if (isRecordingOn.value) {
         // Ensure recordingStartTimeEpoch is set
-        if (recordingStartTimeEpoch == 0) {
+        if (activeRecordingTrack.isEmpty) {
           AppLogger.print('Warning: recordingStartTimeEpoch is 0 in stopPtt, fetching from Firestore...');
           await _fetchRecordingStartTime();
         }
 
-        if (recordingStartTimeEpoch == 0) {
+        if (activeRecordingTrack.isEmpty) {
           AppLogger.print('Error: Cannot update speaking event - recordingStartTimeEpoch is still 0');
-          debugPrint("ERROR: Cannot update speaking event - recordingStartTimeEpoch is 0");
+
           return;
         }
 
@@ -681,7 +662,7 @@ class MeetingController extends GetxController {
           final speakingEventsRef = _firebaseService.meetingsCollection
               .doc(meetingId)
               .collection('recordingTrack')
-              .doc(recordingStartTimeEpoch.toString())
+              .doc(activeRecordingTrack)
               .collection('speakingEvents');
 
           final querySnapshot =
@@ -696,53 +677,33 @@ class MeetingController extends GetxController {
             final doc = querySnapshot.docs.first;
             speakingEventDocId = doc.id;
             AppLogger.print('Recovered speaking event document ID: $speakingEventDocId');
-            debugPrint("Recovered speaking event Doc ID: $speakingEventDocId");
           } else {
             // No open event found, create a recovered event
             speakingEventDocId = stopTime.toString();
             AppLogger.print('No open speaking event found, creating recovered event');
-            debugPrint("No open speaking event found, creating recovered event with ID: $speakingEventDocId");
           }
         }
 
         final docRef = _firebaseService.meetingsCollection
             .doc(meetingId)
             .collection('recordingTrack')
-            .doc(recordingStartTimeEpoch.toString())
+            .doc(activeRecordingTrack)
             .collection('speakingEvents')
             .doc(speakingEventDocId);
 
         final userRole = isHost ? 'HOST' : 'PARTICIPANT';
-        debugPrint("========================================");
-        debugPrint("Attempting to stop speaking event");
-        debugPrint("User Role: $userRole");
-        debugPrint("User ID: ${currentUser.userId}");
-        debugPrint("Full Path: meetings/$meetingId/recordingTrack/$recordingStartTimeEpoch/speakingEvents/${docRef.id}");
-        debugPrint("Document ID: ${docRef.id}");
-        debugPrint("========================================");
 
         final docSnap = await docRef.get();
 
         if (docSnap.exists) {
           // ✅ Document exists → safe to update
           await docRef.update({'stop': stopTime});
-          debugPrint("========================================");
-          debugPrint("✅ Speaking event stopped successfully!");
-          debugPrint("User Role: $userRole");
-          debugPrint("Document ID: ${docRef.id}");
-          debugPrint("Stop time: $stopTime");
-          debugPrint("========================================");
+
           AppLogger.print('✅ [$userRole] Successfully updated speaking event for user ${currentUser.userId} (${currentUser.name})');
         } else {
           // Document doesn't exist, create recovered event with user info
           await docRef.set({'start': stopTime, 'stop': stopTime, 'userId': currentUser.userId, 'userName': currentUser.name, 'recovered': true});
-          debugPrint("========================================");
-          debugPrint("⚠️ Recovered speaking event created!");
-          debugPrint("User Role: $userRole");
-          debugPrint("Full Path: meetings/$meetingId/recordingTrack/$recordingStartTimeEpoch/speakingEvents/${docRef.id}");
-          debugPrint("Document ID: ${docRef.id}");
-          debugPrint("User ID: ${currentUser.userId}");
-          debugPrint("========================================");
+
           AppLogger.print('⚠️ [$userRole] Created recovered speaking event for user ${currentUser.userId} (${currentUser.name})');
         }
 
@@ -750,7 +711,6 @@ class MeetingController extends GetxController {
         speakingEventDocId = '';
       }
     } catch (e) {
-      debugPrint("Error in stopPtt: $e");
       AppLogger.print('Error stopping speaking event: $e');
       // Don't reset speakingEventDocId on error so we can retry
     }
@@ -839,6 +799,9 @@ class MeetingController extends GetxController {
     try {
       AppLogger.print('Starting endMeeting process...');
 
+      // Stop recording before leaving so Agora cloud recording is not orphaned.
+      await _stopRecordingIfActive();
+
       // Leave Agora channel first
       await _agoraService.leaveChannel();
       AppLogger.print('Left Agora channel successfully');
@@ -884,6 +847,9 @@ class MeetingController extends GetxController {
 
   Future<void> endMeetForAll() async {
     try {
+      // Stop recording before tearing down the session.
+      await _stopRecordingIfActive();
+
       // First remove all participants from Firebase
       await removeAllParticipants();
 
@@ -1035,6 +1001,7 @@ class MeetingController extends GetxController {
   void onActiveSpeaker(RtcConnection conn, int userId) {
     currentSpeaker = '$userId';
     participants = participants.map((e) => e.userId == userId ? e.copyWith(isUserSpeaking: true) : e.copyWith(isUserSpeaking: false)).toList();
+    participants.sort((a, b) => (b.isUserSpeaking ? 1 : 0).compareTo(a.isUserSpeaking ? 1 : 0));
     update();
   }
 
@@ -1089,7 +1056,6 @@ class MeetingController extends GetxController {
       },
       onLeaveChannel: (connection, stats) {
         isMeetEneded = true;
-
         update();
       },
       onAudioVolumeIndication: (rtc, speakers, speakerNumber, totalVolume) {
@@ -1103,7 +1069,6 @@ class MeetingController extends GetxController {
           }
         }
       },
-
       onUserMuteAudio: (connection, remoteUid, muted) => updateMuteStatus(remoteUid, muted),
       onActiveSpeaker: onActiveSpeaker,
 
@@ -1188,26 +1153,35 @@ class MeetingController extends GetxController {
     }
   }
 
+  /// Silently stops the mix recording if it is currently active and this
+  /// client is the host.  Called automatically before every meeting-end path
+  /// so the Agora cloud recording is never left running after a session ends.
+  Future<void> _stopRecordingIfActive() async {
+    if (!isHost || !isRecordingOn.value || meetingId.isEmpty) return;
+
+    try {
+      AppLogger.print('Auto-stopping recording before meeting end…');
+
+      await _firebaseService.stopRecordingMix(meetingId: meetingId);
+
+      // recordingTrack stopTime is updated by backend webhook
+
+      await _firebaseService.meetingsCollection.doc(meetingId).update({'isRecordingOn': false});
+
+      isRecordingOn.value = false;
+      AppLogger.print('Recording auto-stopped successfully');
+    } catch (e) {
+      // Non-fatal — log and continue with meeting teardown.
+      AppLogger.print('Error auto-stopping recording: $e');
+    }
+  }
+
   Future<void> toggleMixRecordingButton() async {
     if (isRecordingOn.value) {
       // ---------------- STOP ----------------
       await _firebaseService.stopRecordingMix(meetingId: meetingId);
 
-      final stopTime = DateTime.now().toUtc().millisecondsSinceEpoch;
-
-      final ref = _firebaseService.meetingsCollection.doc(meetingId).collection('recordingTrack').doc(recordingStartTimeEpoch.toString());
-
-      final snap = await ref.get();
-
-      if (snap.exists) {
-        await ref.update({'stopTime': stopTime});
-      } else {
-        await ref.set({
-          'startTime': stopTime, // fallback
-          'stopTime': stopTime,
-          'recovered': true,
-        });
-      }
+      // recordingTrack stopTime is updated by backend webhook
 
       await _firebaseService.meetingsCollection.doc(meetingId).update({"isRecordingOn": false});
       isRecordingOn.value = false;

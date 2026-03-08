@@ -40,9 +40,7 @@ class _UserCreationFormState extends State<UserCreationForm> {
     if (widget.user != null) {
       _nameController.text = widget.user!.name;
       _emailController.text = widget.user!.email;
-      if (widget.isViewMode) {
-        _passwordController.text = '••••••••';
-      }
+      _passwordController.text = widget.user!.password;
     }
   }
 

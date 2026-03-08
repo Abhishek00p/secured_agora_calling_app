@@ -1,216 +1,252 @@
-App Documentation
+# SecuredCalling — Developer Documentation
+
+A Flutter-based video/audio calling application with role-based user management, Agora RTC integration, and cloud recording.
 
-ipconfig getifaddr en0
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Flutter (Android · iOS · Windows) |
+| State Management | GetX |
+| Architecture | Feature-based MVVM |
+| Backend API | Node.js / Express on Render |
+| Database | Firebase Firestore (direct SDK) |
+| Authentication | Custom JWT (no Firebase Auth) |
+| Video Calling | Agora RTC Engine v6 |
+| Cloud Storage | Cloudflare R2 (via AWS S3 SDK) |
+| Local Storage | Shared Preferences |
+
+---
+
+## Project Structure
+
+```
+lib/
+├── app/                  # App entry & routing shell
+├── core/
+│   ├── config/           # Base URL, env constants
+│   ├── constants/        # App-wide constants
+│   ├── extensions/       # Dart extensions
+│   ├── middleware/        # HTTP interceptor (token refresh)
+│   ├── models/           # Shared data models
+│   ├── routes/           # AppRouter (named routes + bindings)
+│   ├── services/         # Core services (HTTP, Firebase, Auth, Download…)
+│   └── theme/            # AppTheme
+├── features/
+│   ├── admin/            # Admin screens (member management)
+│   ├── auth/             # Login screen + auth controller
+│   ├── home/             # Home, user list, meeting list
+│   ├── meeting/          # Meeting room, detail page, recording, download
+│   └── welcome/          # Splash / welcome screen
+├── models/               # Shared models (MeetingDetail, …)
+├── utils/                # Logger, toast util
+└── widgets/              # Shared reusable widgets
+```
 
-App Architecture Overview
+---
 
-Tech Stack
+## Roles
 
-Framework: Flutter (Cross-Platform)
+| Role | Can do |
+|---|---|
+| **Admin** | Create/edit members and users, reset any password |
+| **Member** | Create/edit users under their member code, start recordings, view mix recordings |
+| **User** | Join meetings, view and download their own recordings |
 
-State Management: Riverpod
+---
 
-Architecture Pattern: MVVM
+## Base URL
 
-Backend Database: Firebase Firestore
+```
+https://secured-agora-calling-app.onrender.com
+```
 
-Authentication: Firebase Authentication
+Configured in `lib/core/config/app_config.dart`.
 
-Local Storage: Shared Preferences, Secured Storage
-
-Real-Time Communication: Agora SDK
-
-Supported Platforms: Android, iOS, Tablet, macOS, Windows
-
-Application Layers
-
-Presentation Layer (UI)
-
-Screens: Welcome Screen, Login/Register Screen, Home Screen, Join/Create Call Screen, Call Interface.
-
-Widgets: Reusable widgets for buttons, text inputs, dialogs, etc.
-
-State Management: Riverpod for managing states and listeners.
-
-Domain Layer (Logic)
-
-ViewModels (Using Riverpod): Handles business logic for UI.
-
-Use Cases: Isolated business logic functions (e.g., Join Call, Create Call, Send Request, Accept Request).
-
-Data Layer (Repository & Services)
-
-Repositories: Abstract layer for data access.
-
-Data Sources: Firebase Service, Agora Service, Local Storage Service (SharedPreferences, SecuredStorage).
-
-Flow Diagram
-
-User Authentication (Firebase)
-
-Sign Up -> Save user details in Firestore -> Redirect to Home Screen
-
-Login -> Verify credentials via Firebase -> Redirect to Home Screen
-
-Call Flow (Using Agora SDK)
-
-Member creates a call -> Generates Call ID and Password -> Stores in Firestore
-
-User requests to join -> Pop-up for Call ID & Password -> Sends request to Member
-
-Member accepts/rejects -> If accepted, user joins the call
-
-Host can mute/unmute, record, or end the call
-
-Chat and Screen Sharing (Firebase & Agora)
-
-Chat messages stored in Firebase Firestore
-
-Screen sharing handled by Agora SDK
-
-Free Trial Mode -5354-A43B
-
-Allow joining/creating calls with a maximum duration of 5 minutes
-
-Firestore Database Schema
-
-Users Collection
-
-userId (String, Unique)
-
-email (String)
-
-password (Hashed String)
-
-name (String)
-
-contactDetails (Map)
-
-subscriptionDetails (Map)
-
-Calls Collection
-
-callId (String, Unique)
-
-hostId (String)
-
-participants (List of userIds)
-
-startTime (Timestamp)
-
-endTime (Timestamp)
-
-recordingStatus (Boolean)
-
-callPassword (String, Hashed)
-
-Chats Collection
-
-chatId (String, Unique)
-
-callId (String)
-
-messages (Array of Maps)
-
-Call Requests Collection
-
-requestId (String, Unique)
-
-callId (String)
-
-userId (String)
-
-status (String: pending/accepted/rejected)
-
-Incremental Model Breakdown
-
-Phase 1: Authentication System (Firebase)
-
-Implement Login & Register Screens
-
-Integrate Firebase Authentication
-
-Setup Firestore for user data
-
-Phase 2: Basic Call Functionality (Agora SDK)
-
-Implement Home Screen (Join & Create Call)
-
-Setup Agora SDK for voice and video calls
-
-Basic Call Join/Creation flow
-
-Phase 3: Advanced Call Features
-
-Recording (Host only)
-
-Admit/Reject Join Requests
-
-Speaker Focus
-
-Mute/Unmute functionality
-
-Phase 4: Chat & Screen Sharing
-
-Implement Chat feature with Firestore storage
-
-Integrate Screen Sharing with Agora SDK
-
-Phase 5: Free Trial Mode & Final Touches
-
-Implement Free Trial Mode (Max 5 minutes)
-
-Add polish to UI and handle edge cases
-
-Testing & Bug Fixing
-
-Phase 6: Cross-Platform Compatibility
-
-Ensure compatibility across Android, iOS, Tablet, macOS, and Windows
-
-Final Testing & Deployment
-
-
---------------------------
-# secured_agora_calling_app
-
-
-
-
-
-delivery  :
-Phase 1  ( feedback)
-Theme
-App flow
-Login - register ,
- Name ( fname,lName)
- memberCode
- Password
-Email
-Meeting working  ( meet joining , mute/unmute)
-Free Go through App join or create Call ( max 5 min call )
-Drawer : user details  
-Phase 2
-Admin Section
-Add Members
-Name, 
-Email,
-Purchase date
-Subscription plan days quarterly
-isAcitve
-Total user of member
-  ● Member List ( user detail , payment status, expiry date) 
-● Edit Member Details 
- ● Reminder for Payment Subscription.  button
-● Enable/Disable Member button
- Mobile
-	Meet : Accept/Reject Request ,45  max limit .
-            Phase 1 feedback refactor
-            ● Speaker Focus
-            ● Host can Mute/Unmute User
-            ● Extend Time Feature after scheduled Meeting Hours
-Phase 3
-   1-1 private room for Host and one user
-   ● Cross Platform ( Android,IOS,Macos,windows)
-    Recording of Meet ( Host Only option)
-    Login/Register Screen with TWO factor Auth using OTP
+All requests (except login) carry an `Authorization: Bearer <jwt>` header.  
+On a `401` response the HTTP service automatically calls `GET api/auth/refreshLoginToken` and retries once.
+
+---
+
+## API Endpoints
+
+### Authentication
+
+| # | Method | Path | Auth | Request Body | Response | Description |
+|---|--------|------|------|--------------|----------|-------------|
+| 1 | `POST` | `/api/auth/login` | None | `{ email, password }` | `{ success, data: { token, user } }` | Login — returns a 7-day JWT |
+| 2 | `POST` | `/api/auth/create-user` | Bearer | `{ name, email, password, memberCode, memberUserId }` | `{ success }` | Create a user under a member |
+| 3 | `POST` | `/api/auth/update-user` | Bearer | `{ userId, name, email, memberCode, memberUserId, password? }` | `{ success }` | Update existing user details |
+| 4 | `POST` | `/api/auth/create-member` | Bearer (admin) | `{ name, email, password, memberCode, purchaseDate, planDays, maxParticipantsAllowed, isMember, isActive, canSeeMixRecording }` | `{ success }` | Create a new member (admin only) |
+| 5 | `POST` | `/api/auth/update-member` | Bearer (admin) | Same as create-member + `userId` | `{ success }` | Update a member's details (admin only) |
+| 6 | `POST` | `/resetPassword` | Bearer | `{ targetEmail, newPassword }` | `{ success }` | Reset a user's password _(legacy — no `/api/` prefix)_ |
+| 7 | `GET` | `/api/auth/user-credentials/:userId` | Bearer | — | `{ success, data: { email, password } }` | Retrieve plain-text credentials (admin/member view) |
+| 8 | `POST` | `/getUsersForPasswordReset` | Bearer | `{}` | `{ success, data: { users: [...] } }` | List users eligible for password reset _(legacy — no `/api/` prefix)_ |
+| 9 | `GET` | `/api/auth/refreshLoginToken` | Bearer | `?userId=<id>` | `{ success, token }` | Silently refresh a JWT — called automatically by the HTTP interceptor on 401 |
+
+---
+
+### Agora RTC Token
+
+| # | Method | Path | Auth | Request Body | Response | Description |
+|---|--------|------|------|--------------|----------|-------------|
+| 10 | `POST` | `/api/agora/token` | Bearer | `{ channelName, uid, userRole }` | `{ success, data: { token }, expireTime }` | Generate an Agora RTC token. `userRole`: `0` = subscriber, `1` = publisher |
+| 11 | `POST` | `/verifyToken` | Bearer | `{ channelName, uid, userRole }` | `{ success, token }` | Re-generate token on Agora privilege-will-expire event _(legacy — no `/api/` prefix)_ |
+
+---
+
+### Cloud Recording
+
+All recording endpoints share the same base path. The `type` field in the body distinguishes `"mix"` (server-side composite) from `"individual"` (per-user track).
+
+| # | Method | Path | Auth | Request Body | Response | Description |
+|---|--------|------|------|--------------|----------|-------------|
+| 12 | `POST` | `/api/agora/recording/start` | Bearer | `{ cname, uid, type: "mix", token }` | `{ success }` | Start **mix** recording |
+| 13 | `POST` | `/api/agora/recording/start` | Bearer | `{ cname, uid, type: "individual", token }` | `{ success }` | Start **individual** (per-user) recording |
+| 14 | `POST` | `/api/agora/recording/stop` | Bearer | `{ cname, type: "mix", uid }` | `{ success }` | Stop mix recording |
+| 15 | `POST` | `/api/agora/recording/stop` | Bearer | `{ cname, type: "individual", uid }` | `{ success }` | Stop individual recording |
+| 16 | `POST` | `/api/agora/recording/status` | Bearer | `{ cname, uid, type: "mix" \| "individual" }` | `{ success: bool }` | Poll recording status — the app retries until `success: true` |
+| 17 | `POST` | `/api/agora/recording/update` | Bearer | `{ cname, uid, type, audioSubscribeUids: [uid, ...] }` | `{ success }` | Update the list of users whose audio the recorder subscribes to |
+
+---
+
+### Recording Playback & Listing
+
+| # | Method | Path | Auth | Request Body | Response | Description |
+|---|--------|------|------|--------------|----------|-------------|
+| 18 | `POST` | `/api/agora/recording/list/mix` | Bearer | `{ channelName, meetingId }` | `{ success, data: [ { url, startTime }, ... ] }` | List all mix recordings for a meeting. Returns pre-signed HLS `.m3u8` URLs cached in Firestore. |
+| 19 | `POST` | `/api/agora/recording/list/individual/audiofile` | Bearer | `{ channelName, type: "mix", startTime, endTime }` | `{ success, data: { playableUrl } }` | Get a signed HLS `.m3u8` URL for a specific individual recording clip. |
+| 20 | `POST` | `/api/agora/recording/cleanupSecureFiles` | Bearer | `{}` | _(not checked)_ | Fire-and-forget cleanup of temporary signed files on R2. |
+
+---
+
+### External — FCM Push Notifications
+
+| # | Method | URL | Auth | Request Body | Description |
+|---|--------|-----|------|--------------|-------------|
+| 23 | `POST` | `https://fcm.googleapis.com/fcm/send` | `key=<SERVER_KEY>` | `{ to, notification: { title, body }, data: {...} }` | Send a push notification via FCM legacy API. **⚠️ Server key is currently a placeholder** — not active in production. |
+
+---
+
+### HLS Media (Direct CDN — not backend)
+
+These are plain HTTP GET calls made by `ClipAudioDownloader` directly to Cloudflare R2. The signed URLs are obtained from endpoints 18 / 19 above.
+
+| # | Method | URL | Description |
+|---|--------|-----|-------------|
+| 24 | `GET` | `<playableUrl>` (signed `.m3u8`) | Fetch HLS playlist from R2 to parse segment list |
+| 25 | `GET` | `<segment_url>` (signed `.ts`) | Download each MPEG-TS audio segment for offline save |
+
+---
+
+## Firestore Collections (Direct SDK — no backend)
+
+| Collection path | Operations | Purpose |
+|---|---|---|
+| `users` | get, where, update, snapshots | User profiles |
+| `meetings` | get, set, update, where, snapshots | Meeting records |
+| `meetings/{id}/participants` | set, update, get, snapshots | Live participant tracking |
+| `meetings/{id}/joinRequests` | set, update, delete, snapshots | Join-request approval flow |
+| `meetings/{id}/recordingTrack` | get, set, update, snapshots | Recording start/stop timestamps per track |
+| `meetings/{id}/recordingTrack/{trackId}/speakingEvents` | set, update, get, where | Per-user speaking clip metadata |
+| `meetings/{id}/recordingUrls` | get, set | Pre-signed URL cache (3 h TTL) written by backend |
+| `meetings/{id}/extensions` | add, snapshots | Meeting time-extension log |
+| `call_logs` | add, update | Call start/end audit trail |
+
+---
+
+## Authentication Flow
+
+```
+User enters credentials
+        │
+        ▼
+POST /api/auth/login
+        │
+   { token, user }
+        │
+        ▼
+Token stored in SharedPreferences
+        │
+        ▼
+All subsequent requests: Authorization: Bearer <token>
+        │
+   401 received?
+        │
+        ▼
+GET /api/auth/refreshLoginToken?userId=<id>
+        │
+  { token } ──► update stored token ──► retry original request
+        │
+   Still 401? ──► force logout
+```
+
+---
+
+## Recording Flow
+
+```
+Host joins meeting
+        │
+        ▼
+POST /api/agora/token (publisher role)
+        │
+POST /api/agora/recording/start (type: individual)
+POST /api/agora/recording/start (type: mix)  [member only]
+        │
+POST /api/agora/recording/status  ──► poll until active
+        │
+During call: POST /api/agora/recording/update  (when participant list changes)
+        │
+Host ends / leaves meeting
+        │
+POST /api/agora/recording/stop (individual)
+POST /api/agora/recording/stop (mix)           [member only]
+        │
+POST /api/agora/recording/cleanupSecureFiles
+        │
+        ▼
+Recordings stored on Cloudflare R2 as HLS (.m3u8 + .ts segments)
+        │
+        ▼
+Meeting detail page:
+  POST /api/agora/recording/list/mix              → playable URLs (cached in Firestore)
+  POST /api/agora/recording/list/individual/audiofile → clip URL per speaking event
+        │
+        ▼
+User taps Download:
+  GET <m3u8 URL>  → parse segments
+  GET <.ts URLs>  → download one-by-one
+  FFmpeg merge    → .m4a saved to Downloads (Android)
+  Binary concat   → .ts saved to Downloads (Windows)
+```
+
+---
+
+## Legacy Endpoints
+
+The following endpoints have **no `/api/` prefix** and pre-date the current Express server layout. They are still called by the app but should be migrated to the versioned path in a future backend update.
+
+| Endpoint | Current caller | Replacement target |
+|---|---|---|
+| `POST /resetPassword` | `app_auth_service.dart` | `POST /api/auth/reset-password` |
+| `POST /getUsersForPasswordReset` | `app_auth_service.dart` | `GET /api/auth/users` |
+| `POST /verifyToken` | `agora_token_helper.dart` | `POST /api/agora/token` |
+| `GET /generateLoginToken` | `app_http_interceptor.dart` _(unused)_ | `POST /api/auth/login` |
+| `GET /refreshLoginToken` | `app_http_interceptor.dart` _(unused)_ | `GET /api/auth/refreshLoginToken` |
+
+---
+
+## Environment / Configuration
+
+| Key | Location | Description |
+|---|---|---|
+| `baseUrl` | `lib/core/config/app_config.dart` | Backend Express server base URL |
+| `agoraAppId` | `lib/core/constants/` | Agora App ID |
+| `cloudflareEndpoint` | server `.env` | Cloudflare R2 S3-compatible endpoint |
+| `cloudflareAccessKey` | server `.env` | R2 access key |
+| `cloudflareSecretKey` | server `.env` | R2 secret key |
+| `bucketName` | server `.env` | R2 bucket name |
+| Firebase config | `lib/firebase_options.dart` | Auto-generated by FlutterFire CLI |

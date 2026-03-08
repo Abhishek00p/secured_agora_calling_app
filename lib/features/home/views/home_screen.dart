@@ -47,12 +47,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool isDesktop(BuildContext context) => context.layoutType == AppLayoutType.laptop || context.layoutType == AppLayoutType.laptop;
 
   AppUser user = AppUser.toEmpty();
+  /// Builds meeting list by tab: Host tab (0) → "Your meetings" (member only, by memberCode);
+  /// Join tab (1) → "Recent meetings" (meetings user participated in).
   Widget _buildMeetingListForRole() {
-    if (AppLocalStorage.getUserDetails().isMember) {
-      return MemberMeetingListWidget();
-    } else {
-      return UserMeetingListWidget();
+    if (_selectedIndex == 1) {
+      return const UserMeetingListWidget(); // Recent meetings on Join Meeting tab
     }
+    if (_selectedIndex == 0 && AppLocalStorage.getUserDetails().isMember) {
+      return const MemberMeetingListWidget(); // Your meetings on Host Meeting tab (member only)
+    }
+    // Host tab, not a member: no "Your meetings" section
+    return const SizedBox.shrink();
   }
 
   Widget _buildUserCard(double padding) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -30,6 +31,23 @@ class AppFirebaseService {
   CollectionReference get meetingsCollection => _firestore.collection('meetings');
   CollectionReference get callLogsCollection => _firestore.collection('call_logs');
   CollectionReference get recordingsCollection => _firestore.collection('recordings');
+
+  CollectionReference get errorReportsCollection => _firestore.collection('app_crash');
+
+  /// Reports a Flutter error to Firestore (for non-Android platforms; Android uses Crashlytics).
+  /// Fails silently so it never throws.
+  static Future<void> reportErrorToFirestore({required String exception, required String stackTrace, required String platform}) async {
+    try {
+      await AppFirebaseService.instance.errorReportsCollection.doc().set({
+        'platform': platform,
+        'exception': exception,
+        'stackTrace': stackTrace,
+        'reportedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // Never throw from error reporting
+    }
+  }
 
   // Firestore methods
   Future<DocumentSnapshot> getUserData(String uid) async {
@@ -413,6 +431,76 @@ class AppFirebaseService {
       AppLogger.print('Error getting participated meetings: $e');
       return Stream.empty();
     }
+  }
+
+  /// Returns a stream of meetings where the user has participated (participants
+  /// subcollection contains a doc with document ID == [userId]). List is in
+  /// descending order by scheduledStartTime.
+  Stream<List<MeetingModel>> getRecentMeetingsForUserStream(int userId) {
+    final participantDocId = userId.toString();
+    return _firestore.collectionGroup('participants').snapshots().asyncMap((snapshot) async {
+      final meetingIds = <String>{};
+      for (final doc in snapshot.docs) {
+        if (doc.id == participantDocId) {
+          final meetingId = doc.reference.parent.parent?.id;
+          if (meetingId != null && meetingId.isNotEmpty) meetingIds.add(meetingId);
+        }
+      }
+      if (meetingIds.isEmpty) return <MeetingModel>[];
+      final meetings = <MeetingModel>[];
+      for (final meetingId in meetingIds) {
+        final doc = await meetingsCollection.doc(meetingId).get();
+        if (doc.exists && doc.data() != null) {
+          final data = Map<String, dynamic>.from(doc.data() as Map<String, dynamic>);
+          data['meet_id'] ??= doc.id;
+          meetings.add(MeetingModel.fromJson(data));
+        }
+      }
+      meetings.sort((a, b) => b.scheduledStartTime.compareTo(a.scheduledStartTime));
+      return meetings;
+    });
+  }
+
+  /// Returns a stream of meetings for the "Recent Meetings" list: meetings the
+  /// user has participated in plus all meetings for their member code (so they
+  /// can join upcoming meetings easily). Merged and sorted by scheduledStartTime descending.
+  Stream<List<MeetingModel>> getRecentAndUpcomingMeetingsForUserStream(int userId, String memberCode) {
+    if (memberCode.isEmpty) return getRecentMeetingsForUserStream(userId);
+
+    final controller = StreamController<List<MeetingModel>>.broadcast();
+    List<MeetingModel> participatedList = [];
+    List<MeetingModel> memberMeetingsList = [];
+
+    void mergeAndEmit() {
+      final seen = <String>{};
+      final combined = <MeetingModel>[];
+      for (final m in [...participatedList, ...memberMeetingsList]) {
+        if (seen.add(m.meetId)) combined.add(m);
+      }
+      combined.sort((a, b) => b.scheduledStartTime.compareTo(a.scheduledStartTime));
+      if (!controller.isClosed) controller.add(combined);
+    }
+
+    final sub1 = getRecentMeetingsForUserStream(userId).listen((list) {
+      participatedList = list;
+      mergeAndEmit();
+    }, onError: controller.addError);
+    final sub2 = getUpcomingMeetingsStream(memberCode).listen((snapshot) {
+      memberMeetingsList =
+          snapshot.docs.map((doc) {
+            final data = Map<String, dynamic>.from(doc.data() as Map<String, dynamic>);
+            data['meet_id'] ??= doc.id;
+            return MeetingModel.fromJson(data);
+          }).toList();
+      mergeAndEmit();
+    }, onError: controller.addError);
+
+    controller.onCancel = () {
+      sub1.cancel();
+      sub2.cancel();
+    };
+
+    return controller.stream;
   }
 
   Stream<QuerySnapshot> getUpcomingMeetingsStream(String memberCode) {
@@ -874,20 +962,32 @@ class AppFirebaseService {
 
   Future<List<SpeakingEventModel>> getAllMeetingRecordings({required String meetingId}) async {
     try {
-      List<SpeakingEventModel> allItems = [];
-      final meetingData = MeetingModel.fromJson(
-        (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).get()).data() as Map<String, dynamic>? ?? {},
-      );
+      final meetingsRef = AppFirebaseService.instance.meetingsCollection.doc(meetingId);
+      final currentUserId = AppLocalStorage.getUserDetails().userId;
 
-      final allRecordingDocs = (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
+      final meetingSnap = await meetingsRef.get();
+      final meetingData = MeetingModel.fromJson(meetingSnap.data() as Map<String, dynamic>? ?? {});
 
-      for (QueryDocumentSnapshot doc in allRecordingDocs) {
+      final isHost = currentUserId == meetingData.hostId;
+
+      final trackSnap = await meetingsRef.collection('recordingTrack').get();
+      final allRecordingDocs = trackSnap.docs;
+
+      final List<SpeakingEventModel> allItems = [];
+
+      for (final doc in allRecordingDocs) {
+        final docData = doc.data();
+        int startTime = docData['startTime'] as int? ?? 0;
+        int endTime = docData['stopTime'] as int? ?? 0;
+
+        if (startTime == 0) continue;
+        if (endTime == 0) {
+          endTime = meetingData.scheduledEndTime.millisecondsSinceEpoch;
+        }
+
         String recordingUrl = '';
-        final docData = doc.data() as Map<String, dynamic>? ?? {};
-        final startTime = docData['startTime'] as int? ?? 0;
-        final endTime = docData['stopTime'] as int? ?? 0;
 
-        // fetch recordingUrl from server
+        /// ---- API CALL (same as before) ----
         final response = await AppHttpService().post(
           'api/agora/recording/list/individual/audiofile',
           body: {'channelName': meetingId, 'type': 'mix', 'startTime': startTime, 'endTime': endTime},
@@ -897,51 +997,39 @@ class AppFirebaseService {
           recordingUrl = response['data']['playableUrl'] ?? '';
         }
 
-        if (recordingUrl.isNotEmpty) {
-          final allSpeakingEventsOfThisRecordingDocs =
-              (await AppFirebaseService.instance.meetingsCollection
-                      .doc(meetingId)
-                      .collection('recordingTrack')
-                      .doc(doc.id)
-                      .collection('speakingEvents')
-                      .get())
-                  .docs;
+        if (recordingUrl.isEmpty) continue;
 
-          for (QueryDocumentSnapshot item in allSpeakingEventsOfThisRecordingDocs) {
-            final speakingEventDocData = item.data() as Map<String, dynamic>? ?? {};
-            final currentUserId = AppLocalStorage.getUserDetails().userId;
-            final isHost = currentUserId == meetingData.hostId;
-            final eventUserId = speakingEventDocData['userId'] as int? ?? 0;
+        /// ---- Fetch speaking events ----
+        final eventsSnap = await meetingsRef.collection('recordingTrack').doc(doc.id).collection('speakingEvents').get();
 
-            // If host: skip only host's own recordings
-            if (isHost) {
-              if (eventUserId == meetingData.hostId) {
-                debugPrint("skipping becoz i am host and this is my recordimg");
-                continue;
-              }
-            }
-            // If participant: skip everything that is not theirs
-            else {
-              if (eventUserId != currentUserId) {
-                debugPrint("skipping becoz i am not a host and this is not my recordimg");
+        for (final eventDoc in eventsSnap.docs) {
+          final eventData = eventDoc.data();
 
-                continue;
-              }
-            }
-            allItems.add(
-              SpeakingEventModel(
-                userId: speakingEventDocData['userId'].toString(),
-                userName: speakingEventDocData['userName'],
-                startTime: speakingEventDocData['start'],
-                endTime: speakingEventDocData['stop'],
-                recordingUrl: recordingUrl,
-                trackStartTime: startTime,
-                trackStopTime: endTime,
-              ),
-            );
+          final eventUserId = eventData['userId'] as int? ?? 0;
+
+          /// Host logic
+          if (isHost) {
+            if (eventUserId == meetingData.hostId) continue;
           }
+          /// Participant logic
+          else {
+            if (eventUserId != currentUserId) continue;
+          }
+
+          allItems.add(
+            SpeakingEventModel(
+              userId: eventUserId.toString(),
+              userName: eventData['userName'],
+              startTime: eventData['start'],
+              endTime: eventData['stop'],
+              recordingUrl: recordingUrl,
+              trackStartTime: startTime,
+              trackStopTime: endTime,
+            ),
+          );
         }
       }
+
       return allItems;
     } catch (e, s) {
       debugPrint("error while fetching meeting recordings... $e, $s");
@@ -949,33 +1037,24 @@ class AppFirebaseService {
     }
   }
 
-  // Future<List<SpeakingEventModel>?> getAllIndividualRecordings(String meetingId) async {
-  //   final response = await AppHttpService().post('api/agora/recording/list/individual', body: {'channelName': meetingId});
+  Future<String> getAllIndividualRecordings({required String meetingId, required int start, required int end}) async {
+    final response = await AppHttpService().post(
+      'api/agora/recording/list/individual',
+      body: {'channelName': meetingId, 'startTime': start, 'endTime': end, 'type': 'mix'},
+    );
 
-  //   if (response == null) {
-  //     debugPrint("response is null while fetching individual recording list");
-  //     return null;
-  //   }
-  //   AppLogger.print("data........ : ${response['success']} item lenth : ${response['data']?.length}");
-  //   if (response['success'] == true) {
-  //     final list = (response['data'] as List<dynamic>).map((e) => IndividualRecordingModel.fromJson(Map<String, dynamic>.from(e as Map))).toList();
-  //     final outPut = <SpeakingEventModel>[];
-  //     for (var element in list) {
-  //       if (element.speakingEvents.isNotEmpty) {
-  //         for (var i = 0; i < element.speakingEvents.length; i++) {
-  //           final item = element.speakingEvents[i];
-  //           if (item.startTime != 0 && item.userId.isNotEmpty) {
-  //             outPut.add(element.speakingEvents[i]);
-  //           }
-  //         }
-  //       }
-  //     }
-  //     return outPut;
-  //   } else {
-  //     AppLogger.print(" failed to fetch list of individual recording : $response, message: ${response['error_message']}");
-  //     return [];
-  //   }
-  // }
+    if (response == null) {
+      debugPrint("response is null while fetching individual recording url");
+      return '';
+    }
+    AppLogger.print("data........ : ${response['success']} item lenth : ${response['data']?.length}");
+    if (response['success'] == true && response['data'] != null) {
+      return response['data']['playableUrl'] as String? ?? '';
+    } else {
+      AppLogger.print(" failed to fetch  individual recording Url : $response, message: ${response['error_message']}");
+      return '';
+    }
+  }
 
   /// Generates a random 7-digit number (1000000 - 9999999)
   int generate7DigitId() {

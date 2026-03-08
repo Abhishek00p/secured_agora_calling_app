@@ -137,6 +137,33 @@ class AppLifecycleManager extends GetxService with WidgetsBindingObserver {
 
       final currentUser = AppLocalStorage.getUserDetails();
 
+      // If user was host, stop recording first so Agora cloud recording is not orphaned.
+      if (_isHost) {
+        try {
+          bool recordingActive = false;
+
+          if (Get.isRegistered<MeetingController>()) {
+            final mc = Get.find<MeetingController>();
+            recordingActive = mc.isRecordingOn.value;
+          }
+
+          if (recordingActive) {
+            AppLogger.print('Host app killed with recording active — stopping recording…');
+            await _firebaseService.stopRecordingMix(meetingId: _currentMeetingId);
+
+            // recordingTrack stopTime is updated by backend webhook
+
+            await _firebaseService.meetingsCollection
+                .doc(_currentMeetingId)
+                .update({'isRecordingOn': false});
+
+            AppLogger.print('Recording stopped during app kill cleanup');
+          }
+        } catch (e) {
+          AppLogger.print('Error stopping recording during app kill: $e');
+        }
+      }
+
       // Remove user from meeting participants
       await _firebaseService.removeParticipantFromMeeting(_currentMeetingId, currentUser.userId);
 

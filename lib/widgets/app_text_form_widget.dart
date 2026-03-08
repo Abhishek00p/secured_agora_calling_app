@@ -29,7 +29,7 @@ class AppTextFormField extends StatefulWidget {
 }
 
 class _AppTextFormFieldState extends State<AppTextFormField> {
-  bool _obscureText = false;
+  bool _obscureText = true;
 
   IconData get _prefixIcon {
     switch (widget.type) {
@@ -119,7 +119,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
           suffixIcon:
               widget.type == AppTextFormFieldType.password
                   ? IconButton(
-                    icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
+                    icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility),
                     onPressed: () {
                       setState(() {
                         _obscureText = !_obscureText;
@@ -129,14 +129,8 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
                   : null,
           helperText: widget.helperText,
           helperMaxLines: 2,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade400),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade400),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
@@ -161,10 +155,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
       // If controller is disposed, return a placeholder widget
       return Container(
         height: 56,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade400),
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), borderRadius: BorderRadius.circular(12)),
         child: Center(child: Text(widget.labelText, style: TextStyle(color: Colors.grey[600], fontSize: 16))),
       );
     }

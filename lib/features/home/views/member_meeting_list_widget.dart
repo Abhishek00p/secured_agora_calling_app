@@ -15,9 +15,9 @@ class MemberMeetingListWidget extends StatelessWidget {
         Text('Your Meetings', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
 
-        // Meetings list
+        // Meetings list: all meetings for this member's memberCode, descending order
         StreamBuilder<QuerySnapshot>(
-          stream: AppFirebaseService.instance.getHostMeetingsStream(AppLocalStorage.getUserDetails().userId),
+          stream: AppFirebaseService.instance.getUpcomingMeetingsStream(AppLocalStorage.getUserDetails().memberCode),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -52,7 +52,10 @@ class MemberMeetingListWidget extends StatelessWidget {
 
             return Column(
               children: List.generate(meetings.length, (index) {
-                final meeting = MeetingModel.fromJson(meetings[index].data() as Map<String, dynamic>);
+                final doc = meetings[index];
+                final data = Map<String, dynamic>.from(doc.data() as Map<String, dynamic>);
+                data['meet_id'] ??= doc.id;
+                final meeting = MeetingModel.fromJson(data);
                 return MeetingTileWidget(model: meeting);
               }),
             );

@@ -1,139 +1,266 @@
 import 'dart:io';
-import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
-import 'package:flutter/material.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:media_store_plus/media_store_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
+import 'package:media_store_plus/media_store_plus.dart';
+import 'package:secured_calling/core/services/download_controller.dart';
 
 class ClipAudioDownloader {
-  Future<File> saveToDownloads(File source) async {
-    await MediaStore.ensureInitialized();
-    MediaStore.appFolder = "";
-
-    final mediaStore = MediaStore();
-
-    if (await Permission.storage.isGranted) {
-      final result = await mediaStore.saveFile(tempFilePath: source.path, dirType: DirType.download, dirName: DirName.download);
-
-      if (result == null) {
-        throw Exception("Failed to save to Downloads");
-      }
-
-      return File(result.uri.toFilePath());
-    } else if (await Permission.storage.isDenied || await Permission.storage.isLimited) {
-      debugPrint("Storage permission was not granted");
-      PermissionStatus status = await Permission.storage.request();
-
-      if (status != PermissionStatus.granted) {
-        throw Exception("Storage permission not granted");
-      }
-      final result = await mediaStore.saveFile(tempFilePath: source.path, dirType: DirType.download, dirName: DirName.download);
-
-      if (result == null) {
-        throw Exception("Failed to save to Downloads");
-      }
-
-      return File(result.uri.toFilePath());
-    } else {
-      throw Exception("Storage permission not granted or permanently denied");
-    }
-  }
-
-  Future<File> downloadClip({required String m3u8Url, required Duration clipStart, required Duration clipEnd}) async {
+  /// Downloads a recording from [m3u8Url] and saves it to the device Downloads folder.
+  ///
+  /// [clipStart] and [clipEnd] are offsets from the beginning of the HLS recording.
+  /// When omitted the full recording is downloaded.
+  ///
+  /// [onProgress] receives `(downloaded, total)` after each segment is saved,
+  /// allowing callers to update a notification or progress bar.
+  /// [onProcessing] is called once all segments are downloaded and the
+  /// audio-conversion step begins (Android FFmpeg merge).
+  /// [controller] lets the caller pause, resume, or cancel the download at
+  /// any segment boundary.
+  ///
+  /// Returns a human-readable message indicating where the file was saved.
+  /// Throws [DownloadCancelledException] if the controller cancels the task.
+  Future<String> download({
+    required String m3u8Url,
+    Duration? clipStart,
+    Duration? clipEnd,
+    String? fileName,
+    void Function(int downloaded, int total)? onProgress,
+    void Function()? onProcessing,
+    DownloadController? controller,
+  }) async {
     final tempDir = await getTemporaryDirectory();
 
-    /// STEP 1 — Download playlist
+    // ── Step 1: Fetch playlist ──────────────────────────────────────────────
     final playlistResponse = await http.get(Uri.parse(m3u8Url));
-
     if (playlistResponse.statusCode != 200) {
-      debugPrint("Playlist error → ${playlistResponse.statusCode}");
-      throw Exception("Failed to fetch playlist");
+      throw Exception('Failed to fetch playlist (HTTP ${playlistResponse.statusCode})');
     }
 
     final lines = playlistResponse.body.split('\n');
+    double timeline = 0;
+    final selectedSegments = <String>[];
 
+    for (int i = 0; i < lines.length; i++) {
+      if (!lines[i].startsWith('#EXTINF')) continue;
+
+      final durationStr = lines[i].split(':').elementAtOrNull(1)?.replaceAll(',', '') ?? '0';
+      final duration = double.tryParse(durationStr) ?? 0.0;
+
+      final segmentLine = (i + 1 < lines.length) ? lines[i + 1].trim() : '';
+      if (segmentLine.isEmpty || segmentLine.startsWith('#')) {
+        timeline += duration;
+        continue;
+      }
+
+      final segStart = Duration(milliseconds: (timeline * 1000).toInt());
+      final segEnd = Duration(milliseconds: ((timeline + duration) * 1000).toInt());
+
+      final includeSegment =
+          (clipStart == null && clipEnd == null) || (clipStart != null && clipEnd != null && segEnd > clipStart && segStart < clipEnd);
+
+      if (includeSegment) {
+        selectedSegments.add(Uri.parse(m3u8Url).resolve(segmentLine).toString());
+      }
+
+      timeline += duration;
+    }
+
+    if (selectedSegments.isEmpty) {
+      throw Exception('No audio segments found in the recording');
+    }
+
+    // Notify caller of the total count so it can initialise the progress UI.
+    onProgress?.call(0, selectedSegments.length);
+
+    // ── Step 2: Download .ts segments one-at-a-time ─────────────────────────
+    // Streaming one segment at a time keeps peak memory low even for very long
+    // recordings: we write each response body to disk and discard it before
+    // fetching the next segment.
+    final segmentPaths = <String>[];
+    final baseTs = DateTime.now().millisecondsSinceEpoch;
+
+    for (int i = 0; i < selectedSegments.length; i++) {
+      // Honour pause / cancel signals between every segment.
+      await controller?.checkPoint();
+
+      final res = await http.get(Uri.parse(selectedSegments[i]));
+      if (res.statusCode != 200) {
+        throw Exception('Failed to download segment $i (HTTP ${res.statusCode})');
+      }
+      final path = '${tempDir.path}/seg_${baseTs}_$i.ts';
+      await File(path).writeAsBytes(res.bodyBytes);
+      segmentPaths.add(path);
+
+      // Report progress after each segment is persisted to disk.
+      onProgress?.call(i + 1, selectedSegments.length);
+    }
+
+    // Final check before we hand off to FFmpeg (can't easily cancel mid-encode).
+    await controller?.checkPoint();
+
+    final safeFileName = _sanitizeFileName(fileName ?? 'recording_$baseTs');
+
+    // Notify that we're now in the audio-processing phase.
+    onProcessing?.call();
+
+    // ── Step 3: Platform-specific processing & save ─────────────────────────
+    if (Platform.isAndroid) {
+      return await _processAndroid(tempDir, segmentPaths, safeFileName);
+    } else {
+      return await _processDesktop(tempDir, segmentPaths, safeFileName);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Android path: FFmpeg merge → .m4a → MediaStore Downloads
+  // ──────────────────────────────────────────────────────────────────────────
+  Future<String> _processAndroid(Directory tempDir, List<String> segmentPaths, String baseName) async {
+    final concatFile = File('${tempDir.path}/concat_${DateTime.now().millisecondsSinceEpoch}.txt');
+    await concatFile.writeAsString(segmentPaths.map((p) => "file '${p.replaceAll("'", "\\'")}'").join('\n'));
+
+    final outputPath = '${tempDir.path}/$baseName.m4a';
+    final command = '-f concat -safe 0 -i "${concatFile.path}" -vn -acodec aac -y "$outputPath"';
+
+    final session = await FFmpegKit.execute(command);
+    final returnCode = await session.getReturnCode();
+
+    if (returnCode == null || !returnCode.isValueSuccess()) {
+      final logs = await session.getAllLogsAsString();
+      debugPrint('FFmpeg error logs:\n$logs');
+      throw Exception('Audio conversion failed — FFmpeg returned $returnCode');
+    }
+
+    await _saveToAndroidDownloads(File(outputPath), '$baseName.m4a');
+    return '$baseName.m4a saved to Downloads';
+  }
+
+  Future<void> _saveToAndroidDownloads(File source, String fileName) async {
+    await MediaStore.ensureInitialized();
+    MediaStore.appFolder = 'secured_Calling';
+    final mediaStore = MediaStore();
+
+    final result = await mediaStore.saveFile(tempFilePath: source.path, dirType: DirType.download, dirName: DirName.download);
+
+    if (result == null) {
+      throw Exception('MediaStore failed to save the file to Downloads');
+    }
+
+    debugPrint("Saved to: $result");
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Desktop / Windows path: binary concat of TS → Downloads directory
+  // ──────────────────────────────────────────────────────────────────────────
+  Future<String> _processDesktop(Directory tempDir, List<String> segmentPaths, String baseName) async {
+    final tempOutput = File('${tempDir.path}/$baseName.ts');
+    final sink = tempOutput.openWrite(mode: FileMode.writeOnly);
+
+    for (final path in segmentPaths) {
+      final f = File(path);
+      if (await f.exists()) {
+        sink.add(await f.readAsBytes());
+      }
+    }
+    await sink.flush();
+    await sink.close();
+
+    final savedPath = await _saveToDesktopDownloads(tempOutput, '$baseName.ts');
+    return 'Saved to: $savedPath';
+  }
+
+  Future<String> _saveToDesktopDownloads(File source, String fileName) async {
+    Directory? downloadsDir;
+    try {
+      downloadsDir = await getDownloadsDirectory();
+    } catch (_) {}
+    downloadsDir ??= await getApplicationDocumentsDirectory();
+
+    final destPath = '${downloadsDir.path}/$fileName';
+    await source.copy(destPath);
+    return destPath;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Helpers
+  // ──────────────────────────────────────────────────────────────────────────
+  String _sanitizeFileName(String name) {
+    return name.replaceAll(RegExp(r'[^\w\-]'), '_').replaceAll(RegExp(r'_+'), '_');
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Legacy API kept for backward compatibility
+  // ──────────────────────────────────────────────────────────────────────────
+  Future<File> downloadClip({required String m3u8Url, required Duration clipStart, required Duration clipEnd}) async {
+    final tempDir = await getTemporaryDirectory();
+
+    final playlistResponse = await http.get(Uri.parse(m3u8Url));
+    if (playlistResponse.statusCode != 200) {
+      throw Exception('Failed to fetch playlist');
+    }
+
+    final lines = playlistResponse.body.split('\n');
     double timeline = 0;
     final selectedSegments = <String>[];
 
     for (int i = 0; i < lines.length; i++) {
       if (lines[i].startsWith('#EXTINF')) {
         final duration = double.parse(lines[i].split(':')[1].replaceAll(',', ''));
-
         final segmentLine = lines[i + 1].trim();
-
         final segStart = Duration(milliseconds: (timeline * 1000).toInt());
         final segEnd = Duration(milliseconds: ((timeline + duration) * 1000).toInt());
 
         if (segEnd > clipStart && segStart < clipEnd) {
-          final resolved = Uri.parse(m3u8Url).resolve(segmentLine).toString();
-
-          selectedSegments.add(resolved);
+          selectedSegments.add(Uri.parse(m3u8Url).resolve(segmentLine).toString());
         }
-
         timeline += duration;
       }
     }
 
-    if (selectedSegments.isEmpty) {
-      throw Exception("No segments found");
-    }
+    if (selectedSegments.isEmpty) throw Exception('No segments found');
 
-    /// STEP 2 — Download segments
     final segmentPaths = <String>[];
-
     for (int i = 0; i < selectedSegments.length; i++) {
       final res = await http.get(Uri.parse(selectedSegments[i]));
-
-      if (res.statusCode != 200) {
-        throw Exception("Segment download failed");
-      }
-
+      if (res.statusCode != 200) throw Exception('Segment download failed');
       final path = '${tempDir.path}/seg_$i.ts';
-      final file = File(path);
-
-      await file.writeAsBytes(res.bodyBytes);
-
+      await File(path).writeAsBytes(res.bodyBytes);
       segmentPaths.add(path);
     }
 
-    /// sanity check
-    for (final p in segmentPaths) {
-      if (!await File(p).exists()) {
-        throw Exception("Missing segment file");
-      }
-    }
-
-    /// STEP 3 — concat file (escaped paths)
     final concatFile = File('${tempDir.path}/concat.txt');
+    await concatFile.writeAsString(segmentPaths.map((p) => "file '${p.replaceAll("'", "\\'")}'").join('\n'));
 
-    final concatContent = segmentPaths.map((p) => "file '${p.replaceAll("'", "\\'")}'").join('\n');
-
-    await concatFile.writeAsString(concatContent);
-
-    debugPrint("Concat file →\n$concatContent");
-
-    /// STEP 4 — FFmpeg merge
     final outputPath = '${tempDir.path}/clip_${DateTime.now().millisecondsSinceEpoch}.m4a';
-
-    final command = "-f concat -safe 0 -i ${concatFile.path} -vn -acodec aac $outputPath";
-
-    debugPrint("FFmpeg CMD → $command");
-
+    final command = '-f concat -safe 0 -i ${concatFile.path} -vn -acodec aac $outputPath';
     final session = await FFmpegKit.execute(command);
     final returnCode = await session.getReturnCode();
 
-    debugPrint("FFmpeg return code → $returnCode");
-
     if (returnCode == null || !returnCode.isValueSuccess()) {
-      final logs = await session.getAllLogsAsString();
-      debugPrint("FFmpeg logs →\n$logs");
-      throw Exception("FFmpeg merge failed");
+      throw Exception('FFmpeg merge failed');
     }
 
-    /// STEP 5 — Save to Downloads
-    final downloadedFile = await saveToDownloads(File(outputPath));
+    await saveToDownloads(File(outputPath));
+    return File(outputPath);
+  }
 
-    return downloadedFile;
+  Future<File> saveToDownloads(File source) async {
+    await MediaStore.ensureInitialized();
+    MediaStore.appFolder = 'secured_calling';
+    final mediaStore = MediaStore();
+
+    PermissionStatus status = await Permission.storage.status;
+    if (!status.isGranted) {
+      status = await Permission.storage.request();
+      if (!status.isGranted) throw Exception('Storage permission not granted');
+    }
+
+    final result = await mediaStore.saveFile(tempFilePath: source.path, dirType: DirType.audio, dirName: DirName.audiobooks);
+    if (result == null) throw Exception('Failed to save to Downloads');
+
+    return File(result.uri.toFilePath());
   }
 }

@@ -2,6 +2,8 @@ plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
     id("com.google.gms.google-services")
+    id ("com.google.firebase.crashlytics")
+
     // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -18,9 +20,9 @@ android {
     compileSdk = 36
     ndkVersion = "27.0.12077973"
    lint {
-        disable "NullSafeMutableLiveData"
-        abortOnError false
-        checkReleaseBuilds false
+        disable.add("NullSafeMutableLiveData")
+        abortOnError = false
+        checkReleaseBuilds = false
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -46,22 +48,13 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-        }
-    }
-        flavorDimensions += "default"
-
-    productFlavors {
-        create("dev") {
-            dimension = "default"
-            applicationId = "com.example.secured_calling.dev"
-            versionNameSuffix = "-dev"
-        }
-        create("prod") {
-            dimension = "default"
-            applicationId = "com.example.secured_calling"
+            isMinifyEnabled = false
+            isShrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
