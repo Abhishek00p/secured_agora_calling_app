@@ -1248,12 +1248,19 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                   if (value == 'remove') {
                     _showRemoveParticipantDialog(context, user, meetingController);
                   }
+                  if (value == 'make_host') {
+                    meetingController.transferHost(user.userId);
+                  }
                 },
                 itemBuilder:
                     (context) => [
                       PopupMenuItem(
                         value: 'remove',
                         child: Row(children: const [Icon(Icons.close, color: Colors.red, size: 18), SizedBox(width: 8), Text("Remove")]),
+                      ),
+                      PopupMenuItem(
+                        value: 'make_host',
+                        child: Row(children: const [Icon(Icons.star, color: Colors.yellow, size: 18), SizedBox(width: 8), Text("Make Host")]),
                       ),
                     ],
                 child: Container(

@@ -252,14 +252,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed:
-                        () => UserCredentialsBottomSheet.show(
-                          context,
-                          targetEmail: member.email,
-                          targetName: member.name,
-                          isMember: true,
-                          userId: member.userId.toString(),
-                        ),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => MemberForm(member: member, canEdit: false))),
                     icon: const Icon(Icons.remove_red_eye, size: 15),
                     label: const Text('View', style: TextStyle(fontSize: 12)),
                     style: OutlinedButton.styleFrom(
@@ -291,31 +284,54 @@ class _AdminScreenState extends State<AdminScreen> {
 
             // 🔹 SEARCH + FILTER (CENTERED)
             Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: Padding(
-                  padding: EdgeInsets.all(padding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        height: 50,
-                        child: TextField(
-                          onChanged: (value) {
-                            setState(() => _searchQuery = value.toLowerCase());
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'Search by name or email...',
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            filled: true,
+              child: Padding(
+                padding: EdgeInsets.all(padding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisSize: isDesktop(context) ? MainAxisSize.max : MainAxisSize.min,
+                      mainAxisAlignment: isDesktop(context) ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+                      children: [
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 720),
+
+                          child: SizedBox(
+                            height: 50,
+                            child: TextField(
+                              onChanged: (value) {
+                                setState(() => _searchQuery = value.toLowerCase());
+                              },
+                              decoration: InputDecoration(
+                                hintText: 'Search by name or email...',
+                                prefixIcon: const Icon(Icons.search),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                filled: true,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(spacing: 8, children: [_buildFilterChip("All"), _buildFilterChip("Close"), _buildFilterChip("Long")]),
-                    ],
-                  ),
+                        if (isDesktop(context))
+                          Padding(
+                            padding: EdgeInsetsGeometry.symmetric(horizontal: responsivePadding(context)),
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const MemberForm()));
+                              },
+                              child: Row(
+                                children: [
+                                  Text('Add New Member', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                  SizedBox(width: 6),
+                                  const Icon(Icons.add),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(spacing: 8, children: [_buildFilterChip("All"), _buildFilterChip("Close"), _buildFilterChip("Long")]),
+                  ],
                 ),
               ),
             ),
@@ -325,14 +341,19 @@ class _AdminScreenState extends State<AdminScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MemberForm()));
-        },
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton:
+          isDesktop(context)
+              ? null
+              : FloatingActionButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MemberForm()));
+                },
+                child: const Icon(Icons.add),
+              ),
     );
   }
+
+  bool isDesktop(BuildContext context) => context.layoutType == AppLayoutType.laptop || context.layoutType == AppLayoutType.laptop;
 
   Widget _buildMemberCard(BuildContext context, ThemeData theme, AppUser member, DateTime now, {bool isDesktop = false}) {
     final expiryDate = member.planExpiryDate;

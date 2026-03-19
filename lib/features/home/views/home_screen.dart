@@ -47,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool isDesktop(BuildContext context) => context.layoutType == AppLayoutType.laptop || context.layoutType == AppLayoutType.laptop;
 
   AppUser user = AppUser.toEmpty();
+
   /// Builds meeting list by tab: Host tab (0) → "Your meetings" (member only, by memberCode);
   /// Join tab (1) → "Recent meetings" (meetings user participated in).
   Widget _buildMeetingListForRole() {
@@ -298,6 +299,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
             // ✅ DESKTOP — split layout
             return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // LEFT PANEL
                 SizedBox(
@@ -308,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         const PersistentCallBar(),
                         _buildUserCard(padding),
                         _buildTabBar(padding),
-                        const Divider(),
+                        // const Divider(),
                         _pages[_selectedIndex], // only actions
                       ],
                     ),

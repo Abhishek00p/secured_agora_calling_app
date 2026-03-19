@@ -1086,4 +1086,16 @@ class AppFirebaseService {
       debugPrint("error caught in cleaning up secure files : $e");
     }
   }
+
+  void transferHost(String meetingId, int userId) {
+    meetingsCollection
+        .doc(meetingId)
+        .update({'hostUserId': userId, 'hostId': userId})
+        .then((_) {
+          AppLogger.print('Host transferred successfully to user $userId for meeting $meetingId');
+        })
+        .catchError((e) {
+          AppLogger.print('Error transferring host: $e');
+        });
+  }
 }

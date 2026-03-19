@@ -1230,4 +1230,19 @@ class MeetingController extends GetxController {
 
     update();
   }
+
+  void transferHost(int userId) {
+      if (!isHost) {
+        AppToastUtil.showErrorToast('Only host can transfer host role');
+        return;
+      }
+  
+      try {
+        _firebaseService.transferHost(meetingId, userId);
+        AppToastUtil.showSuccessToast('Host role transferred');
+      } catch (e) {
+        AppLogger.print('Error transferring host role: $e');
+        AppToastUtil.showErrorToast('Error transferring host role: $e');
+      }
+  }
 }
