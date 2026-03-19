@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 
 extension AppDateTimeExtension on DateTime? {
   String get formatDateTime {
@@ -56,7 +57,6 @@ extension AppDateTimeExtension on DateTime? {
   String get formatDate {
     final date = this;
     if (date == null) return 'N/A';
-
     String getDaySuffix(int day) {
       if (day >= 11 && day <= 13) return 'th';
       switch (day % 10) {

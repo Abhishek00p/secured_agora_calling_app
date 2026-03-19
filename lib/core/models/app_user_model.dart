@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:secured_calling/core/extensions/app_string_extension.dart';
 import 'package:secured_calling/core/extensions/date_time_extension.dart';
 
@@ -10,7 +11,7 @@ class AppUser {
   final DateTime createdAt;
   final Subscription subscription;
   final String memberCode;
-  final String? planExpiryDate;
+  final DateTime? planExpiryDate;
   final int? totalUsers;
   final bool isActive;
   final int planDays;
@@ -39,7 +40,6 @@ class AppUser {
 
   factory AppUser.fromJson(Map<String, dynamic>? json) {
     if (json == null) return AppUser.toEmpty();
-
     return AppUser(
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
@@ -54,14 +54,12 @@ class AppUser {
               : null,
       subscription: Subscription.fromJson(json['subscription']),
       planExpiryDate:
-          json['planExpiryDate'] == null || json['planExpiryDate'].toString().trim().isEmpty
-              ? null
-              : json['planExpiryDate'].toString().toDateTime.formatDate,
+          json['planExpiryDate'] == null || json['planExpiryDate'].toString().trim().isEmpty ? null : json['planExpiryDate'].toString().toDateTime,
       totalUsers: json['totalUsers'] ?? 0,
       isActive: json['isActive'] ?? false,
       maximumParticipantsAllowed: json['maxParticipantsAllowed'] ?? 0,
       planDays: json['planDays'] ?? 0,
-      purchaseDate: json['purchaseDate'] ?? '',
+      purchaseDate: (json['purchaseDate'] ?? '').toString().toDateTime.formatDate,
       canSeeMixRecording: json['canSeeMixRecording'] ?? false,
       password: json['password'] ?? '',
     );

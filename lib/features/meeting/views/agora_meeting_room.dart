@@ -1048,15 +1048,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                     children: [
                       IconButton(
                         onPressed: () {
-                          meetingController.toggleMixRecordingButton();
+                          // meetingController.toggleMixRecordingButton();
                         },
-                        icon: Obx(
-                          () => Icon(
-                            meetingController.isRecordingOn.value ? Icons.stop_circle_rounded : Icons.fiber_manual_record_rounded,
-                            size: 24,
-                            color: Colors.red,
-                          ),
+                        icon:
+                        // Obx(
+                        //   () =>
+                        Icon(
+                          // meetingController.isRecordingOn.value ? Icons.stop_circle_rounded :
+                          Icons.fiber_manual_record_rounded,
+                          size: 24,
+                          color: Colors.red,
                         ),
+                        // ),
                       ),
                       Obx(() {
                         if (meetingController.isRecordingOn.value && meetingController.isHost) {

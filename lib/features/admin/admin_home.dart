@@ -41,7 +41,7 @@ class _AdminScreenState extends State<AdminScreen> {
       if (!matchQuery) return false;
 
       // Expiry filter
-      final daysLeft = m.planExpiryDate?.toDateTime.difference(now).inDays ?? 0;
+      final daysLeft = m.planExpiryDate?.difference(now).inDays ?? 0;
 
       if (_filter == 'Close') {
         return daysLeft <= 60;
@@ -109,7 +109,10 @@ class _AdminScreenState extends State<AdminScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: members.length,
-            itemBuilder: (context, i) => _buildMemberCard(context, Theme.of(context), members[i], now),
+            itemBuilder: (context, i) {
+              debugPrint("member expiry date before building : ${members[i].planExpiryDate}");
+              return _buildMemberCard(context, Theme.of(context), members[i], now);
+            },
           );
         }
 
@@ -130,13 +133,13 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _buildMemberCardCollapsed(BuildContext context, ThemeData theme, AppUser member, DateTime now) {
-    final isExpiringSoon = (member.planExpiryDate?.toDateTime.difference(now).inDays ?? 0) <= 60;
+    final isExpired = (member.planExpiryDate?.difference(now).inDays ?? 0) <= 0;
     final padding = responsivePadding(context);
 
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: isExpiringSoon ? Colors.red.shade50 : theme.cardColor,
+      color: isExpired ? Colors.red.shade50 : theme.cardColor,
       child: Padding(
         padding: EdgeInsets.all(padding),
         child: Column(
@@ -149,10 +152,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 Expanded(
                   child: Text(
                     member.name.sentenceCase,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isExpiringSoon ? Colors.red.shade700 : null,
-                    ),
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: isExpired ? Colors.red.shade700 : null),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -166,21 +166,14 @@ class _AdminScreenState extends State<AdminScreen> {
                       child: Switch(
                         value: member.isActive,
                         onChanged: (val) {
-                          FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(member.userId.toString())
-                              .update({'isActive': val});
+                          FirebaseFirestore.instance.collection('users').doc(member.userId.toString()).update({'isActive': val});
                         },
                         activeColor: theme.colorScheme.primary,
                       ),
                     ),
                     Text(
                       member.isActive ? 'Active' : 'Inactive',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: member.isActive ? Colors.green : Colors.red,
-                      ),
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: member.isActive ? Colors.green : Colors.red),
                     ),
                   ],
                 ),
@@ -190,26 +183,35 @@ class _AdminScreenState extends State<AdminScreen> {
             const SizedBox(height: 4),
 
             // ── Email ─────────────────────────────────────────────────────
-            Text(
-              member.email,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-            ),
+            Text(member.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600])),
 
             const SizedBox(height: 6),
 
             // ── Expiry ────────────────────────────────────────────────────
             Row(
               children: [
-                Icon(Icons.lock_clock, size: 13, color: isExpiringSoon ? Colors.red.shade400 : Colors.grey),
+                Icon(Icons.lock_clock, size: 13, color: isExpired ? Colors.red.shade400 : Colors.grey),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    'Expires: ${member.planExpiryDate?.toDateTime.formatDate}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: isExpiringSoon ? Colors.red.shade700 : Colors.grey[700],
-                    ),
+                    'Expires: ${member.planExpiryDate?.formatDate}',
+                    style: theme.textTheme.bodySmall?.copyWith(color: isExpired ? Colors.red.shade700 : Colors.grey[700]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+
+            // ── Purchase ────────────────────────────────────────────────────
+            Row(
+              children: [
+                Icon(Icons.lock_clock, size: 13, color: isExpired ? Colors.red.shade400 : Colors.grey),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Purchase Date: ${member.purchaseDate}',
+                    style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[700]),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -235,10 +237,7 @@ class _AdminScreenState extends State<AdminScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => MemberForm(member: member)),
-                    ),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => MemberForm(member: member))),
                     icon: const Icon(Icons.edit, size: 15),
                     label: const Text('Edit', style: TextStyle(fontSize: 12)),
                     style: ElevatedButton.styleFrom(
@@ -253,13 +252,14 @@ class _AdminScreenState extends State<AdminScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => UserCredentialsBottomSheet.show(
-                      context,
-                      targetEmail: member.email,
-                      targetName: member.name,
-                      isMember: true,
-                      userId: member.userId.toString(),
-                    ),
+                    onPressed:
+                        () => UserCredentialsBottomSheet.show(
+                          context,
+                          targetEmail: member.email,
+                          targetName: member.name,
+                          isMember: true,
+                          userId: member.userId.toString(),
+                        ),
                     icon: const Icon(Icons.remove_red_eye, size: 15),
                     label: const Text('View', style: TextStyle(fontSize: 12)),
                     style: OutlinedButton.styleFrom(
@@ -276,9 +276,6 @@ class _AdminScreenState extends State<AdminScreen> {
       ),
     );
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -338,13 +335,16 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _buildMemberCard(BuildContext context, ThemeData theme, AppUser member, DateTime now, {bool isDesktop = false}) {
-    final isExpiringSoon = (member.planExpiryDate?.toDateTime.difference(now).inDays ?? 0) <= 60;
+    final expiryDate = member.planExpiryDate;
+    debugPrint("expiryDate : $expiryDate");
+    final isExpired = (expiryDate?.difference(now).inDays ?? 0) <= 0;
     final padding = responsivePadding(context);
-
+    final userPlanExpiryDate = expiryDate.formatDate;
+    debugPrint("readable expiryDate : $expiryDate");
     return Card(
       margin: EdgeInsets.symmetric(horizontal: padding, vertical: padding / 2),
       shape: RoundedRectangleBorder(side: BorderSide(color: Colors.black.withAppOpacity(0.2)), borderRadius: BorderRadius.circular(16)),
-      color: isExpiringSoon ? Colors.red.shade50 : theme.cardColor,
+      color: isExpired ? Colors.red.shade50 : theme.cardColor,
       elevation: 2,
       shadowColor: Colors.black.withAppOpacity(0.08),
       child: ExpansionTile(
@@ -357,7 +357,7 @@ class _AdminScreenState extends State<AdminScreen> {
           member.name.sentenceCase,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            color: isExpiringSoon ? Colors.red.shade700 : theme.colorScheme.onSurface,
+            color: isExpired ? Colors.red.shade700 : theme.colorScheme.onSurface,
           ),
         ),
         subtitle: Padding(
@@ -372,8 +372,8 @@ class _AdminScreenState extends State<AdminScreen> {
                   const Icon(Icons.lock_clock, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    "Expires: ${member.planExpiryDate?.toDateTime.formatDate}",
-                    style: theme.textTheme.bodySmall?.copyWith(color: isExpiringSoon ? Colors.red.shade700 : Colors.grey[700]),
+                    "Expires: $userPlanExpiryDate",
+                    style: theme.textTheme.bodySmall?.copyWith(color: isExpired ? Colors.red.shade700 : Colors.grey[700]),
                   ),
                 ],
               ),
@@ -390,12 +390,8 @@ class _AdminScreenState extends State<AdminScreen> {
                   children: [
                     _buildDetailRow(icon: Icons.person, label: "Name", value: member.name, theme: theme),
                     _buildDetailRow(icon: Icons.numbers, label: "User Id", value: member.email, theme: theme),
-                    _buildDetailRow(
-                      icon: Icons.lock_clock,
-                      label: "Expires",
-                      value: member.planExpiryDate?.toDateTime.formatDate ?? '',
-                      theme: theme,
-                    ),
+                    _buildDetailRow(icon: Icons.lock_clock, label: "Expires", value: member.planExpiryDate?.formatDate ?? '', theme: theme),
+                    _buildDetailRow(icon: Icons.lock_clock, label: "Purchase", value: member.purchaseDate, theme: theme),
                     _buildDetailRow(icon: Icons.people, label: "Users", value: member.totalUsers.toString(), theme: theme),
                   ],
                 ),
@@ -437,13 +433,15 @@ class _AdminScreenState extends State<AdminScreen> {
               ),
               OutlinedButton.icon(
                 onPressed: () {
-                  UserCredentialsBottomSheet.show(
-                    context,
-                    targetEmail: member.email,
-                    targetName: member.name,
-                    isMember: true,
-                    userId: member.userId.toString(),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => MemberForm(member: member, canEdit: false)));
+
+                  // UserCredentialsBottomSheet.show(
+                  //   context,
+                  //   targetEmail: member.email,
+                  //   targetName: member.name,
+                  //   isMember: true,
+                  //   userId: member.userId.toString(),
+                  // );
                 },
                 icon: const Icon(Icons.remove_red_eye, size: 18),
                 label: const Text("view more", style: TextStyle(fontSize: 13)),

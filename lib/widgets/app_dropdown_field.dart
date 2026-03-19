@@ -119,10 +119,7 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                 borderRadius: BorderRadius.circular(widget.borderRadius),
                 child: Container(
                   constraints: BoxConstraints(maxHeight: widget.menuMaxHeight ?? 300),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(widget.borderRadius),
-                  ),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(widget.borderRadius)),
                   child: ListView.builder(
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
@@ -142,6 +139,7 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                                 _selectedValue = item.value;
                               });
                               widget.onChanged?.call(item.value);
+                              if (!mounted) return;
                               _removeOverlay();
                             }
                           },
@@ -154,9 +152,7 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                           ),
                         ),
                         trailing:
-                            item.description != null
-                                ? Text(item.description!, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))
-                                : null,
+                            item.description != null ? Text(item.description!, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)) : null,
                         onTap: () {
                           setState(() {
                             _selectedValue = item.value;
@@ -182,6 +178,7 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
   void _removeOverlay() {
     _overlayEntry?.remove();
     _overlayEntry = null;
+    if (!mounted) return;
     setState(() {
       _isOpen = false;
     });
@@ -196,19 +193,13 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final selectedItem = widget.items.firstWhere(
-      (item) => item.value == _selectedValue,
-      orElse: () => widget.items.first,
-    );
+    final selectedItem = widget.items.firstWhere((item) => item.value == _selectedValue, orElse: () => widget.items.first);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.label != null) ...[
-          Text(
-            widget.label!,
-            style: widget.labelStyle ?? const TextStyle(fontSize: 12, color: Colors.black, fontWeight: FontWeight.w500),
-          ),
+          Text(widget.label!, style: widget.labelStyle ?? const TextStyle(fontSize: 12, color: Colors.black, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
         ],
         CompositedTransformTarget(
@@ -234,24 +225,15 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            selectedItem.label,
-                            style: widget.style ?? const TextStyle(fontSize: 12, color: Colors.black),
-                          ),
+                          Text(selectedItem.label, style: widget.style ?? const TextStyle(fontSize: 12, color: Colors.black)),
                           if (selectedItem.description != null) ...[
                             const SizedBox(height: 4),
-                            Text(
-                              selectedItem.description!,
-                              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-                            ),
+                            Text(selectedItem.description!, style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
                           ],
                         ],
                       ),
                     ),
-                    Icon(
-                      _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                      color: widget.suffixIconColor ?? Colors.black,
-                    ),
+                    Icon(_isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down, color: widget.suffixIconColor ?? Colors.black),
                   ],
                 ),
               ),
