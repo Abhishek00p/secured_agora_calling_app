@@ -5,9 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:secured_calling/core/constants.dart';
-import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/models/meeting_model.dart';
-import 'package:secured_calling/core/models/recording_file_model.dart';
 import 'package:secured_calling/core/services/agora_token_helper.dart';
 import 'package:secured_calling/core/services/http_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
@@ -942,118 +940,65 @@ class AppFirebaseService {
     return response['success'] ?? false;
   }
 
-  Future<List<MixRecordingModel>?> getAllMixRecordings(String meetingId) async {
-    final response = await AppHttpService().post('api/agora/recording/list/mix', body: {'channelName': meetingId, 'meetingId': meetingId});
-
-    if (response == null) {
-      debugPrint("response is null while fetching recording list");
-      return null;
-    }
-    if (response['success'] == true) {
-      if (response['data'] is List) {
-        return (response['data'] as List).map((e) => MixRecordingModel.fromJson(e)).toList();
-      }
-    } else {
-      AppLogger.print(" failed to fetch list of recording : $response, message: ${response['error_message']}");
-    }
-
-    return [];
-  }
-
-  Future<List<SpeakingEventModel>> getAllMeetingRecordings({required String meetingId}) async {
-    try {
-      final meetingsRef = AppFirebaseService.instance.meetingsCollection.doc(meetingId);
-      final currentUserId = AppLocalStorage.getUserDetails().userId;
-
-      final meetingSnap = await meetingsRef.get();
-      final meetingData = MeetingModel.fromJson(meetingSnap.data() as Map<String, dynamic>? ?? {});
-
-      final isHost = currentUserId == meetingData.hostId;
-
-      final trackSnap = await meetingsRef.collection('recordingTrack').get();
-      final allRecordingDocs = trackSnap.docs;
-
-      final List<SpeakingEventModel> allItems = [];
-
-      for (final doc in allRecordingDocs) {
-        final docData = doc.data();
-        int startTime = docData['startTime'] as int? ?? 0;
-        int endTime = docData['stopTime'] as int? ?? 0;
-
-        if (startTime == 0) continue;
-        if (endTime == 0) {
-          endTime = meetingData.scheduledEndTime.millisecondsSinceEpoch;
-        }
-
-        String recordingUrl = '';
-
-        /// ---- API CALL (same as before) ----
-        final response = await AppHttpService().post(
-          'api/agora/recording/list/individual/audiofile',
-          body: {'channelName': meetingId, 'type': 'mix', 'startTime': startTime, 'endTime': endTime},
-        );
-
-        if (response != null && response['success'] == true && response['data'] != null) {
-          recordingUrl = response['data']['playableUrl'] ?? '';
-        }
-
-        if (recordingUrl.isEmpty) continue;
-
-        /// ---- Fetch speaking events ----
-        final eventsSnap = await meetingsRef.collection('recordingTrack').doc(doc.id).collection('speakingEvents').get();
-
-        for (final eventDoc in eventsSnap.docs) {
-          final eventData = eventDoc.data();
-
-          final eventUserId = eventData['userId'] as int? ?? 0;
-
-          /// Host logic
-          if (isHost) {
-            if (eventUserId == meetingData.hostId) continue;
-          }
-          /// Participant logic
-          else {
-            if (eventUserId != currentUserId) continue;
-          }
-
-          allItems.add(
-            SpeakingEventModel(
-              userId: eventUserId.toString(),
-              userName: eventData['userName'],
-              startTime: eventData['start'],
-              endTime: eventData['stop'],
-              recordingUrl: recordingUrl,
-              trackStartTime: startTime,
-              trackStopTime: endTime,
-            ),
-          );
-        }
-      }
-
-      return allItems;
-    } catch (e, s) {
-      debugPrint("error while fetching meeting recordings... $e, $s");
-      return [];
-    }
-  }
-
-  Future<String> getAllIndividualRecordings({required String meetingId, required int start, required int end}) async {
+  /// Full-track `.m4a` signed URL (`POST …/recording/fetch-m4a`).
+  /// Backend body: `recordingStartTime`, `recordingEndTime`, `channelName`, `type`.
+  /// Response: `{ success: true, data: <url string> }`.
+  Future<String> getMeetingRecordingM4aUrl({required String meetingId, required int start, required int end, String type = 'mix'}) async {
     final response = await AppHttpService().post(
-      'api/agora/recording/list/individual',
-      body: {'channelName': meetingId, 'startTime': start, 'endTime': end, 'type': 'mix'},
+      'api/agora/recording/fetch-m4a',
+      body: {'channelName': meetingId, 'recordingStartTime': start, 'recordingEndTime': end, 'type': type},
     );
 
     if (response == null) {
-      debugPrint("response is null while fetching individual recording url");
+      debugPrint("response is null while fetching  recording url");
       return '';
     }
-    AppLogger.print("data........ : ${response['success']} item lenth : ${response['data']?.length}");
+    AppLogger.print("data........ : ${response['success']} ${response['data']}");
     if (response['success'] == true && response['data'] != null) {
-      return response['data']['playableUrl'] as String? ?? '';
+      return _parseM4aUrlData(response['data']);
     } else {
-      AppLogger.print(" failed to fetch  individual recording Url : $response, message: ${response['error_message']}");
+      AppLogger.print(" failed to fetch   recording Url : $response, message: ${response['message']}");
       return '';
     }
+  }
+
+  /// Server-trimmed `.m4a` signed URL (`POST …/recording/fetch-m4a/trimmed`).
+  /// Response: `{ success: true, data: <url string> }`.
+  Future<String> getTrimmedRecordingM4aUrl({
+    required String meetingId,
+    required int recordingFullStartTime,
+    required int recordingFullEndTime,
+    required int trimmedStartTime,
+    required int trimmedEndTime,
+    String type = 'mix',
+  }) async {
+    final response = await AppHttpService().post(
+      'api/agora/recording/fetch-m4a/trimmed',
+      body: {
+        'channelName': meetingId,
+        'type': type,
+        'recordingFullStartTime': recordingFullStartTime,
+        'recordingFullEndTime': recordingFullEndTime,
+        'trimmedStartTime': trimmedStartTime,
+        'trimmedEndTime': trimmedEndTime,
+      },
+    );
+
+    if (response == null) {
+      debugPrint('response is null while fetching trimmed recording url');
+      return '';
+    }
+    if (response['success'] == true && response['data'] != null) {
+      return _parseM4aUrlData(response['data']);
+    }
+    AppLogger.print(' failed to fetch trimmed recording Url : $response, message: ${response['message']}');
+    return '';
+  }
+
+  String _parseM4aUrlData(dynamic data) {
+    if (data is String) return data;
+    if (data is Map && data['url'] != null) return data['url'].toString();
+    return '';
   }
 
   /// Generates a random 7-digit number (1000000 - 9999999)

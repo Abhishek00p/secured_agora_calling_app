@@ -40,6 +40,9 @@ class AppUser {
 
   factory AppUser.fromJson(Map<String, dynamic>? json) {
     if (json == null) return AppUser.toEmpty();
+
+    debugPrint("Parsing AppUser from JSON: $json");
+    debugPrint("Parsing.... AppUser from JSON: $json");
     return AppUser(
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
@@ -64,18 +67,23 @@ class AppUser {
       password: json['password'] ?? '',
     );
   }
-
   Map<String, dynamic> toJson() {
     return {
+      'userId': userId,
       'name': name,
       'email': email,
       'isMember': isMember,
+      'memberCode': memberCode,
       'createdAt': createdAt.toIso8601String(),
       'subscription': subscription.toJson(),
-      'userId': userId,
-      'memberCode': memberCode,
-      'planExpiryDate': planExpiryDate,
+      'planExpiryDate': planExpiryDate?.toIso8601String(),
       'totalUsers': totalUsers,
+      'isActive': isActive,
+      'planDays': planDays,
+      'purchaseDate': purchaseDate,
+      'maxParticipantsAllowed': maximumParticipantsAllowed,
+      'canSeeMixRecording': canSeeMixRecording,
+      'password': password,
     };
   }
 
@@ -96,7 +104,25 @@ class AppUser {
 
   @override
   String toString() {
-    return 'AppUser(userId: $userId, name: $name, email: $email, isMember: $isMember, memberCode: $memberCode, createdAt: $createdAt, subscription: $subscription)';
+    return '''
+AppUser(
+  userId: $userId,
+  name: $name,
+  email: $email,
+  isMember: $isMember,
+  memberCode: $memberCode,
+  createdAt: $createdAt,
+  subscription: $subscription,
+  planExpiryDate: $planExpiryDate,
+  totalUsers: $totalUsers,
+  isActive: $isActive,
+  planDays: $planDays,
+  purchaseDate: $purchaseDate,
+  maximumParticipantsAllowed: $maximumParticipantsAllowed,
+  canSeeMixRecording: $canSeeMixRecording,
+  password: $password
+)
+''';
   }
 }
 

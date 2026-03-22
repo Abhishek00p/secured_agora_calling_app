@@ -138,12 +138,19 @@ class DownloadManagerService {
   Future<void> onDownloadComplete({required String downloadKey, required String savedMessage}) async {
     final entry = _active.remove(downloadKey);
     if (!hasActiveDownloads) await _safeWakelock(false);
+    // Clear the ongoing progress notification so the replacement is swipe-dismissible.
+    try {
+      await _plugin.cancel(id: _notifId(downloadKey));
+    } catch (_) {}
     await _showComplete(downloadKey, entry?.fileName ?? '', savedMessage, entry?.meetingId, entry?.meetingName);
   }
 
   Future<void> onDownloadError({required String downloadKey, required String fileName, required String error}) async {
     final entry = _active.remove(downloadKey);
     if (!hasActiveDownloads) await _safeWakelock(false);
+    try {
+      await _plugin.cancel(id: _notifId(downloadKey));
+    } catch (_) {}
     await _showError(downloadKey, fileName, error, entry?.meetingId, entry?.meetingName);
   }
 
@@ -167,9 +174,11 @@ class DownloadManagerService {
 
   Future<void> cancelDownload(String downloadKey) async {
     final entry = _active.remove(downloadKey);
-    if (entry == null) return;
-    entry.controller.cancel();
-    if (!hasActiveDownloads) await _safeWakelock(false);
+    if (entry != null) {
+      entry.controller.cancel();
+      if (!hasActiveDownloads) await _safeWakelock(false);
+    }
+    // Always remove the notification (e.g. duplicate cancel tap or race with completion).
     try {
       await _plugin.cancel(id: _notifId(downloadKey));
     } catch (_) {}
@@ -178,27 +187,28 @@ class DownloadManagerService {
   // ── Notification dispatch ────────────────────────────────────────────────
 
   void _dispatch(NotificationResponse response) {
-    if (response.notificationResponseType == NotificationResponseType.selectedNotification) {
-      // User tapped the notification body.
-      final data = _parsePayload(response.payload);
-      if (data != null) {
-        _navigateToMeeting(data['meetingId'] as String?, data['meetingName'] as String?);
+    Future.microtask(() async {
+      if (response.notificationResponseType == NotificationResponseType.selectedNotification) {
+        final data = _parsePayload(response.payload);
+        if (data != null) {
+          _navigateToMeeting(data['meetingId'] as String?, data['meetingName'] as String?);
+        }
+        return;
       }
-    } else {
-      // User tapped an action button.
+
       final data = _parsePayload(response.payload);
       final key = data?['downloadKey'] as String?;
       if (key == null) return;
 
-      switch (response.actionId) {
-        case _kActionPause:
-          pauseDownload(key);
-        case _kActionResume:
-          resumeDownload(key);
-        case _kActionCancel:
-          cancelDownload(key);
+      final actionId = response.actionId;
+      if (actionId == _kActionPause) {
+        await pauseDownload(key);
+      } else if (actionId == _kActionResume) {
+        await resumeDownload(key);
+      } else if (actionId == _kActionCancel) {
+        await cancelDownload(key);
       }
-    }
+    });
   }
 
   // ── Navigation ───────────────────────────────────────────────────────────
@@ -252,16 +262,16 @@ class DownloadManagerService {
     final List<AndroidNotificationAction> actions;
     if (entry.processing) {
       // FFmpeg is running — only Cancel is meaningful.
-      actions = [const AndroidNotificationAction(_kActionCancel, '✕  Cancel', cancelNotification: false)];
+      actions = [const AndroidNotificationAction(_kActionCancel, '✕  Cancel', cancelNotification: true)];
     } else if (entry.paused) {
       actions = [
         const AndroidNotificationAction(_kActionResume, '▶  Resume', cancelNotification: false),
-        const AndroidNotificationAction(_kActionCancel, '✕  Cancel', cancelNotification: false),
+        const AndroidNotificationAction(_kActionCancel, '✕  Cancel', cancelNotification: true),
       ];
     } else {
       actions = [
         const AndroidNotificationAction(_kActionPause, '⏸  Pause', cancelNotification: false),
-        const AndroidNotificationAction(_kActionCancel, '✕  Cancel', cancelNotification: false),
+        const AndroidNotificationAction(_kActionCancel, '✕  Cancel', cancelNotification: true),
       ];
     }
 
@@ -312,14 +322,18 @@ class DownloadManagerService {
       ongoing: false,
       autoCancel: true,
       playSound: true,
+      category: AndroidNotificationCategory.status,
+      timeoutAfter: 120000,
     );
+
+    const iosDetails = DarwinNotificationDetails(presentAlert: true, presentSound: true, presentBanner: true);
 
     try {
       await _plugin.show(
         id: _notifId(downloadKey),
         title: '✅  Download complete',
         body: savedMessage,
-        notificationDetails: NotificationDetails(android: androidDetails),
+        notificationDetails: NotificationDetails(android: androidDetails, iOS: iosDetails),
         payload: payload,
       );
     } catch (e) {
@@ -340,14 +354,18 @@ class DownloadManagerService {
       priority: Priority.high,
       ongoing: false,
       autoCancel: true,
+      category: AndroidNotificationCategory.error,
+      timeoutAfter: 180000,
     );
+
+    const iosDetails = DarwinNotificationDetails(presentAlert: true, presentSound: true, presentBanner: true);
 
     try {
       await _plugin.show(
         id: _notifId(downloadKey),
         title: '❌  Download failed — $fileName',
         body: error,
-        notificationDetails: NotificationDetails(android: androidDetails),
+        notificationDetails: NotificationDetails(android: androidDetails, iOS: iosDetails),
         payload: payload,
       );
     } catch (e) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/services/internet_connection_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
@@ -26,8 +27,6 @@ class MeetingDialogController extends GetxController {
   final showUserSelection = false.obs;
   final inviteType = 'all'.obs; // 'all' or 'selected'
   final availableUsers = <AppUser>[].obs;
-
- 
 
   void toggleUserSelection() {
     showUserSelection.value = !showUserSelection.value;
@@ -63,6 +62,11 @@ class MeetingUtil {
   static final AppFirebaseService firebaseService = AppFirebaseService.instance;
 
   static Future<void> createNewMeeting({required BuildContext context}) async {
+    final isConnected = await InternetConnectionService.instance.hasInternetAccess();
+    if (!isConnected) {
+      AppToastUtil.showErrorToast('No internet connection. Please check your connection and try again.');
+      return;
+    }
     final now = DateTime.now();
     String meetingName = 'Meeting ${now.hour}:${now.minute}';
 
