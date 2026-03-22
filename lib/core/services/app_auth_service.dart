@@ -1,3 +1,4 @@
+import 'package:secured_calling/core/config/app_config.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/http_service.dart';
@@ -9,8 +10,7 @@ class AppAuthService {
   static AppAuthService get instance => _instance;
 
   /// Get the appropriate base URL based on platform and environment
-  String get baseUrl => "https://secured-agora-calling-app.onrender.com/";
-  // String get baseUrl => "https://cd05-2409-40c0-11b7-8838-4575-312f-26f5-3142.ngrok-free.app/";
+  String get baseUrl => AppConfig.baseUrl;
 
   // final FirebaseFunctions _functions = FirebaseFunctions.instance; // Not used in HTTP implementation
   String? _currentToken;

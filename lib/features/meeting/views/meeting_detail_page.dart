@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:secured_calling/core/extensions/app_int_extension.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
 import 'package:secured_calling/core/services/download_controller.dart';
 import 'package:secured_calling/core/services/download_manager_service.dart';
@@ -57,13 +56,8 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
     if (mounted) setState(() => _downloadingMap[key] = value);
   }
 
-  Future<void> _handleDownload({
-    required String m3u8Url,
-    required String downloadKey,
-    Duration? clipStart,
-    Duration? clipEnd,
-    String? fileName,
-  }) async {
+  /// Downloads a full `.m4a` from [audioUrl] (whole mix or server-trimmed individual URL).
+  Future<void> _handleDownloadFull({required String audioUrl, required String downloadKey, String? fileName}) async {
     if (_isDownloading(downloadKey)) return;
     _setDownloading(downloadKey, true);
 
@@ -80,25 +74,19 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
     );
 
     try {
+      await dlController.checkPoint();
       final downloader = ClipAudioDownloader();
-      final savedMsg = await downloader.download(
-        m3u8Url: m3u8Url,
-        clipStart: clipStart,
-        clipEnd: clipEnd,
+      final savedMsg = await downloader.downloadFull(
+        audioUrl: audioUrl,
         fileName: fileName,
-        controller: dlController,
-        onProgress: (downloaded, total) {
-          dlService.onProgress(downloadKey: downloadKey, downloaded: downloaded, total: total);
-        },
-        onProcessing: () {
-          dlService.onProcessing(downloadKey: downloadKey);
+        onProgress: (received, total) {
+          dlService.onProgress(downloadKey: downloadKey, downloaded: received, total: total);
         },
       );
 
       await dlService.onDownloadComplete(downloadKey: downloadKey, savedMessage: savedMsg);
       if (mounted) AppToastUtil.showSuccessToast('Saved to Downloads');
     } on DownloadCancelledException {
-      // Cancelled by the user — no error toast needed, notification already dismissed.
       debugPrint('Download $downloadKey was cancelled');
     } catch (e) {
       debugPrint('Download error → $e');
@@ -165,10 +153,10 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                             userId: '',
                             userName: '',
                             startTime: item.startTime,
-                            endTime: 0,
+                            endTime: item.endTime,
                             recordingUrl: item.playableUrl,
                             trackStartTime: item.startTime,
-                            trackStopTime: 0,
+                            trackStopTime: item.endTime,
                           ),
                           url: item.playableUrl,
                           onPlaybackStart: _onRecordingPlaybackStart,
@@ -184,7 +172,11 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                         onPressed:
                             downloading
                                 ? null
-                                : () => _handleDownload(m3u8Url: item.playableUrl, downloadKey: downloadKey, fileName: 'mix_recording_${index + 1}'),
+                                : () => _handleDownloadFull(
+                                  audioUrl: item.playableUrl,
+                                  downloadKey: downloadKey,
+                                  fileName: 'mix_recording_${index + 1}',
+                                ),
                       ),
                     ],
                   );
@@ -214,11 +206,8 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                     children: [
                       Flexible(
                         child: RecorderAudioTile(
-                          recordingStartTime: item.trackStartTime.toDateTimeWithSec,
                           model: item,
                           url: item.recordingUrl,
-                          clipStartTime: item.startTime.toDateTimeWithSec.subtract(const Duration(seconds: 2)),
-                          clipEndTime: item.endTime.toDateTimeWithSec.add(const Duration(seconds: 2)),
                           onPlaybackStart: _onRecordingPlaybackStart,
                           onPlaybackEnd: _onRecordingPlaybackEnd,
                         ),
@@ -233,22 +222,10 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                             downloading
                                 ? null
                                 : () {
-                                  final recordingStart = item.trackStartTime.toDateTimeWithSec;
-                                  final clipStartTime = item.startTime.toDateTimeWithSec.subtract(const Duration(seconds: 2));
-                                  final clipEndTime = item.endTime.toDateTimeWithSec.add(const Duration(seconds: 2));
-                                  final clipStart = clipStartTime.difference(recordingStart);
-                                  final clipEnd = clipEndTime.difference(recordingStart);
-
                                   final safeName =
                                       item.userName.isNotEmpty ? '${item.userName}_recording_${item.startTime}' : 'recording_${index + 1}';
 
-                                  _handleDownload(
-                                    m3u8Url: item.recordingUrl,
-                                    downloadKey: downloadKey,
-                                    clipStart: clipStart,
-                                    clipEnd: clipEnd,
-                                    fileName: safeName,
-                                  );
+                                  _handleDownloadFull(audioUrl: item.recordingUrl, downloadKey: downloadKey, fileName: safeName);
                                 },
                       ),
                     ],

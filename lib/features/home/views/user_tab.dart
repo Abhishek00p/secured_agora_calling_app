@@ -6,10 +6,12 @@ import 'package:secured_calling/core/models/meeting_model.dart';
 import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
+import 'package:secured_calling/core/services/internet_connection_service.dart';
 import 'package:secured_calling/core/services/join_request_service.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/home/views/meeting_action_card.dart';
 import 'package:secured_calling/features/meeting/views/join_meeting_dialog.dart';
+import 'package:secured_calling/utils/app_tost_util.dart';
 
 class UserTab extends StatefulWidget {
   const UserTab({super.key});
@@ -43,7 +45,12 @@ class _UserTabState extends State<UserTab> {
             icon: Icons.group_add,
             description: 'Enter a meeting ID to join an existing call',
             buttonText: 'Join',
-            onPressed: () {
+            onPressed: () async {
+              final isConnected = await InternetConnectionService.instance.hasInternetAccess();
+              if (!isConnected) {
+                AppToastUtil.showErrorToast('No internet connection. Please check your connection and try again.');
+                return;
+              }
               showDialog(context: context, barrierDismissible: false, builder: (context) => JoinMeetingDialog());
             },
           ),
