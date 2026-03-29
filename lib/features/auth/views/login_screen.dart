@@ -194,12 +194,12 @@ class _LoginFormState extends State<LoginForm> {
             ),
           ),
           SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              Get.to(() => NetworkLogScreen());
-            },
-            child: Icon(Icons.show_chart_rounded),
-          ),
+          // ElevatedButton(
+          //   onPressed: () {
+          //     Get.to(() => NetworkLogScreen());
+          //   },
+          //   child: Icon(Icons.show_chart_rounded),
+          // ),
         ],
       ),
     );
