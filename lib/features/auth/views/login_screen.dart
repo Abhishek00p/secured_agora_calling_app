@@ -4,6 +4,7 @@ import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
+import 'package:secured_calling/features/home/network_log_screen.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
@@ -22,7 +23,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(title: const Text('Login'), backgroundColor: Colors.transparent, elevation: 0, foregroundColor: AppTheme.primaryColor),
+      appBar: AppBar(
+        title: const Text('Login'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: AppTheme.primaryColor,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(responsivePadding(context)),
@@ -40,7 +46,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Container(
                       width: 80,
                       height: 80,
-                      decoration: BoxDecoration(gradient: AppTheme.primaryGradient, borderRadius: BorderRadius.circular(18)),
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
                       child: const Icon(Icons.call, size: 40, color: Colors.white),
                     ),
                   ),
@@ -50,12 +59,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Welcome Text
                   Text(
                     'Welcome Back',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                   ),
 
                   const SizedBox(height: 8),
 
-                  Text('Sign in to continue to SecuredCalling', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600])),
+                  Text(
+                    'Sign in to continue to SecuredCalling',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                  ),
 
                   const SizedBox(height: 40),
 
@@ -135,11 +149,19 @@ class _LoginFormState extends State<LoginForm> {
       key: widget.formKey,
       child: Column(
         children: [
-          AppTextFormField(controller: loginRegisterController.loginEmailController, labelText: 'User Id', type: AppTextFormFieldType.text),
+          AppTextFormField(
+            controller: loginRegisterController.loginEmailController,
+            labelText: 'User Id',
+            type: AppTextFormFieldType.text,
+          ),
 
           const SizedBox(height: 16),
 
-          AppTextFormField(controller: loginRegisterController.loginPasswordController, labelText: 'Password', type: AppTextFormFieldType.password),
+          AppTextFormField(
+            controller: loginRegisterController.loginPasswordController,
+            labelText: 'Password',
+            type: AppTextFormFieldType.password,
+          ),
 
           const SizedBox(height: 32),
 
@@ -159,11 +181,24 @@ class _LoginFormState extends State<LoginForm> {
                         ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
                         )
-                        : const Text('Login', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                        : const Text(
+                          'Login',
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
               ),
             ),
+          ),
+          SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              Get.to(() => NetworkLogScreen());
+            },
+            child: Icon(Icons.show_chart_rounded),
           ),
         ],
       ),
