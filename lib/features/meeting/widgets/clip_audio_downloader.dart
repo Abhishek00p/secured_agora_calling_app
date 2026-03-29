@@ -355,6 +355,11 @@ class ClipAudioDownloader {
 
   /// 💾 SAVE
   Future<void> _saveToDownloads(File source, String fileName) async {
+    if (Platform.isWindows) {
+      await _saveToWindowsDownloads(source, fileName);
+      return;
+    }
+
     await MediaStore.ensureInitialized();
     MediaStore.appFolder = 'secured_calling';
 
@@ -367,6 +372,24 @@ class ClipAudioDownloader {
     }
 
     debugPrint("Saved to: $result");
+  }
+
+  /// Windows: copy into the user Downloads folder (mirrors a user-visible library save; [media_store_plus] is Android-only).
+  Future<void> _saveToWindowsDownloads(File source, String fileName) async {
+    Directory? downloadsDir;
+    try {
+      downloadsDir = await getDownloadsDirectory();
+    } catch (_) {}
+    downloadsDir ??= await getApplicationDocumentsDirectory();
+
+    final subDir = Directory('${downloadsDir.path}/secured_calling');
+    if (!await subDir.exists()) {
+      await subDir.create(recursive: true);
+    }
+
+    final dest = File('${subDir.path}/$fileName');
+    await source.copy(dest.path);
+    debugPrint('Saved to: ${dest.path}');
   }
 
   String _sanitizeFileName(String name) {
