@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:secured_calling/features/meeting/bindings/live_meeting_controller.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
@@ -68,6 +70,7 @@ class AppLocalStorage {
       setLoggedIn(false);
       clearToken();
       clearUserDetails();
+      Get.delete<MeetingController>();
       return true;
     } catch (e) {
       AppToastUtil.showErrorToast('Error signing out: $e');

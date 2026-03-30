@@ -34,7 +34,11 @@ class AppFirebaseService {
 
   /// Reports a Flutter error to Firestore (for non-Android platforms; Android uses Crashlytics).
   /// Fails silently so it never throws.
-  static Future<void> reportErrorToFirestore({required String exception, required String stackTrace, required String platform}) async {
+  static Future<void> reportErrorToFirestore({
+    required String exception,
+    required String stackTrace,
+    required String platform,
+  }) async {
     try {
       await AppFirebaseService.instance.errorReportsCollection.doc().set({
         'platform': platform,
@@ -129,7 +133,10 @@ class AppFirebaseService {
 
   Future<void> startMeeting(String meetingId) async {
     AppLogger.print('meeting id : $meetingId');
-    await meetingsCollection.doc(meetingId).update({'status': 'live', 'actualStartTime': DateTime.now().toIso8601String()});
+    await meetingsCollection.doc(meetingId).update({
+      'status': 'live',
+      'actualStartTime': DateTime.now().toIso8601String(),
+    });
   }
 
   Future<void> endMeeting(String meetingId) async {
@@ -173,7 +180,11 @@ class AppFirebaseService {
     try {
       final participantDoc = meetingsCollection.doc(meetId).collection('participants').doc('$userId');
 
-      await participantDoc.update({'leaveTime': FieldValue.serverTimestamp(), 'isActive': false, 'removedByHost': isRemovedByHost});
+      await participantDoc.update({
+        'leaveTime': FieldValue.serverTimestamp(),
+        'isActive': false,
+        'removedByHost': isRemovedByHost,
+      });
 
       // Check if this was the last participant
       final participantsSnapshot = await meetingsCollection.doc(meetId).collection('participants').get();
@@ -313,7 +324,11 @@ class AppFirebaseService {
 
   /// Get meeting extension history
   Stream<QuerySnapshot> getMeetingExtensionsStream(String meetingId) {
-    return meetingsCollection.doc(meetingId).collection('extensions').orderBy('extendedAt', descending: true).snapshots();
+    return meetingsCollection
+        .doc(meetingId)
+        .collection('extensions')
+        .orderBy('extendedAt', descending: true)
+        .snapshots();
   }
 
   /// Request to join a meeting using sub-collection approach
@@ -344,7 +359,9 @@ class AppFirebaseService {
   Future<void> approveMeetingJoinRequest(String meetingId, int userId) async {
     try {
       // Update the join request status to accepted
-      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).update({'status': 'accepted'});
+      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).update({
+        'status': 'accepted',
+      });
 
       // Add user to participants
       await addParticipants(meetingId, userId);
@@ -359,7 +376,9 @@ class AppFirebaseService {
   /// Reject a join request
   Future<void> rejectMeetingJoinRequest(String meetingId, int userId) async {
     try {
-      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).update({'status': 'rejected'});
+      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).update({
+        'status': 'rejected',
+      });
 
       AppLogger.print('Join request rejected for user $userId in meeting $meetingId');
     } catch (e) {
@@ -371,7 +390,9 @@ class AppFirebaseService {
   /// Mark join request as joined (when user successfully joins the meeting)
   Future<void> markJoinRequestAsJoined(String meetingId, int userId) async {
     try {
-      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).update({'status': 'joined'});
+      await meetingsCollection.doc(meetingId).collection('joinRequests').doc(userId.toString()).update({
+        'status': 'joined',
+      });
 
       AppLogger.print('Join request marked as joined for user $userId in meeting $meetingId');
     } catch (e) {
@@ -383,18 +404,27 @@ class AppFirebaseService {
   Stream<QuerySnapshot> getPendingJoinRequestsStream(String meetingId) {
     AppLogger.print('Setting up pending join requests stream for meeting: $meetingId');
 
-    return meetingsCollection.doc(meetingId).collection('joinRequests').where('status', isEqualTo: 'pending').snapshots().map((snapshot) {
-      AppLogger.print('Firebase query result: ${snapshot.docs.length} pending requests found');
-      for (final doc in snapshot.docs) {
-        AppLogger.print('Pending request doc: ${doc.id} - ${doc.data()}');
-      }
-      return snapshot;
-    });
+    return meetingsCollection
+        .doc(meetingId)
+        .collection('joinRequests')
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snapshot) {
+          AppLogger.print('Firebase query result: ${snapshot.docs.length} pending requests found');
+          for (final doc in snapshot.docs) {
+            AppLogger.print('Pending request doc: ${doc.id} - ${doc.data()}');
+          }
+          return snapshot;
+        });
   }
 
   /// Get stream of all join requests for a meeting
   Stream<QuerySnapshot> getAllJoinRequestsStream(String meetingId) {
-    return meetingsCollection.doc(meetingId).collection('joinRequests').orderBy('requestedAt', descending: false).snapshots();
+    return meetingsCollection
+        .doc(meetingId)
+        .collection('joinRequests')
+        .orderBy('requestedAt', descending: false)
+        .snapshots();
   }
 
   /// Get a specific join request document
@@ -415,7 +445,10 @@ class AppFirebaseService {
   }
 
   Stream<QuerySnapshot> getHostMeetingsStream(int hostId) {
-    return meetingsCollection.where('hostUserId', isEqualTo: hostId).orderBy('scheduledStartTime', descending: true).snapshots();
+    return meetingsCollection
+        .where('hostUserId', isEqualTo: hostId)
+        .orderBy('scheduledStartTime', descending: true)
+        .snapshots();
   }
 
   Stream<QuerySnapshot> getParticipantsStream(String meetingId) {
@@ -424,7 +457,10 @@ class AppFirebaseService {
 
   Stream<QuerySnapshot> getParticipatedMeetingsStream(int userId) {
     try {
-      return meetingsCollection.where('allParticipants', arrayContains: userId).orderBy('scheduledStartTime', descending: true).snapshots();
+      return meetingsCollection
+          .where('allParticipants', arrayContains: userId)
+          .orderBy('scheduledStartTime', descending: true)
+          .snapshots();
     } catch (e) {
       AppLogger.print('Error getting participated meetings: $e');
       return Stream.empty();
@@ -502,7 +538,10 @@ class AppFirebaseService {
   }
 
   Stream<QuerySnapshot> getUpcomingMeetingsStream(String memberCode) {
-    return meetingsCollection.where('memberCode', isEqualTo: memberCode.toUpperCase()).orderBy('scheduledStartTime', descending: true).snapshots();
+    return meetingsCollection
+        .where('memberCode', isEqualTo: memberCode.toUpperCase())
+        .orderBy('scheduledStartTime', descending: true)
+        .snapshots();
   }
 
   Stream<QuerySnapshot> getUpcomingMeetingsForUserStream(String memberCode, int userId) {
@@ -543,13 +582,25 @@ class AppFirebaseService {
   }
 
   // Call logs
-  Future<void> logCallParticipation({required String meetingId, required String userId, required DateTime joinTime}) async {
+  Future<void> logCallParticipation({
+    required String meetingId,
+    required String userId,
+    required DateTime joinTime,
+  }) async {
     await callLogsCollection.add({'meetingId': meetingId, 'userId': userId, 'joinTime': joinTime, 'leaveTime': null});
   }
 
-  Future<void> updateCallLogOnLeave({required String meetingId, required String userId, required DateTime leaveTime}) async {
+  Future<void> updateCallLogOnLeave({
+    required String meetingId,
+    required String userId,
+    required DateTime leaveTime,
+  }) async {
     final QuerySnapshot logs =
-        await callLogsCollection.where('meetingId', isEqualTo: meetingId).where('userId', isEqualTo: userId).where('leaveTime', isNull: true).get();
+        await callLogsCollection
+            .where('meetingId', isEqualTo: meetingId)
+            .where('userId', isEqualTo: userId)
+            .where('leaveTime', isNull: true)
+            .get();
 
     if (logs.docs.isNotEmpty) {
       await callLogsCollection.doc(logs.docs.first.id).update({'leaveTime': leaveTime});
@@ -565,7 +616,8 @@ class AppFirebaseService {
   }
 
   Future<String> verifyAgoraToken({required String channelName, required int uid, required bool isHost}) async {
-    return await AgoraTokenHelper.verifyAgoraToken(channelName: channelName, uid: uid, userRole: isHost ? '1' : '0') ?? '';
+    return await AgoraTokenHelper.verifyAgoraToken(channelName: channelName, uid: uid, userRole: isHost ? '1' : '0') ??
+        '';
   }
 
   Stream<bool> isCurrentUserMutedByHost(String meetingId) {
@@ -642,7 +694,8 @@ class AppFirebaseService {
   }
 
   Future<List<AppUser>> getUsersByMemberCodeData(String memberCode) async {
-    final QuerySnapshot querySnapshot = await usersCollection.where('memberCode', isEqualTo: memberCode.toUpperCase()).get();
+    final QuerySnapshot querySnapshot =
+        await usersCollection.where('memberCode', isEqualTo: memberCode.toUpperCase()).get();
     AppLogger.print('Fetched ${querySnapshot.docs.length} users for member code $memberCode');
     return querySnapshot.docs
         .map((doc) => AppUser.fromJson(doc.data() as Map<String, dynamic>))
@@ -807,10 +860,15 @@ class AppFirebaseService {
       await batch.commit();
 
       // Check if meeting should be ended (no active participants)
-      final activeParticipants = await meetingsCollection.doc(meetingId).collection('participants').where('isActive', isEqualTo: true).get();
+      final activeParticipants =
+          await meetingsCollection.doc(meetingId).collection('participants').where('isActive', isEqualTo: true).get();
 
       if (activeParticipants.docs.isEmpty) {
-        await meetingsCollection.doc(meetingId).update({'status': 'ended', 'actualEndTime': now, 'endReason': 'all_participants_timeout'});
+        await meetingsCollection.doc(meetingId).update({
+          'status': 'ended',
+          'actualEndTime': now,
+          'endReason': 'all_participants_timeout',
+        });
 
         AppLogger.print('Meeting $meetingId ended due to all participants timing out');
       }
@@ -929,7 +987,12 @@ class AppFirebaseService {
   Future<bool> updateRecordingUserStreamList(String meetingId, String type, List<String> userIds) async {
     final response = await AppHttpService().post(
       'api/agora/recording/update',
-      body: {'cname': meetingId, 'uid': AppLocalStorage.getUserDetails().userId.toString(), 'type': type, 'audioSubscribeUids': userIds},
+      body: {
+        'cname': meetingId,
+        'uid': AppLocalStorage.getUserDetails().userId.toString(),
+        'type': type,
+        'audioSubscribeUids': userIds,
+      },
     );
 
     if (response == null) {
@@ -943,7 +1006,12 @@ class AppFirebaseService {
   /// Full-track `.m4a` signed URL (`POST …/recording/fetch-m4a`).
   /// Backend body: `recordingStartTime`, `recordingEndTime`, `channelName`, `type`.
   /// Response: `{ success: true, data: <url string> }`.
-  Future<String> getMeetingRecordingM4aUrl({required String meetingId, required int start, required int end, String type = 'mix'}) async {
+  Future<String> getMeetingRecordingM4aUrl({
+    required String meetingId,
+    required int start,
+    required int end,
+    String type = 'mix',
+  }) async {
     final response = await AppHttpService().post(
       'api/agora/recording/fetch-m4a',
       body: {'channelName': meetingId, 'recordingStartTime': start, 'recordingEndTime': end, 'type': type},

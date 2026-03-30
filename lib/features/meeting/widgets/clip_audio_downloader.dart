@@ -277,7 +277,11 @@ import 'package:media_store_plus/media_store_plus.dart';
 
 class ClipAudioDownloader {
   /// 📥 FULL DOWNLOAD
-  Future<String> downloadFull({required String audioUrl, String? fileName, void Function(int received, int total)? onProgress}) async {
+  Future<String> downloadFull({
+    required String audioUrl,
+    String? fileName,
+    void Function(int received, int total)? onProgress,
+  }) async {
     final tempDir = await getTemporaryDirectory();
 
     final baseName = _sanitizeFileName(fileName ?? 'recording_${DateTime.now().millisecondsSinceEpoch}');
@@ -305,9 +309,8 @@ class ClipAudioDownloader {
 
     await sink.close();
 
-    await _saveToDownloads(file, '$baseName.m4a');
-
-    return file.path;
+    final savedPath = await _saveToDownloads(file, '$baseName.m4a');
+    return savedPath;
   }
 
   /// ✂️ CLIP DOWNLOAD (APPROX)
@@ -339,9 +342,8 @@ class ClipAudioDownloader {
     final file = File(filePath);
     await file.writeAsBytes(response.bodyBytes);
 
-    await _saveToDownloads(file, '$baseName.m4a');
-
-    return file.path;
+    final savedPath = await _saveToDownloads(file, '$baseName.m4a');
+    return savedPath;
   }
 
   /// 📦 GET FILE SIZE
@@ -354,10 +356,9 @@ class ClipAudioDownloader {
   }
 
   /// 💾 SAVE
-  Future<void> _saveToDownloads(File source, String fileName) async {
+  Future<String> _saveToDownloads(File source, String fileName) async {
     if (Platform.isWindows) {
-      await _saveToWindowsDownloads(source, fileName);
-      return;
+      return _saveToWindowsDownloads(source, fileName);
     }
 
     await MediaStore.ensureInitialized();
@@ -370,8 +371,27 @@ class ClipAudioDownloader {
     if (result == null) {
       throw Exception('Failed to save file');
     }
-
     debugPrint("Saved to: $result");
+    return result.toString();
+  }
+
+  /// Windows: copy into the user Downloads folder (mirrors a user-visible library save; [media_store_plus] is Android-only).
+  Future<String> _saveToWindowsDownloads(File source, String fileName) async {
+    Directory? downloadsDir;
+    try {
+      downloadsDir = await getDownloadsDirectory();
+    } catch (_) {}
+    downloadsDir ??= await getApplicationDocumentsDirectory();
+
+    final subDir = Directory('${downloadsDir.path}/secured_calling');
+    if (!await subDir.exists()) {
+      await subDir.create(recursive: true);
+    }
+
+    final dest = File('${subDir.path}/$fileName');
+    await source.copy(dest.path);
+    debugPrint('Saved to: ${dest.path}');
+    return dest.path;
   }
 
   /// Windows: copy into the user Downloads folder (mirrors a user-visible library save; [media_store_plus] is Android-only).

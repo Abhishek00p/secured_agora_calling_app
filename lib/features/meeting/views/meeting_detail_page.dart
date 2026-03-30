@@ -85,7 +85,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
       );
 
       await dlService.onDownloadComplete(downloadKey: downloadKey, savedMessage: savedMsg);
-      if (mounted) AppToastUtil.showSuccessToast('Saved to Downloads');
+      if (mounted) AppToastUtil.showSuccessToast('Saved to: $savedMsg');
     } on DownloadCancelledException {
       debugPrint('Download $downloadKey was cancelled');
     } catch (e) {

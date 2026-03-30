@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/extensions/app_color_extension.dart';
@@ -73,7 +71,7 @@ class _Scale {
         controlHorizontalPadding: 16,
         micRadius: 60,
         bodyHorizontalPadding: 8,
-        bottomSpacerHeight: 40,
+        bottomSpacerHeight: 20,
         appBarFontSize: 16,
         appBarSubFontSize: 12,
       );
@@ -89,7 +87,7 @@ class _Scale {
         controlHorizontalPadding: 24,
         micRadius: 60,
         bodyHorizontalPadding: 20,
-        bottomSpacerHeight: 50,
+        bottomSpacerHeight: 20,
         appBarFontSize: 18,
         appBarSubFontSize: 13,
       );
@@ -106,7 +104,7 @@ class _Scale {
         controlHorizontalPadding: 32,
         micRadius: 60,
         bodyHorizontalPadding: 40,
-        bottomSpacerHeight: 60,
+        bottomSpacerHeight: 20,
         appBarFontSize: 20,
         appBarSubFontSize: 14,
       );
@@ -140,7 +138,12 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     AppLogger.print('meeting id before init  :${widget.meetingId}');
     final alreadyInThisMeeting = meetingController.isJoined.value && meetingController.meetingId == widget.meetingId;
     if (!alreadyInThisMeeting) {
-      meetingController.initializeMeeting(meetingId: widget.meetingId, channelName: widget.channelName, isUserHost: widget.isHost, context: context);
+      meetingController.initializeMeeting(
+        meetingId: widget.meetingId,
+        channelName: widget.channelName,
+        isUserHost: widget.isHost,
+        context: context,
+      );
     }
   }
 
@@ -166,7 +169,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
           builder:
               (dialogContext) => AlertDialog(
                 title: const Text('Confirmation', textAlign: TextAlign.center),
-                content: Text(isHost ? 'Do you want to end the call for everyone or just leave the meeting?' : 'Do you want to leave the meeting?'),
+                content: Text(
+                  isHost
+                      ? 'Do you want to end the call for everyone or just leave the meeting?'
+                      : 'Do you want to leave the meeting?',
+                ),
                 actions: [
                   TextButton(
                     onPressed: () async {
@@ -187,9 +194,9 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                                   Navigator.of(loadingDialogContext).pop();
                                 }
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(
-                                    context,
-                                  ).showSnackBar(SnackBar(content: Text('Error leaving meeting: $e'), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error leaving meeting: $e'), backgroundColor: Colors.red),
+                                  );
                                 }
                               });
                           return const AlertDialog(
@@ -216,7 +223,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('End Call', style: TextStyle(fontSize: scale.fontSize * 0.8, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(
+              'End Call',
+              style: TextStyle(fontSize: scale.fontSize * 0.8, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
             const SizedBox(width: 10),
             const Icon(Icons.call_end, color: Colors.white),
           ],
@@ -242,7 +252,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
             children: [
               Icon(mc.isOnSpeaker.value ? Icons.volume_up : Icons.volume_off, size: scale.iconSize),
               const SizedBox(width: 8),
-              Text(mc.isOnSpeaker.value ? 'Speaker On' : 'Speaker Off', style: TextStyle(fontSize: scale.fontSize * 0.65)),
+              Text(
+                mc.isOnSpeaker.value ? 'Speaker On' : 'Speaker Off',
+                style: TextStyle(fontSize: scale.fontSize * 0.65),
+              ),
             ],
           ),
         ),
@@ -304,12 +317,13 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
 
     if (isLaptop) {
       // Laptop: everything in one horizontal row with equal spacing
+      final spacing = SizedBox(width: MediaQuery.of(context).size.width * 0.05);
       return Padding(
-        padding: EdgeInsets.only(bottom: responsivePad * 2),
+        padding: EdgeInsets.only(bottom: 10),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [mic, speaker, endCall],
+          children: [mic, spacing, speaker, spacing, endCall],
         ),
       );
     }
@@ -317,18 +331,21 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     // Mobile / Tablet: original stacked layout preserved
     if (mc.isHost) {
       return Padding(
-        padding: EdgeInsets.only(bottom: responsivePad * 2),
+        padding: EdgeInsets.only(bottom: 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             mic,
-            Column(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [speaker, SizedBox(height: 16), endCall]),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [speaker, SizedBox(height: 16), endCall],
+            ),
           ],
         ),
       );
     } else {
       return Padding(
-        padding: EdgeInsets.only(bottom: responsivePad * 2),
+        padding: EdgeInsets.only(bottom: 10),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -394,7 +411,10 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                         children: const [
                           Icon(Icons.fiber_manual_record_rounded, size: 24, color: Colors.red),
                           SizedBox(width: 4),
-                          BlinkingText(text: 'Rec', style: TextStyle(fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w500)),
+                          BlinkingText(
+                            text: 'Rec',
+                            style: TextStyle(fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w500),
+                          ),
                         ],
                       )
                       : const SizedBox.shrink();
@@ -463,7 +483,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                             // ── Bottom controls ──
                             _buildBottomControls(meetingController, scale, responsivePad, isLaptop),
 
-                            SizedBox(height: scale.bottomSpacerHeight),
+                            SizedBox(height: 20),
                           ],
                         ),
                       );
@@ -484,12 +504,18 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
 
     return Container(
       margin: EdgeInsets.all(scale.padding),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(scale.borderRadius), border: Border.all(color: user.color)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(scale.borderRadius),
+        border: Border.all(color: user.color),
+      ),
       child: Stack(
         children: [
           // Water ripple for PTT users
           Obx(
-            () => meetingController.pttUsers.contains(user.userId) ? Positioned.fill(child: WaterRipple(color: user.color)) : const SizedBox.shrink(),
+            () =>
+                meetingController.pttUsers.contains(user.userId)
+                    ? Positioned.fill(child: WaterRipple(color: user.color))
+                    : const SizedBox.shrink(),
           ),
 
           // Name label
@@ -514,7 +540,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
               children: [
                 Obx(() {
                   final isMuted = user.isUserMuted || !meetingController.pttUsers.contains(user.userId);
-                  return Icon(isMuted ? Icons.mic_off : Icons.mic, color: isMuted ? Colors.red : Colors.white, size: scale.iconSize);
+                  return Icon(
+                    isMuted ? Icons.mic_off : Icons.mic,
+                    color: isMuted ? Colors.red : Colors.white,
+                    size: scale.iconSize,
+                  );
                 }),
                 Obx(() {
                   if (meetingController.pttUsers.contains(user.userId)) {
@@ -572,11 +602,23 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                     (context) => [
                       PopupMenuItem(
                         value: 'remove',
-                        child: Row(children: const [Icon(Icons.close, color: Colors.red, size: 18), SizedBox(width: 8), Text("Remove")]),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.close, color: Colors.red, size: 18),
+                            SizedBox(width: 8),
+                            Text("Remove"),
+                          ],
+                        ),
                       ),
                       PopupMenuItem(
                         value: 'make_host',
-                        child: Row(children: const [Icon(Icons.star, color: Colors.yellow, size: 18), SizedBox(width: 8), Text("Make Host")]),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.star, color: Colors.yellow, size: 18),
+                            SizedBox(width: 8),
+                            Text("Make Host"),
+                          ],
+                        ),
                       ),
                     ],
                 child: Container(
@@ -597,14 +639,32 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     double childAspectRatio;
 
     if (_Breakpoint.isMobile(screenWidth)) {
-      crossAxisCount = 2;
-      childAspectRatio = 1.0;
+      switch (meetingController.participants.length) {
+        case < 3:
+          crossAxisCount = 1;
+          childAspectRatio = 1.75;
+          break;
+        default:
+          crossAxisCount = 2;
+          childAspectRatio = 1.0;
+      }
     } else if (_Breakpoint.isTablet(screenWidth)) {
       crossAxisCount = 3;
       childAspectRatio = 1.05;
     } else {
-      crossAxisCount = 4;
-      childAspectRatio = 1.1;
+      switch (meetingController.participants.length) {
+        case > 4:
+          crossAxisCount = 6;
+          childAspectRatio = 1.1;
+          break;
+        case < 3:
+          crossAxisCount = 2;
+          childAspectRatio = 1.3;
+          break;
+        default:
+          crossAxisCount = 2;
+          childAspectRatio = 2.5;
+      }
     }
 
     return GridView.builder(
@@ -624,8 +684,12 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
 
   // ─── Participant List View ─────────────────
   Widget _buildParticipantView(MeetingController meetingController, double screenWidth) {
-    final host = meetingController.participants.firstWhereOrNull((p) => p.userId == meetingController.meetingModel.value.hostUserId);
-    final self = meetingController.participants.firstWhereOrNull((p) => p.userId == meetingController.currentUser.userId);
+    final host = meetingController.participants.firstWhereOrNull(
+      (p) => p.userId == meetingController.meetingModel.value.hostUserId,
+    );
+    final self = meetingController.participants.firstWhereOrNull(
+      (p) => p.userId == meetingController.currentUser.userId,
+    );
 
     final List<ParticipantModel> viewParticipants = [];
     if (host != null) viewParticipants.add(host);
@@ -637,7 +701,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
 
     final double tileHeight =
         _Breakpoint.isMobile(screenWidth)
-            ? 180
+            ? MediaQuery.of(context).size.height * 0.25
             : _Breakpoint.isTablet(screenWidth)
             ? 220
             : 280;
@@ -651,7 +715,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
           itemCount: viewParticipants.length,
           itemBuilder: (context, index) {
             final user = viewParticipants[index];
-            return SizedBox(width: 320, height: tileHeight, child: _buildParticipantTile(user, meetingController, screenWidth));
+            return SizedBox(
+              width: 320,
+              height: tileHeight,
+              child: _buildParticipantTile(user, meetingController, screenWidth),
+            );
           },
         ),
       );
@@ -680,7 +748,11 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     });
   }
 
-  void _showRemoveParticipantDialog(BuildContext context, ParticipantModel participant, MeetingController meetingController) {
+  void _showRemoveParticipantDialog(
+    BuildContext context,
+    ParticipantModel participant,
+    MeetingController meetingController,
+  ) {
     showDialog(
       context: context,
       builder:
