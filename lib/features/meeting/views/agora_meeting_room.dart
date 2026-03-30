@@ -317,12 +317,13 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
 
     if (isLaptop) {
       // Laptop: everything in one horizontal row with equal spacing
+      final spacing = SizedBox(width: MediaQuery.of(context).size.width * 0.05);
       return Padding(
         padding: EdgeInsets.only(bottom: 10),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [mic, speaker, endCall],
+          children: [mic, spacing, speaker, spacing, endCall],
         ),
       );
     }
@@ -330,7 +331,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
     // Mobile / Tablet: original stacked layout preserved
     if (mc.isHost) {
       return Padding(
-        padding: EdgeInsets.only(bottom: responsivePad * 2),
+        padding: EdgeInsets.only(bottom: 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -344,7 +345,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
       );
     } else {
       return Padding(
-        padding: EdgeInsets.only(bottom: responsivePad * 2),
+        padding: EdgeInsets.only(bottom: 10),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -482,7 +483,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                             // ── Bottom controls ──
                             _buildBottomControls(meetingController, scale, responsivePad, isLaptop),
 
-                            SizedBox(height: scale.bottomSpacerHeight),
+                            SizedBox(height: 20),
                           ],
                         ),
                       );
@@ -662,7 +663,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
           break;
         default:
           crossAxisCount = 2;
-          childAspectRatio = 1.6;
+          childAspectRatio = 2.5;
       }
     }
 
@@ -700,7 +701,7 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
 
     final double tileHeight =
         _Breakpoint.isMobile(screenWidth)
-            ? 180
+            ? MediaQuery.of(context).size.height * 0.25
             : _Breakpoint.isTablet(screenWidth)
             ? 220
             : 280;
