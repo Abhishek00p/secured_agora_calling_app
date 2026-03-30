@@ -394,6 +394,24 @@ class ClipAudioDownloader {
     return dest.path;
   }
 
+  /// Windows: copy into the user Downloads folder (mirrors a user-visible library save; [media_store_plus] is Android-only).
+  Future<void> _saveToWindowsDownloads(File source, String fileName) async {
+    Directory? downloadsDir;
+    try {
+      downloadsDir = await getDownloadsDirectory();
+    } catch (_) {}
+    downloadsDir ??= await getApplicationDocumentsDirectory();
+
+    final subDir = Directory('${downloadsDir.path}/secured_calling');
+    if (!await subDir.exists()) {
+      await subDir.create(recursive: true);
+    }
+
+    final dest = File('${subDir.path}/$fileName');
+    await source.copy(dest.path);
+    debugPrint('Saved to: ${dest.path}');
+  }
+
   String _sanitizeFileName(String name) {
     return name.replaceAll(RegExp(r'[^\w\-]'), '_').replaceAll(RegExp(r'_+'), '_');
   }
