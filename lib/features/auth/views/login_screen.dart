@@ -4,7 +4,6 @@ import 'package:secured_calling/core/routes/app_router.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/auth/views/login_register_controller.dart';
-import 'package:secured_calling/features/home/network_log_screen.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/widgets/app_text_form_widget.dart';
@@ -122,10 +121,57 @@ class _LoginScreenState extends State<LoginScreen> {
     loginRegisterController.update();
     final result = await loginRegisterController.login(context: context);
 
-    if (result == null) {
+    if (!mounted) return;
+
+    if (result.success) {
       Navigator.pushReplacementNamed(context, AppRouter.homeRoute);
-    } else {
-      AppToastUtil.showErrorToast(result);
+      return;
+    }
+
+    if (result.alreadySignedInElsewhere) {
+      final continueHere = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) {
+          return AlertDialog(
+            title: const Text('Already signed in elsewhere'),
+            content: const Text(
+              'This account is already active on another device. You can stay signed out, or sign in here and sign the other device out.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Continue on this device'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (!mounted || continueHere != true) {
+        return;
+      }
+
+      final retry = await loginRegisterController.login(context: context, forceLogoutOtherSessions: true);
+      if (!mounted) return;
+
+      if (retry.success) {
+        Navigator.pushReplacementNamed(context, AppRouter.homeRoute);
+      } else if (retry.alreadySignedInElsewhere) {
+        AppToastUtil.showErrorToast('Could not sign in on this device. Please try again.');
+      } else if (retry.errorMessage != null) {
+        AppToastUtil.showErrorToast(retry.errorMessage!);
+      }
+      return;
+    }
+
+    if (result.errorMessage != null) {
+      AppToastUtil.showErrorToast(result.errorMessage!);
     }
   }
 }

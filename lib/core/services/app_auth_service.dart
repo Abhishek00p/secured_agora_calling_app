@@ -5,6 +5,35 @@ import 'package:secured_calling/core/services/http_service.dart';
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 
+/// Result of a login attempt (including 409 "already signed in elsewhere").
+class LoginAttemptResult {
+  const LoginAttemptResult._({
+    required this.success,
+    this.alreadySignedInElsewhere = false,
+    this.user,
+    this.token,
+    this.errorMessage,
+  });
+
+  factory LoginAttemptResult.ok(AppUser user, String token) {
+    return LoginAttemptResult._(success: true, user: user, token: token);
+  }
+
+  factory LoginAttemptResult.alreadySignedInElsewhere() {
+    return const LoginAttemptResult._(success: false, alreadySignedInElsewhere: true);
+  }
+
+  factory LoginAttemptResult.fail(String? errorMessage) {
+    return LoginAttemptResult._(success: false, errorMessage: errorMessage);
+  }
+
+  final bool success;
+  final bool alreadySignedInElsewhere;
+  final AppUser? user;
+  final String? token;
+  final String? errorMessage;
+}
+
 class AppAuthService {
   static final AppAuthService _instance = AppAuthService._();
   static AppAuthService get instance => _instance;
@@ -25,51 +54,68 @@ class AppAuthService {
   AppUser? get currentUser => _currentUser;
   bool get isUserLoggedIn => AppLocalStorage.getLoggedInStatus();
 
-  /// Login user using Firebase Functions (HTTP)
-  Future<Map<String, dynamic>?> login({required String email, required String password}) async {
+  /// Login user using Firebase Functions (HTTP).
+  /// Set [forceLogoutOtherSessions] to true after the user confirms signing in on this device (409 flow).
+  Future<LoginAttemptResult> login({
+    required String email,
+    required String password,
+    bool forceLogoutOtherSessions = false,
+  }) async {
     try {
       AppLogger.print('Attempting login for: $email');
 
-      // Use the new CRUD function with includeAuth: false for login
+      final body = <String, dynamic>{
+        'email': email.trim().toLowerCase(),
+        'password': password,
+      };
+      if (forceLogoutOtherSessions) {
+        body['forceLogoutOtherSessions'] = true;
+      }
+
       final response = await _httpService.post(
         'api/auth/login',
-        body: {'email': email.trim().toLowerCase(), 'password': password},
-        includeAuth: false, // Don't include auth token for login
+        body: body,
+        includeAuth: false,
       );
       if (response == null) {
         AppToastUtil.showErrorToast('Something went wrong, please try again');
-        return null;
+        return LoginAttemptResult.fail(null);
+      }
+
+      final statusCode = response['statusCode'] as int?;
+      if (statusCode == 409) {
+        return LoginAttemptResult.alreadySignedInElsewhere();
       }
 
       if (response.containsKey('success')) {
         AppLogger.print("the data received from api is : $response");
 
         if (response['success'] == true) {
-          // Extract token + user
           final data = response['data'] != null ? Map<String, dynamic>.from(response['data']) : {};
           AppLogger.print("the token received from api is : ${data['token']}");
           _currentToken = data['token'];
           _currentUser = AppUser.fromJson(data['user']);
 
-          // Save locally
           AppLocalStorage.storeUserDetails(_currentUser!);
           AppLocalStorage.setLoggedIn(true);
           AppLocalStorage.storeToken(_currentToken!);
 
           AppLogger.print('Login successful for user: ${_currentUser!.name}');
-          return {'success': true, 'user': _currentUser, 'token': _currentToken};
+          return LoginAttemptResult.ok(_currentUser!, _currentToken!);
         } else {
           final errorMessage = response['error_message'] ?? 'Login failed';
           AppToastUtil.showErrorToast(errorMessage);
+          return LoginAttemptResult.fail(null);
         }
       } else {
         AppToastUtil.showErrorToast("Invalid response format from server");
+        return LoginAttemptResult.fail(null);
       }
     } catch (e) {
       AppLogger.print('Login error: $e');
       AppToastUtil.showErrorToast('Login failed: $e');
+      return LoginAttemptResult.fail(null);
     }
-    return null;
   }
 
   /// Create new user (called by members)
@@ -314,13 +360,18 @@ class AppAuthService {
     return null;
   }
 
-  /// Logout user
+  /// Logout user: ends server session, then clears local token and user data.
   Future<void> logout() async {
     try {
+      try {
+        await _httpService.post('api/auth/logout', body: {}, includeAuth: true);
+      } catch (e) {
+        AppLogger.print('Logout API error (continuing local sign-out): $e');
+      }
+
       _currentToken = null;
       _currentUser = null;
 
-      // Clear local storage
       AppLocalStorage.setLoggedIn(false);
       AppLocalStorage.clearUserDetails();
       AppLocalStorage.clearToken();

@@ -164,7 +164,7 @@ class AppHttpService {
       try {
         final errorData = jsonDecode(response.body);
         final errorMessage = errorData['error_message'] ?? errorData['message'] ?? 'Request failed with status ${response.statusCode}';
-        return {'success': false, 'error_message': errorMessage};
+        return {'success': false, 'error_message': errorMessage, 'statusCode': response.statusCode};
       } catch (e) {
         AppToastUtil.showErrorToast('Request failed with status ${response.statusCode}: ${response.reasonPhrase}');
       }
