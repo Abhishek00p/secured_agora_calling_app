@@ -124,7 +124,10 @@ class HttpClientWithInterceptor extends http.BaseClient {
 
   // 🔄 Force refresh token
   Future<String> refreshToken() async {
-    final data = await AppHttpService().get('refreshLoginToken', queryParams: {'userId': AppLocalStorage.getUserDetails().userId.toString()});
+    final data = await AppHttpService().get(
+      'refreshLoginToken',
+      queryParams: {'userId': AppLocalStorage.getUserDetails().userId.toString()},
+    );
     return data?['token'] ?? '';
   }
 }

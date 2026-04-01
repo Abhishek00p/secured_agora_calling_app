@@ -100,6 +100,8 @@ class AppAuthService {
           AppLocalStorage.setLoggedIn(true);
           AppLocalStorage.storeToken(_currentToken!);
 
+          AppHttpService.resetSessionExpiredState();
+
           AppLogger.print('Login successful for user: ${_currentUser!.name}');
           return LoginAttemptResult.ok(_currentUser!, _currentToken!);
         } else {
@@ -360,6 +362,15 @@ class AppAuthService {
     return null;
   }
 
+  /// Clears in-memory and persisted session without calling the server.
+  void clearLocalSessionOnly() {
+    _currentToken = null;
+    _currentUser = null;
+    AppLocalStorage.setLoggedIn(false);
+    AppLocalStorage.clearUserDetails();
+    AppLocalStorage.clearToken();
+  }
+
   /// Logout user: ends server session, then clears local token and user data.
   Future<void> logout() async {
     try {
@@ -369,12 +380,8 @@ class AppAuthService {
         AppLogger.print('Logout API error (continuing local sign-out): $e');
       }
 
-      _currentToken = null;
-      _currentUser = null;
-
-      AppLocalStorage.setLoggedIn(false);
-      AppLocalStorage.clearUserDetails();
-      AppLocalStorage.clearToken();
+      clearLocalSessionOnly();
+      AppHttpService.resetSessionExpiredState();
 
       AppLogger.print('User logged out successfully');
     } catch (e) {
