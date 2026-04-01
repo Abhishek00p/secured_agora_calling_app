@@ -44,34 +44,40 @@ class LoginRegisterController extends GetxController {
     update();
   }
 
-  Future<String?> login({required BuildContext context}) async {
+  Future<LoginAttemptResult> login({
+    required BuildContext context,
+    bool forceLogoutOtherSessions = false,
+  }) async {
     setLoading(true);
     clearError();
     update();
 
     try {
       final result = await AppAuthService.instance
-          .login(email: loginEmailController.text.trim(), password: loginPasswordController.text)
+          .login(
+            email: loginEmailController.text.trim(),
+            password: loginPasswordController.text,
+            forceLogoutOtherSessions: forceLogoutOtherSessions,
+          )
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
               AppToastUtil.showErrorToast('Login request timed out. Please check your internet connection and try again.');
-              return null;
+              return LoginAttemptResult.fail(null);
             },
           );
-      if (result == null) {
-        return null;
+
+      if (result.success) {
+        AppLogger.print("login successful: ${result.user}");
+        loginEmailController.clear();
+        loginPasswordController.clear();
       }
 
-      AppLogger.print("login successful: ${result['user']}");
-      loginEmailController.clear();
-      loginPasswordController.clear();
-      return null;
+      return result;
     } on Exception catch (e) {
       AppLogger.print("error while logging in: $e");
       String errorMessage = e.toString();
 
-      // Handle specific error types
       if (errorMessage.contains('timeout')) {
         errorMessage = 'Request timed out. Please check your internet connection.';
       } else if (errorMessage.contains('SocketException') || errorMessage.contains('NetworkException')) {
@@ -81,11 +87,12 @@ class LoginRegisterController extends GetxController {
       }
 
       setError(errorMessage);
-      return errorMessage;
+      return LoginAttemptResult.fail(errorMessage);
     } catch (e) {
       AppLogger.print("unexpected error while logging in: $e");
-      setError('An unexpected error occurred. Please try again.');
-      return 'An unexpected error occurred. Please try again.';
+      const msg = 'An unexpected error occurred. Please try again.';
+      setError(msg);
+      return LoginAttemptResult.fail(msg);
     } finally {
       setLoading(false);
       update();

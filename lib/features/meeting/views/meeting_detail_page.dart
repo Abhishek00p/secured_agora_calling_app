@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/core/models/individual_recording_model.dart';
+import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/core/services/download_controller.dart';
 import 'package:secured_calling/core/services/download_manager_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
@@ -167,7 +168,11 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                         tooltip: downloading ? 'Downloading…' : 'Download audio',
                         icon:
                             downloading
-                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
                                 : const Icon(Icons.download_rounded),
                         onPressed:
                             downloading
@@ -216,16 +221,26 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                         tooltip: downloading ? 'Downloading…' : 'Download audio',
                         icon:
                             downloading
-                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
                                 : const Icon(Icons.download_rounded),
                         onPressed:
                             downloading
                                 ? null
                                 : () {
                                   final safeName =
-                                      item.userName.isNotEmpty ? '${item.userName}_recording_${item.startTime}' : 'recording_${index + 1}';
+                                      item.userName.isNotEmpty
+                                          ? '${item.userName}_recording_${item.startTime}'
+                                          : 'recording_${index + 1}';
 
-                                  _handleDownloadFull(audioUrl: item.recordingUrl, downloadKey: downloadKey, fileName: safeName);
+                                  _handleDownloadFull(
+                                    audioUrl: item.recordingUrl,
+                                    downloadKey: downloadKey,
+                                    fileName: safeName,
+                                  );
                                 },
                       ),
                     ],
@@ -271,11 +286,17 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
         if (meetingDetail.participants.isEmpty) {
           return const Center(child: Text('No participants yet'));
         }
-
+        final currentUserId = AppLocalStorage.getUserDetails().userId.toString();
+        final pList =
+            meetingDetail.hostId == int.parse(currentUserId)
+                ? meetingDetail.participants
+                : meetingDetail.participants
+                    .where((p) => p.userId == currentUserId || p.userId == meetingDetail.hostId.toString())
+                    .toList();
         return ListView.builder(
           padding: EdgeInsets.all(responsivePadding(context)),
-          itemCount: meetingDetail.participants.length,
-          itemBuilder: (context, index) => ParticipantListItem(participant: meetingDetail.participants[index], index: index),
+          itemCount: pList.length,
+          itemBuilder: (context, index) => ParticipantListItem(participant: pList[index], index: index),
         );
       }
 
@@ -291,7 +312,10 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
               getMixRecordingListWidget(),
               const SizedBox(height: 20),
             ],
-            Text('${controller.isCurrentUserHost ? 'Individual' : 'Your'} Recordings', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              '${controller.isCurrentUserHost ? 'Individual' : 'Your'} Recordings',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             getIndividualRecordingWidgets(),
             const SizedBox(height: 32),
@@ -326,20 +350,31 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
           // Meeting Info Card
           SliverToBoxAdapter(
             child: Center(
-              child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentMaxWidth(context)), child: MeetingInfoCard(meeting: meetingDetail)),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: contentMaxWidth(context)),
+                child: MeetingInfoCard(meeting: meetingDetail),
+              ),
             ),
           ),
 
           // TabBar
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(responsivePadding(context), responsivePadding(context), responsivePadding(context), 8),
+              padding: EdgeInsets.fromLTRB(
+                responsivePadding(context),
+                responsivePadding(context),
+                responsivePadding(context),
+                8,
+              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: contentMaxWidth(context)),
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: AppTheme.lightSurfaceColor, borderRadius: BorderRadius.circular(14)),
+                    decoration: BoxDecoration(
+                      color: AppTheme.lightSurfaceColor,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     child: TabBar(
                       controller: tabBarController,
                       onTap: (index) {
@@ -365,16 +400,24 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
             if (controller.currentTabIndex.value == 0) {
               if (meetingDetail.participants.isEmpty) {
                 return const SliverFillRemaining(
-                  child: Center(child: Text('No participants have joined yet.', style: TextStyle(fontSize: 16, color: Colors.grey))),
+                  child: Center(
+                    child: Text('No participants have joined yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                  ),
                 );
               }
-
+              final currentUserId = AppLocalStorage.getUserDetails().userId.toString();
+              final pList =
+                  meetingDetail.hostId == int.parse(currentUserId)
+                      ? meetingDetail.participants
+                      : meetingDetail.participants
+                          .where((p) => p.userId == currentUserId || p.userId == meetingDetail.hostId.toString())
+                          .toList();
               final padding = responsivePadding(context);
               final maxWidth = contentMaxWidth(context);
 
               return SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  final participant = meetingDetail.participants[index];
+                  final participant = pList[index];
                   return Padding(
                     padding: EdgeInsets.symmetric(horizontal: padding),
                     child: Center(
@@ -384,7 +427,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                       ),
                     ),
                   );
-                }, childCount: meetingDetail.participants.length),
+                }, childCount: pList.length),
               );
             }
 
@@ -401,7 +444,12 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                         SizedBox(height: responsivePadding(context)),
 
                         if (controller.loggedInUserData.isMember && controller.canCurrentUserSeeMixRecording) ...[
-                          Text('Mix Recordings', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14)),
+                          Text(
+                            'Mix Recordings',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
+                          ),
                           SizedBox(height: responsivePadding(context)),
                           getMixRecordingListWidget(),
                           SizedBox(height: responsivePadding(context)),
@@ -409,7 +457,9 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
 
                         Text(
                           '${controller.isCurrentUserHost ? 'Individual' : "Your"} Recordings',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 14),
                         ),
 
                         if (_isInActiveCall())
@@ -427,7 +477,9 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                                     Expanded(
                                       child: Text(
                                         'You\'re in an active call. Your mic will be muted in the call while playing a recording.',
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.primaryColor),
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall?.copyWith(color: AppTheme.primaryColor),
                                       ),
                                     ),
                                   ],
@@ -484,7 +536,9 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
                         onPressed: controller.refreshMeetingDetails,
                         icon: const Icon(Icons.refresh),
                         label: const Text('Try Again'),
-                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        ),
                       ),
                     ],
                   ),

@@ -182,44 +182,195 @@ class MeetingDetailController extends GetxController {
     return meetingStatus == 'upcoming';
   }
 
+  // Future<void> fetchMixRecordings() async {
+  //   try {
+  //     if (!canCurrentUserSeeMixRecording) {
+  //       debugPrint("Current user does not have permission to see mix recording, skipping fetchMixRecordings");
+  //       return;
+  //     }
+  //     isMixRecordingLoading.value = true;
+  //     final allRecordingsTrack =
+  //         (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
+  //     if (allRecordingsTrack.isEmpty) {
+  //       AppLogger.print("No recording tracks found for meeting : $meetingId");
+  //       mixRecordings.clear();
+  //       isMixRecordingLoading.value = false;
+  //       return;
+  //     }
+  //     List<MixRecordingModel> list = [];
+  //     for (Map<String, dynamic> item in allRecordingsTrack.map((e) => e.data())) {
+  //       final startTime = item['startTime'] as int? ?? 0;
+  //       final endTime = item['stopTime'] as int? ?? 0;
+  //       if (startTime == 0 || endTime == 0) {
+  //         AppLogger.print(
+  //           " =======> start or endtime is 0 , skipping fetch recording for this track : ${item['trackId']}",
+  //         );
+  //         continue;
+  //       }
+  //       final recordingUrl = await AppFirebaseService.instance.getMeetingRecordingM4aUrl(
+  //         meetingId: meetingId,
+  //         start: startTime,
+  //         end: endTime,
+  //       );
+  //       if (recordingUrl.trim().isNotEmpty) {
+  //         debugPrint(
+  //           " =======> fetched mix recording for track with start time : ${item['startTime']} and end time : ${item['stopTime']} with url : $recordingUrl",
+  //         );
+  //         list.add(MixRecordingModel(playableUrl: recordingUrl, startTime: startTime, endTime: endTime));
+  //       } else {
+  //         debugPrint(
+  //           " =======> recording url empty for track with start time : ${item['startTime']} and end time : ${item['stopTime']} ",
+  //         );
+  //       }
+  //     }
+  //     mixRecordings.value = list;
+
+  //     isMixRecordingLoading.value = false;
+  //   } catch (e, st) {
+  //     AppLogger.print("Failed to fetch mix recording in controller : $e\n$st");
+  //     mixRecordings.clear();
+  //     isMixRecordingLoading.value = false;
+  //   }
+  // }
+
+  // Future<void> fetchIndividualRecordings() async {
+  //   try {
+  //     isIndividualRecordingLoading.value = true;
+  //     final allRecordingTracks =
+  //         (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
+  //     List<SpeakingEventModel> list = [];
+  //     individualRecordings.clear();
+
+  //     for (var item in allRecordingTracks) {
+  //       final itemData = item.data();
+  //       final startTime = itemData['startTime'] as int? ?? 0;
+  //       final endTime = itemData['stopTime'] as int? ?? 0;
+  //       if (startTime == 0 || endTime == 0) {
+  //         AppLogger.print(" =======> start or endtime is 0 , skipping fetch recording for this track : ${item.id}");
+  //         continue;
+  //       }
+  //       final speakingEventsOfThisTrack =
+  //           (await AppFirebaseService.instance.meetingsCollection
+  //                   .doc(meetingId)
+  //                   .collection('recordingTrack')
+  //                   .doc(item.id)
+  //                   .collection('speakingEvents')
+  //                   .get())
+  //               .docs;
+  //       for (var speakingEvent in speakingEventsOfThisTrack) {
+  //         final data = speakingEvent.data();
+  //         final eventStart = data['start'];
+  //         final eventStop = data['stop'];
+  //         if (eventStart == null || eventStart == 0 || eventStop == null || eventStop == 0) {
+  //           continue;
+  //         }
+  //         final evStart = eventStart as int;
+  //         final evStop = eventStop as int;
+  //         if (isCurrentUserHost || loggedInUserData.userId.toString() == data['userId'].toString()) {
+  //           AppLogger.print(
+  //             " =======> fetching recording for user : ${data['userName']} with id : ${data['userId']} for track : ${item.id}",
+  //           );
+  //         } else {
+  //           AppLogger.print(
+  //             " =======> skipping recording for user : ${data['userName']} with id : ${data['userId']} for track : ${item.id} as current user is not host and recording is not of current user",
+  //           );
+  //           continue;
+  //         }
+  //         final trimmedUrl = await AppFirebaseService.instance.getTrimmedRecordingM4aUrl(
+  //           meetingId: meetingId,
+  //           recordingFullStartTime: startTime,
+  //           recordingFullEndTime: endTime,
+  //           trimmedStartTime: evStart,
+  //           trimmedEndTime: evStop,
+  //         );
+  //         if (trimmedUrl.trim().isEmpty) {
+  //           AppLogger.print(' =======> trimmed m4a url empty for track ${item.id} speaking event');
+  //           continue;
+  //         }
+  //         list.add(
+  //           SpeakingEventModel(
+  //             userId: data['userId'].toString(),
+  //             userName: data['userName'],
+  //             startTime: evStart,
+  //             endTime: evStop,
+  //             recordingUrl: trimmedUrl,
+  //             trackStartTime: itemData['startTime'],
+  //             trackStopTime: itemData['stopTime'],
+  //           ),
+  //         );
+  //       }
+  //     }
+  //     list.sort((a, b) {
+  //       final nameCompare = a.userName.toLowerCase().compareTo(b.userName.toLowerCase());
+
+  //       if (nameCompare != 0) return nameCompare;
+
+  //       // If names are same → sort by time
+  //       return a.startTime.compareTo(b.startTime);
+  //     });
+
+  //     individualRecordings.value = list;
+  //   } catch (e, st) {
+  //     AppLogger.print("Failed to fetchIndividualRecordings : $e\n$st");
+  //     individualRecordings.clear();
+  //   } finally {
+  //     isIndividualRecordingLoading.value = false;
+  //   }
+  // }
   Future<void> fetchMixRecordings() async {
     try {
       if (!canCurrentUserSeeMixRecording) {
-        debugPrint("Current user does not have permission to see mix recording, skipping fetchMixRecordings");
+        debugPrint("No permission, skipping fetchMixRecordings");
         return;
       }
+
       isMixRecordingLoading.value = true;
-      final allRecordingsTrack = (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
+
+      final allRecordingsTrack =
+          (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
+
       if (allRecordingsTrack.isEmpty) {
         AppLogger.print("No recording tracks found for meeting : $meetingId");
         mixRecordings.clear();
-        isMixRecordingLoading.value = false;
         return;
       }
-      List<MixRecordingModel> list = [];
-      for (Map<String, dynamic> item in allRecordingsTrack.map((e) => e.data())) {
+
+      // 🔥 Create parallel tasks
+      final futures = allRecordingsTrack.map((doc) async {
+        final item = doc.data();
+
         final startTime = item['startTime'] as int? ?? 0;
         final endTime = item['stopTime'] as int? ?? 0;
-        if (startTime == 0 || endTime == 0) {
-          AppLogger.print(" =======> start or endtime is 0 , skipping fetch recording for this track : ${item['trackId']}");
-          continue;
-        }
-        final recordingUrl = await AppFirebaseService.instance.getMeetingRecordingM4aUrl(meetingId: meetingId, start: startTime, end: endTime);
-        if (recordingUrl.trim().isNotEmpty) {
-          debugPrint(
-            " =======> fetched mix recording for track with start time : ${item['startTime']} and end time : ${item['stopTime']} with url : $recordingUrl",
-          );
-          list.add(MixRecordingModel(playableUrl: recordingUrl, startTime: startTime, endTime: endTime));
-        } else {
-          debugPrint(" =======> recording url empty for track with start time : ${item['startTime']} and end time : ${item['stopTime']} ");
-        }
-      }
-      mixRecordings.value = list;
 
-      isMixRecordingLoading.value = false;
+        if (startTime == 0 || endTime == 0) {
+          return null;
+        }
+
+        final url = await AppFirebaseService.instance.getMeetingRecordingM4aUrl(
+          meetingId: meetingId,
+          start: startTime,
+          end: endTime,
+        );
+
+        if (url.trim().isEmpty) return null;
+
+        return MixRecordingModel(playableUrl: url, startTime: startTime, endTime: endTime);
+      });
+
+      // 🚀 Run all API calls in parallel
+      final results = await Future.wait(futures);
+
+      // Remove nulls
+      final list = results.whereType<MixRecordingModel>().toList();
+
+      // Optional: sort by time
+      list.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+      mixRecordings.value = list;
     } catch (e, st) {
-      AppLogger.print("Failed to fetch mix recording in controller : $e\n$st");
+      AppLogger.print("Failed to fetch mix recording: $e\n$st");
       mixRecordings.clear();
+    } finally {
       isMixRecordingLoading.value = false;
     }
   }
@@ -227,99 +378,107 @@ class MeetingDetailController extends GetxController {
   Future<void> fetchIndividualRecordings() async {
     try {
       isIndividualRecordingLoading.value = true;
-      final allRecordingTracks = (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
-      List<SpeakingEventModel> list = [];
+
+      final allRecordingTracks =
+          (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
+
       individualRecordings.clear();
 
+      List<Future<List<SpeakingEventModel>>> futures = [];
+
       for (var item in allRecordingTracks) {
-        final itemData = item.data();
-        final startTime = itemData['startTime'] as int? ?? 0;
-        final endTime = itemData['stopTime'] as int? ?? 0;
-        if (startTime == 0 || endTime == 0) {
-          AppLogger.print(" =======> start or endtime is 0 , skipping fetch recording for this track : ${item.id}");
-          continue;
-        }
-        final speakingEventsOfThisTrack =
-            (await AppFirebaseService.instance.meetingsCollection
-                    .doc(meetingId)
-                    .collection('recordingTrack')
-                    .doc(item.id)
-                    .collection('speakingEvents')
-                    .get())
-                .docs;
-        for (var speakingEvent in speakingEventsOfThisTrack) {
-          final data = speakingEvent.data();
-          final eventStart = data['start'];
-          final eventStop = data['stop'];
-          if (eventStart == null || eventStart == 0 || eventStop == null || eventStop == 0) {
-            continue;
-          }
-          final evStart = eventStart as int;
-          final evStop = eventStop as int;
-          if (isCurrentUserHost || loggedInUserData.userId.toString() == data['userId'].toString()) {
-            AppLogger.print(" =======> fetching recording for user : ${data['userName']} with id : ${data['userId']} for track : ${item.id}");
-          } else {
-            AppLogger.print(
-              " =======> skipping recording for user : ${data['userName']} with id : ${data['userId']} for track : ${item.id} as current user is not host and recording is not of current user",
-            );
-            continue;
-          }
-          final trimmedUrl = await AppFirebaseService.instance.getTrimmedRecordingM4aUrl(
-            meetingId: meetingId,
-            recordingFullStartTime: startTime,
-            recordingFullEndTime: endTime,
-            trimmedStartTime: evStart,
-            trimmedEndTime: evStop,
-          );
-          if (trimmedUrl.trim().isEmpty) {
-            AppLogger.print(' =======> trimmed m4a url empty for track ${item.id} speaking event');
-            continue;
-          }
-          list.add(
-            SpeakingEventModel(
-              userId: data['userId'].toString(),
-              userName: data['userName'],
-              startTime: evStart,
-              endTime: evStop,
-              recordingUrl: trimmedUrl,
-              trackStartTime: itemData['startTime'],
-              trackStopTime: itemData['stopTime'],
-            ),
-          );
-        }
+        futures.add(_processTrack(item));
       }
-      list.sort((a, b) => a.userName.toLowerCase().compareTo(b.userName.toLowerCase()));
+
+      // Run all tracks in parallel 🚀
+      final results = await Future.wait(futures);
+
+      // Flatten list
+      final list = results.expand((e) => e).toList();
+
+      // Sorting (this is cheap, no issue)
+      list.sort((a, b) {
+        final nameCompare = a.userName.toLowerCase().compareTo(b.userName.toLowerCase());
+
+        if (nameCompare != 0) return nameCompare;
+
+        return a.startTime.compareTo(b.startTime);
+      });
+
       individualRecordings.value = list;
     } catch (e, st) {
-      AppLogger.print("Failed to fetchIndividualRecordings : $e\n$st");
+      AppLogger.print("Failed: $e\n$st");
       individualRecordings.clear();
     } finally {
       isIndividualRecordingLoading.value = false;
     }
   }
-  // Future<void> getAllUserWiseRecordings() async {
-  //   final eventsSnap =
-  //       await FirebaseFirestore.instance.collectionGroup('speakingEvents').where('meetingId', isEqualTo: meetingId).orderBy('start').get();
 
-  //   List<RecordingTrackModel> data = [];
-  //   for (var doc in eventsSnap.docs) {
-  //     final docData = RecordingTrackModel.fromJson(doc.data());
-  //     final recordedFile = mixRecordings.firstWhereOrNull(
-  //       (e) => (e.startTime?.isBefore(docData.startTime.toDateTime) ?? false) && (e.stopTime?.isAfter(docData.endTime.toDateTime) ?? false),
-  //     );
+  Future<List<SpeakingEventModel>> _processTrack(QueryDocumentSnapshot<Map<String, dynamic>> item) async {
+    final itemData = item.data();
 
-  //     if (recordedFile != null) {
-  //       data.add(
-  //         IndividualRecordingModel(
-  //               url: recordedFile.playableUrl,
-  //               startTime: docData.startTime.toDateTime,
-  //               stopTime: docData.endTime.toDateTime,
-  //               recordingTime: recordedFile.recordingTime,
-  //               userId: int.tryParse(doc.reference.parent.parent?.id ?? '0'),
-  //             )
-  //             as RecordingTrackModel,
-  //       );
-  //     }
-  //   }
-  // }
+    final startTime = itemData['startTime'] as int? ?? 0;
+    final endTime = itemData['stopTime'] as int? ?? 0;
+
+    if (startTime == 0 || endTime == 0) return [];
+
+    final speakingEvents =
+        (await AppFirebaseService.instance.meetingsCollection
+                .doc(meetingId)
+                .collection('recordingTrack')
+                .doc(item.id)
+                .collection('speakingEvents')
+                .get())
+            .docs;
+
+    List<Future<SpeakingEventModel?>> futures = [];
+
+    for (var event in speakingEvents) {
+      futures.add(_processEvent(event, itemData, startTime, endTime));
+    }
+
+    final results = await Future.wait(futures);
+
+    return results.whereType<SpeakingEventModel>().toList();
+  }
+
+  Future<SpeakingEventModel?> _processEvent(
+    QueryDocumentSnapshot<Map<String, dynamic>> event,
+    Map<String, dynamic> itemData,
+    int startTime,
+    int endTime,
+  ) async {
+    final data = event.data();
+
+    final evStart = data['start'];
+    final evStop = data['stop'];
+
+    if (evStart == null || evStop == null || evStart == 0 || evStop == 0) {
+      return null;
+    }
+
+    if (!(isCurrentUserHost || loggedInUserData.userId.toString() == data['userId'].toString())) {
+      return null;
+    }
+
+    final url = await AppFirebaseService.instance.getTrimmedRecordingM4aUrl(
+      meetingId: meetingId,
+      recordingFullStartTime: startTime,
+      recordingFullEndTime: endTime,
+      trimmedStartTime: evStart,
+      trimmedEndTime: evStop,
+    );
+
+    if (url.trim().isEmpty) return null;
+
+    return SpeakingEventModel(
+      userId: data['userId'].toString(),
+      userName: data['userName'],
+      startTime: evStart,
+      endTime: evStop,
+      recordingUrl: url,
+      trackStartTime: startTime,
+      trackStopTime: endTime,
+    );
+  }
 }

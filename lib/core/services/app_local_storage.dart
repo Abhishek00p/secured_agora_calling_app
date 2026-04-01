@@ -6,6 +6,7 @@ import 'package:secured_calling/features/meeting/bindings/live_meeting_controlle
 import 'package:secured_calling/utils/app_logger.dart';
 import 'package:secured_calling/utils/app_tost_util.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
+import 'package:secured_calling/core/services/app_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppLocalStorage {
@@ -67,9 +68,7 @@ class AppLocalStorage {
 
   static Future<bool> signOut(BuildContext context) async {
     try {
-      setLoggedIn(false);
-      clearToken();
-      clearUserDetails();
+      await AppAuthService.instance.logout();
       Get.delete<MeetingController>();
       return true;
     } catch (e) {
