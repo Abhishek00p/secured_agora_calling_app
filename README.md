@@ -29,7 +29,7 @@ lib/
 │   ├── config/           # Base URL, env constants
 │   ├── constants/        # App-wide constants
 │   ├── extensions/       # Dart extensions
-│   ├── middleware/        # HTTP interceptor (token refresh)
+│   ├── middleware/        # Legacy HTTP client wrapper (unused by main app)
 │   ├── models/           # Shared data models
 │   ├── routes/           # AppRouter (named routes + bindings)
 │   ├── services/         # Core services (HTTP, Firebase, Auth, Download…)
@@ -66,7 +66,8 @@ https://secured-agora-calling-app.onrender.com
 Configured in `lib/core/config/app_config.dart`.
 
 All requests (except login) carry an `Authorization: Bearer <jwt>` header.  
-On a `401` response the HTTP service automatically calls `GET api/auth/refreshLoginToken` and retries once.
+On a `401` response, `AppHttpService` does **not** refresh or retry: it runs the session-expired handler once (toast, clear local session, navigate to login). Concurrent `401`s are deduplicated so logout runs only once.
+Implementation: `lib/core/services/http_service.dart` (`_executeRequest`), handler registered in `main.dart` via `AppSessionExpiredHandler` (`lib/core/services/app_session_expired_handler.dart`).
 
 ---
 
@@ -84,7 +85,7 @@ On a `401` response the HTTP service automatically calls `GET api/auth/refreshLo
 | 6 | `POST` | `/resetPassword` | Bearer | `{ targetEmail, newPassword }` | `{ success }` | Reset a user's password _(legacy — no `/api/` prefix)_ |
 | 7 | `GET` | `/api/auth/user-credentials/:userId` | Bearer | — | `{ success, data: { email, password } }` | Retrieve plain-text credentials (admin/member view) |
 | 8 | `POST` | `/getUsersForPasswordReset` | Bearer | `{}` | `{ success, data: { users: [...] } }` | List users eligible for password reset _(legacy — no `/api/` prefix)_ |
-| 9 | `GET` | `/api/auth/refreshLoginToken` | Bearer | `?userId=<id>` | `{ success, token }` | Silently refresh a JWT — called automatically by the HTTP interceptor on 401 |
+| 9 | `GET` | `/api/auth/refreshLoginToken` | Bearer | `?userId=<id>` | `{ success, token }` | Optional JWT refresh (available on the server; the Flutter app does **not** call this on `401` — see Base URL section above) |
 
 ---
 
@@ -173,14 +174,11 @@ Token stored in SharedPreferences
         ▼
 All subsequent requests: Authorization: Bearer <token>
         │
-   401 received?
+   401 received (authenticated request)?
         │
         ▼
-GET /api/auth/refreshLoginToken?userId=<id>
-        │
-  { token } ──► update stored token ──► retry original request
-        │
-   Still 401? ──► force logout
+Session-expired handler (once if many calls fail together):
+  toast → clear local session → Get.offAllNamed(/login)
 ```
 
 ---
@@ -235,7 +233,7 @@ The following endpoints have **no `/api/` prefix** and pre-date the current Expr
 | `POST /getUsersForPasswordReset` | `app_auth_service.dart` | `GET /api/auth/users` |
 | `POST /verifyToken` | `agora_token_helper.dart` | `POST /api/agora/token` |
 | `GET /generateLoginToken` | `app_http_interceptor.dart` _(unused)_ | `POST /api/auth/login` |
-| `GET /refreshLoginToken` | `app_http_interceptor.dart` _(unused)_ | `GET /api/auth/refreshLoginToken` |
+| `GET /refreshLoginToken` | `app_http_interceptor.dart` _(unused)_ | `GET /api/auth/refreshLoginToken` _(app does not auto-call on 401)_ |
 
 ---
 

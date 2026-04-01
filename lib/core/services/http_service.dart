@@ -17,6 +17,20 @@ class AppHttpService {
 
   AppHttpService._internal();
 
+  /// Set from [main] so this layer does not depend on [AppAuthService] (avoids import cycles).
+  static Future<void> Function()? _sessionExpiredHandler;
+
+  static void setSessionExpiredHandler(Future<void> Function()? handler) {
+    _sessionExpiredHandler = handler;
+  }
+
+  /// Call after a successful login so a later 401 can trigger a new session-expired flow.
+  static void resetSessionExpiredState() {
+    _sessionExpiredFuture = null;
+  }
+
+  static Future<void>? _sessionExpiredFuture;
+
   /// Get the appropriate Firebase Function URL based on platform and environment
   String get firebaseFunctionUrl {
     // if (kDebugMode) {
@@ -53,13 +67,13 @@ class AppHttpService {
     return headers;
   }
 
-  /// Generic GET request
+  /// Generic GET request.
   Future<Map<String, dynamic>?> get(String endpoint, {Map<String, String>? queryParams, bool includeAuth = true}) async {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final finalUri = queryParams != null ? uri.replace(queryParameters: queryParams) : uri;
 
-      final response = await _executeWithRefresh(
+      final response = await _executeRequest(
         functionName: endpoint,
         method: 'GET',
         url: finalUri.toString(),
@@ -80,7 +94,7 @@ class AppHttpService {
     try {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
-      final response = await _executeWithRefresh(
+      final response = await _executeRequest(
         functionName: endpoint,
         method: 'POST',
         url: uri.toString(),
@@ -106,7 +120,7 @@ class AppHttpService {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
 
-      final response = await _executeWithRefresh(
+      final response = await _executeRequest(
         functionName: endpoint,
         method: 'PUT',
         url: uri.toString(),
@@ -132,7 +146,7 @@ class AppHttpService {
       final uri = Uri.parse('$firebaseFunctionUrl$endpoint');
       final requestBody = body != null ? jsonEncode(body) : '';
 
-      final response = await _executeWithRefresh(
+      final response = await _executeRequest(
         functionName: endpoint,
         method: 'DELETE',
         url: uri.toString(),
@@ -172,10 +186,8 @@ class AppHttpService {
     return null;
   }
 
-  bool _isRefreshing = false;
-  Future<void>? _refreshFuture;
-
-  Future<http.Response> _executeWithRefresh({
+  /// Single HTTP call; on 401 with auth, runs session-expired logout (no refresh, no retry).
+  Future<http.Response> _executeRequest({
     required String functionName,
     required String method,
     required String url,
@@ -183,9 +195,9 @@ class AppHttpService {
     required bool includeAuth,
     required Future<http.Response> Function(Map<String, String> headers) call,
   }) async {
-    Map<String, String> headers = _getHeaders(includeAuth: includeAuth);
+    final headers = _getHeaders(includeAuth: includeAuth);
 
-    http.Response response = await AppApiFunctionLogger.instance.logFunctionCall(
+    final http.Response response = await AppApiFunctionLogger.instance.logFunctionCall(
       functionName: functionName,
       method: method,
       url: url,
@@ -194,55 +206,32 @@ class AppHttpService {
       httpCall: () => call(headers),
     );
 
-    if (response.statusCode != 401 || !includeAuth) {
-      return response;
+    if (response.statusCode == 401 && includeAuth) {
+      await _runSessionExpiredOnce();
     }
 
-    // Token expired → refresh
-    await _refreshTokenOnce();
-
-    // Retry once with new token
-    headers = _getHeaders(includeAuth: includeAuth);
-
-    return AppApiFunctionLogger.instance.logFunctionCall(
-      functionName: '$functionName (retry)',
-      method: method,
-      url: url,
-      headers: headers,
-      body: body,
-      httpCall: () => call(headers),
-    );
+    return response;
   }
 
-  Future<void> _refreshTokenOnce() async {
-    if (_isRefreshing) {
-      await _refreshFuture;
-      return;
+  /// Ensures only one session-expired flow (toast, clear, navigate) for concurrent 401s.
+  Future<void> _runSessionExpiredOnce() {
+    if (_sessionExpiredFuture != null) {
+      return _sessionExpiredFuture!;
     }
+    _sessionExpiredFuture = _performSessionExpired();
+    return _sessionExpiredFuture!;
+  }
 
-    _isRefreshing = true;
-    _refreshFuture = _refreshToken();
-
-    try {
-      await _refreshFuture;
-    } finally {
-      _isRefreshing = false;
+  Future<void> _performSessionExpired() async {
+    final handler = _sessionExpiredHandler;
+    if (handler != null) {
+      await handler();
+    } else {
+      AppLogger.print('Session expired but no handler registered; clearing local token only.');
+      AppLocalStorage.clearToken();
+      AppLocalStorage.clearUserDetails();
+      AppLocalStorage.setLoggedIn(false);
     }
   }
 
-  Future<void> _refreshToken() async {
-    final response = await get('api/auth/refreshLoginToken', queryParams: {'userId': AppLocalStorage.getUserDetails().userId.toString()});
-
-    if (response != null && response['success'] != true) {
-      throw Exception('Session expired');
-    }
-
-    final newToken = response?['token'] ?? '';
-
-    if (newToken == null || newToken.isEmpty) {
-      throw Exception('Invalid refresh response');
-    }
-
-    AppLocalStorage.storeToken(newToken);
-  }
 }
