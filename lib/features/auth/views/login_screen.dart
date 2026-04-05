@@ -29,9 +29,9 @@ class _LoginScreenState extends State<LoginScreen> {
         foregroundColor: AppTheme.primaryColor,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(responsivePadding(context)),
-          child: Center(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(responsivePadding(context)),
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: contentMaxWidth(context)),
               child: Column(
@@ -39,7 +39,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const SizedBox(height: 40),
-
                   // App Logo
                   Center(
                     child: Container(
@@ -139,10 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
               'This account is already active on another device. You can stay signed out, or sign in here and sign the other device out.',
             ),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
-              ),
+              TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
                 onPressed: () => Navigator.of(ctx).pop(true),

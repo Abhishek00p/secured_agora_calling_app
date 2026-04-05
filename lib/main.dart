@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:secured_calling/app/app.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
@@ -24,7 +25,7 @@ void main() async {
   } catch (e) {
     debugPrint("Firebase Crashlytics initialization error: $e");
   }
-
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await AppLocalStorage.init();
   AppHttpService.setSessionExpiredHandler(AppSessionExpiredHandler.handleSessionExpired);
   await DownloadManagerService.instance.initialize();

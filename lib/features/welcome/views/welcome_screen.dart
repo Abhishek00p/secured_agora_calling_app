@@ -15,7 +15,6 @@ class WelcomeScreen extends StatefulWidget {
 class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   void initState() {
-    AppFirebaseService.instance.cleanUpServiceSecureFiles();
     super.initState();
   }
 
@@ -24,14 +23,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final padding = responsivePadding(context);
     final isLaptop = context.isLaptop;
 
-    return Scaffold(body: SafeArea(child: isLaptop ? _buildLaptopCentered(context, padding) : _buildMobileScrollable(context, padding)));
+    return Scaffold(
+      body: SafeArea(
+        child: isLaptop ? _buildLaptopCentered(context, padding) : _buildMobileScrollable(context, padding),
+      ),
+    );
   }
 
   Widget _buildLaptopCentered(BuildContext context, double padding) {
     return LayoutBuilder(
       builder: (context, constraints) {
         return SizedBox(
-          height: constraints.maxHeight, // 👈 KEY FIX
+          height: constraints.maxHeight,
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1200),
@@ -55,22 +58,47 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: Theme.of(context).cardTheme.color, borderRadius: BorderRadius.circular(24)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(24),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Features',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                 ),
                 const SizedBox(height: 24),
-                _buildFeatureItem(context, Icons.groups_rounded, 'High-quality video meetings', 'Connect with up to 45 participants'),
+                _buildFeatureItem(
+                  context,
+                  Icons.groups_rounded,
+                  'High-quality video meetings',
+                  'Connect with up to 45 participants',
+                ),
                 const SizedBox(height: 20),
-                _buildFeatureItem(context, Icons.record_voice_over_rounded, 'Advanced audio controls', 'Speaker focus & selective muting'),
+                _buildFeatureItem(
+                  context,
+                  Icons.record_voice_over_rounded,
+                  'Advanced audio controls',
+                  'Speaker focus & selective muting',
+                ),
                 const SizedBox(height: 20),
-                _buildFeatureItem(context, Icons.screen_share_rounded, 'Seamless screen sharing', 'Present your ideas with clarity'),
+                _buildFeatureItem(
+                  context,
+                  Icons.screen_share_rounded,
+                  'Seamless screen sharing',
+                  'Present your ideas with clarity',
+                ),
                 const SizedBox(height: 20),
-                _buildFeatureItem(context, Icons.chat_rounded, 'Integrated chat system', 'Communicate via text during meetings'),
+                _buildFeatureItem(
+                  context,
+                  Icons.chat_rounded,
+                  'Integrated chat system',
+                  'Communicate via text during meetings',
+                ),
               ],
             ),
           ),
@@ -85,9 +113,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             children: [
               _buildLogo(context, size: 100),
               const SizedBox(height: 32),
-              Text('SecuredCalling', style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'SecuredCalling',
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 12),
-              Text('Connect. Collaborate. Create.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'Connect. Collaborate. Create.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 32),
               _buildAboutCard(context),
               const SizedBox(height: 40),
@@ -100,8 +135,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildMobileScrollable(BuildContext context, double padding) {
-    return SingleChildScrollView(
-      child: Center(
+    return Center(
+      child: SingleChildScrollView(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
           child: Padding(padding: EdgeInsets.all(padding), child: _buildMobileLayout(context)),
@@ -121,7 +156,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         const SizedBox(height: 24),
         Text('SecuredCalling', style: Theme.of(context).textTheme.displayMedium?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        Text('Connect. Collaborate. Create.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          'Connect. Collaborate. Create.',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         const SizedBox(height: 32),
         _buildAboutCard(context),
         const SizedBox(height: 40),
@@ -154,7 +193,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Get Started', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+          Text(
+            'Get Started',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(width: 8),
           Icon(forwardArrow, color: Colors.white),
         ],
@@ -173,7 +215,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         children: [
           Text(
             'About Our Company',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Text(
@@ -196,13 +240,33 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       ),
       child: Column(
         children: [
-          _buildFeatureItem(context, Icons.groups_rounded, 'High-quality video meetings', 'Connect with up to 45 participants'),
+          _buildFeatureItem(
+            context,
+            Icons.groups_rounded,
+            'High-quality video meetings',
+            'Connect with up to 45 participants',
+          ),
           const SizedBox(height: 16),
-          _buildFeatureItem(context, Icons.record_voice_over_rounded, 'Advanced audio controls', 'Speaker focus & selective muting'),
+          _buildFeatureItem(
+            context,
+            Icons.record_voice_over_rounded,
+            'Advanced audio controls',
+            'Speaker focus & selective muting',
+          ),
           const SizedBox(height: 16),
-          _buildFeatureItem(context, Icons.screen_share_rounded, 'Seamless screen sharing', 'Present your ideas with clarity'),
+          _buildFeatureItem(
+            context,
+            Icons.screen_share_rounded,
+            'Seamless screen sharing',
+            'Present your ideas with clarity',
+          ),
           const SizedBox(height: 16),
-          _buildFeatureItem(context, Icons.chat_rounded, 'Integrated chat system', 'Communicate via text during meetings'),
+          _buildFeatureItem(
+            context,
+            Icons.chat_rounded,
+            'Integrated chat system',
+            'Communicate via text during meetings',
+          ),
         ],
       ),
     );
@@ -214,7 +278,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Icon(icon, color: AppTheme.primaryColor, size: 24),
         ),
         const SizedBox(width: 16),
