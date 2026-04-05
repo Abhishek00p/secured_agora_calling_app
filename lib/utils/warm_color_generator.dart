@@ -14,7 +14,6 @@ class WarmColorGenerator {
     Color(0xFFEB5E28), // Reddish orange
     // Warm purples
     Color(0xFFB388EB), // Soft lavender purple
-    Color(0xFF9D4EDD), // Vivid purple
     Color(0xFFC084FC), // Pastel purple
     Color(0xFFD291BC), // Mauve
     Color(0xFFE0AAFF),

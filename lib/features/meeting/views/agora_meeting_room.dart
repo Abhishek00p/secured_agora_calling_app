@@ -62,7 +62,7 @@ class _Scale {
     if (_Breakpoint.isMobile(width)) {
       return const _Scale(
         fontSize: 20,
-        iconSize: 20,
+        iconSize: 30,
         padding: 8,
         borderRadius: 8,
         topIconSize: 14,
@@ -78,7 +78,7 @@ class _Scale {
     } else if (_Breakpoint.isTablet(width)) {
       return const _Scale(
         fontSize: 22,
-        iconSize: 24,
+        iconSize: 34,
         padding: 12,
         borderRadius: 10,
         topIconSize: 17,
@@ -95,7 +95,7 @@ class _Scale {
       // Laptop
       return const _Scale(
         fontSize: 26,
-        iconSize: 28,
+        iconSize: 38,
         padding: 16,
         borderRadius: 12,
         topIconSize: 20,
@@ -284,9 +284,20 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
         }),
       );
     } else {
+      final isLaptop = _Breakpoint.isLaptop(Get.width);
       return GestureDetector(
-        onLongPressStart: (_) => mc.startPtt(),
-        onLongPressEnd: (_) => mc.stopPtt(),
+        onTap:
+            isLaptop
+                ? () {
+                  if (mc.isMuted.value) {
+                    mc.startPtt();
+                  } else {
+                    mc.stopPtt();
+                  }
+                }
+                : null,
+        onLongPressStart: isLaptop ? null : (_) => mc.startPtt(),
+        onLongPressEnd: isLaptop ? null : (_) => mc.stopPtt(),
         child: Obx(() {
           final isPttActive = mc.pttUsers.contains(mc.currentUser.userId);
           return CircleAvatar(

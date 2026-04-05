@@ -68,7 +68,7 @@ class AppLocalStorage {
 
   static Future<bool> signOut(BuildContext context) async {
     try {
-      await AppAuthService.instance.logout();
+      AppAuthService.instance.logout();
       Get.delete<MeetingController>();
       return true;
     } catch (e) {

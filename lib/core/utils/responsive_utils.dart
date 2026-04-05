@@ -35,7 +35,7 @@ double contentMaxWidth(BuildContext context) {
     case AppLayoutType.mobile:
       return double.infinity;
     case AppLayoutType.tablet:
-      return 560;
+      return double.infinity;
     case AppLayoutType.laptop:
       return 480;
   }

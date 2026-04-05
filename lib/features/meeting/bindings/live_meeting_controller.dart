@@ -73,14 +73,13 @@ class MeetingController extends GetxController {
   /// Fetch the recording start time from Firestore
   Future<void> _fetchRecordingStartTime() async {
     try {
-      final querySnapshot =
-          await AppFirebaseService.instance.meetingsCollection
-              .doc(meetingId)
-              .collection('recordingTrack')
-              .where('stopTime', isEqualTo: null)
-              .orderBy('startTime', descending: true)
-              .limit(1)
-              .get();
+      final querySnapshot = await AppFirebaseService.instance.meetingsCollection
+          .doc(meetingId)
+          .collection('recordingTrack')
+          .where('stopTime', isEqualTo: null)
+          .orderBy('startTime', descending: true)
+          .limit(1)
+          .get();
 
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
@@ -218,10 +217,9 @@ class MeetingController extends GetxController {
           final additionalMinutes = currentDuration - lastDuration;
           if (additionalMinutes > 0) {
             final reason = data['lastExtensionReason'] as String?;
-            final message =
-                reason != null
-                    ? 'Meeting extended by $additionalMinutes minutes: $reason'
-                    : 'Meeting extended by $additionalMinutes minutes';
+            final message = reason != null
+                ? 'Meeting extended by $additionalMinutes minutes: $reason'
+                : 'Meeting extended by $additionalMinutes minutes';
             AppToastUtil.showInfoToast(message);
           }
         }
@@ -236,10 +234,9 @@ class MeetingController extends GetxController {
         final reason = data['lastExtensionReason'] as String?;
 
         if (extensionMinutes > 0) {
-          final message =
-              reason != null
-                  ? 'Meeting extended by $extensionMinutes minutes: $reason'
-                  : 'Meeting extended by $extensionMinutes minutes';
+          final message = reason != null
+              ? 'Meeting extended by $extensionMinutes minutes: $reason'
+              : 'Meeting extended by $extensionMinutes minutes';
           AppToastUtil.showInfoToast(message);
         }
       }
@@ -311,20 +308,19 @@ class MeetingController extends GetxController {
     showDialog(
       context: Get.context!,
       barrierDismissible: false, // Cannot be dismissed by clicking outside
-      builder:
-          (context) => TimerWarningDialog(
-            key: _timerWarningDialogKey,
-            onExtend: () async {
-              _timerWarningShown = false;
-              Navigator.pop(context);
-              await _showExtendMeetingDialog(context);
-            },
-            onDismiss: () {
-              _timerWarningShown = false;
-              _timerWarningDismissed = true; // Mark as dismissed to prevent re-showing
-              Navigator.pop(context);
-            },
-          ),
+      builder: (context) => TimerWarningDialog(
+        key: _timerWarningDialogKey,
+        onExtend: () async {
+          _timerWarningShown = false;
+          Navigator.pop(context);
+          await _showExtendMeetingDialog(context);
+        },
+        onDismiss: () {
+          _timerWarningShown = false;
+          _timerWarningDismissed = true; // Mark as dismissed to prevent re-showing
+          Navigator.pop(context);
+        },
+      ),
     );
   }
 
@@ -339,20 +335,19 @@ class MeetingController extends GetxController {
   Future<void> _showExtendMeetingDialog(BuildContext context) async {
     showDialog(
       context: context,
-      builder:
-          (context) => ExtendMeetingDialog(
-            meetingId: meetingId,
-            meetingTitle: meetingModel.value.meetingName,
-            onExtend: (additionalMinutes, reason) async {
-              try {
-                await extendMeetingWithOptions(additionalMinutes: additionalMinutes, reason: reason);
-                return true;
-              } catch (e) {
-                AppToastUtil.showErrorToast('Failed to extend meeting: $e');
-                return false;
-              }
-            },
-          ),
+      builder: (context) => ExtendMeetingDialog(
+        meetingId: meetingId,
+        meetingTitle: meetingModel.value.meetingName,
+        onExtend: (additionalMinutes, reason) async {
+          try {
+            await extendMeetingWithOptions(additionalMinutes: additionalMinutes, reason: reason);
+            return true;
+          } catch (e) {
+            AppToastUtil.showErrorToast('Failed to extend meeting: $e');
+            return false;
+          }
+        },
+      ),
     );
   }
 
@@ -485,23 +480,22 @@ class MeetingController extends GetxController {
 
       _firebaseService.getParticipantsStream(meetingId).listen((snapshot) {
         final currentUserId = AppLocalStorage.getUserDetails().userId;
-        final newParticipants =
-            snapshot.docs
-                .where((doc) {
-                  return (doc.data() as Map<String, dynamic>)['isActive'] == true;
-                })
-                .map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  return ParticipantModel(
-                    userId: data['userId'] ?? -1,
-                    name: data['username'] ?? '',
-                    isUserMuted: data['isMuted'] as bool? ?? false,
-                    isUserSpeaking: false, // This will be updated by Agora
-                    color: WarmColorGenerator.getRandomWarmColorByIndex(data['colorIndex'] ?? 0),
-                    firebaseUid: '', // This might need to be fetched if required
-                  );
-                })
-                .toList();
+        final newParticipants = snapshot.docs
+            .where((doc) {
+              return (doc.data() as Map<String, dynamic>)['isActive'] == true;
+            })
+            .map((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              return ParticipantModel(
+                userId: data['userId'] ?? -1,
+                name: data['username'] ?? '',
+                isUserMuted: data['isMuted'] as bool? ?? false,
+                isUserSpeaking: false, // This will be updated by Agora
+                color: WarmColorGenerator.getRandomWarmColorByIndex(data['colorIndex'] ?? 0),
+                firebaseUid: '', // This might need to be fetched if required
+              );
+            })
+            .toList();
 
         // Check if current user was forcefully removed
         // Only check for removal if user was previously in the meeting and is now removed
@@ -680,13 +674,12 @@ class MeetingController extends GetxController {
               .doc(activeRecordingTrack)
               .collection('speakingEvents');
 
-          final querySnapshot =
-              await speakingEventsRef
-                  .where('userId', isEqualTo: currentUser.userId)
-                  .where('stop', isEqualTo: null)
-                  .orderBy('start', descending: true)
-                  .limit(1)
-                  .get();
+          final querySnapshot = await speakingEventsRef
+              .where('userId', isEqualTo: currentUser.userId)
+              .where('stop', isEqualTo: null)
+              .orderBy('start', descending: true)
+              .limit(1)
+              .get();
 
           if (querySnapshot.docs.isNotEmpty) {
             final doc = querySnapshot.docs.first;
@@ -1029,10 +1022,9 @@ class MeetingController extends GetxController {
 
   void onActiveSpeaker(RtcConnection conn, int userId) {
     currentSpeaker = '$userId';
-    participants =
-        participants
-            .map((e) => e.userId == userId ? e.copyWith(isUserSpeaking: true) : e.copyWith(isUserSpeaking: false))
-            .toList();
+    participants = participants
+        .map((e) => e.userId == userId ? e.copyWith(isUserSpeaking: true) : e.copyWith(isUserSpeaking: false))
+        .toList();
     participants.sort((a, b) => (b.isUserSpeaking ? 1 : 0).compareTo(a.isUserSpeaking ? 1 : 0));
     update();
   }

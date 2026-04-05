@@ -44,7 +44,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   int _selectedIndex = 0;
 
   int poppedTimes = 0;
-  bool isDesktop(BuildContext context) => context.layoutType == AppLayoutType.laptop || context.layoutType == AppLayoutType.laptop;
+  bool isDesktop(BuildContext context) =>
+      context.layoutType == AppLayoutType.laptop || context.layoutType == AppLayoutType.laptop;
 
   AppUser user = AppUser.toEmpty();
 
@@ -69,19 +70,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       decoration: BoxDecoration(
         gradient: AppTheme.primaryGradient,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(user.name.titleCase, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(
+            user.name.titleCase,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          ),
           const SizedBox(height: 4),
           if (user.memberCode.isNotEmpty) ...[
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Code: ${user.memberCode}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+                Text(
+                  'Code: ${user.memberCode}',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                ),
                 4.w,
                 IconButton(
                   icon: const Icon(Icons.copy, color: Colors.white, size: 14),
@@ -109,9 +118,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Plan: ${user.subscription.plan}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                Text(
+                  'Plan: ${user.subscription.plan}',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                ),
                 8.w,
-                Text('Expires: ${user.subscription.expiryDate.formatDate}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                Text(
+                  'Expires: ${user.subscription.expiryDate.formatDate}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
               ],
             ),
           ],
@@ -132,7 +147,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: Colors.white,
         unselectedLabelColor: Get.textTheme.bodyLarge?.color,
-        tabs: const [Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'), Tab(icon: Icon(Icons.people), text: 'Join Meeting')],
+        tabs: const [
+          Tab(icon: Icon(Icons.video_call), text: 'Host Meeting'),
+          Tab(icon: Icon(Icons.people), text: 'Join Meeting'),
+        ],
       ),
     );
   }
@@ -140,6 +158,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+    AppFirebaseService.instance.cleanUpServiceSecureFiles();
     WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -192,7 +211,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     if (Get.isRegistered<MeetingController>()) {
       final c = Get.find<MeetingController>();
       if (c.isJoined.value) {
-        Get.toNamed(AppRouter.meetingRoomRoute, arguments: {'channelName': c.channelName, 'isHost': c.isHost, 'meetingId': c.meetingId});
+        Get.toNamed(
+          AppRouter.meetingRoomRoute,
+          arguments: {'channelName': c.channelName, 'isHost': c.isHost, 'meetingId': c.meetingId},
+        );
       }
     }
   }
@@ -320,7 +342,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 const VerticalDivider(width: 1),
 
                 // RIGHT PANEL — MEETING LIST
-                Expanded(child: Padding(padding: EdgeInsets.all(padding), child: SingleChildScrollView(child: _buildMeetingListForRole()))),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.all(padding),
+                    child: SingleChildScrollView(child: _buildMeetingListForRole()),
+                  ),
+                ),
               ],
             );
           },
