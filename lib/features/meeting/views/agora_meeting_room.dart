@@ -69,7 +69,7 @@ class _Scale {
         indicatorDotSize: 8,
         controlButtonHeight: 50,
         controlHorizontalPadding: 16,
-        micRadius: 60,
+        micRadius: 70,
         bodyHorizontalPadding: 8,
         bottomSpacerHeight: 20,
         appBarFontSize: 16,
@@ -85,7 +85,7 @@ class _Scale {
         indicatorDotSize: 10,
         controlButtonHeight: 58,
         controlHorizontalPadding: 24,
-        micRadius: 60,
+        micRadius: 90,
         bodyHorizontalPadding: 20,
         bottomSpacerHeight: 20,
         appBarFontSize: 18,
@@ -102,7 +102,7 @@ class _Scale {
         indicatorDotSize: 12,
         controlButtonHeight: 64,
         controlHorizontalPadding: 32,
-        micRadius: 60,
+        micRadius: 80,
         bodyHorizontalPadding: 40,
         bottomSpacerHeight: 20,
         appBarFontSize: 20,
@@ -315,7 +315,14 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
   // On laptop: all controls in a single horizontal Row
   // On mobile/tablet: keep the original stacked layout
   //
-  Widget _buildBottomControls(MeetingController mc, _Scale scale, double responsivePad, bool isLaptop) {
+  Widget _buildBottomControls(
+    MeetingController mc,
+    _Scale scale,
+    double responsivePad,
+    bool isLaptop, {
+    required bool isMobile,
+    required bool isTablet,
+  }) {
     final mic = _buildMicButton(mc: mc, scale: scale, isHost: mc.isHost);
     final speaker = _buildSpeakerButton(mc, scale, responsivePad);
     final endCall = _buildEndCallButton(
@@ -325,44 +332,50 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
       onLeaveMeeting: mc.endMeeting,
       scale: scale,
     );
-
-    if (isLaptop) {
-      // Laptop: everything in one horizontal row with equal spacing
-      final spacing = SizedBox(width: MediaQuery.of(context).size.width * 0.05);
-      return Padding(
-        padding: EdgeInsets.only(bottom: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [mic, spacing, speaker, spacing, endCall],
-        ),
-      );
-    }
-
-    // Mobile / Tablet: original stacked layout preserved
     if (mc.isHost) {
-      return Padding(
-        padding: EdgeInsets.only(bottom: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            mic,
-            Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [speaker, SizedBox(height: 16), endCall],
-            ),
-          ],
-        ),
-      );
+      if (isMobile) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              mic,
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [speaker, SizedBox(height: 16), endCall],
+              ),
+            ],
+          ),
+        );
+      } else {
+        return Padding(
+          padding: EdgeInsets.only(bottom: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [mic, speaker, endCall],
+          ),
+        );
+      }
     } else {
+      if (isLaptop) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [mic, speaker, endCall],
+          ),
+        );
+      }
       return Padding(
         padding: EdgeInsets.only(bottom: 10),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            mic,
-            SizedBox(height: 16),
             Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [speaker, SizedBox(width: 16), endCall]),
+            SizedBox(height: 16),
+            mic,
           ],
         ),
       );
@@ -470,6 +483,8 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                       final double screenWidth = constraints.maxWidth;
                       final scale = _Scale.fromWidth(screenWidth);
                       final isLaptop = _Breakpoint.isLaptop(screenWidth);
+                      final isTablet = _Breakpoint.isTablet(screenWidth);
+                      final isMobile = _Breakpoint.isMobile(screenWidth);
                       final responsivePad = responsivePadding(context);
 
                       return Padding(
@@ -492,7 +507,14 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
                             if (meetingController.isHost) JoinRequestWidget(),
 
                             // ── Bottom controls ──
-                            _buildBottomControls(meetingController, scale, responsivePad, isLaptop),
+                            _buildBottomControls(
+                              meetingController,
+                              scale,
+                              responsivePad,
+                              isLaptop,
+                              isMobile: isMobile,
+                              isTablet: isTablet,
+                            ),
 
                             SizedBox(height: 20),
                           ],
@@ -646,35 +668,49 @@ class _AgoraMeetingRoomState extends State<AgoraMeetingRoom> with WidgetsBinding
 
   // ─── Host Grid View ────────────────────────
   Widget _buildHostView(MeetingController meetingController, double screenWidth) {
+    final count = meetingController.participants.length;
+
     int crossAxisCount;
     double childAspectRatio;
 
     if (_Breakpoint.isMobile(screenWidth)) {
-      switch (meetingController.participants.length) {
-        case < 3:
-          crossAxisCount = 1;
-          childAspectRatio = 1.75;
-          break;
-        default:
-          crossAxisCount = 2;
-          childAspectRatio = 1.0;
+      if (count == 1) {
+        crossAxisCount = 1;
+        childAspectRatio = 1.7;
+      } else if (count == 2) {
+        crossAxisCount = 2;
+        childAspectRatio = 0.9;
+      } else {
+        crossAxisCount = 2;
+        childAspectRatio = 1.0;
       }
     } else if (_Breakpoint.isTablet(screenWidth)) {
-      crossAxisCount = 3;
-      childAspectRatio = 1.05;
+      if (count <= 2) {
+        crossAxisCount = 1;
+        childAspectRatio = 1.65;
+      } else if (count <= 4) {
+        crossAxisCount = 2;
+        childAspectRatio = 1.0;
+      } else if (count <= 12) {
+        crossAxisCount = 3;
+        childAspectRatio = 1.0;
+      } else {
+        crossAxisCount = 4;
+        childAspectRatio = 1.0;
+      }
     } else {
-      switch (meetingController.participants.length) {
-        case > 4:
-          crossAxisCount = 6;
-          childAspectRatio = 1.1;
-          break;
-        case < 3:
-          crossAxisCount = 2;
-          childAspectRatio = 1.3;
-          break;
-        default:
-          crossAxisCount = 2;
-          childAspectRatio = 2.5;
+      if (count == 1) {
+        crossAxisCount = 1;
+        childAspectRatio = 1.8;
+      } else if (count <= 4) {
+        crossAxisCount = 2;
+        childAspectRatio = 1.4;
+      } else if (count <= 9) {
+        crossAxisCount = 3;
+        childAspectRatio = 1.1;
+      } else {
+        crossAxisCount = 4;
+        childAspectRatio = 1.0;
       }
     }
 
