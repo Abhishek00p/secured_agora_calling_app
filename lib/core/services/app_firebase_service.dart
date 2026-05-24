@@ -1030,6 +1030,40 @@ class AppFirebaseService {
     }
   }
 
+  /// Batch trimmed URLs (`POST …/recording/fetch-m4a/trimmed/batch`).
+  /// Response: `{ success: true, data: { clips: [{ clipId, url, success }] } }`.
+  Future<Map<String, String>> getBatchTrimmedRecordingM4aUrls({
+    required String meetingId,
+    required List<Map<String, dynamic>> clips,
+    String type = 'mix',
+  }) async {
+    if (clips.isEmpty) return {};
+
+    final response = await AppHttpService().post(
+      'api/agora/recording/fetch-m4a/trimmed/batch',
+      body: {'channelName': meetingId, 'type': type, 'clips': clips, 'concurrency': 5},
+    );
+
+    if (response == null || response['success'] != true || response['data'] == null) {
+      AppLogger.print(' failed to fetch batch trimmed URLs : $response');
+      return {};
+    }
+
+    final data = response['data'];
+    final clipList = data is Map ? data['clips'] : data;
+    if (clipList is! List) return {};
+
+    final out = <String, String>{};
+    for (final entry in clipList) {
+      if (entry is! Map) continue;
+      final clipId = (entry['clipId'] ?? '').toString();
+      if (clipId.isEmpty || entry['success'] != true) continue;
+      final url = _parseM4aUrlData(entry['url'] ?? entry['data']);
+      if (url.isNotEmpty) out[clipId] = url;
+    }
+    return out;
+  }
+
   /// Server-trimmed `.m4a` signed URL (`POST …/recording/fetch-m4a/trimmed`).
   /// Response: `{ success: true, data: <url string> }`.
   Future<String> getTrimmedRecordingM4aUrl({

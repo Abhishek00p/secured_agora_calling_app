@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:secured_calling/core/models/app_user_model.dart';
-import 'package:secured_calling/core/models/individual_recording_model.dart';
+import 'package:secured_calling/core/models/individual_recording_item.dart';
 import 'package:secured_calling/core/models/recording_file_model.dart';
 import 'package:secured_calling/core/services/app_firebase_service.dart';
+import 'package:secured_calling/core/utils/async_task_pool.dart';
 import 'package:secured_calling/core/services/app_local_storage.dart';
 import 'package:secured_calling/features/meeting/services/meeting_detail_service.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
@@ -29,13 +30,18 @@ class MeetingDetailController extends GetxController {
   RxInt currentTabIndex = 0.obs;
 
   RxList<MixRecordingModel> mixRecordings = <MixRecordingModel>[].obs;
-  RxList<SpeakingEventModel> individualRecordings = <SpeakingEventModel>[].obs;
+  RxList<IndividualRecordingItem> individualRecordingItems = <IndividualRecordingItem>[].obs;
   // Stream subscriptions
   StreamSubscription<DocumentSnapshot>? _meetingStreamSubscription;
 
   MeetingDetailController({required this.meetingId});
   RxBool isMixRecordingLoading = false.obs;
   RxBool isIndividualRecordingLoading = false.obs;
+  RxBool isResolvingIndividualAudioUrls = false.obs;
+
+  static const int _trimUrlConcurrency = 5;
+  static const int _trimBatchChunkSize = 25;
+  int _urlResolveGeneration = 0;
 
   AppUser loggedInUserData = AppLocalStorage.getUserDetails();
 
@@ -58,6 +64,7 @@ class MeetingDetailController extends GetxController {
 
   @override
   void onClose() {
+    _urlResolveGeneration++;
     _meetingStreamSubscription?.cancel();
     super.onClose();
   }
@@ -376,109 +383,184 @@ class MeetingDetailController extends GetxController {
   }
 
   Future<void> fetchIndividualRecordings() async {
+    final generation = ++_urlResolveGeneration;
+
     try {
       isIndividualRecordingLoading.value = true;
+      isResolvingIndividualAudioUrls.value = false;
 
       final allRecordingTracks =
           (await AppFirebaseService.instance.meetingsCollection.doc(meetingId).collection('recordingTrack').get()).docs;
 
-      individualRecordings.clear();
+      final metadataFutures = allRecordingTracks.map(_loadTrackMetadataItems);
+      final metadataChunks = await Future.wait(metadataFutures);
+      final items = metadataChunks.expand((e) => e).toList();
 
-      List<Future<List<SpeakingEventModel>>> futures = [];
-
-      for (var item in allRecordingTracks) {
-        futures.add(_processTrack(item));
-      }
-
-      // Run all tracks in parallel 🚀
-      final results = await Future.wait(futures);
-
-      // Flatten list
-      final list = results.expand((e) => e).toList();
-
-      // Sorting (this is cheap, no issue)
-      list.sort((a, b) {
+      items.sort((a, b) {
         final nameCompare = a.userName.toLowerCase().compareTo(b.userName.toLowerCase());
-
         if (nameCompare != 0) return nameCompare;
-
         return a.startTime.compareTo(b.startTime);
       });
 
-      individualRecordings.value = list;
+      if (generation != _urlResolveGeneration) return;
+      individualRecordingItems.value = items;
     } catch (e, st) {
-      AppLogger.print("Failed: $e\n$st");
-      individualRecordings.clear();
+      AppLogger.print('Failed to load individual recording metadata: $e\n$st');
+      individualRecordingItems.clear();
     } finally {
       isIndividualRecordingLoading.value = false;
     }
+
+    if (generation != _urlResolveGeneration) return;
+    if (individualRecordingItems.isEmpty) return;
+
+    unawaited(_resolveIndividualRecordingUrls(generation));
   }
 
-  Future<List<SpeakingEventModel>> _processTrack(QueryDocumentSnapshot<Map<String, dynamic>> item) async {
-    final itemData = item.data();
-
-    final startTime = itemData['startTime'] as int? ?? 0;
-    final endTime = itemData['stopTime'] as int? ?? 0;
-
-    if (startTime == 0 || endTime == 0) return [];
-
-    final speakingEvents =
-        (await AppFirebaseService.instance.meetingsCollection
-                .doc(meetingId)
-                .collection('recordingTrack')
-                .doc(item.id)
-                .collection('speakingEvents')
-                .get())
-            .docs;
-
-    List<Future<SpeakingEventModel?>> futures = [];
-
-    for (var event in speakingEvents) {
-      futures.add(_processEvent(event, itemData, startTime, endTime));
-    }
-
-    final results = await Future.wait(futures);
-
-    return results.whereType<SpeakingEventModel>().toList();
-  }
-
-  Future<SpeakingEventModel?> _processEvent(
-    QueryDocumentSnapshot<Map<String, dynamic>> event,
-    Map<String, dynamic> itemData,
-    int startTime,
-    int endTime,
+  Future<List<IndividualRecordingItem>> _loadTrackMetadataItems(
+    QueryDocumentSnapshot<Map<String, dynamic>> trackDoc,
   ) async {
-    final data = event.data();
+    final trackData = trackDoc.data();
+    final trackStart = trackData['startTime'] as int? ?? 0;
+    final trackEnd = trackData['stopTime'] as int? ?? 0;
 
-    final evStart = data['start'];
-    final evStop = data['stop'];
+    if (trackStart == 0 || trackEnd == 0) return [];
 
-    if (evStart == null || evStop == null || evStart == 0 || evStop == 0) {
-      return null;
+    final eventsRef = AppFirebaseService.instance.meetingsCollection
+        .doc(meetingId)
+        .collection('recordingTrack')
+        .doc(trackDoc.id)
+        .collection('speakingEvents');
+
+    QuerySnapshot<Map<String, dynamic>> eventsSnapshot;
+    if (isCurrentUserHost) {
+      eventsSnapshot = await eventsRef.get();
+    } else {
+      eventsSnapshot = await eventsRef.where('userId', isEqualTo: loggedInUserData.userId).get();
+      if (eventsSnapshot.docs.isEmpty) {
+        eventsSnapshot = await eventsRef.where('userId', isEqualTo: loggedInUserData.userId.toString()).get();
+      }
     }
 
-    if (!(isCurrentUserHost || loggedInUserData.userId.toString() == data['userId'].toString())) {
-      return null;
+    final items = <IndividualRecordingItem>[];
+
+    for (final event in eventsSnapshot.docs) {
+      final data = event.data();
+      final evStart = data['start'];
+      final evStop = data['stop'];
+
+      if (evStart == null || evStop == null || evStart == 0 || evStop == 0) continue;
+
+      final userId = (data['userId'] ?? '').toString();
+      if (!isCurrentUserHost && userId != loggedInUserData.userId.toString()) continue;
+
+      items.add(
+        IndividualRecordingItem(
+          clipId: '${trackDoc.id}_${event.id}',
+          trackId: trackDoc.id,
+          eventId: event.id,
+          userId: userId,
+          userName: (data['userName'] ?? '').toString(),
+          startTime: evStart as int,
+          endTime: evStop as int,
+          trackStartTime: trackStart,
+          trackStopTime: trackEnd,
+        ),
+      );
     }
 
-    final url = await AppFirebaseService.instance.getTrimmedRecordingM4aUrl(
-      meetingId: meetingId,
-      recordingFullStartTime: startTime,
-      recordingFullEndTime: endTime,
-      trimmedStartTime: evStart,
-      trimmedEndTime: evStop,
-    );
+    return items;
+  }
 
-    if (url.trim().isEmpty) return null;
+  Future<void> _resolveIndividualRecordingUrls(int generation) async {
+    isResolvingIndividualAudioUrls.value = true;
 
-    return SpeakingEventModel(
-      userId: data['userId'].toString(),
-      userName: data['userName'],
-      startTime: evStart,
-      endTime: evStop,
-      recordingUrl: url,
-      trackStartTime: startTime,
-      trackStopTime: endTime,
+    try {
+      final pending = List<IndividualRecordingItem>.from(individualRecordingItems);
+      final resolved = <String, String>{};
+
+      for (var i = 0; i < pending.length; i += _trimBatchChunkSize) {
+        if (generation != _urlResolveGeneration) return;
+
+        final end = (i + _trimBatchChunkSize) > pending.length ? pending.length : i + _trimBatchChunkSize;
+        final chunk = pending.sublist(i, end);
+
+        final batchUrls = await AppFirebaseService.instance.getBatchTrimmedRecordingM4aUrls(
+          meetingId: meetingId,
+          clips: chunk.map((e) => e.toTrimClipRequest().toJson()).toList(),
+        );
+
+        resolved.addAll(batchUrls);
+        _applyResolvedUrls(resolved, generation);
+      }
+
+      final stillPending = individualRecordingItems.where((e) => e.isAudioLoading).toList();
+      if (stillPending.isEmpty || generation != _urlResolveGeneration) return;
+
+      final pool = AsyncTaskPool(concurrency: _trimUrlConcurrency);
+      await pool.map(stillPending, (item) async {
+        if (generation != _urlResolveGeneration) return;
+
+        final url = await AppFirebaseService.instance.getTrimmedRecordingM4aUrl(
+          meetingId: meetingId,
+          recordingFullStartTime: item.trackStartTime,
+          recordingFullEndTime: item.trackStopTime,
+          trimmedStartTime: item.startTime,
+          trimmedEndTime: item.endTime,
+        );
+
+        if (generation != _urlResolveGeneration) return;
+        _applyClipUrl(item.clipId, url, generation);
+      });
+    } catch (e, st) {
+      AppLogger.print('Failed to resolve individual recording URLs: $e\n$st');
+      _markUnresolvedAsFailed(generation);
+    } finally {
+      if (generation == _urlResolveGeneration) {
+        isResolvingIndividualAudioUrls.value = false;
+      }
+    }
+  }
+
+  void _applyResolvedUrls(Map<String, String> urlsByClipId, int generation) {
+    if (generation != _urlResolveGeneration) return;
+
+    var changed = false;
+    final updated =
+        individualRecordingItems.map((item) {
+          final url = urlsByClipId[item.clipId];
+          if (url == null || url.isEmpty) return item;
+          changed = true;
+          return item.copyWith(recordingUrl: url, isAudioLoading: false, audioLoadFailed: false);
+        }).toList();
+
+    if (changed) individualRecordingItems.value = updated;
+  }
+
+  void _applyClipUrl(String clipId, String url, int generation) {
+    if (generation != _urlResolveGeneration) return;
+
+    final index = individualRecordingItems.indexWhere((e) => e.clipId == clipId);
+    if (index < 0) return;
+
+    final trimmed = url.trim();
+    individualRecordingItems[index] = individualRecordingItems[index].copyWith(
+      recordingUrl: trimmed,
+      isAudioLoading: false,
+      audioLoadFailed: trimmed.isEmpty,
     );
+    individualRecordingItems.refresh();
+  }
+
+  void _markUnresolvedAsFailed(int generation) {
+    if (generation != _urlResolveGeneration) return;
+
+    individualRecordingItems.value =
+        individualRecordingItems
+            .map(
+              (item) =>
+                  item.isAudioLoading ? item.copyWith(isAudioLoading: false, audioLoadFailed: true) : item,
+            )
+            .toList();
   }
 }

@@ -522,7 +522,19 @@ class MeetingController extends GetxController {
           // This is just for logging purposes
         }
 
-        participants = newParticipants;
+        participants =
+            newParticipants
+            // +
+            // newParticipants
+            //  +
+            // newParticipants
+            //  +
+            // newParticipants
+            //  +
+            // newParticipants
+            +
+            newParticipants +
+            newParticipants;
         update();
       });
 
