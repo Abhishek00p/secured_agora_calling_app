@@ -7,6 +7,7 @@ import 'package:secured_calling/core/services/download_manager_service.dart';
 import 'package:secured_calling/core/theme/app_theme.dart';
 import 'package:secured_calling/core/utils/responsive_utils.dart';
 import 'package:secured_calling/features/meeting/widgets/clip_audio_downloader.dart';
+import 'package:secured_calling/features/meeting/widgets/individual_recording_row.dart';
 import 'package:secured_calling/features/meeting/widgets/recorder_audio_tile.dart';
 import 'package:secured_calling/models/meeting_detail.dart';
 import 'package:secured_calling/widgets/meeting_info_card.dart';
@@ -191,63 +192,81 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> with SingleTicker
   }
 
   Widget getIndividualRecordingWidgets() {
-    return Obx(
-      () =>
-          controller.isIndividualRecordingLoading.value
-              ? const Center(child: CircularProgressIndicator.adaptive())
-              : controller.individualRecordings.isEmpty
-              ? const NoDataFoundWidget(message: 'No individual recordings available.')
-              : ListView.builder(
-                padding: EdgeInsets.zero,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: controller.individualRecordings.length,
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  final item = controller.individualRecordings[index];
-                  final downloadKey = 'individual_$index';
-                  final downloading = _isDownloading(downloadKey);
+    return Obx(() {
+      if (controller.isIndividualRecordingLoading.value) {
+        return const Center(child: CircularProgressIndicator.adaptive());
+      }
 
-                  return Row(
-                    children: [
-                      Flexible(
-                        child: RecorderAudioTile(
-                          model: item,
-                          url: item.recordingUrl,
-                          onPlaybackStart: _onRecordingPlaybackStart,
-                          onPlaybackEnd: _onRecordingPlaybackEnd,
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: downloading ? 'Downloading…' : 'Download audio',
-                        icon:
-                            downloading
-                                ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                                : const Icon(Icons.download_rounded),
-                        onPressed:
-                            downloading
-                                ? null
-                                : () {
-                                  final safeName =
-                                      item.userName.isNotEmpty
-                                          ? '${item.userName}_recording_${item.startTime}'
-                                          : 'recording_${index + 1}';
+      if (controller.individualRecordingItems.isEmpty) {
+        return const NoDataFoundWidget(message: 'No individual recordings available.');
+      }
 
-                                  _handleDownloadFull(
-                                    audioUrl: item.recordingUrl,
-                                    downloadKey: downloadKey,
-                                    fileName: safeName,
-                                  );
-                                },
-                      ),
-                    ],
-                  );
-                },
+      return Column(
+        children: [
+          if (controller.isResolvingIndividualAudioUrls.value)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Loading audio…',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54),
+                  ),
+                ],
               ),
-    );
+            ),
+          ListView.builder(
+            padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: controller.individualRecordingItems.length,
+            shrinkWrap: true,
+            itemBuilder: (context, index) {
+              final item = controller.individualRecordingItems[index];
+              final downloadKey = 'individual_${item.clipId}';
+              final downloading = _isDownloading(downloadKey);
+
+              return IndividualRecordingRow(
+                item: item,
+                onPlaybackStart: _onRecordingPlaybackStart,
+                onPlaybackEnd: _onRecordingPlaybackEnd,
+                trailing: IconButton(
+                  tooltip: downloading ? 'Downloading…' : 'Download audio',
+                  icon:
+                      downloading
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Icon(Icons.download_rounded),
+                  onPressed:
+                      !item.hasPlayableUrl || downloading
+                          ? null
+                          : () {
+                            final safeName =
+                                item.userName.isNotEmpty
+                                    ? '${item.userName}_recording_${item.startTime}'
+                                    : 'recording_${index + 1}';
+
+                            _handleDownloadFull(
+                              audioUrl: item.recordingUrl,
+                              downloadKey: downloadKey,
+                              fileName: safeName,
+                            );
+                          },
+                ),
+              );
+            },
+          ),
+        ],
+      );
+    });
   }
 
   // ──────────────────────────────────────────────────────────────────────────

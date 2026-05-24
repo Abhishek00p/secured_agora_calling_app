@@ -113,13 +113,17 @@ All recording endpoints share the same base path. The `type` field in the body d
 
 ---
 
-### Recording Playback & Listing
+### Recording Playback (Flutter app)
 
 | # | Method | Path | Auth | Request Body | Response | Description |
 |---|--------|------|------|--------------|----------|-------------|
-| 18 | `POST` | `/api/agora/recording/list/mix` | Bearer | `{ channelName, meetingId }` | `{ success, data: [ { url, startTime }, ... ] }` | List all mix recordings for a meeting. Returns pre-signed HLS `.m3u8` URLs cached in Firestore. |
-| 19 | `POST` | `/api/agora/recording/list/individual/audiofile` | Bearer | `{ channelName, type: "mix", startTime, endTime }` | `{ success, data: { playableUrl } }` | Get a signed HLS `.m3u8` URL for a specific individual recording clip. |
-| 20 | `POST` | `/api/agora/recording/cleanupSecureFiles` | Bearer | `{}` | _(not checked)_ | Fire-and-forget cleanup of temporary signed files on R2. |
+| 18 | `POST` | `/api/agora/recording/fetch-m4a` | Bearer | `{ channelName, recordingStartTime, recordingEndTime, type }` | `{ success, data: "<url>" }` | Full track `.m4a` (HLS → ffmpeg on server, cached in R2) |
+| 19 | `POST` | `/api/agora/recording/fetch-m4a/trimmed` | Bearer | `{ channelName, type, recordingFullStartTime, recordingFullEndTime, trimmedStartTime, trimmedEndTime }` | `{ success, data: "<url>" }` | One speaking-event clip |
+| 20 | `POST` | `/api/agora/recording/fetch-m4a/trimmed/batch` | Bearer | `{ channelName, type, clips: [...], concurrency?: 5 }` | `{ success, data: { clips: [{ clipId, url, success }] } }` | Many clips (server concurrency cap) |
+| 21 | `GET` | `/api/agora/recording/hls/proxy` | Bearer | `?key=<r2-key>` | HLS body | Proxy m3u8/ts with Bearer auth |
+| 22 | `POST` | `/api/agora/recording/cleanupSecureFiles` | Bearer | `{}` | _(not checked)_ | Cleanup temporary signed files on R2 |
+
+**Legacy (not used by current app):** `/recording/list/mix`, `/recording/list/individual/audiofile`.
 
 ---
 
@@ -131,14 +135,13 @@ All recording endpoints share the same base path. The `type` field in the body d
 
 ---
 
-### HLS Media (Direct CDN — not backend)
+### Media download (direct CDN)
 
-These are plain HTTP GET calls made by `ClipAudioDownloader` directly to Cloudflare R2. The signed URLs are obtained from endpoints 18 / 19 above.
+`ClipAudioDownloader` downloads the signed `.m4a` URL from endpoints 18–20 (single HTTP GET).
 
 | # | Method | URL | Description |
 |---|--------|-----|-------------|
-| 24 | `GET` | `<playableUrl>` (signed `.m3u8`) | Fetch HLS playlist from R2 to parse segment list |
-| 25 | `GET` | `<segment_url>` (signed `.ts`) | Download each MPEG-TS audio segment for offline save |
+| 24 | `GET` | `<signed .m4a url>` | Save clip to device Downloads |
 
 ---
 
@@ -185,40 +188,37 @@ Session-expired handler (once if many calls fail together):
 
 ## Recording Flow
 
+### During meeting (metadata)
+
 ```
-Host joins meeting
+PTT on/off while recording → Firestore speakingEvents { start, stop, userId, userName }
+recordingTrack.stopTime set when cloud recording ends
+```
+
+### Meeting detail — individual clips
+
+```
+loadMeetingDetails()
         │
         ▼
-POST /api/agora/token (publisher role)
-        │
-POST /api/agora/recording/start (type: individual)
-POST /api/agora/recording/start (type: mix)  [member only]
-        │
-POST /api/agora/recording/status  ──► poll until active
-        │
-During call: POST /api/agora/recording/update  (when participant list changes)
-        │
-Host ends / leaves meeting
-        │
-POST /api/agora/recording/stop (individual)
-POST /api/agora/recording/stop (mix)           [member only]
-        │
-POST /api/agora/recording/cleanupSecureFiles
+Firestore: recordingTrack + speakingEvents
+  (participants: where userId == logged-in user)
         │
         ▼
-Recordings stored on Cloudflare R2 as HLS (.m3u8 + .ts segments)
+Show list immediately (name, time, per-row “Loading audio…”)
         │
         ▼
-Meeting detail page:
-  POST /api/agora/recording/list/mix              → playable URLs (cached in Firestore)
-  POST /api/agora/recording/list/individual/audiofile → clip URL per speaking event
+POST /fetch-m4a/trimmed/batch (chunks of 25, server concurrency 5)
+  → fallback: POST /fetch-m4a/trimmed (client pool of 5)
         │
         ▼
-User taps Download:
-  GET <m3u8 URL>  → parse segments
-  GET <.ts URLs>  → download one-by-one
-  FFmpeg merge    → .m4a saved to Downloads (Android)
-  Binary concat   → .ts saved to Downloads (Windows)
+Rows gain playable URL → RecorderAudioTile + download enabled
+```
+
+### Server (cloud recording → R2)
+
+```
+start/stop recording → HLS on R2 → fetch-m4a builds .m4a via ffmpeg (cached under audiorecording/)
 ```
 
 ---
